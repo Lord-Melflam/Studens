@@ -1,0 +1,35 @@
+# Deliberately minimal. The stack is not chosen yet (docs/requirements.md), so this file
+# covers only what is certain: secrets, OS noise and editor noise. Add stack specific
+# entries when a stack is actually decided, not before.
+
+# Local working context, deliberately untracked. Holds machine specific environment
+# details and personal notes that have no place in a public repository. The engineering
+# invariants that contributors actually need are stated in README.md instead.
+CLAUDE.md
+CLAUDE.local.md
+
+# Secrets and local configuration. NFR-S3: no secret is ever committed.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+
+# Editor and tooling
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# Logs and local scratch
+*.log
+tmp/
+.cache/
