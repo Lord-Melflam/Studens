@@ -79,8 +79,10 @@ convention:
 
 ## Licence
 
-**Not yet chosen** (`docs/requirements.md` OPEN-18). Until a licence is added, no
-permission to use, copy or distribute this code is granted.
+[MIT](LICENSE). Use it, modify it, build on it.
+
+Contributions are accepted on the same terms: what comes in is licensed the way what goes
+out is, so no separate contributor agreement is needed.
 
 ## Author
 

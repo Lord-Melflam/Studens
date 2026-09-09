@@ -472,7 +472,7 @@ These block agreement. None may be silently assumed.
 | ~~OPEN-15~~ | ~~Are secondary school users in the vision?~~ **RESOLVED 2026-09-09: no.** Higher education only. | closed |
 | OPEN-16 | Trusted contributors, vetted catalogue, or untrusted plugins? | FR-B7, FR-B8, security model |
 | OPEN-17 | How does an AI module fit a zero budget constraint? | CON-1, vision 1.0 |
-| OPEN-18 | What licence, and who governs contributions? | Outside collaboration |
+| OPEN-18 | Who governs contributions? Review authority, merge rights, and how an outside module is accepted. **Licence part resolved 2026-09-09: MIT.** | Outside collaboration, OPEN-16 |
 | OPEN-19 | Is a minimum anonymity set required before an anonymous contribution is shown? | FR-C5 |
 | ~~OPEN-20~~ | ~~Can a contributor manage their own anonymous contributions?~~ **RESOLVED 2026-09-09: no. No editing, no deletion, ever.** | closed |
 | OPEN-21 | Is anonymous or attributed status publicly visible on a contribution? | FR-C5, product |
@@ -504,6 +504,7 @@ by "AI stuff". Better resolved now than discovered later.
 | OPEN-20 | Can a contributor manage their own anonymous contributions after submitting? | **No. No editing, no deletion, ever.** The strong answer, taken deliberately: it preserves FR-C2 and FR-C3 with no exception path, at a real cost in convenience. Moderators retain removal powers (FR-C10); the restriction binds the contributor, not the platform. Resolved 2026-09-09. |
 | OPEN-6 | How to rate limit without linking? | **Option A, fixed window.** A counter on the member record, nothing on the contribution. No cryptography. See `design/anonymous-rate-limiting.md`. Resolved 2026-09-09. |
 | OPEN-27 | Live database write stream adversary in the threat model? | **No.** Proportionality judgement for a small free project. Consequence: the residual correlation in design note 4.1 is knowingly accepted, and FR-C12 requires the privacy statement to disclose it rather than claim absolute unlinkability. Resolved 2026-09-09. |
+| OPEN-18 (licence part) | Which licence? | **MIT.** Permissive, chosen over AGPL with the trade-off understood: anyone may host a derivative commercially without contributing back, in exchange for the lowest possible barrier to the outside contributors the vision depends on (1.0). Inbound equals outbound, so no contributor licence agreement is needed. The remaining half of OPEN-18, contribution governance, stays open. Resolved 2026-09-09. |
 | OPEN-28 | Product name, and therefore the repository name? | **Studens.** Latin, *studēns*, present active participle of *studeō, studēre*: "studying, dedicating oneself to". It is the origin of the participle stem *student-* behind English *student*, French *étudiant* and Dutch *student*, so it reads natively in all three of the platform's languages. Chosen over **Sodalitas** by accepting a weaker (descriptive) trademark position in exchange for immediate legibility, which suits a free non commercial platform. Selection history and rejected names in 7.2. `studens.be` was available on 2026-09-09. **The BOIP trademark search remains outstanding and is not blocked by this decision.** Resolved 2026-09-09. |
 
 Resolved questions stay in the document rather than being deleted. A reader six months from
