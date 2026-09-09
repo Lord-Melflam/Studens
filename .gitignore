@@ -8,6 +8,11 @@
 CLAUDE.md
 CLAUDE.local.md
 
+# Study notes and syntheses of course material. Untracked on purpose: they summarise
+# UCL course slides and a commercial textbook, so they stay out of a public repository.
+# Extracted source text also lands here and must never be committed.
+study/
+
 # Secrets and local configuration. NFR-S3: no secret is ever committed.
 .env
 .env.*
