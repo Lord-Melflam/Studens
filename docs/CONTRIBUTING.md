@@ -13,8 +13,35 @@ Requires Node 22 or later and a PostgreSQL database.
 
 ```bash
 npm install
-cp .env.example .env      # then fill in DATABASE_URL
-npm run gates             # typecheck, lint, tests, schema validation
+npm run gates             # typecheck, lint, tests, schema validation. No database needed.
+```
+
+Then the database, which is a separate set of gates because it needs one:
+
+```bash
+sudo service postgresql start
+sudo -u postgres createuser --createdb --createrole "$USER"
+sudo -u postgres createdb -O "$USER" studens
+
+cp .env.example .env      # the local default needs no password: see below
+npm run gates:db          # migrate, grant, then verify the schema isolation
+```
+
+**There is no password to manage locally.** `.env.example` connects over the unix
+socket with peer authentication, so PostgreSQL trusts the operating system user.
+Setting this project up involves no secret at all, which is the point.
+
+`npm run db:grant-local` grants your user membership of the three module roles so
+that `SET ROLE` works and the isolation checks can run. That is a local testing
+affordance. In production each module gets its own credentials and its own
+connection pool, so a connection cannot escalate at all.
+
+Then, for real data:
+
+```bash
+npm run ingest -- --faculty epl --max 40   # scrapes uclouvain.be, politely
+npm run dev:api                            # terminal 1
+npm run dev:web                            # terminal 2, then localhost:5173
 ```
 
 **Work inside the Linux filesystem, not on a Windows mount.** Measured on this
@@ -65,6 +92,19 @@ fails if anything that could identify a Member reaches the anonymous path. It
 needs no database, so it fails before a migration is ever written. It also
 checks that the anonymous identifier is random rather than sequential, that its
 date is day precision only, and that it carries no tenant column.
+
+`scripts/verify-isolation.sql` is the third and the one the architecture argument
+rests on. It asserts that a feature module cannot read platform data, cannot
+write the catalogue, and **cannot insert an anonymous review at all**: only the
+platform can, because only the platform can perform the FR-C13 quota check in
+the same transaction. That is the anonymity kernel enforced by the database
+rather than by code review, and it answers OPEN-39.
+
+Its first version was a false green worth knowing about. Every `SET ROLE` was
+itself denied, so all the checks ran as the table owner with full access and the
+"must fail" cases quietly succeeded. Each check now asserts which role it is
+actually running as, and raises if it cannot assume it, because a check that
+cannot confirm its own identity proves nothing.
 
 **If either is failing, do not weaken it.** Read `docs/requirements.md` 3.3
 first. Both encode decisions with recorded reasoning behind them, and every

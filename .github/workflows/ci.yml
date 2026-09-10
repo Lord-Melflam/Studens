@@ -48,3 +48,41 @@ jobs:
 
       - name: Validate the database schema
         run: npm run schema:validate
+
+  # A separate job because it needs a database. The gates above deliberately
+  # need no infrastructure and no secrets, so they stay fast and can never be
+  # skipped for want of a service.
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: studens
+          POSTGRES_PASSWORD: studens
+          POSTGRES_DB: studens
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      # Throwaway credentials for an ephemeral container, not a secret.
+      DATABASE_URL: postgresql://studens:studens@localhost:5432/studens?schema=platform
+      PGHOST: localhost
+      PGUSER: studens
+      PGPASSWORD: studens
+      PGDATABASE: studens
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: sudo apt-get install -y --no-install-recommends postgresql-client
+
+      # This is the check the architecture argument rests on: a role per schema,
+      # and a feature module that genuinely cannot read platform data or bypass
+      # the anonymity kernel. See scripts/verify-isolation.sql.
+      - name: Migrate, then verify the schema isolation
+        run: npm run gates:db

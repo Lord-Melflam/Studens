@@ -310,8 +310,38 @@ transaction**: the module calls a platform service to submit a contribution, the
 opens one transaction, performs the conditional quota update, and writes the contribution.
 That is FR-B11 again ("ask questions, do not fetch data"), and it places the invariant inside
 the platform, which is what makes the safety kernel in section 4 a real thing rather than a
-metaphor. Recorded as **OPEN-39**, since the exact division of labour is an implementation
-decision and should not be settled in prose.
+metaphor. **RESOLVED 2026-09-10, against real code as OPEN-39 asked.** The grants in
+`prisma/migrations/20260910161500_roles_and_grants` are narrower than a general
+cross-schema door:
+
+| Role | `ryc.ReviewAnonymous` |
+|---|---|
+| `studens_platform` | INSERT, UPDATE, SELECT |
+| `studens_ryc` | SELECT only |
+| anyone | no DELETE |
+
+So **only the platform can create an anonymous contribution**, because only it can
+perform the FR-C13 quota check in the same transaction. The module that owns the
+feature can display anonymous reviews and cannot bypass the quota to write one.
+UPDATE is the platform's because FR-C10 removal is audited in
+`platform.AuditLog`, and DELETE belongs to nobody because FR-C9 makes these
+permanent for everyone.
+
+That turns the safety kernel of section 4 from a metaphor into a database
+object: the write path to the anonymous store is one grant wide, and a reviewer
+can check it by reading a migration rather than by auditing application code.
+
+`scripts/verify-isolation.sql` asserts all of it, and was itself verified by
+mutation: granting `studens_ryc` an INSERT, or a read of the quota counter,
+makes it fail with a `SECURITY:` message and a non-zero exit.
+
+**A warning about that script's first version**, because the failure mode
+generalises. Every `SET ROLE` was itself denied (PostgreSQL 14 requires role
+membership, which the owner did not have), so all fourteen checks ran as the
+table owner with full access and every "must fail" case quietly succeeded. It
+looked like a clean pass. Each check now asserts which role it is actually
+running as and raises if it cannot assume it: **a security check that cannot
+confirm its own identity proves nothing.**
 
 ## 9. Costs accepted
 

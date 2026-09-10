@@ -23,7 +23,12 @@
     "dev": "npm run build:api && (node apps/api/dist/index.js & npm run --workspace @studens/web dev)",
     "build:api": "tsc --build apps/api",
     "dev:api": "npm run build:api && node apps/api/dist/index.js",
-    "dev:web": "npm run --workspace @studens/web dev"
+    "dev:web": "npm run --workspace @studens/web dev",
+    "db:migrate": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset --force",
+    "db:grant-local": "psql -d \"${PGDATABASE:-studens}\" -q -c \"GRANT studens_platform, studens_ref, studens_ryc TO CURRENT_USER\"",
+    "db:verify-isolation": "psql -v ON_ERROR_STOP=1 -d \"${PGDATABASE:-studens}\" -f scripts/verify-isolation.sql",
+    "gates:db": "npm run db:migrate && npm run db:grant-local && npm run db:verify-isolation"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
@@ -33,5 +38,8 @@
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.13.0",
     "vitest": "^2.1.4"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
   }
 }
