@@ -273,7 +273,8 @@ of the whole design.
   writes it.
 \item \textbf{The platform cannot read a feature module's own data.} The arrow
   does not point the other way either: no grant on
-  \texttt{ryc.ReviewAttributed}.
+  \texttt{ryc.ReviewAttributed}. This one has a consequence that only appeared
+  once the code was written, see \S\ref{sec:tworoles}.
 \item \textbf{Nobody holds DELETE on \texttt{ryc.ReviewAnonymous}.} FR-C9 makes
   anonymous contributions permanent, and FR-C10's removal is a status change.
   The absence of that grant is the enforcement.
@@ -289,7 +290,7 @@ Worth a narrowing migration.
 
 \subsection{This matrix is tested, not just documented}
 
-\texttt{scripts/verify-isolation.sql} asserts fourteen properties: every grant
+\texttt{scripts/verify-isolation.sql} asserts fifteen properties: every grant
 above, and more importantly every \emph{absence}. It is run by
 \texttt{npm run gates:db} and by a CI job with a PostgreSQL service.
 
@@ -371,6 +372,64 @@ whole argument against microservices: with a database per service this becomes a
 saga, and a saga persists a correlation identifier tying the quota increment to
 the contribution, which is exactly the pair FR-C2 forbids. \textbf{The
 coordination mechanism would be the forbidden link.}
+\end{why}
+
+\subsection{The attributed path spans two roles}\label{sec:tworoles}
+
+The drawing above is the anonymous path, where both writes are performed by
+\texttt{studens\_platform}. The attributed path was assumed to be the easy one
+and it is not, because it crosses the grant matrix in the middle:
+
+\begin{center}
+\sffamily\scriptsize
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}p{3.9cm}p{4.5cm}p{4.5cm}@{}}
+\toprule
+& \textbf{voie anonyme} & \textbf{voie nomm\'ee} \\
+\midrule
+1. d\'ecompte du quota
+  & \texttt{platform.MemberQuota}\newline \color{studens}\texttt{studens\_platform}
+  & \texttt{platform.MemberQuota}\newline \color{studens}\texttt{studens\_platform} \\
+\midrule
+\rowcolor{anonlt}
+2. \'ecriture de l'avis
+  & \texttt{ryc.ReviewAnonymous}\newline \color{studens}\texttt{studens\_platform}
+  & \texttt{ryc.ReviewAttributed}\newline \textbf{\texttt{studens\_ryc}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Nobody but \texttt{studens\_ryc} may write \texttt{ryc.ReviewAttributed}, and
+that is not an omission to be patched: it is item~3 of the grant matrix, the
+platform holding no rights over a feature module's own data. So the kernel takes
+a second role, \texttt{writeRole}, and issues \texttt{SET LOCAL ROLE} again
+between the two statements. One transaction, two identities, in this order:
+
+\begin{center}
+\ttfamily\scriptsize
+BEGIN $\rightarrow$ SET LOCAL ROLE studens\_platform $\rightarrow$ quota
+$\rightarrow$\\[0.6mm]
+SET LOCAL ROLE studens\_ryc $\rightarrow$ INSERT $\rightarrow$ COMMIT
+\end{center}
+
+\begin{why}
+\textbf{Found by a 500, not by reading.} The first attributed submission failed
+with a permission error, and the first instinct was to grant
+\texttt{studens\_platform} the missing INSERT. That would have quietly deleted
+the third property of the grant matrix to fix a symptom.
+
+\textbf{The quota still cannot be bypassed.} The role switch happens
+\emph{after} the counter is spent, inside the same transaction, so a rollback
+takes both. The module never gets to choose the order.
+
+\textbf{The atomicity argument is unchanged and now applies twice.}
+\texttt{SET LOCAL} is scoped to the transaction, so this is one connection and
+one commit. Across two services it would be two commits and a compensating
+action, which is the saga this architecture exists to avoid.
+
+\textbf{What would change the answer.} If a third path ever needed a third role,
+the kernel would be growing a permission model, and the right move then is to
+give it an explicit one rather than a second optional argument.
 \end{why}
 
 \subsection{What the kernel deliberately does not do}

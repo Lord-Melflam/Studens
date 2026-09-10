@@ -24,6 +24,10 @@ export default defineConfig({
       "@studens/platform": src("platform"),
       "@studens/ref": src("ref"),
       "@studens/ryc": src("ryc"),
+      // The frontend module's entry point is .tsx, hence the explicit path.
+      "@studens/ryc-ui": fileURLToPath(
+        new URL("./packages/ryc-ui/src/index.tsx", import.meta.url),
+      ),
     },
   },
 });

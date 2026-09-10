@@ -3,8 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "studens": { "tier": "platform" },
+  "studens": {
+    "tier": "platform"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": "./dist/index.js" }
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
 }

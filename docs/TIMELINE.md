@@ -14,18 +14,18 @@ gone wrong and what each failure changed.
 
 | | |
 |---|---|
-| Stage | **Working software.** Catalogue end to end; the review module is not built |
-| Commits | 22 |
-| Requirements | 105, of which FR-A 10, FR-B 18, FR-C 22, FR-D 26, FR-E 7 |
+| Stage | **Working software.** Catalogue end to end, and reviews submitted and read on both paths |
+| Commits | 23 |
+| Requirements | 106, of which FR-A 10, FR-B 18, FR-C 23, FR-D 26, FR-E 7 |
 | Open questions | **14** open, 31 resolved |
-| Tests | **85**, plus 14 database isolation assertions |
-| Code | ~3,200 lines TypeScript, ~800 SQL and Prisma, ~3,000 documentation |
+| Tests | **131**, plus 15 database isolation assertions |
+| Code | ~5,000 lines TypeScript, ~800 SQL and Prisma, ~3,000 documentation |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
 ### What runs today
 
 ```bash
-npm run gates            # typecheck, lint, 85 tests, schema validation. No database needed
+npm run gates            # typecheck, lint, 131 tests, schema validation. No database needed
 npm run gates:db         # migrate, grant, then verify the schema isolation
 npm run ingest -- --faculty epl        # scrape uclouvain.be, politely. Cached after the first run
 npm run db:load                        # snapshot into PostgreSQL, in one transaction
@@ -38,11 +38,17 @@ programme or search a course code and open its page: ECTS, quarter, language,
 lecturers, contact hours, the official assessment method with its weightings,
 and a link to the official UCLouvain page.
 
+Below that page you can now read the reviews and write one. The form, the fork
+between your name and anonymity, the confirmation on the anonymous branch and
+the aggregate all work end to end, against the real kernel.
+
 ### What is deliberately not there
 
-Reviews, because the module is not built. Authentication, because nothing yet
-needs it (FR-D13 makes course pages public anyway). The trendline and
-distribution graphs, deferred to v2. **No placeholders for any of them**: an
+Authentication, so submission runs on a fenced development identity
+(`STUDENS_DEV_IDENTITY=1`, refused when `NODE_ENV=production`, and the process
+says so at every start). Moderation has no queue consumer, so a submitted review
+publishes directly. The trendline and distribution graphs, deferred to v2.
+**No placeholders for any of them**: an
 empty ratings panel would claim the platform does something it cannot.
 
 ### Decided, and not to be re-argued without new evidence
@@ -304,12 +310,65 @@ The LaTeX preamble was extracted to `studens-preamble.tex` at the same time, so
 the palette exists once. A per-institution theme is planned and a palette in two
 files would have diverged.
 
+### Phase 14: the review submission path
+
+The first code that exercises the anonymity kernel, built in the order that let
+each piece be checked before the next depended on it.
+
+**The kernel first.** `platform/quota.ts` and `platform/kernel.ts`. The quota is
+a single statement, `INSERT ... ON CONFLICT ... DO UPDATE ... WHERE`, so the
+check and the increment cannot be separated. The first draft read the counter
+and then wrote it, which is a race; a mutation test proved it, letting **19 of
+20** concurrent attempts through against a limit of 5. The window start is
+computed from the epoch, so it needs no stored state and reveals nothing about
+when a member joined.
+
+**Then the two paths.** `ryc/submit.ts`. They share validation and nothing else.
+`memberId` appears in `submitAnonymous`'s signature and reaches the kernel; it
+does not appear in `content(...)` or below it, and the table has no column for
+it, so a mistake there fails to compile.
+
+**A discovery.** The first attributed submission returned 500: `studens_platform`
+holds no grant on `ryc.ReviewAttributed`, because the grant matrix says the
+platform has no rights over a feature module's own data. The boundary was working
+correctly, and the fix was not to weaken it: the kernel now takes a second role
+and switches with `SET LOCAL ROLE` between the quota and the insert, one
+transaction, two identities. `design/backend-design.tex` 5.3.
+
+**Reading, with the privacy rules on the server.** `ryc/read.ts` returns an
+anonymous review with `author`, `recommendation`, `workloadVsEcts` and
+`difficulty` already null (FR-C16, FR-D15), while those numbers still feed the
+aggregate, which is the whole point of FR-D15. The pass band is a band above a
+floor of five, never a percentage (FR-D23). None of this is left to the client:
+a second client would leak it on day one.
+
+**Then the screens.** `ryc-ui`: the form, the fork, the confirmation, the result.
+The form carries no way to choose a path, because FR-C9 makes the anonymous
+choice permanent and a radio button beside *Send* invites a decision of that
+weight to be taken without reading it. The anonymous branch costs one screen
+more than the named one, and that asymmetry is the design.
+
+**Making the asymmetry checkable.** That property lived in JSX across three
+`onClick` handlers, where it is readable but not testable, so the state machine
+was pulled out into `ryc-ui/src/flow.ts` as a pure function. `test/ui` now
+asserts over every step and every event that **no step other than the
+confirmation can write an anonymous review**. Verified by mutation: removing the
+confirmation step fails three tests. Recorded as FR-C23.
+
+Tests went from 85 to 131. The gates and the live endpoints were both run: the
+anonymous path returns no id (FR-C9), the attributed path returns one, and 400,
+401, 409 and 429 all come back where they should.
+
 ---
 
 ## Next
 
-1. **Review submission**, which is the first thing that exercises the anonymity
-   kernel: the quota check and the anonymous insert in one transaction, as the
-   only role permitted to do it.
-2. Authentication, which FR-D13 needs before reviews can be read.
-3. Branch protection, which only François can enable.
+1. **Authentication** (FR-A). It is now the only thing between the review path
+   and a real user: submission runs on a development identity that refuses to
+   work in production. Needs OAuth client credentials from Microsoft and Google,
+   which only François can register.
+2. **Moderation** (FR-E). A submitted review publishes directly today. The queue
+   has a schema and no consumer.
+3. **Editing an attributed review** (FR-C14) and "Mes avis" (FR-D12), both of
+   which the fork already promises on screen.
+4. Branch protection, which only François can enable.

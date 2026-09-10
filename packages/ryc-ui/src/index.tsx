@@ -30,3 +30,10 @@ export const rycModule: ModuleRegistration = {
 
 export { Ryc };
 export type { CourseDetail, CourseSummary } from "./api.js";
+
+/**
+ * The review path's state machine, exported because it is checked from
+ * test/ui. It is the module's contract about one thing: an anonymous review is
+ * only ever written from the confirmation step (FR-C9).
+ */
+export { next, EVENTS, STEPS, type Event, type Step, type Transition } from "./flow.js";

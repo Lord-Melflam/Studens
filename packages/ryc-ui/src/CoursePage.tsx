@@ -5,7 +5,10 @@
  * method with its weightings (FR-D19). None of it is asked of a reviewer, which
  * is why the review form will be short.
  */
-import type { CourseDetail } from "./api.js";
+import { useCallback, useEffect, useState } from "react";
+import { api, type Aggregate, type CourseDetail, type PublishedReview } from "./api.js";
+import { Reviews } from "./Reviews.js";
+import { SubmitFlow } from "./SubmitFlow.js";
 
 function Field({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
@@ -18,6 +21,44 @@ function Field({ label, value }: { label: string; value: string | null }) {
 }
 
 export function CoursePage({ course, onBack }: { course: CourseDetail; onBack: () => void }) {
+  const [reviews, setReviews] = useState<{
+    aggregate: Aggregate;
+    reviews: PublishedReview[];
+    sessionRequired: boolean;
+  } | null>(null);
+  const [writing, setWriting] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const load = useCallback(() => {
+    api
+      .reviews(course.code)
+      .then((r) => {
+        setReviews(r);
+        setFailed(false);
+      })
+      .catch(() => setFailed(true));
+  }, [course.code]);
+
+  useEffect(load, [load]);
+
+  // The submission flow replaces the page rather than opening over it. It is a
+  // sequence of decisions, and the last one cannot be undone; a modal that can
+  // be dismissed by clicking beside it is the wrong container for that.
+  if (writing) {
+    return (
+      <article className="course">
+        <h2>
+          <span className="code">{course.code.toUpperCase()}</span> {course.title}
+        </h2>
+        <SubmitFlow
+          courseCode={course.code}
+          onClose={() => setWriting(false)}
+          onSubmitted={load}
+        />
+      </article>
+    );
+  }
+
   return (
     <article className="course">
       <button type="button" className="back" onClick={onBack}>
@@ -78,14 +119,21 @@ export function CoursePage({ course, onBack }: { course: CourseDetail; onBack: (
         </div>
       </dl>
 
-      <section className="reviews-absent">
-        <h3>Avis</h3>
-        <p>
-          Pas encore d&apos;avis: le module n&apos;est pas construit. Rien
-          n&apos;est affiché ici plutôt qu&apos;un espace vide qui suggérerait le
-          contraire.
-        </p>
-      </section>
+      {failed && (
+        <section className="reviews-absent">
+          <h3>Avis</h3>
+          <p>Les avis n&apos;ont pas pu être chargés.</p>
+        </section>
+      )}
+
+      {reviews && (
+        <Reviews
+          aggregate={reviews.aggregate}
+          reviews={reviews.reviews}
+          sessionRequired={reviews.sessionRequired}
+          onWrite={() => setWriting(true)}
+        />
+      )}
     </article>
   );
 }

@@ -262,6 +262,7 @@ Small, and each cost real time.
 | npm type resolution | `@types/react` resolved to **19** while the stack chose React 18, and later nested under `apps/web` where a sibling package could not see it | Pin types to the runtime version exactly. A package that uses a library declares the types it needs rather than borrowing another package's |
 | Shell quoting in `psql -c` | Escaped pipes mangled the SQL and produced a comparison of two empty strings, which then reported a false verdict | Put non-trivial SQL in a file or a heredoc, never inline with escapes |
 | New toolchain, old `.gitignore` | Adding LaTeX meant `.aux`, `.out` and `.toc` files, which were staged for commit. Caught by the rule 6 review of staged files, not by foresight | A new build tool brings new generated files. Add them to `.gitignore` in the same change that introduces the tool |
+| Duplicate `@prisma/client` | `^7.10.0` was installed nested in three packages while the CLI and the generated client were 5.22. Types checked, gates passed, and it would have failed at runtime | Pin the client to the exact version of the generator, in every package that declares it, then `rm -rf node_modules package-lock.json && npm install`. A nested duplicate is invisible to `tsc` |
 | A comment is not a violation | The frontend boundary test failed on a CSS comment that *explained* the rule it was checking | Strip comments before scanning source for forbidden words |
 
 ---
@@ -315,8 +316,8 @@ check is expected to report a hit. Anywhere else is a real violation.)
 
 ## 9. The patterns underneath
 
-Twelve entries is enough to see that most of them are four mistakes wearing
-different clothes. This section is the useful part of the document.
+Thirteen entries is enough to see that most of them are a handful of mistakes
+wearing different clothes. This section is the useful part of the document.
 
 ### The thing is verified; the thing that verifies it is not
 
@@ -357,6 +358,28 @@ Writing a rule down feels like adopting it and is not the same act. **A rule
 needs a mechanism**: a test, a grep, a script, a gate. Where no mechanism is
 possible, expect the rule to be broken and check by hand at a fixed point, which
 for this project is the rule 6 review before every commit.
+
+### The obvious fix for a boundary error is to remove the boundary
+
+The first attributed review submission failed with a permission error:
+`studens_platform` holds no INSERT on `ryc.ReviewAttributed`. The immediate
+instinct was to add the grant, which takes ten seconds and would have deleted
+the third property of the grant matrix, the one saying the platform holds no
+rights over a feature module's own data. Nothing would have failed afterwards.
+`verify-isolation.sql` asserted that the platform cannot *read* that table and
+said nothing about writing it, so the fourteen checks would all still have
+passed. An absence is only covered if someone writes the check for it.
+
+The error was not an obstacle, it was the boundary reporting that the design had
+a gap: the attributed path spans two roles and the kernel had only one. The fix
+was a second role inside the same transaction, not a wider first one.
+
+**The habit that follows**: when a permission error blocks progress, the first
+question is what that permission exists to prevent, and the answer belongs in
+the commit message. The assertion that the platform cannot write
+`ryc.ReviewAttributed` was added at the same time, so the tempting fix now fails
+a gate rather than passing quietly. Widening is sometimes right; widening *without saying what
+was given up* is how a matrix rots into decoration.
 
 ### Standards point outward more easily than inward
 

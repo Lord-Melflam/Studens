@@ -10,7 +10,10 @@
  * by touching its storage (FR-B11).
  */
 import express from "express";
+import { PrismaClient } from "@prisma/client";
 import { catalogueRoutes } from "./routes/catalogue.js";
+import { reviewRoutes } from "./routes/reviews.js";
+import { devIdentityEnabled } from "./identity.js";
 
 export const process_role = "web" as const;
 
@@ -28,6 +31,12 @@ export async function createApp(source: AppSource = {}) {
   });
 
   app.use("/api", await catalogueRoutes(source));
+
+  // Reviews need a member, and a member needs FR-A. Mounted only when the
+  // catalogue is database-backed, since the kernel writes to the same database.
+  if (!source.snapshotPath) {
+    app.use("/api", reviewRoutes(new PrismaClient()));
+  }
 
   // Anything unmatched under /api is a 404 as JSON, not an HTML error page.
   app.use("/api", (_req, res) => {
@@ -49,6 +58,15 @@ if (isEntry) {
           `api listening on http://localhost:${port} ` +
             `(catalogue: ${snapshotPath ?? "database"})`,
         );
+        if (devIdentityEnabled()) {
+          // Loud on purpose. This is the one thing standing between the review
+          // path and being usable, and it must not be forgotten quietly.
+          console.warn(
+            "\n  !!  DEVELOPMENT IDENTITY IS ON. Every request is the same member.\n" +
+              "      There is no authentication: FR-A is not built.\n" +
+              "      Never run this way anywhere but a laptop.\n",
+          );
+        }
       }),
     )
     .catch((err: unknown) => {

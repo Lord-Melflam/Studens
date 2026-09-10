@@ -5,6 +5,14 @@
  * docs/design/module-boundaries.md.
  *
  * FR-B11: modules ask this tier narrow questions; they do not fetch its data.
- * The cross-tier transaction in FR-C13 is owned here (OPEN-39).
+ * The cross-tier transaction in FR-C13 is owned here, and `withQuota` is it.
  */
 export const tier = "platform" as const;
+
+export { withQuota, quotaRemaining, type KernelTx, type WithQuotaOptions } from "./kernel.js";
+export {
+  windowStartFor,
+  QuotaExceeded,
+  QUOTA_PER_WINDOW,
+  WINDOW_DAYS,
+} from "./quota.js";

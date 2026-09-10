@@ -64,6 +64,19 @@ SELECT pg_temp.expect_denied('studens_ryc', 'SELECT 1 FROM platform."AuditLog"',
 -- And the reverse: the platform does not read a feature module's own data.
 SELECT pg_temp.expect_denied('studens_platform', 'SELECT 1 FROM ryc."ReviewAttributed"',
   'read attributed reviews');
+-- Nor write it. Added 2026-09-10 after the attributed submission path hit this
+-- exact denial: the tempting fix was to grant the platform INSERT here, and
+-- nothing in this file would have noticed, because only SELECT was asserted.
+-- The real fix was a second role inside one transaction, see
+-- design/backend-design.tex 5.3. This assertion is what stops the tempting one.
+SELECT pg_temp.expect_denied('studens_platform',
+  -- Every NOT NULL column without a default is supplied, so the only reason
+  -- this statement can fail is the missing grant. A probe that would be
+  -- rejected by a constraint proves nothing about permissions.
+  $$INSERT INTO ryc."ReviewAttributed"(id,"courseId","memberId","academicYear",
+      recommendation,"workloadVsEcts",difficulty,body,"updatedAt")
+    VALUES ('probe','probe','probe',2024,3,3,3,'probe',NOW())$$,
+  'write an attributed review');
 
 -- The catalogue is readable by feature modules and writable only by ingestion.
 SELECT pg_temp.expect_allowed('studens_ryc', 'SELECT 1 FROM ref."Course" LIMIT 1',
