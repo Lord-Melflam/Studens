@@ -1,0 +1,571 @@
+% Studens: backend design.
+%
+% Build:  cd docs/design && xelatex backend-design.tex   (twice, for the toc)
+%
+% Unlike the frontend draft, most of this is BUILT and running. Sections that
+% describe something proposed say so. Every fact about the schema and the
+% grants in this document was read out of the live database rather than from
+% memory.
+
+\documentclass[11pt,a4paper]{article}
+\input{studens-preamble}
+\docfooter{Studens backend design \textbf{·} mostly built}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{2.2cm}
+{\sffamily\fontsize{34}{40}\selectfont\bfseries\color{studens}Studens}\\[2mm]
+{\sffamily\large\color{muted}Backend design}\\[10mm]
+\begin{tikzpicture}\draw[studens,line width=1.2pt] (0,0) -- (5,0);\end{tikzpicture}\\[10mm]
+{\sffamily\normalsize How the server is put together, and where each\\
+boundary is actually enforced rather than merely intended.}\\[16mm]
+
+\begin{tcolorbox}[width=0.86\textwidth,colback=studenslt,colframe=studens,
+  arc=2pt,fonttitle=\sffamily\bfseries,title={Status: mostly built}]
+\sffamily\small
+The architecture here was decided in \texttt{design/architecture-style.md} and
+is running. This document draws it, which the prose could not.
+
+Sections describing something \textbf{proposed} say so in the heading. Every
+fact about the schema, the roles and the grants was read out of the live
+database while writing, not recalled.
+\end{tcolorbox}
+
+\vfill
+{\sffamily\footnotesize\color{muted}François Meli \textbf{·} 2026-09-10 \textbf{·} \texttt{docs/design/backend-design.tex}}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ===========================================================================
+\section{The shape in one sentence}
+
+A modular monolith and a worker, sharing one PostgreSQL database in which every
+module owns a schema and a role, on a single virtual machine.
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+
+\node[wbox={4.6cm}{0.8cm}] (browser) at (0,4.0) {navigateur \tiny · React, Vite};
+
+\node[wtier={5.2cm}{0.95cm}] (api) at (-3.7,2.2)
+  {\texttt{apps/api}\\[0.3mm]\tiny le processus web, sans \'etat};
+\node[wbox={5.2cm}{0.95cm}] (worker) at (3.7,2.2)
+  {\texttt{apps/worker}\\[0.3mm]\tiny ingestion, mod\'eration};
+
+\draw[flow] (browser.south) -- node[lbl,fill=paper,inner sep=1.5pt,right,xshift=1mm] {HTTP, JSON}
+  ($(browser.south)+(0,-0.55)$) -| (api.north);
+
+% A shared connector rather than six crossing arrows: both processes use the
+% same in-process modules, which is what a monolith means.
+\draw[flow,-] (api.south) -- (-3.7,0.95);
+\draw[flow,-] (worker.south) -- (3.7,0.95);
+\draw[line width=0.8pt,studens] (-3.7,0.95) -- (3.7,0.95);
+
+\node[wbox={3.5cm}{0.8cm},draw=studens] (plat) at (-4.3,0.05) {\texttt{platform}};
+\node[wbox={3.5cm}{0.8cm}] (ref) at (0,0.05) {\texttt{ref}};
+\node[wbox={3.5cm}{0.8cm}] (ryc) at (4.3,0.05) {\texttt{ryc}};
+\foreach \n in {plat,ref,ryc} {\draw[flow] (\n.north |- 0,0.95) -- (\n.north);}
+
+\node[wbox={12.9cm}{1.4cm},fill=ink!4] (db) at (0,-1.6)
+  {PostgreSQL 14\\[0.5mm]\tiny une base \textbf{·} trois sch\'emas: \texttt{platform}, \texttt{ref}, \texttt{ryc}\\[0.3mm]\tiny un r\^ole par sch\'ema, et c'est l\`a que la fronti\`ere est appliqu\'ee};
+\foreach \n in {plat,ref,ryc} {\draw[flow] (\n.south) -- (\n.south |- db.north);}
+
+\begin{scope}[on background layer]
+  \node[draw=line,dashed,rounded corners=4pt,fit=(api)(worker)(db),inner sep=8pt] (vm) {};
+\end{scope}
+\node[lbl,fill=paper,inner sep=1.5pt,anchor=west] at ($(vm.north west)+(0.5,0)$)
+  {une seule machine \textbf{·} Oracle Always Free \textbf{·} 2 OCPU / 12 Go \textbf{·} r\'egion UE};
+\end{tikzpicture}
+\end{center}
+
+\begin{why}
+Two properties of this picture are decisions rather than defaults, and both are
+argued in \texttt{architecture-style.md}.
+
+\textbf{One deployable, not several.} Microservices were excluded by two
+independent arguments, and the decisive one is in section~\ref{sec:kernel}: the
+mechanism that makes distributed consistency possible is the mechanism the
+privacy design exists to prevent.
+
+\textbf{One database, three schemas, three roles.} This is what turns FR-B3 from
+a convention into something the database refuses. A lint rule catches an import;
+it cannot catch a module issuing SQL against another module's tables, because
+that is a string.
+\end{why}
+
+% ===========================================================================
+\section{Where the boundary is actually enforced}
+
+Three mechanisms, deliberately overlapping, in increasing order of strength.
+The point of listing them together is that each catches what the one above it
+cannot.
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+
+\node[wbox={13.6cm}{1.25cm}] (a) at (0,2.0)
+  {\textbf{1. Le manifeste du paquet} \tiny \texttt{package.json}\\[0.4mm]
+   \tiny Un paquet qui ne d\'eclare pas une d\'ependance ne peut pas la r\'esoudre. V\'erifi\'e par \texttt{boundaries.test.ts}: les d\'ependances descendent, jamais l'inverse.};
+
+\node[wbox={13.6cm}{1.25cm}] (b) at (0,0.35)
+  {\textbf{2. La r\`egle de lint} \tiny \texttt{no-restricted-imports}\\[0.4mm]
+   \tiny Attrape ce qu'un manifeste ne voit pas: un import profond vers \texttt{@studens/x/src/...} se r\'esout tr\`es bien et casse quand m\^eme la fronti\`ere.};
+
+\node[wtier={13.6cm}{1.25cm}] (c) at (0,-1.3)
+  {\textbf{3. Les droits SQL} \tiny \texttt{GRANT} / absence de \texttt{GRANT}\\[0.4mm]
+   \tiny Attrape ce qu'aucun outil JavaScript ne voit: une requ\^ete SQL vers la table d'un autre module. C'est une cha\^ine de caract\`eres, donc rien c\^ot\'e code ne peut la lire.};
+
+\draw[flow] (a) -- (b);
+\draw[flow] (b) -- (c);
+
+\node[cell={3.2cm}{\sffamily\tiny\color{muted}}] at (7.4,1.9) {d\'etecte\\\`a la r\'esolution};
+\node[cell={3.2cm}{\sffamily\tiny\color{muted}}] at (7.4,0.25) {d\'etecte\\\`a la compilation};
+\node[cell={3.2cm}{\sffamily\tiny\bfseries\color{studens}}] at (7.4,-1.4) {\textbf{refuse}\\\`a l'ex\'ecution};
+\end{tikzpicture}
+\end{center}
+
+The third is different in kind from the first two. They \emph{detect}; it
+\emph{refuses}. A developer who bypasses the first two, or a bug that constructs
+a query at runtime, still hits a role with no grant.
+
+\begin{careful}
+The first two live in the repository and can be edited by whoever is changing
+the code. The third lives in the database and is changed by a migration, which
+is reviewed like anything else but takes a deliberate act.
+
+That asymmetry is the reason FR-B15 exists: the gates must hold regardless of
+author, including the project owner, because with a team of one, review of your
+own code is self-review.
+\end{careful}
+
+\newpage
+% ===========================================================================
+\section{The data model}
+
+Sixteen tables. Read out of the live database on 2026-09-10. The columns are
+ordered by what references what rather than by tier, so \texttt{ryc} sits in the
+middle: it is the only schema that references both of the others.
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+
+% Column order follows REFERENCES, not tiers: ryc references both of the
+% others, so it sits between them and no line has to cross a third column.
+% The first version put the schemas in tier order and every cross-schema
+% reference had to traverse the middle, landing labels on unrelated tables.
+
+% ---------- platform, left
+\node[wtier={3.9cm}{0.6cm}] (tenant)  at (-5.7,3.2)  {\texttt{Tenant}};
+\node[wtier={3.9cm}{0.6cm}] (member)  at (-5.7,2.3)  {\texttt{Member}};
+\node[wtier={3.9cm}{0.72cm}] (quota)  at (-5.7,1.3)  {\texttt{MemberQuota}\\[0.2mm]\tiny fen\^etre + compteur};
+\node[wtier={3.9cm}{0.6cm}] (session) at (-5.7,0.3)  {\texttt{Session}};
+\node[wtier={3.9cm}{0.6cm}] (audit)   at (-5.7,-0.6) {\texttt{AuditLog}};
+\draw[flow] (tenant) -- (member);
+\draw[flow] (member.west) -- ($(member.west)+(-0.35,0)$) |- (quota.west);
+\draw[flow] (member.west) -- ($(member.west)+(-0.35,0)$) |- (session.west);
+
+% ---------- ryc, middle, because it references both sides
+\node[wnamed={4.0cm}{0.72cm}] (ratt)  at (0,2.3)  {\texttt{ReviewAttributed}\\[0.2mm]\tiny 14 colonnes};
+\node[wanon={4.0cm}{0.72cm}]  (ranon) at (0,1.0)  {\texttt{ReviewAnonymous}\\[0.2mm]\tiny 12 colonnes};
+\node[wbox={4.0cm}{0.72cm}]   (rimp)  at (0,-0.3) {\texttt{ReviewImported}\\[0.2mm]\tiny 7 colonnes};
+
+% ---------- ref, right
+\node[wbox={3.9cm}{0.6cm}] (inst) at (5.7,3.2)  {\texttt{Institution}};
+\node[wbox={3.9cm}{0.6cm}] (fac)  at (5.7,2.3)  {\texttt{Faculty}};
+\node[wbox={3.9cm}{0.6cm}] (prog) at (5.7,1.4)  {\texttt{Programme}};
+\node[wbox={3.9cm}{0.6cm}] (po)   at (5.7,0.5)  {\texttt{ProgrammeOffering}};
+\node[wbox={3.9cm}{0.7cm}] (off)  at (5.7,-0.5) {\texttt{CourseOffering}\\[0.2mm]\tiny une par ann\'ee};
+\node[wbox={3.9cm}{0.68cm}] (crs) at (5.7,-1.5) {\texttt{Course}\\[0.2mm]\tiny identit\'e stable};
+\node[wbox={3.9cm}{0.6cm}] (ot)   at (5.7,-2.4) {\texttt{OfferingTeacher}};
+\node[wbox={3.9cm}{0.6cm}] (of)   at (5.7,-3.3) {\texttt{OfferingFaculty}};
+\draw[flow] (inst)--(fac); \draw[flow] (fac)--(prog); \draw[flow] (prog)--(po);
+\draw[flow] (po)--(off); \draw[flow] (off)--(crs);
+\draw[flow] (off.east) -- ($(off.east)+(0.35,0)$) |- (ot.east);
+\draw[flow] (off.east) -- ($(off.east)+(0.35,0)$) |- (of.east);
+
+% ---------- cross-schema: plain ids, routed through the gaps
+\draw[flown,dashed] (ratt.west) -- (member.east)
+  node[cell={1.6cm}{\sffamily\tiny\color{named}},midway,above,yshift=0.5mm] {\texttt{memberId}};
+\draw[flown,dashed] (ratt.east) -- (2.55,2.3) -- (2.55,-1.5) -- (crs.west);
+\draw[flowa,dashed] (ranon.east) -- (3.05,1.0) -- (3.05,-1.72) -- (crs.west);
+\node[cell={1.7cm}{\sffamily\tiny\color{muted}}] at (2.2,-2.15) {\texttt{courseId}};
+
+% ---------- the join that must not exist
+\draw[danger,line width=1.0pt,dashed] (quota.east) -- (ranon.west);
+\draw[danger,line width=1.0pt] ($(quota.east)!0.5!(ranon.west)+(-0.18,-0.18)$) -- ($(quota.east)!0.5!(ranon.west)+(0.18,0.18)$);
+\draw[danger,line width=1.0pt] ($(quota.east)!0.5!(ranon.west)+(-0.18,0.18)$) -- ($(quota.east)!0.5!(ranon.west)+(0.18,-0.18)$);
+
+\node[lbl,fill=paper,inner sep=1.5pt] at (-5.7,3.9) {sch\'ema \texttt{platform}};
+\node[lbl,fill=paper,inner sep=1.5pt] at (0,3.9) {sch\'ema \texttt{ryc}};
+\node[lbl,fill=paper,inner sep=1.5pt] at (5.7,3.9) {sch\'ema \texttt{ref}};
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\draw[flow] (0,0) -- (0.9,0); \node[cell={4.4cm}{\sffamily\tiny\color{muted}},anchor=west] at (1.05,0) {trait plein: cl\'e \'etrang\`ere, dans un sch\'ema};
+\draw[flow,dashed] (6.0,0) -- (6.9,0); \node[cell={4.6cm}{\sffamily\tiny\color{muted}},anchor=west] at (7.05,0) {pointill\'e: identifiant simple, entre sch\'emas};
+\draw[danger,line width=1.0pt,dashed] (12.4,0) -- (13.3,0); \node[cell={2.6cm}{\sffamily\tiny\color{danger}},anchor=west] at (13.45,0) {n'existe pas};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Why cross-schema references are plain ids}
+
+Every reference \emph{inside} a schema is a real foreign key. Every reference
+\emph{across} schemas is a plain string column with an index and no constraint.
+That is deliberate and it costs something, so it is worth stating why.
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}p{4.6cm}p{9.4cm}@{}}
+\toprule
+\textbf{What a foreign key would give} & \textbf{What it would cost} \\
+\midrule
+Referential integrity enforced by the database & A Prisma relation must be declared on \emph{both} sides, so \texttt{ryc} referencing \texttt{platform.Member} forces a back-relation on \texttt{Member}. Tier~1 would then depend on tier~3, inverting FR-B10 \\[2mm]
+Cascading deletes & Which is the wrong behaviour anyway: FR-C9 makes contributions permanent, and nothing may cascade into them \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A plain id also survives module extraction unchanged, which is the property
+FR-B10 and FR-B11 exist to preserve. The cost is real and recorded at the top of
+\texttt{prisma/schema.prisma}: Prisma will not enforce integrity across schemas,
+so a review can point at a course that no longer exists. FR-D16 turns that from
+a bug into intended behaviour, because a review of a retired course must
+survive.
+
+\newpage
+% ===========================================================================
+\section{The grant matrix}
+
+The security boundary, as the database actually holds it. Read live on
+2026-09-10 from \texttt{information\_schema.role\_table\_grants}.
+
+\begin{center}
+\sffamily\scriptsize
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}p{4.7cm}p{2.9cm}p{2.9cm}p{2.9cm}@{}}
+\toprule
+& \textbf{\color{studens}studens\_platform} & \textbf{studens\_ref} & \textbf{studens\_ryc} \\
+\midrule
+\texttt{platform.*} & all & \textcolor{muted}{none} & \textcolor{muted}{none} \\
+\texttt{ref.*} & \textcolor{muted}{none} & all & SELECT \\
+\texttt{ryc.ReviewAttributed} & \textcolor{muted}{none} & \textcolor{muted}{none} & all \\
+\texttt{ryc.ReviewImported} & \textcolor{muted}{none} & \textcolor{muted}{none} & all \\
+\rowcolor{anonlt}
+\texttt{ryc.ReviewAnonymous} & \textbf{INSERT, UPDATE, SELECT} & \textcolor{muted}{none} & \textbf{SELECT only} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Four things are readable directly off that table, and the last one is the point
+of the whole design.
+
+\begin{enumerate}[leftmargin=*,itemsep=1.2mm]
+\item \textbf{A feature module cannot see platform data.} No grant on
+  \texttt{platform.*} for \texttt{studens\_ryc}, so member records, sessions,
+  the audit log and above all the quota counter are simply not reachable.
+\item \textbf{The catalogue is read-only to feature modules.} Only ingestion
+  writes it.
+\item \textbf{The platform cannot read a feature module's own data.} The arrow
+  does not point the other way either: no grant on
+  \texttt{ryc.ReviewAttributed}.
+\item \textbf{Nobody holds DELETE on \texttt{ryc.ReviewAnonymous}.} FR-C9 makes
+  anonymous contributions permanent, and FR-C10's removal is a status change.
+  The absence of that grant is the enforcement.
+\end{enumerate}
+
+\begin{careful}
+\texttt{studens\_platform} also holds full rights on
+\texttt{platform.\_prisma\_migrations}, picked up from
+\texttt{ALTER DEFAULT PRIVILEGES}. Harmless, since migrations run as the owner,
+but it is an unintended grant and unintended grants are how matrices rot.
+Worth a narrowing migration.
+\end{careful}
+
+\subsection{This matrix is tested, not just documented}
+
+\texttt{scripts/verify-isolation.sql} asserts fourteen properties: every grant
+above, and more importantly every \emph{absence}. It is run by
+\texttt{npm run gates:db} and by a CI job with a PostgreSQL service.
+
+Each check asserts which role it is actually running as before doing anything,
+because the first version of that script passed while proving nothing: every
+\texttt{SET ROLE} was itself denied, so all fourteen checks ran as the table
+owner with full access and each ``must fail'' case quietly succeeded. See
+\texttt{LESSONS.md} section~1.
+
+\newpage
+% ===========================================================================
+\section{The anonymity kernel}\label{sec:kernel}
+
+The one piece of this system that is genuinely hard, and the reason the
+architecture is what it is.
+
+\subsection{The problem in one line}
+
+FR-C4 requires a per-person contribution limit. FR-C2 forbids storing any member
+identifier on an anonymous contribution. Enforcing a per-person limit appears to
+require knowing which person.
+
+\begin{why}
+They are not contradictory, because they are facts about different objects.
+
+\textbf{Counting is a fact about the member. Linking is a fact about the
+contribution.} To enforce ``at most N per period'' the system needs to know
+\emph{how many} a member has made, never \emph{which ones}.
+\end{why}
+
+\subsection{The write, drawn}
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+
+\foreach \i/\y/\n in {0/0/{navigateur}, 1/-1.05/{\texttt{apps/api}},
+                      2/-2.25/{module \texttt{ryc}}, 3/-3.85/{noyau, dans \texttt{platform}},
+                      4/-5.5/{PostgreSQL}} {
+  \node[wbox={3.6cm}{0.6cm}] (l\i) at (-5.6,\y) {\n};
+}
+
+\node[wfork={8.4cm}{0.65cm}] (s1) at (1.6,0)
+  {POST /api/reviews \tiny · le formulaire, et le choix de la voie};
+\node[wbox={8.4cm}{0.65cm}] (s2) at (1.6,-1.05)
+  {le module valide le cours, la note, le texte};
+\node[wbox={8.4cm}{0.95cm}] (s3) at (1.6,-2.25)
+  {le module demande au noyau de publier\\[0.3mm]
+   \tiny il ne peut pas \'ecrire lui-m\^eme: pas de droit INSERT};
+\node[wtier={8.4cm}{1.75cm}] (s4) at (1.6,-3.85)
+  {\textbf{une seule transaction}\\[0.6mm]
+   \tiny 1. \texttt{UPDATE MemberQuota SET used = used + 1}\\[0.2mm]
+   \tiny \phantom{1. } \texttt{WHERE memberId = ? AND used < limite}\\[0.3mm]
+   \tiny 2. si 0 ligne touch\'ee: refus, rien n'est \'ecrit\\[0.3mm]
+   \tiny 3. sinon \texttt{INSERT INTO ryc.ReviewAnonymous},\\[0.2mm]
+   \tiny \phantom{3. } \textbf{sans aucune r\'ef\'erence au membre}};
+\node[wbox={8.4cm}{0.65cm}] (s5) at (1.6,-5.5)
+  {COMMIT \tiny · les deux \'ecritures, ou aucune};
+
+\foreach \a/\b in {s1/s2, s2/s3, s3/s4, s4/s5} {\draw[flow] (\a)--(\b);}
+\foreach \i in {0,1,2,3,4} {\draw[line,dashed] (l\i.east) -- ($(l\i.east)+(1.4,0)$);}
+\end{tikzpicture}
+\end{center}
+
+\begin{why}
+\textbf{Step 1 is a conditional update, not a read then a write.} An earlier
+version of this design read the counter, compared it, then wrote. Two
+submissions arriving together both read the same value and both pass, which is a
+classic race and would have shipped. The single atomic
+\texttt{UPDATE ... WHERE used < limit} makes the check and the increment one
+operation.
+
+\textbf{The module cannot perform step 3 itself.} \texttt{studens\_ryc} holds
+SELECT and nothing else on the anonymous table. So the quota cannot be bypassed
+by the module that owns the feature, and the exception is one grant rather than
+an open door.
+
+\textbf{Both writes are in one transaction and nothing links them.} That is the
+whole argument against microservices: with a database per service this becomes a
+saga, and a saga persists a correlation identifier tying the quota increment to
+the contribution, which is exactly the pair FR-C2 forbids. \textbf{The
+coordination mechanism would be the forbidden link.}
+\end{why}
+
+\subsection{What the kernel deliberately does not do}
+
+It does not validate that the course exists. \texttt{studens\_platform} has no
+grant on \texttt{ref} at all, so it could not if it wanted to.
+
+That is the right division rather than an oversight. The module owns domain
+knowledge, which is what a valid course is; the platform owns the quota and
+unlinkability. The kernel writes an opaque target identifier it does not
+interpret, and the module validates before asking. Discovered by the grants
+refusing the lookup, which is a boundary doing its job.
+
+\newpage
+% ===========================================================================
+\section{The ingestion pipeline}
+
+Long, network-bound, and never in a request path. It runs in the worker.
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[wbox={2.9cm}{1.1cm}] (a) at (-6.0,0) {\textbf{Crawl}\\[0.3mm]\tiny 20 facult\'es d\'ecouvertes, jamais cod\'ees};
+\node[wbox={2.9cm}{1.1cm}] (b) at (-2.9,0) {\textbf{Parse}\\[0.3mm]\tiny deux \'epoques de mise en page};
+\node[wbox={2.9cm}{1.1cm}] (c) at (0.2,0) {\textbf{Valide}\\[0.3mm]\tiny ECTS, codes, ann\'ee};
+\node[wtier={2.9cm}{1.1cm}] (d) at (3.3,0) {\textbf{Promeut}\\[0.3mm]\tiny \texttt{rename(2)}, atomique};
+\node[wtier={2.9cm}{1.1cm}] (e) at (6.4,0) {\textbf{Charge}\\[0.3mm]\tiny une transaction};
+\foreach \x/\y in {a/b, b/c, c/d, d/e} {\draw[flow] (\x)--(\y);}
+
+\node[wbox={2.9cm}{0.65cm},fill=ink!4] (cache) at (-6.0,-1.6) {\tiny cache disque\\\tiny 30 jours};
+\draw[flow,dashed] (cache) -- (a);
+
+\node[cell={6.4cm}{\sffamily\tiny\color{muted}}] at (1.9,-1.5)
+  {Deux points d'atomicit\'e, et c'est tout le dessin: l'instantan\'e ne remplace le pr\'ec\'edent que s'il est complet et valide, et le chargement est une seule transaction. Un crawl cass\'e ne peut pas vider une fiche de cours.};
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}p{3.3cm}p{5.4cm}p{5.4cm}@{}}
+\toprule
+\textbf{\'Etape} & \textbf{Ce qui peut mal tourner} & \textbf{Ce qui se passe alors} \\
+\midrule
+Crawl & Le site change, une page ne r\'epond pas & Le cache absorbe les reprises. Une page de programme sans cours n'est pas fatale \\[1.5mm]
+Parse & La mise en page change & \'Echec bruyant, avec l'URL et le champ. Jamais un \texttt{null} silencieux \\[1.5mm]
+Valide & ECTS manquant, code implausible & L'instantan\'e est refus\'e en entier \\[1.5mm]
+Promeut & Rien: le fichier est \'ecrit ailleurs puis d\'eplac\'e & L'ancien instantan\'e reste en place \\[1.5mm]
+Charge & Une contrainte casse en cours & \texttt{ROLLBACK}. Le catalogue pr\'ec\'edent est intact \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{careful}
+\textbf{Two rules in the loader are about reviews, not about the catalogue.}
+
+Course ids must be \emph{stable} across runs, because reviews reference them and
+cross-schema references are plain ids. Recreating courses with fresh identifiers
+would silently orphan every review ever written. Courses are therefore matched
+on code and keep the id they have.
+
+And nothing is ever deleted from \texttt{ref.Course}. Codes vanish from the
+catalogue routinely, and a review of a retired course must survive (FR-D16). A
+course no longer offered simply stops gaining offerings.
+\end{careful}
+
+\newpage
+% ===========================================================================
+\section{Proposed: the worker and its queues}
+
+The worker exists and runs two command-line tasks. It has \textbf{no queue},
+and moderation has no consumer. This section is a proposal.
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[wbox={4.2cm}{0.8cm}] (api) at (-4.6,1.2) {\texttt{apps/api} \tiny · une requ\^ete};
+\node[wanon={5.2cm}{1.0cm}] (q) at (1.4,1.2)
+  {\textbf{file de mod\'eration}\\[0.3mm]\tiny une table, pas un courtier de messages};
+\node[wbox={4.2cm}{0.8cm}] (w) at (1.4,-0.4) {\texttt{apps/worker} \tiny · consomme};
+\node[wbox={4.2cm}{0.8cm}] (mod) at (1.4,-1.7) {filtres, puis humain};
+\draw[flow] (api) -- (q);
+\draw[flow] (q) -- (w);
+\draw[flow] (w) -- (mod);
+
+\node[wanon={5.6cm}{1.3cm},draw=anon,line width=1.0pt] (rule) at (7.9,1.2)
+  {\textbf{FR-E7, et c'est le point}\\[0.3mm]\tiny une entr\'ee de file ne porte \textbf{aucune} r\'ef\'erence au membre.\\[0.2mm]\tiny Une file est du stockage, m\^eme si \c{c}a ressemble \`a de la plomberie};
+\draw[flowa,dashed] (q) -- (rule);
+\end{tikzpicture}
+\end{center}
+
+\begin{why}
+A queue looks like infrastructure and is storage. If a queue entry carried a
+submitter reference so the pipeline could sanction an author, unlinkability
+would be broken \emph{in the queue} while the final table stayed clean, and
+nobody would be looking there.
+
+\textbf{A table rather than a message broker}, because a broker is another
+process, another failure mode and another thing to operate on a two-core
+machine, for a workload of a few hundred submissions. Postgres
+\texttt{SELECT ... FOR UPDATE SKIP LOCKED} is enough and keeps the atomicity
+guarantees the rest of the design already relies on.
+\end{why}
+
+% ===========================================================================
+\section{Failure modes}
+
+What actually happens when things break, rather than what is hoped.
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}p{4.4cm}p{4.6cm}p{5.0cm}@{}}
+\toprule
+\textbf{Failure} & \textbf{Effect} & \textbf{What exists today} \\
+\midrule
+Oracle reclaims the idle VM & Everything stops & A periodic health check is \textbf{mandatory}, not optional. Restore from backup (NFR-O1) \\[1.5mm]
+Oracle cuts the free tier again & Instance shut down until resized & Happened in June 2026 with no announcement. Hetzner at about 4 EUR a month is the recorded fallback \\[1.5mm]
+The web process dies & No requests served & One deployable means one blast radius. This is the accepted cost of the architecture \\[1.5mm]
+The worker dies & Ingestion and moderation stall & Requests keep being served. This is why the worker is a separate process \\[1.5mm]
+UCLouvain changes its markup & Ingestion fails loudly & The previous catalogue stays live. Nothing degrades silently \\[1.5mm]
+The database is lost & Everything is lost & NFR-O1: a backup whose restore has been performed at least once \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{careful}
+\textbf{Backup cadence is a privacy parameter, not only an operational one.}
+
+FR-C3 promises no linkage from any single stored snapshot. Across \emph{two}
+snapshots taken within one quota window, the quota counter has moved while the
+anonymous table has gained rows dated that day, which narrows authorship. The
+bound is set by the backup interval and the quota window together, which is why
+OPEN-41 sits against FR-C3 and FR-C12 rather than against NFR-O1 alone.
+
+Whoever configures backups is making a privacy decision.
+\end{careful}
+
+\newpage
+% ===========================================================================
+\section{What is not built}
+
+Stated plainly, because a design document that describes intentions as though
+they were code is worse than none.
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}p{4.6cm}p{4.0cm}p{5.4cm}@{}}
+\toprule
+\textbf{Piece} & \textbf{State} & \textbf{Blocked on} \\
+\midrule
+Catalogue, end to end & \textbf{built and running} & 546 courses loaded \\
+The three tiers and their grants & \textbf{built, and tested by mutation} & \\
+Review submission & \textbf{not built} & the next thing. Exercises the kernel \\
+Authentication & not built & OPEN-5 answered, nothing written \\
+Reading reviews & not built & needs authentication (FR-D13) \\
+Moderation, the queue & not built & OPEN-7, OPEN-8, OPEN-24 \\
+Import of historical reviews & not built & OPEN-42, permission \\
+Any AI capability & not built, and not assumed & OPEN-17, OPEN-23 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ===========================================================================
+\section{Open questions this document raises}
+
+\begin{enumerate}[leftmargin=*,itemsep=1.5mm]
+\item \textbf{The unintended grant on \texttt{\_prisma\_migrations}} should be
+  narrowed. Harmless today; unintended grants are how a matrix rots.
+
+\item \textbf{There is no health check yet}, and Oracle's idle reclamation
+  makes one mandatory rather than nice to have. It is the cheapest possible
+  script and its absence is the largest operational risk in the system.
+
+\item \textbf{Per-module database credentials do not exist in production
+  form.} Locally one user is a member of all three roles, which is a testing
+  affordance. The deployed shape is three credentials and three pools, so a
+  connection cannot escalate at all. Nothing has been written for that.
+
+\item \textbf{Nothing measures anything.} There are no metrics and no
+  structured logs, and FR-B12 already constrains what a log may contain: no
+  record may name a member and a target together. Designing observability after
+  the fact, against that constraint, is harder than designing it now.
+\end{enumerate}
+
+\vfill
+\begin{center}
+\begin{tcolorbox}[width=0.94\textwidth,colback=studenslt,colframe=studens,
+  arc=2pt,fonttitle=\sffamily\bfseries,title={The one thing to keep}]
+\sffamily\small
+If everything else in this document were rewritten, the property to preserve is
+the one the red cross marks in section~3: \textbf{there is no join between the
+quota counter and the anonymous contributions}, and the write path to that table
+is one grant wide.
+
+Everything else is a consequence, including the choice of a monolith. An absence
+is invisible, so it has to be drawn, tested and written down, or it will be
+removed by someone who cannot see it.
+\end{tcolorbox}
+\end{center}
+
+\end{document}

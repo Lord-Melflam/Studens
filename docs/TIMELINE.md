@@ -15,7 +15,7 @@ gone wrong and what each failure changed.
 | | |
 |---|---|
 | Stage | **Working software.** Catalogue end to end; the review module is not built |
-| Commits | 20 |
+| Commits | 22 |
 | Requirements | 105, of which FR-A 10, FR-B 18, FR-C 22, FR-D 26, FR-E 7 |
 | Open questions | **14** open, 31 resolved |
 | Tests | **85**, plus 14 database isolation assertions |
@@ -286,6 +286,23 @@ the copyright status of the file.
 
 The first version of the drawings had text overlapping in many places, from
 hand-computed layout with guessed text widths. See `LESSONS.md` section 1.
+
+### Phase 13: drawing the backend
+
+`design/backend-design.tex`, 12 pages. The architecture was already decided and
+running; this draws it, which the prose could not. Every fact about the schema,
+the roles and the grants was read out of the live database while writing rather
+than recalled, which is how the unintended grant on `_prisma_migrations` was
+noticed.
+
+The centrepiece is the anonymity kernel drawn as a sequence, and the grant
+matrix printed as a table: the security boundary made visible, including the
+four properties readable directly off it, of which the last is that nobody holds
+DELETE on the anonymous table.
+
+The LaTeX preamble was extracted to `studens-preamble.tex` at the same time, so
+the palette exists once. A per-institution theme is planned and a palette in two
+files would have diverged.
 
 ---
 
