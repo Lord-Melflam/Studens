@@ -47,8 +47,14 @@ Specifications live in `docs/`, and they are the authoritative description of th
 
 | Document | Contents |
 |---|---|
+| `docs/TIMELINE.md` | **Start here.** Where the project is, what runs today, what is deliberately absent, and the log of how each decision was reached |
 | `docs/requirements.md` | Platform requirements. The working document. Requirement IDs are permanent and referenced from tests and commits |
-| `docs/design/anonymous-rate-limiting.md` | Accepted design note: enforcing contribution limits without linking a contribution to a person |
+| `docs/CONTRIBUTING.md` | How to run it, and why code review is a security control here rather than a quality practice |
+| `docs/LESSONS.md` | What has gone wrong and what each failure changed. Kept because the rule is worth more than the memory of the bug |
+| `docs/design/architecture-style.md` | Accepted: modular monolith plus a worker, with the six candidates compared and microservices excluded on two independent grounds |
+| `docs/design/module-boundaries.md` | How modules share without coupling. Rejects a global shared module, and explains why |
+| `docs/design/anonymous-rate-limiting.md` | Accepted: enforcing contribution limits without linking a contribution to a person |
+| `docs/design/catalogue-ingestion.md` | Accepted: scraping the course catalogue, with the structure discovered rather than hardcoded |
 
 Requirements are marked `[VERIFIED]`, `[DERIVED]`, `[PRIOR-ART]` or `[OPEN]`. Nothing is
 agreed while it is still `[OPEN]`, and open questions are collected in section 7. That

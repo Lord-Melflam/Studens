@@ -1,5 +1,9 @@
 # Contributing
 
+New here? Read `TIMELINE.md` first for where the project stands, and
+`LESSONS.md` for the failures that produced the rules you are about to work
+under. Both are short, and the second will save you repeating something.
+
 Studens is MIT licensed, inbound equals outbound, so no contributor agreement is
 needed. Outside contributors are welcome as contributors: open a pull request.
 
