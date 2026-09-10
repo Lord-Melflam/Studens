@@ -29,9 +29,18 @@ npm run gates            # typecheck, lint, 131 tests, schema validation. No dat
 npm run gates:db         # migrate, grant, then verify the schema isolation
 npm run ingest -- --faculty epl        # scrape uclouvain.be, politely. Cached after the first run
 npm run db:load                        # snapshot into PostgreSQL, in one transaction
-npm run dev:api                        # terminal 1
+npm run dev:api                        # terminal 1, with the development identity
+npm run dev:api:anon                   # same, signed out, to see what a visitor sees
 npm run dev:web                        # terminal 2, then localhost:5173
 ```
+
+`dev:api` sets `STUDENS_DEV_IDENTITY=1`, because submission needs a member
+(FR-C4) and FR-A is not built, so without it the review form refuses to open and
+looks like a bug. The fence is unchanged: the code still requires the variable
+to be set explicitly, still refuses when `NODE_ENV=production`, and still prints
+a warning naming FR-A at every start. Production does not run this script. The
+cost is that a signed-out session is no longer the default locally, hence
+`dev:api:anon`. Both scripts go away when FR-A ships.
 
 You land on the **shell**, choose a module, and inside RYC you can browse a
 programme or search a course code and open its page: ECTS, quarter, language,

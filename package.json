@@ -20,16 +20,17 @@
     "schema:validate": "DATABASE_URL=\"postgresql://validate:validate@localhost:5432/validate\" prisma validate --schema prisma/schema.prisma",
     "ingest": "npm run --silent build:worker && node apps/worker/dist/ingest-catalogue.js",
     "build:worker": "tsc --build apps/worker",
-    "dev": "npm run build:api && (node apps/api/dist/index.js & npm run --workspace @studens/web dev)",
+    "dev": "npm run build:api && (STUDENS_DEV_IDENTITY=1 node apps/api/dist/index.js & npm run --workspace @studens/web dev)",
     "build:api": "tsc --build apps/api",
-    "dev:api": "npm run build:api && node apps/api/dist/index.js",
+    "dev:api": "npm run build:api && STUDENS_DEV_IDENTITY=1 node apps/api/dist/index.js",
     "dev:web": "npm run --workspace @studens/web dev",
     "db:migrate": "prisma migrate deploy",
     "db:reset": "prisma migrate reset --force",
     "db:grant-local": "psql -d \"${PGDATABASE:-studens}\" -q -c \"GRANT studens_platform, studens_ref, studens_ryc TO CURRENT_USER\"",
     "db:verify-isolation": "psql -v ON_ERROR_STOP=1 -d \"${PGDATABASE:-studens}\" -f scripts/verify-isolation.sql",
     "gates:db": "npm run db:migrate && npm run db:grant-local && npm run db:verify-isolation",
-    "db:load": "npm run --silent build:worker && node apps/worker/dist/load-catalogue.js"
+    "db:load": "npm run --silent build:worker && node apps/worker/dist/load-catalogue.js",
+    "dev:api:anon": "npm run build:api && node apps/api/dist/index.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
