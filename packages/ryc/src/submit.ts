@@ -44,6 +44,16 @@ export interface ReviewInput {
 /** FR-D8. Blocks non-reviews, not short ones. */
 export const MIN_BODY = 80;
 
+/**
+ * FR-D8, the other end. About 600 words, generous for a course review.
+ *
+ * Without it the only ceiling was the 32 kB request cap in apps/api, which is
+ * a transport limit: it fails the whole request with no field named, after the
+ * person has written everything. A limit that produces a field error is a
+ * different thing from a limit that produces a 413.
+ */
+export const MAX_BODY = 4000;
+
 export class ReviewInvalid extends Error {
   constructor(readonly field: string, message: string) {
     super(`${field}: ${message}`);
@@ -83,6 +93,12 @@ export function validate(input: ReviewInput, now: Date = new Date()): void {
   const body = input.body.trim();
   if (body.length < MIN_BODY) {
     throw new ReviewInvalid("body", `must be at least ${MIN_BODY} characters`);
+  }
+  if (body.length > MAX_BODY) {
+    throw new ReviewInvalid("body", `must be at most ${MAX_BODY} characters`);
+  }
+  if (input.advice !== undefined && input.advice.trim().length > MAX_BODY) {
+    throw new ReviewInvalid("advice", `must be at most ${MAX_BODY} characters`);
   }
 }
 

@@ -145,6 +145,38 @@ my case" but "what else does it touch, and would I notice".
 
 ---
 
+### Copy taken from a design document describes a product that does not exist
+
+The fork screen's two cards were written from `design/frontend-design.tex`,
+which draws the **target** product. So the named card offered three reasons to
+choose it: the review stays editable, it appears in "Mes avis", and its
+deletion can be requested.
+
+None of the three is built. FR-C14 and FR-D12 are specified and have no code.
+
+That is worse than an ordinary inaccuracy, because of *which* screen it was on.
+The fork is where somebody makes a permanent, unprovable choice by reading two
+lists side by side, so a false claim on one list does not merely mislead: it
+pushes the decision toward the branch making it, and here that was the branch
+that is **not** anonymous. Copy on that screen is not decoration, it is part of
+the mechanism FR-C exists to protect.
+
+Caught by François asking for polish, not by any gate.
+
+**Rule now in force.** FR-D28 and `test/ui/path-honesty.test.ts`: the two cards
+may not name a capability that is not built, and the planned edit is mentioned
+once, below both cards, in the quietest type on the screen. The test is to be
+updated in the same change that ships FR-C14 and FR-D12, never before. The
+promise was put back and the test failed, naming the requirement.
+
+**Generalised.** A design document is a description of the destination, written
+in the present tense. Lifting its words into a build that has not arrived there
+ships a claim rather than a plan. When copy comes from a design note, each
+sentence needs checking against what runs, and the check is sharpest on any
+screen where the reader is about to decide something they cannot undo.
+
+---
+
 ## 2. Requirements that were wrong, and only showed it when made concrete
 
 ### An over-broad rule is violated on day one and then ignored forever

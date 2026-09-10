@@ -16,16 +16,16 @@ gone wrong and what each failure changed.
 |---|---|
 | Stage | **Working software.** Catalogue end to end, and reviews submitted and read on both paths |
 | Commits | 23 |
-| Requirements | 108, of which FR-A 10, FR-B 18, FR-C 23, FR-D 28, FR-E 7 |
+| Requirements | 110, of which FR-A 10, FR-B 18, FR-C 23, FR-D 30, FR-E 7 |
 | Open questions | **14** open, 31 resolved |
-| Tests | **151**, plus 15 database isolation assertions |
+| Tests | **186**, plus 15 database isolation assertions |
 | Code | ~5,000 lines TypeScript, ~800 SQL and Prisma, ~3,000 documentation |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
 ### What runs today
 
 ```bash
-npm run gates            # typecheck, lint, 151 tests, schema validation. No database needed
+npm run gates            # typecheck, lint, 186 tests, schema validation. No database needed
 npm run gates:db         # migrate, grant, then verify the schema isolation
 npm run ingest -- --faculty epl        # scrape uclouvain.be, politely. Cached after the first run
 npm run db:load                        # snapshot into PostgreSQL, in one transaction
@@ -404,6 +404,43 @@ wrong: `test/catalogue/rich.test.ts` on the parser, against fixtures shaped
 like the real markup rather than tidier than it, and `test/ui/prose.test.ts`
 on the renderer, which is where a list that arrives nested and renders flat
 would show. 143 tests to 151.
+
+---
+
+### Phase 16: polishing the submission screens
+
+Seven things, and the first was not cosmetic.
+
+**The fork was advertising three features that do not exist.** The named card
+offered "modifiable plus tard", "apparaît dans Mes avis" and "vous pouvez
+demander sa suppression". FR-C14 and FR-D12 are specified and have no code. The
+copy had been lifted from `design/frontend-design.tex`, which draws the target
+product in the present tense.
+
+That matters because of which screen it was on. The fork is where a permanent,
+unprovable choice is made by comparing two lists, so a false claim on one side
+pushes the decision toward it, and here that was the side that is not
+anonymous. The cards now say only what is true today, the planned edit is
+mentioned once below both of them in the quietest type on the screen, and
+`test/ui/path-honesty.test.ts` fails if a card names an unbuilt capability
+again. Recorded as FR-D28 and in `LESSONS.md` section 1.
+
+**The rest.** The submission limit is shown before the review is written rather
+than as a 429 after it, and at zero the form does not open (FR-D29); its
+wording says the platform counts reviews and never which ones, because for the
+anonymous path it does not. A step indicator shows two steps on the named
+branch and three on the anonymous one, so the asymmetry is visible before the
+choice. The draft is re-readable on the fork and on the confirmation, since
+deciding whether to sign text you cannot see is a decision made half blind.
+Leaving the form with text in it now asks first. Missing fields are marked
+where they are, not only listed in a sentence a long form pushes off screen.
+And the body gained a maximum of 4,000 characters, **on the server first**: the
+only ceiling had been the API's 32 kB request cap, which fails the whole
+request with no field named.
+
+Writing that limit exposed a gap: `validate()` had no tests at all. The quota
+and the roles were covered, the content rules were covered by a manual curl.
+`test/ryc/validate.test.ts` now covers all of them, 24 cases. 151 tests to 186.
 
 ---
 

@@ -29,14 +29,15 @@ function Sent({ result, onDone }: { result: SentResult; onDone: () => void }) {
       <h3>Avis envoyé</h3>
       {result.anonymous ? (
         <p>
-          Il part en modération sans rien qui le relie à vous. Il n&apos;apparaîtra
-          pas dans « Mes avis », et cette page ne peut pas vous le montrer: nous
-          ne savons pas lequel est le vôtre.
+          Il part en modération sans rien qui le relie à vous. Cette page ne
+          peut pas vous le montrer, ni maintenant ni plus tard: nous ne savons
+          pas lequel est le vôtre, et c&apos;est exactement ce que vous avez
+          choisi.
         </p>
       ) : (
         <p>
-          Il part en modération sous votre nom. Vous le retrouverez dans « Mes
-          avis », où vous pourrez le modifier.
+          Il part en modération sous votre nom, et apparaîtra sur la fiche du
+          cours une fois relu.
         </p>
       )}
       <button type="button" className="primary" onClick={onDone}>
@@ -130,6 +131,30 @@ export function SubmitFlow({
     );
   }
 
+  // FR-C4. At zero the answer will not change by writing the review first, so
+  // the form does not open. The wording says what the limit counts, because a
+  // limit that appears to know WHICH reviews you wrote would read as a link
+  // between your account and an anonymous row, which is the thing that does
+  // not exist (design/anonymous-rate-limiting.md).
+  if (ctx.quotaRemaining === 0 && step !== "sent") {
+    return (
+      <section className="notice">
+        <p>
+          Vous avez atteint votre limite d&apos;avis pour cette période. Elle se
+          renouvelle: revenez dans quelques jours.
+        </p>
+        <p className="hint">
+          Nous comptons combien d&apos;avis vous publiez, jamais lesquels. Un
+          avis anonyme reste sans lien avec votre compte, y compris pour ce
+          décompte.
+        </p>
+        <button type="button" className="back" onClick={onClose}>
+          retour à la fiche
+        </button>
+      </section>
+    );
+  }
+
   if (step === "sent" && result) {
     return <Sent result={result} onDone={onClose} />;
   }
@@ -145,6 +170,7 @@ export function SubmitFlow({
       {step === "form" && (
         <ReviewForm
           courseCode={courseCode}
+          quotaRemaining={ctx.quotaRemaining}
           initial={draft}
           onCancel={onClose}
           onReady={(d) => {
@@ -157,6 +183,7 @@ export function SubmitFlow({
       {step === "fork" && (
         <PathChoice
           ctx={ctx}
+          draft={draft}
           busy={busy}
           onBack={() => on("back")}
           onNamed={() => on("choose-named")}
@@ -167,6 +194,7 @@ export function SubmitFlow({
       {step === "confirm" && (
         <AnonymousConfirm
           ctx={ctx}
+          draft={draft}
           busy={busy}
           onBack={() => on("back")}
           onConfirm={() => on("confirm-anonymous")}

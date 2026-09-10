@@ -44,3 +44,12 @@ export { next, EVENTS, STEPS, type Event, type Step, type Transition } from "./f
  * that arrive nested but render flat are the same bug to a reader.
  */
 export { Blocks, ProseField, type Block, type Span } from "./Prose.js";
+
+/**
+ * The fork and its confirmation. Exported for test/ui/path-honesty.test.ts,
+ * which holds the rule that the two cards may not advertise a capability that
+ * is not built: this is the screen where a permanent choice is made by
+ * comparing them.
+ */
+export { PathChoice, AnonymousConfirm } from "./PathChoice.js";
+export { Steps, type StepName } from "./Steps.js";

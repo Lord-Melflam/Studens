@@ -15,6 +15,7 @@ export {
   validate,
   ReviewInvalid,
   MIN_BODY,
+  MAX_BODY,
   type ReviewInput,
   type SubmitOptions,
 } from "./submit.js";

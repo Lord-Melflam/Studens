@@ -8,18 +8,22 @@
  *   - the anonymous card leads to one more screen
  *
  * Only one of the two cannot be undone, so only one of the two costs an extra
- * confirmation (docs/design/frontend-design.tex 6.1).
+ * confirmation (docs/design/frontend-design.tex 6, FR-C23).
  *
- * The counts come from GET /review-context and are FR-C21 in one sentence.
- * Studens does not know the cohort size and never will (requirements.md 3.3),
- * so it hands over the two numbers it does have and leaves the judgement to the
- * only person who holds the third. That is informed risk, not prevented risk,
- * and the wording must not pretend otherwise.
+ * WHAT THE CARDS MAY SAY. This is the screen where a person makes a permanent
+ * choice by comparing two lists, so a claim on either list that is not true
+ * today is a thumb on the scale. Editing an attributed review (FR-C14) and
+ * "Mes avis" (FR-D12) are specified and NOT BUILT, so the named card does not
+ * offer them as reasons to choose it. They are named as planned, once, in the
+ * one place where the difference between the branches is permanent anyway.
+ * test/ui/path-honesty.test.ts holds this.
  */
-import type { ReviewContext } from "./api.js";
+import type { ReviewContext, ReviewDraft } from "./api.js";
+import { Steps } from "./Steps.js";
 
 function Counts({ ctx }: { ctx: ReviewContext }) {
-  const named = ctx.named === 0 ? "aucun avis nommé" : `${ctx.named} avis nommé${ctx.named > 1 ? "s" : ""}`;
+  const named =
+    ctx.named === 0 ? "aucun avis nommé" : `${ctx.named} avis nommé${ctx.named > 1 ? "s" : ""}`;
   const anon =
     ctx.anonymous === 0
       ? "aucun avis anonyme"
@@ -36,14 +40,45 @@ function Counts({ ctx }: { ctx: ReviewContext }) {
   );
 }
 
+/**
+ * What you are about to publish, collapsed.
+ *
+ * The choice on this screen is about the text, and until now the text was on
+ * the previous screen. Deciding whether you want your name on something you
+ * cannot currently see is a decision made half blind.
+ */
+export function DraftSummary({ draft }: { draft: ReviewDraft | null }) {
+  if (!draft) return null;
+  return (
+    <details className="draft">
+      <summary>
+        Relire mon avis
+        <span className="draft-facts">
+          {draft.academicYear}-{draft.academicYear + 1} · recommandé{" "}
+          {draft.recommendation}/5 · charge {draft.workloadVsEcts}/5 · difficulté{" "}
+          {draft.difficulty}/5 · {draft.body.length} caractères
+        </span>
+      </summary>
+      <p className="draft-body">{draft.body}</p>
+      {draft.advice && (
+        <p className="draft-advice">
+          <strong>Conseil:</strong> {draft.advice}
+        </p>
+      )}
+    </details>
+  );
+}
+
 export function PathChoice({
   ctx,
+  draft,
   onNamed,
   onAnonymous,
   onBack,
   busy,
 }: {
   ctx: ReviewContext;
+  draft: ReviewDraft | null;
   onNamed: () => void;
   onAnonymous: () => void;
   onBack: () => void;
@@ -51,6 +86,7 @@ export function PathChoice({
 }) {
   return (
     <section className="fork">
+      <Steps current="fork" />
       <button type="button" className="back" onClick={onBack} disabled={busy}>
         revenir au formulaire
       </button>
@@ -60,14 +96,15 @@ export function PathChoice({
         de choisir.
       </p>
 
+      <DraftSummary draft={draft} />
+
       <div className="fork-cards">
         <article className="card card-named">
           <span className="chip-named">Sous mon nom</span>
           <ul>
             <li>Votre nom apparaît sur la fiche du cours.</li>
-            <li>Vous pouvez le modifier plus tard.</li>
-            <li>Il apparaît dans « Mes avis ».</li>
-            <li>Vous pouvez demander sa suppression.</li>
+            <li>On peut vous demander des précisions, ou vous contredire.</li>
+            <li>Vous restez rattaché à cet avis, y compris dans un an.</li>
           </ul>
           <button type="button" className="primary named" onClick={onNamed} disabled={busy}>
             Publier sous mon nom
@@ -82,7 +119,6 @@ export function PathChoice({
             <li>
               <strong>Impossible à modifier ou à supprimer.</strong>
             </li>
-            <li>N&apos;apparaît pas dans « Mes avis ».</li>
             <li>Vous ne pourrez pas prouver qu&apos;il est de vous.</li>
           </ul>
           <Counts ctx={ctx} />
@@ -91,6 +127,17 @@ export function PathChoice({
           </button>
         </article>
       </div>
+
+      {/*
+        Said once, below both cards, and not as an argument for either. A
+        feature that does not exist yet belongs in a footnote, not in the list
+        someone reads to make a decision they cannot take back.
+      */}
+      <p className="fork-note">
+        La modification d&apos;un avis nommé est prévue et n&apos;est pas encore
+        en place. Elle ne concernera jamais un avis anonyme: personne, nous y
+        compris, ne peut retrouver lequel est le vôtre.
+      </p>
     </section>
   );
 }
@@ -105,17 +152,20 @@ export function PathChoice({
  */
 export function AnonymousConfirm({
   ctx,
+  draft,
   onConfirm,
   onBack,
   busy,
 }: {
   ctx: ReviewContext;
+  draft: ReviewDraft | null;
   onConfirm: () => void;
   onBack: () => void;
   busy: boolean;
 }) {
   return (
     <section className="confirm">
+      <Steps current="confirm" />
       <button type="button" className="back" onClick={onBack} disabled={busy}>
         revenir au choix
       </button>
@@ -136,14 +186,23 @@ export function AnonymousConfirm({
         </li>
       </ul>
 
+      {/* Last chance to reread it, on the screen where rereading still matters. */}
+      <DraftSummary draft={draft} />
+
       <Counts ctx={ctx} />
 
       <div className="actions">
         <button type="button" className="primary anon" onClick={onConfirm} disabled={busy}>
           {busy ? "envoi…" : "Publier anonymement, définitivement"}
         </button>
+        {/*
+          A second way out, beside the irreversible button. Someone who has
+          scrolled this far and hesitates should not have to scroll back up to
+          the link at the top to change their mind. It says what it does: it
+          does not publish anything, it returns to the choice.
+        */}
         <button type="button" className="ghost" onClick={onBack} disabled={busy}>
-          Finalement, sous mon nom
+          Revenir en arrière
         </button>
       </div>
     </section>

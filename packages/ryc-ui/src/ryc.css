@@ -328,3 +328,62 @@ button.ghost {
   border: 1px solid var(--line);
   vertical-align: top;
 }
+
+/* --- where you are in the flow.
+   Two steps on the named branch, three on the anonymous one. The list grows
+   when you choose anonymity, which is the asymmetry made visible. */
+.steps {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.steps li { display: flex; align-items: center; gap: 0.35rem; }
+.steps li + li::before { content: "›"; margin-right: 0.15rem; color: var(--line); }
+.steps-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.68rem;
+}
+.steps li.on { color: var(--ink); font-weight: 600; }
+.steps li.on .steps-n { color: #fff; background: var(--accent); border-color: var(--accent); }
+.steps li.done .steps-n { border-color: var(--accent); color: var(--accent); }
+
+/* --- a field the form is waiting on. Marked where it is, not only listed
+   in a sentence at the bottom that a long form pushes off screen. */
+.missing { position: relative; }
+.scale.missing legend, .field-block.missing { color: var(--danger); }
+.field-block.missing textarea { border-color: var(--danger); }
+.check.gate.missing { border-color: var(--danger); }
+
+/* --- the draft, re-readable on the two screens where the choice is made */
+.draft {
+  margin-bottom: 1.25rem;
+  padding: 0.6rem 0.8rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.88rem;
+}
+.draft summary { cursor: pointer; font-weight: 500; }
+.draft-facts { display: block; margin-top: 0.2rem; font-size: 0.78rem; color: var(--muted); font-weight: 400; }
+.draft-body { margin: 0.7rem 0 0; white-space: pre-wrap; }
+.draft-advice { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted); }
+
+/* --- the footnote under the fork. Deliberately below both cards and in the
+   quietest type on the screen: a feature that does not exist yet must not
+   read as a reason to choose one branch over the other. */
+.fork-note {
+  margin: 1rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}

@@ -4,15 +4,15 @@
  * Note what this form does NOT contain: any way to choose named or anonymous.
  * That choice is the next screen, on its own, because FR-C9 makes the anonymous
  * half permanent and unprovable and a radio button beside "Envoyer" invites a
- * decision of that weight to be taken without reading it
- * (docs/design/frontend-design.tex 6).
+ * decision of that weight to be taken without reading it (FR-C23).
  *
  * It also asks nothing the catalogue already knows. The assessment method, the
  * hours, the ECTS and the language are scraped (FR-D19), so the form is short:
  * three numbers, a year, and the prose that is the actual contribution.
  */
 import { useState } from "react";
-import { MIN_BODY, type ReviewDraft } from "./api.js";
+import { MAX_BODY, MIN_BODY, type ReviewDraft } from "./api.js";
+import { Steps } from "./Steps.js";
 
 /** FR-D5, FR-D6, FR-D7. The ends are named so 3 is not silently "average". */
 const SCALES = [
@@ -42,6 +42,7 @@ function Scale({
   low,
   high,
   value,
+  invalid,
   onChange,
 }: {
   name: string;
@@ -49,10 +50,11 @@ function Scale({
   low: string;
   high: string;
   value: number | null;
+  invalid: boolean;
   onChange: (v: number) => void;
 }) {
   return (
-    <fieldset className="scale">
+    <fieldset className={invalid ? "scale missing" : "scale"}>
       <legend>{label}</legend>
       <div className="scale-row">
         <span className="scale-end">{low}</span>
@@ -84,11 +86,18 @@ function yearOptions(now = new Date()): number[] {
 
 export function ReviewForm({
   courseCode,
+  quotaRemaining,
   onCancel,
   onReady,
   initial,
 }: {
   courseCode: string;
+  /**
+   * FR-C4. Shown BEFORE the form, not after a 429. Learning that you have no
+   * submissions left once you have written eight hundred characters is the
+   * worst possible moment to learn it.
+   */
+  quotaRemaining: number | null;
   onCancel: () => void;
   onReady: (draft: ReviewDraft) => void;
   /** Carried back when someone returns from the fork to change something. */
@@ -110,11 +119,25 @@ export function ReviewForm({
   const [completed, setCompleted] = useState(initial?.completed ?? false);
   const [touched, setTouched] = useState(false);
 
+  const trimmed = body.trim();
+  const short = trimmed.length < MIN_BODY;
+  const long = trimmed.length > MAX_BODY;
+
   const missing: string[] = [];
   if (!completed) missing.push("confirmer que vous avez terminé le cours");
   for (const s of SCALES) if (scores[s.key] === null) missing.push(s.label.toLowerCase());
-  const short = body.trim().length < MIN_BODY;
   if (short) missing.push("le texte de l'avis");
+  if (long) missing.push(`raccourcir le texte (${MAX_BODY} caractères maximum)`);
+
+  /** Something worth losing. Used to decide whether leaving needs a question. */
+  const hasWork = trimmed.length > 0 || advice.trim().length > 0;
+
+  function leave() {
+    // A back link that silently throws away twenty minutes of writing is the
+    // one interaction on this screen that cannot be undone either.
+    if (hasWork && !window.confirm("Abandonner cet avis ? Le texte sera perdu.")) return;
+    onCancel();
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -127,17 +150,19 @@ export function ReviewForm({
       difficulty: scores["difficulty"]!,
       hoursPerWeek: hours.trim() === "" ? undefined : Number(hours),
       passed: passed === "" ? undefined : passed === "yes",
-      body: body.trim(),
+      body: trimmed,
       advice: advice.trim() === "" ? undefined : advice.trim(),
       completed,
     });
   }
 
-  const left = MIN_BODY - body.trim().length;
+  const left = MIN_BODY - trimmed.length;
+  const over = trimmed.length - MAX_BODY;
 
   return (
-    <form className="review-form" onSubmit={submit}>
-      <button type="button" className="back" onClick={onCancel}>
+    <form className="review-form" onSubmit={submit} noValidate>
+      <Steps current="form" />
+      <button type="button" className="back" onClick={leave}>
         retour à la fiche
       </button>
       <h3>Votre avis sur {courseCode.toUpperCase()}</h3>
@@ -146,9 +171,21 @@ export function ReviewForm({
         lui seul.
       </p>
 
+      {quotaRemaining !== null && quotaRemaining <= 2 && (
+        <p className="notice" role="status">
+          {quotaRemaining === 1
+            ? "Il vous reste un avis à publier pour cette période."
+            : `Il vous reste ${quotaRemaining} avis à publier pour cette période.`}{" "}
+          <em>
+            La limite compte les avis, jamais lesquels: elle vaut pour les deux
+            voies, sans lien entre votre compte et un avis anonyme.
+          </em>
+        </p>
+      )}
+
       {/* FR-D21. Optional as a data point (OPEN-44) but required as a gate:
           you cannot review a course you did not finish. */}
-      <label className="check gate">
+      <label className={touched && !completed ? "check gate missing" : "check gate"}>
         <input
           type="checkbox"
           checked={completed}
@@ -179,6 +216,7 @@ export function ReviewForm({
           low={s.low}
           high={s.high}
           value={scores[s.key] ?? null}
+          invalid={touched && scores[s.key] === null}
           onChange={(v) => setScores((prev) => ({ ...prev, [s.key]: v }))}
         />
       ))}
@@ -222,16 +260,21 @@ export function ReviewForm({
         </p>
       </fieldset>
 
-      <label className="field-block">
+      <label className={touched && (short || long) ? "field-block missing" : "field-block"}>
         Votre avis
         <textarea
           rows={8}
           value={body}
           onChange={(e) => setBody(e.target.value)}
+          aria-invalid={touched && (short || long)}
           placeholder="Comment le cours est donné, ce qui aide, ce qui manque."
         />
-        <span className={short ? "counter short" : "counter"}>
-          {short ? `encore ${left} caractères` : `${body.trim().length} caractères`}
+        <span className={short || long ? "counter short" : "counter"}>
+          {short
+            ? `encore ${left} caractère${left > 1 ? "s" : ""}`
+            : long
+              ? `${over} caractère${over > 1 ? "s" : ""} de trop`
+              : `${trimmed.length} caractères, sur ${MAX_BODY} au maximum`}
         </span>
       </label>
 

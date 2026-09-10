@@ -94,6 +94,8 @@ export interface ReviewDraft {
 
 /** FR-D8, mirrored so the character counter can be honest as you type. */
 export const MIN_BODY = 80;
+/** FR-D8's ceiling, mirrored for the same reason. The server is the authority. */
+export const MAX_BODY = 4000;
 
 /** A refused submission, carrying the field the server named. */
 export class SubmitFailed extends Error {
