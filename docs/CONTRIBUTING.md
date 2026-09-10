@@ -21,6 +21,17 @@ npm run gates             # typecheck, lint, tests, schema validation
 project: 300 small file writes took 0.03 s on ext4 and 4.0 s on `/mnt/c`, which
 is 134 times slower. `node_modules` is tens of thousands of files.
 
+## Editor
+
+`.vscode/extensions.json` recommends four extensions, and VS Code offers to install
+them on first open. Each one surfaces a gate in the editor rather than leaving it
+to CI: ESLint shows FR-B6 boundary violations as you type, the Prisma extension
+validates the schema where the anonymity invariant lives, the Vitest explorer runs
+the two architecture gates, and Remote-WSL is how the project is opened at all.
+
+Only that file is tracked. `.gitignore` ignores the rest of `.vscode`, so editor
+settings stay personal and nobody's formatter is imposed on anyone else.
+
 ## Review is a security control, not a quality practice
 
 FR-B14 made code review the boundary that every FR-C guarantee rests on: the

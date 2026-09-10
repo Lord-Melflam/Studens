@@ -1,0 +1,18 @@
+{
+  "// why": [
+    "Each recommendation exists to surface a gate in the editor instead of only in CI.",
+    "Personal preferences do not belong here: .gitignore tracks this file and ignores",
+    "the rest of .vscode, so settings stay yours.",
+    "See docs/CONTRIBUTING.md."
+  ],
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "Prisma.prisma",
+    "vitest.explorer",
+    "ms-vscode-remote.remote-wsl"
+  ],
+  "// dbaeumer.vscode-eslint": "Shows FR-B6 boundary violations inline as you type, rather than at npm run lint or in a failed CI run. This is the gate contributors hit most often.",
+  "// Prisma.prisma": "Syntax and validation for prisma/schema.prisma, where the anonymity invariant is structural (FR-C2, FR-C6, FR-C18 to FR-C20). Catches an invalid schema before the gate does.",
+  "// vitest.explorer": "Runs the two architecture gates from the editor. Useful because their failure messages name the requirement they enforce.",
+  "// ms-vscode-remote.remote-wsl": "The project lives in the Linux filesystem on purpose: 134 times faster than the Windows mount, measured. A contributor on Windows needs this to open it correctly."
+}
