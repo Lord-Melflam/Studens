@@ -132,6 +132,28 @@ Option A does not defend against a live adversary with write stream access. That
 should be written in the privacy policy rather than glossed over. Option B is the upgrade
 path if that adversary is in scope.
 
+**Correction, 2026-09-10: this is not only a live adversary problem.**
+
+The paragraphs above treat write timing as something an adversary must be *watching* to
+exploit, and OPEN-27 put live adversaries out of scope on that basis. Drawing the schema for
+`architecture-style.md` showed the reasoning was incomplete.
+
+**A series of backups is stored data, and it reconstructs the same correlation offline.**
+Diff two backups taken a day apart: `member_quota.used` moved for one Member, and the
+anonymous table gained a handful of rows dated that day. FR-C3 explicitly covers "a dump, a
+backup, or query access to the live tables", so this sits inside the threat model, not
+outside it, and NFR-O1 requires the backups to exist.
+
+The exposure is bounded by the same two things that bound 4.1: the day-coarse `created_at`
+and the length of the quota window. Nothing finer is available.
+
+**Resolved by tightening the claim rather than the design.** FR-C3 now promises no linkage
+from any *single* snapshot, and acknowledges a bounded correlation across snapshots taken
+within one quota window. FR-C12 obliges the privacy statement to say so. Weakening the backup
+was considered and rejected: an untested backup is not a backup. The open parameter is backup
+cadence and retention, which is therefore a **privacy** setting and not merely an operational
+one. **[OPEN-41]**
+
 ### 4.2 The counter reveals participation volume
 
 An administrator reading the members table learns that a Member made N contributions this

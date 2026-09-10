@@ -257,6 +257,49 @@ inheritance. Two conditions on it:
 - **Docker is not currently usable** in the development WSL environment, so any Compose-based
   workflow has a prerequisite outside this repository.
 
+### 1.7 Architecture style
+
+**[VERIFIED]** François, 2026-09-10, after reviewing the concrete schema. Full comparison and
+justification in `design/architecture-style.md`, which is Accepted.
+
+**A modular monolith with enforced boundaries, plus one worker process.** One deployable for
+the web path, one worker for background work, one Postgres with **a schema per module and a
+distinct database role per schema**, all on the single Always Free VM (5.2).
+
+Six styles were compared against eight criteria taken from this document. Two independent
+arguments excluded microservices, which matters more than either alone:
+
+- **The anonymity invariant is cross-tier.** FR-C13's quota sits on the member record and the
+  contribution goes to the anonymous store, and both must commit together with no shared key.
+  A database per service makes that a distributed transaction, so either two-phase commit or
+  a saga. A saga persists a correlation identifier linking the quota increment to the
+  contribution, which is precisely the member-and-target pair FR-C2 forbids. **The
+  coordination mechanism is the forbidden link.**
+- **The invariant must be verifiable, not merely reviewable.** FR-C8's test is a schema test,
+  which works because there is one schema to enumerate. Across services it becomes a
+  system-wide property with no practical oracle. The design-for-verification reading applies:
+  the only write path to the anonymous store is a small kernel, reviewable line by line.
+
+The worker exists because two workloads already must not run in a request path: moderation
+(FR-E4 to FR-E6) and catalogue ingestion. That is the one item from the classic
+monolithic-hell list that genuinely applies here, and a worker is the proportionate answer to
+it rather than a service split.
+
+The schema-per-role part is what makes FR-B3 enforceable at all. A lint rule catches an
+import; it cannot catch a module issuing SQL against another module's tables, because that is
+a string. A role with no grant makes it impossible rather than detected, and because the
+schemas share one database, the cross-tier transaction above still works.
+
+**Costs accepted:** one blast radius, so fault isolation is worse than microservices would
+give; one language for everything, already accepted via OPEN-11; FR-B5 degrades to a feature
+flag rather than a deployment operation; and the whole thing collapses to an unstructured
+monolith if FR-B6's build gate is ever made advisory, so that gate is load bearing.
+
+**This decision depends on OPEN-16.** If third-party modules are ever **untrusted**,
+in-process is wrong and those modules need process isolation with no database access. That is
+a hybrid and a later change, not an argument for microservices now. v1 ships core-team
+modules only (1.4).
+
 ## 2. Actors
 
 **[DERIVED]** from the described login shell and the anonymous-module concept. Confirm
@@ -364,7 +407,7 @@ two is cheap; if they do not, the platform is a monolith in the bad sense.
 | FR-B6 | SHOULD | Violations of FR-B3 fail the build, rather than relying on reviewer vigilance. |
 | FR-B7 | SHOULD | The module contract is documented well enough for someone outside the core team to write a module against it. |
 | FR-B8 | SHOULD | A module declares what it needs (storage, user attributes, network) rather than being granted everything by default. |
-| FR-B9 | MUST | Shared, impersonal, read-mostly data (the course catalogue and similar) lives in a **reference module** that holds **no personal data** in any column. Feature modules read it; only its owner writes it. **[DERIVED]** 2026-09-10, `design/module-boundaries.md`. |
+| FR-B9 | MUST | Shared, read-mostly data (the course catalogue and similar) lives in a **reference module** that holds **no data about Members** in any column. Feature modules read it; only its owner writes it. **Corrected 2026-09-10:** the original wording said "no personal data", which the catalogue violates on day one, since it carries lecturer names. Third party data from a public source is permitted; anything identifying a platform user is not. See `design/architecture-style.md` 13.1. |
 | FR-B10 | MUST | Dependencies point one way: feature module to reference module to platform service. No feature module depends on another feature module, directly or through shared tables. Extends FR-B3 and FR-B6. |
 | FR-B11 | MUST | Where a module needs something the platform knows about a Member, it asks a question with a narrow answer, rather than fetching the underlying data. **Ask questions, do not fetch data.** |
 | FR-B12 | MUST | No log, metric or trace record may carry a Member identifier and a contribution target identifier together. This is FR-C5 applied to telemetry, which is written by infrastructure rather than by reviewed code. |
@@ -471,7 +514,7 @@ from a refinement to a decision that matters.
 |---|---|---|
 | FR-C1 | MUST | Authentication establishes *eligibility to contribute*. For an anonymous contribution it never establishes authorship. |
 | FR-C2 | MUST | An anonymous contribution stores **no** identifier of the authenticated Member, in any column, log, or backup. |
-| FR-C3 | MUST | An Administrator holding stored data (a dump, a backup, or query access to the live tables) cannot link an anonymous contribution to a Member. **Deliberately scoped:** an adversary observing writes as they happen is out of the threat model. See below. |
+| FR-C3 | MUST | An Administrator holding **any single** stored snapshot (one dump, one backup, or query access to the live tables at one moment) cannot link an anonymous contribution to a Member. Across **two or more snapshots taken within one quota window** a bounded correlation exists, because the quota counter moves. **Corrected 2026-09-10**, see FR-C19 and `design/architecture-style.md` 13.3. Also deliberately scoped: an adversary observing writes as they happen is out of the threat model. |
 | FR-C4 | MUST | A Member cannot contribute without limit, and enforcing that must not break FR-C2. **[OPEN-6]** |
 | FR-C5 | MUST | Timestamps, ordering and identifiers must not act as a de facto link. |
 | FR-C6 | MUST | Anonymous and attributed contributions are stored on structurally separate paths, not distinguished by a nullable owner column. |
@@ -486,6 +529,9 @@ from a refinement to a decision that matters.
 | FR-C15 | MUST | Whether a contribution is anonymous or attributed **is** publicly visible: attributed shows the author, anonymous shows an explicit badge. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-21. |
 | FR-C16 | MUST | **No trust tier, domain, institution or other author attribute renders on an anonymous contribution.** The anonymous badge is the only marker it carries. **[DERIVED]** 2026-09-10. |
 | FR-C17 | MUST | The platform must not publicly state or imply that one person can leave only one anonymous review of a course. It cannot enforce that, and asserting it narrows the candidate set for an attacker. **[DERIVED]** 2026-09-10. |
+| FR-C18 | MUST | An anonymous contribution's identifier is **random**. Never a sequence (which publishes insertion order, FR-C5) and never derived from its content (which lets an attacker who guesses the text confirm the row exists). |
+| FR-C19 | MUST | The tenant of an anonymous contribution is derived from **the target**, never from the submitting Member. Stamping the Member's tenant would write an author attribute onto the anonymous record, breaching FR-C16. Applies wherever author-derived and target-derived tenancy differ, for instance an exchange student reviewing a host institution's course. **[DERIVED]** 2026-09-10, `design/architecture-style.md` 13.2. |
+| FR-C20 | MUST | Anonymous and attributed contributions live in separate tables with **no member column of any kind** on the anonymous one. This is FR-C6 made concrete: the guarantee is structural, not dependent on application code staying correct. |
 
 **The threat model boundary, decided 2026-09-09.** **[VERIFIED]** François. Rate limiting
 uses Option A of `design/anonymous-rate-limiting.md`: a fixed window counter on the member
@@ -540,6 +586,26 @@ also unlinkable: removing a contribution reveals nothing about who wrote it.
 *A named third party retains their rights.* A review about an identifiable lecturer contains
 that lecturer's personal data, and their rights do not depend on the reviewer's anonymity.
 FR-C10 is what makes such a request actionable. Interacts with OPEN-10.
+
+**Backups are stored data, and a series of them correlates.** **Found 2026-09-10** while
+drawing the schema, and it corrected FR-C3 rather than the design.
+
+A single backup carries no join column, so it reveals nothing. **Two** backups a day apart do:
+`member_quota.used` moved for one Member while the anonymous table gained a handful of rows
+dated that day. On the numbers in 4.4, that narrows authorship to roughly one in five, and
+sharpens over a term.
+
+The scope limit we relied on does not cover this. `design/anonymous-rate-limiting.md` 4.1
+treats write-timing correlation as a **live adversary** problem, and OPEN-27 put live
+adversaries out of scope. A backup is not a live adversary; it is stored data, which FR-C3
+explicitly names. And NFR-O1 requires the backups to exist.
+
+It is bounded: no finer than the day-coarse `created_at` already disclosed, and no finer than
+the quota window. So the resolution was to **tighten the claim, not weaken the backup**.
+FR-C3 now says what it delivers, and FR-C12 obliges the privacy statement to match. Weakening
+the backup was considered and rejected: an untested backup is not a backup, and this project
+has lost data twice. What remains open is the backup cadence and retention relative to the
+quota window, since those two numbers set the bound. **[OPEN-41]**
 
 **Mixed mode leaks through behaviour.** A Member who contributes attributed on one course
 and anonymously on another can often be correlated through timing, writing style or session
@@ -885,6 +951,9 @@ These block agreement. None may be silently assumed.
 | OPEN-36 | Do attributed contributions show a **full name** or a **username**? A real name is stronger accountability, more identifying under the GDPR, and makes the complement problem sharper. | FR-C15, OPEN-10, 3.3 |
 | OPEN-37 | Does the FR-D8 minimum review length apply on the **anonymous** path? Longer text is better data and a better stylometric fingerprint. Options: same minimum, a lower one, or a warning at submission time. | FR-D8, FR-C12, 3.3 |
 | OPEN-38 | How are courses reconciled **across years** when a code or title changes? A rename, merge or code change breaks the year-over-year link FR-D4 and the deferred trendline depend on. Fuzzy matching, not parsing, and the one place a model would earn its place. Not needed until two years of data exist. | FR-D4, `design/catalogue-ingestion.md` |
+| OPEN-39 | Where does the cross-tier transaction live, given a role per module? `design/architecture-style.md` 8 argues the platform must own it, since no single-tier role can touch both. The exact division of labour between platform and module for a submission should be settled against real code. | FR-B11, FR-C13 |
+| OPEN-40 | Is the worker deployed with the web process or separately? Same codebase either way. Separate lets it restart without touching the web path, which matters given the Oracle reclamation risk. | 5.2, `design/architecture-style.md` |
+| OPEN-41 | Backup cadence and retention, relative to the quota window. These two numbers set the bound on the FR-C3 cross-snapshot correlation, so they are a privacy parameter and not just an operational one. | FR-C3, FR-C12, NFR-O1 |
 
 **OPEN-19 is now the load-bearing one.** With OPEN-25 and OPEN-31 resolved as Option 1, the
 complement problem in 3.3 has no structural mitigation left except a minimum anonymity set.
