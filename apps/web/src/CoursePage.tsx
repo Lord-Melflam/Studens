@@ -56,6 +56,26 @@ export function CoursePage({ course, onBack }: { course: CourseDetail; onBack: (
         <Field label="Évaluation" value={course.assessment} />
         <Field label="Thèmes abordés" value={course.themes} />
         <Field label="Contenu" value={course.content} />
+
+        <div className="field">
+          <dt>Fiche officielle</dt>
+          <dd>
+            {/*
+              rel="noreferrer" as well as noopener: it stops UCLouvain seeing
+              that the visit came from Studens. A small thing, and consistent
+              with a platform whose main promise is not linking people to what
+              they read.
+            */}
+            <a
+              className="official"
+              href={course.officialUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {course.officialUrl}
+            </a>
+          </dd>
+        </div>
       </dl>
 
       <section className="reviews-absent">

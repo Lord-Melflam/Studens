@@ -13,15 +13,27 @@ import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import type { ParsedOffering } from "./parse/offering.js";
 
+export interface DiscoveredFaculty {
+  code: string;
+  /** The link text from the faculty index, for instance "Ecole polytechnique de Louvain". */
+  name: string;
+}
+
 export interface Snapshot {
-  /** Schema version of this file format, so a reader can refuse an old one. */
-  version: 1;
+  /**
+   * Schema version of this FILE format, so a reader can refuse an old one.
+   * Bumped to 2 on 2026-09-10 when faculties gained their names: ref.Faculty
+   * requires one, and the faculty index already carries it in the link text.
+   * The version field exists to be used, so an older snapshot is refused
+   * rather than silently loaded with a code where a name belongs.
+   */
+  version: 2;
   /** When the crawl finished. */
   takenAt: string;
   /** The academic year crawled. */
   year: number;
-  /** Faculty codes as DISCOVERED, never as configured. */
-  faculties: string[];
+  /** Faculties as DISCOVERED, never as configured. */
+  faculties: DiscoveredFaculty[];
   programmes: Array<{ code: string; faculty: string }>;
   offerings: ParsedOffering[];
   /** Which faculties each offering was reached through. Many-to-many on purpose. */
@@ -35,7 +47,11 @@ export class SnapshotInvalid extends Error {}
  * Every check here is a failure the crawl could plausibly produce.
  */
 export function validate(s: Snapshot): void {
-  if (s.version !== 1) throw new SnapshotInvalid(`unknown snapshot version ${s.version}`);
+  if (s.version !== 2) {
+    throw new SnapshotInvalid(
+      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 2)`,
+    );
+  }
   if (s.faculties.length === 0) throw new SnapshotInvalid("no faculties discovered");
   if (s.programmes.length === 0) throw new SnapshotInvalid("no programmes discovered");
   if (s.offerings.length === 0) throw new SnapshotInvalid("no course offerings parsed");

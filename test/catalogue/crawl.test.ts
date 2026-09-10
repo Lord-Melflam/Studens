@@ -69,7 +69,9 @@ describe("the chain is discovered, not configured", () => {
   it("finds faculties it could not possibly have had a list of", async () => {
     const site = fakeSite();
     const snap = await crawl({ year: YEAR, fetcher: site.fetcher });
-    expect(snap.faculties.sort()).toEqual(["xxx", "yyy", "zzz"]);
+    // Names come from the link text, which ref.Faculty needs.
+    expect(snap.faculties.find((f) => f.code === "zzz")?.name).toBe("Zeta");
+    expect(snap.faculties.map((f) => f.code).sort()).toEqual(["xxx", "yyy", "zzz"]);
   });
 
   it("walks through to the offerings", async () => {
@@ -97,7 +99,7 @@ describe("the chain is discovered, not configured", () => {
 
   it("can be scoped to one faculty without hardcoding which", async () => {
     const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, onlyFaculties: ["zzz"] });
-    expect(snap.faculties).toEqual(["zzz"]);
+    expect(snap.faculties.map((f) => f.code)).toEqual(["zzz"]);
     expect(snap.offerings).toHaveLength(2);
   });
 

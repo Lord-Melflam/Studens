@@ -6,13 +6,25 @@
  * will sit behind a session. Nothing here needs one.
  */
 import { Router } from "express";
-import { Catalogue } from "@studens/ref";
+import { DatabaseCatalogue, SnapshotCatalogue, type Catalogue } from "@studens/ref";
 
-export async function catalogueRoutes(snapshotPath: string): Promise<Router> {
-  // Loaded once at startup. A failure here stops the process rather than
-  // serving an empty catalogue, which is the same "fail loudly" rule the
+/**
+ * The database is the default. A snapshot file is available for running with
+ * no database at all, which is how this API worked before the catalogue was
+ * loaded into Postgres.
+ *
+ * Note what did NOT change when the storage did: every route handler below.
+ * That is what the read interface in @studens/ref is for.
+ */
+export async function catalogueRoutes(source: {
+  snapshotPath?: string;
+}): Promise<Router> {
+  // Opened once at startup. A failure here stops the process rather than
+  // serving an empty catalogue, which is the same fail-loudly rule the
   // ingestion follows.
-  const catalogue = await Catalogue.open(snapshotPath);
+  const catalogue: Catalogue = source.snapshotPath
+    ? await SnapshotCatalogue.open(source.snapshotPath)
+    : await DatabaseCatalogue.open();
   const router = Router();
 
   router.get("/catalogue", (_req, res) => {
@@ -26,17 +38,18 @@ export async function catalogueRoutes(snapshotPath: string): Promise<Router> {
       res.json({ query: q, results: [] });
       return;
     }
-    res.json({ query: q, results: catalogue.search(q) });
+    void Promise.resolve(catalogue.search(q)).then((results) => res.json({ query: q, results }));
   });
 
   /** FR-D3: the course page. */
   router.get("/courses/:code", (req, res) => {
-    const course = catalogue.get(req.params.code);
-    if (!course) {
-      res.status(404).json({ error: "no such course in this catalogue year" });
-      return;
-    }
-    res.json(course);
+    void Promise.resolve(catalogue.get(req.params.code)).then((course) => {
+      if (!course) {
+        res.status(404).json({ error: "no such course in this catalogue year" });
+        return;
+      }
+      res.json(course);
+    });
   });
 
   return router;

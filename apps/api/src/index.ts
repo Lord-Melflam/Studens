@@ -14,7 +14,12 @@ import { catalogueRoutes } from "./routes/catalogue.js";
 
 export const process_role = "web" as const;
 
-export async function createApp(snapshotPath: string) {
+export interface AppSource {
+  /** Set to read a snapshot file instead of the database. */
+  snapshotPath?: string;
+}
+
+export async function createApp(source: AppSource = {}) {
   const app = express();
   app.disable("x-powered-by");
 
@@ -22,7 +27,7 @@ export async function createApp(snapshotPath: string) {
     res.json({ ok: true });
   });
 
-  app.use("/api", await catalogueRoutes(snapshotPath));
+  app.use("/api", await catalogueRoutes(source));
 
   // Anything unmatched under /api is a 404 as JSON, not an HTML error page.
   app.use("/api", (_req, res) => {
@@ -35,11 +40,15 @@ export async function createApp(snapshotPath: string) {
 const isEntry = process.argv[1]?.endsWith("index.js") ?? false;
 if (isEntry) {
   const port = Number(process.env["PORT"] ?? 3001);
-  const snapshot = process.env["CATALOGUE_SNAPSHOT"] ?? "data/catalogue.json";
-  createApp(snapshot)
+  // The database unless a snapshot is named explicitly.
+  const snapshotPath = process.env["CATALOGUE_SNAPSHOT"];
+  createApp(snapshotPath ? { snapshotPath } : {})
     .then((app) =>
       app.listen(port, () => {
-        console.log(`api listening on http://localhost:${port} (catalogue: ${snapshot})`);
+        console.log(
+          `api listening on http://localhost:${port} ` +
+            `(catalogue: ${snapshotPath ?? "database"})`,
+        );
       }),
     )
     .catch((err: unknown) => {

@@ -22,7 +22,7 @@ import { extractLinks } from "./parse/links.js";
 import { parseOffering, type ParsedOffering } from "./parse/offering.js";
 import { assertPlausibleYear, candidateYears } from "./year.js";
 import { BASE } from "./urls.js";
-import type { Snapshot } from "./snapshot.js";
+import type { DiscoveredFaculty, Snapshot } from "./snapshot.js";
 
 export interface CrawlOptions {
   year?: number;
@@ -67,12 +67,15 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   // 1. faculties, discovered from a single root
   const indexUrl = facultyIndex(year);
   const index = await fetcher.get(indexUrl);
-  let faculties = extractLinks(index.html, facultyLinkPattern(year), indexUrl, "faculty links").map(
-    (l) => l.code,
-  );
+  let faculties: DiscoveredFaculty[] = extractLinks(
+    index.html,
+    facultyLinkPattern(year),
+    indexUrl,
+    "faculty links",
+  ).map((l) => ({ code: l.code, name: l.text || l.code.toUpperCase() }));
   if (opts.onlyFaculties?.length) {
     const want = new Set(opts.onlyFaculties.map((f) => f.toLowerCase()));
-    faculties = faculties.filter((f) => want.has(f));
+    faculties = faculties.filter((f) => want.has(f.code));
     if (faculties.length === 0) {
       throw new Error(
         `none of the requested faculties were found in the ${year} index: ` +
@@ -84,7 +87,7 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
 
   // 2. programmes per faculty
   const programmes: Array<{ code: string; faculty: string }> = [];
-  for (const faculty of faculties) {
+  for (const { code: faculty } of faculties) {
     const url = `${BASE}/fr/catalogue-formations/faculte-${year}-${faculty}`;
     const page = await fetcher.get(url);
     for (const link of extractLinks(page.html, programmeLinkPattern(year), url, "programme links")) {
@@ -145,7 +148,7 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   say(`${offerings.length} offerings parsed`);
 
   return {
-    version: 1,
+    version: 2,
     takenAt: new Date().toISOString(),
     year,
     faculties,

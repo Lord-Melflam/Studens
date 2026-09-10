@@ -15,6 +15,8 @@ export interface CourseSummary {
 }
 
 export interface CourseDetail extends CourseSummary {
+  /** The official UCLouvain page for this offering. */
+  officialUrl: string;
   language: string | null;
   contactHours: string | null;
   assessment: string | null;

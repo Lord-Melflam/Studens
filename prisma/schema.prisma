@@ -178,6 +178,16 @@ model CourseOffering {
   /// Official TEACHING hours. Not student effort: a different measurement
   /// from FR-D6, and must not be presented as the same thing.
   contactHours String?
+  /// The rest of what the page publishes. Added 2026-09-10: the schema predated
+  /// the parser, so these were missing and the database-backed catalogue could
+  /// not show what the file-backed one already did.
+  themes       String?
+  content      String?
+  /// The entity acronym the page names as in charge, for instance "> MECA".
+  /// Text rather than a Faculty reference because it is an entity code from a
+  /// different vocabulary than the faculty slugs the crawl discovers, and
+  /// reconciling them is not needed to display it.
+  owningFaculty String?
 
   faculties OfferingFaculty[]
   teachers  OfferingTeacher[]

@@ -95,3 +95,10 @@ dl { margin: 0; }
 .reviews-absent { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
 .reviews-absent h3 { margin: 0 0 0.4rem; font-size: 1rem; }
 .reviews-absent p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+.official {
+  color: var(--accent);
+  word-break: break-all;
+  font-size: 0.92rem;
+}
+.official:hover { text-decoration-thickness: 2px; }

@@ -39,3 +39,22 @@ describe("academicYearFor", () => {
     expect(candidateYears(utc("2026-09-20"))).toEqual([2026, 2027, 2025]);
   });
 });
+
+describe("the official course URL", () => {
+  it("is the canonical form for the offering's own year", async () => {
+    const { courseUrl } = await import("@studens/ref");
+    expect(courseUrl(2025, "lepl1503")).toBe("https://uclouvain.be/cours-2025-lepl1503");
+  });
+
+  it("lowercases the code, so a link built from a display value still works", async () => {
+    const { courseUrl } = await import("@studens/ref");
+    expect(courseUrl(2025, "LEPL1503")).toBe("https://uclouvain.be/cours-2025-lepl1503");
+  });
+
+  it("uses an archived year's own canonical form, which redirects to the archive", async () => {
+    const { courseUrl } = await import("@studens/ref");
+    // Verified 2026-09-10: this 301s to
+    // sites.uclouvain.be/archives-portail/cdc2012/cours-2012-lfsa2995
+    expect(courseUrl(2012, "lfsa2995")).toBe("https://uclouvain.be/cours-2012-lfsa2995");
+  });
+});

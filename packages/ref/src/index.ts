@@ -18,8 +18,17 @@ export {
   validate,
   SnapshotInvalid,
   type Snapshot,
+  type DiscoveredFaculty,
 } from "./ingestion/snapshot.js";
 export { parseOffering, detectEra, type ParsedOffering, type Era } from "./ingestion/parse/offering.js";
 export { academicYearFor, candidateYears, ROLLOVER } from "./ingestion/year.js";
+export { courseUrl } from "./ingestion/urls.js";
 export { ParseError, FetchError } from "./ingestion/errors.js";
-export { Catalogue, type CourseSummary, type CourseDetail } from "./read.js";
+export { loadSnapshot, type LoadResult, type LoadOptions } from "./ingestion/load.js";
+export {
+  type Catalogue,
+  SnapshotCatalogue,
+  DatabaseCatalogue,
+  type CourseSummary,
+  type CourseDetail,
+} from "./read.js";

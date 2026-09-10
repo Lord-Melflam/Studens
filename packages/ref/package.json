@@ -12,6 +12,7 @@
     ".": "./dist/index.js"
   },
   "dependencies": {
+    "@prisma/client": "^7.10.0",
     "cheerio": "^1.2.0"
   }
 }
