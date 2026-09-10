@@ -525,7 +525,7 @@ from a refinement to a decision that matters.
 | FR-C9 | MUST | An anonymous contribution cannot be edited or deleted **by its contributor**, ever. This follows from FR-C2: nobody can prove authorship, including its author. **[VERIFIED]** François, 2026-09-09. |
 | FR-C10 | MUST | Moderators and Administrators **can** remove any contribution, anonymous or attributed. FR-C9 constrains the contributor, never the platform. |
 | FR-C11 | MUST | Before an anonymous contribution is submitted, the contributor is shown that it is permanent and irreversible, and confirms. |
-| FR-C12 | MUST | The public privacy statement describes the guarantee at exactly its real strength, including the FR-C3 scope limit. It must not overclaim. |
+| FR-C12 | MUST | The public privacy statement describes the guarantee at exactly its real strength and must not overclaim. It must cover, by name: the FR-C3 cross-snapshot limit, and the complement exposure in 3.3, meaning that on a small target with high named participation a reader may be able to infer authorship, and that the platform cannot prevent this because it does not know cohort sizes. |
 | FR-C13 | MUST | Per course uniqueness (FR-D9) is enforced on the **attributed** path only. On the anonymous path the quota (FR-C4) is the only limit. **[VERIFIED]** François, 2026-09-10, Option 1. |
 | FR-C14 | MUST | An **attributed** contribution can be edited by its author. Contrast FR-C9, which is not a policy choice but a structural consequence. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-22. |
 | FR-C15 | MUST | Whether a contribution is anonymous or attributed **is** publicly visible: attributed shows the author, anonymous shows an explicit badge. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-21. |
@@ -534,6 +534,8 @@ from a refinement to a decision that matters.
 | FR-C18 | MUST | An anonymous contribution's identifier is **random**. Never a sequence (which publishes insertion order, FR-C5) and never derived from its content (which lets an attacker who guesses the text confirm the row exists). |
 | FR-C19 | MUST | The tenant of an anonymous contribution is derived from **the target**, never from the submitting Member. Stamping the Member's tenant would write an author attribute onto the anonymous record, breaching FR-C16. Applies wherever author-derived and target-derived tenancy differ, for instance an exchange student reviewing a host institution's course. **[DERIVED]** 2026-09-10, `design/architecture-style.md` 13.2. |
 | FR-C20 | MUST | Anonymous and attributed contributions live in separate tables with **no member column of any kind** on the anonymous one. This is FR-C6 made concrete: the guarantee is structural, not dependent on application code staying correct. |
+| FR-C21 | MUST | **Before** a contributor commits to anonymity, they are shown the counts that bear on their exposure: how many attributed and how many anonymous contributions the target already has. Where attributed participation is high and anonymous is zero, this is presented as a warning, not a statistic. Extends FR-C11. **[VERIFIED]** François, 2026-09-10. Part of the OPEN-19 resolution. |
+| FR-C22 | MUST | **No suppression threshold.** An anonymous contribution is displayed regardless of how many others exist. A count-based threshold would measure the wrong quantity, fail at launch, and break FR-C9 verification. See 3.3. |
 
 **The threat model boundary, decided 2026-09-09.** **[VERIFIED]** François. Rate limiting
 uses Option A of `design/anonymous-rate-limiting.md`: a fixed window counter on the member
@@ -567,8 +569,75 @@ legitimate decision, but it must be a deliberate one.
 **The choice itself carries information.** If most contributions are attributed, choosing
 anonymity is itself a signal, and on a small course with few reviews the anonymity set can
 collapse to one person regardless of how good the cryptography is. Unlinkability protects
-the record; it does not protect against there being only one plausible author. **[OPEN-19]**
-Is a minimum anonymity set required before an anonymous contribution is displayed?
+the record; it does not protect against there being only one plausible author.
+
+**RESOLVED 2026-09-10, OPEN-19: no suppression threshold.** The reasoning matters more than
+the answer, because the question as originally posed measured the wrong quantity.
+
+Let **N** be the cohort of a course, **A** the number of distinct attributed reviewers, and
+**M** the number of anonymous reviews. Under the stated one-review-per-person policy the
+anonymous authors are distinct people who did not post attributed, so:
+
+```
+M  <=  N - A                 the silent set  S = N - A
+```
+
+The room an anonymous author has to hide in is **|S| minus M**: the silent members who did
+*not* write an anonymous review. Two failure points follow. If **|S| equals M**, the author
+set is exactly the silent set, which discloses "these people wrote critical anonymous
+reviews" even without saying which wrote which. If **|S| equals 1**, the author is known
+outright.
+
+**So the risk is driven by N minus A, not by M.** OPEN-19 asked for a threshold on M, which is
+the number we can see, and that is the wrong one.
+
+**And N is not available to us, by design.** FR-A6 means there is no roster, 1.4 rules out
+institutional integration, and `design/module-boundaries.md` refuses to store enrolment
+because a PAE store is a linkage engine. The platform therefore **cannot compute the anonymity
+set, while an attacker can**: a classmate knows who is in the room, and UCLouvain publishes
+programme structures. We hold A and M; they hold N.
+
+That asymmetry is why no threshold we could implement would be a guarantee. It would apply a
+proxy to the visible number while the real attack runs on the invisible one, and FR-C12
+forbids describing that as protection.
+
+Three further reasons against a count threshold, in descending weight:
+
+1. It would invite overclaiming. "A minimum anonymity set of 3" reads as k-anonymity and is
+   not, because k would be measured against M rather than against N minus A.
+2. **It fails exactly at launch.** Every course starts at zero to two reviews, so a threshold
+   of 3 hides nearly everything during the year the platform has to prove itself, and the
+   1.1 pass test fails by construction.
+3. **It collides with FR-C9.** A withheld anonymous review cannot be checked by its author,
+   because there is no "my contributions" on the anonymous path, ever. The contributor
+   submits, sees nothing, and cannot tell whether it worked. The likely responses are
+   resubmitting, which burns quota, or concluding the platform is broken.
+
+**What is done instead** is FR-C21 and FR-D15: move the judgement to the person holding the
+missing number, and reduce what each anonymous record discloses. Neither is protection, and
+both are honest.
+
+**What stays broken, stated plainly.** On a small course with high named participation, a
+determined classmate can narrow authorship substantially and nothing here stops them. The
+only thing keeping it probabilistic rather than certain is the enforcement gap in FR-C13: a
+Member *can* post attributed and anonymously on the same course, undetectably. That is a
+weaker defence than a mechanism, and FR-C12 must say so rather than imply otherwise.
+
+**Rejected alternatives**, recorded so they are not re-proposed:
+
+| Option | Why not |
+|---|---|
+| Threshold on M | Measures the wrong quantity, fails at launch, breaks FR-C9 verification, invites overclaiming |
+| Threshold on N minus A | The correct target and not computable. Needs enrolment data the architecture refuses to hold |
+| Self-reported class size | Unreliable and gameable, and it would put an unverifiable number behind a guarantee |
+| Hide the attributed reviewer list | Attributed contributions exist in order to be attributed |
+| Batch anonymous publication before each PAE window | Interesting, and it matches the real demand moment, but it does not touch the complement attack, which is static, and it delays first value. Reconsider if abuse appears |
+| Differential privacy on aggregates | Corrupts the ratings, which are the product |
+
+**What would change this.** Legitimate access to enrolment data would make N minus A
+computable, though `module-boundaries.md` argues hard against ever holding it. Observed abuse
+would make batching worth its cost. And a course showing M at a plausible full cohort warrants
+suppression by hand, which is a moderation action rather than a rule.
 
 **"My contributions" is incompatible with anonymity, and is therefore not offered.**
 **RESOLVED 2026-09-09, OPEN-20:** an anonymous contribution cannot be edited or deleted by
@@ -655,6 +724,7 @@ below, including FR-D9.
 | FR-D12 | SHOULD | A Member can see their own attributed reviews in one place, in order to edit them (FR-C14). |
 | FR-D13 | MUST | **Course pages are public; reviews require a session to read.** Code, title, ECTS, description and lecturer are UCLouvain's own published data and stay open. Reviews do not. **[VERIFIED]** François, 2026-09-10, delegated decision. |
 | FR-D14 | MUST | Review text is excluded from search engine indexing. |
+| FR-D15 | MUST | On the **anonymous** path, a review displays its text and date only. Rating, workload and difficulty contribute to the aggregate but are **not shown per review**. The value of those numbers is the aggregate; a per-review triple plus prose is a detailed fingerprint on a record meant to be unlinkable. **[VERIFIED]** François, 2026-09-10. Part of the OPEN-19 resolution. |
 
 #### Deferred to v2
 
@@ -933,7 +1003,7 @@ These block agreement. None may be silently assumed.
 | ~~OPEN-16~~ | ~~Trusted contributors, vetted catalogue, or untrusted plugins?~~ **RESOLVED 2026-09-10.** | closed |
 | OPEN-17 | How does **any** AI capability fit a zero budget constraint? Reframed 2026-09-10: AI is not a module (1.0), so the cost question applies wherever it lands, not to one deferrable feature. | CON-1, vision 1.0, OPEN-30 |
 | OPEN-18 | Who governs contributions? Review authority and merge rights. **Sharpened 2026-09-10 and now more urgent:** FR-B14 makes code review the security boundary, so "who may approve a merge" is a security question, not a workflow preference. With a team of one, review of the owner's own code is self-review, which FR-B15 exists to compensate for. **Licence part resolved 2026-09-09: MIT.** | FR-B14, FR-B15, goal 3 |
-| OPEN-19 | Is a minimum anonymity set required before an anonymous contribution is shown? Sharpened 2026-09-10 by the complement problem in 3.3: the set that matters may be the **silent** members, not the anonymous ones. | FR-C5, OPEN-31 |
+| ~~OPEN-19~~ | ~~Is a minimum anonymity set required before an anonymous contribution is shown?~~ **RESOLVED 2026-09-10: no.** | closed |
 | ~~OPEN-20~~ | ~~Can a contributor manage their own anonymous contributions?~~ **RESOLVED 2026-09-09: no. No editing, no deletion, ever.** | closed |
 | ~~OPEN-21~~ | ~~Is anonymous or attributed status publicly visible on a contribution?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-22~~ | ~~Can an attributed contribution be edited, deleted, or made anonymous later?~~ **RESOLVED 2026-09-10.** | closed |
@@ -951,7 +1021,7 @@ These block agreement. None may be silently assumed.
 | OPEN-34 | When MPA arrives, who owns enrolment: a platform service or MPA itself? Do not decide before there is a second consumer. | FR-B11, 1.0 |
 | OPEN-35 | Open registration means one person can hold many accounts, so the quota (FR-C4) and per course uniqueness (FR-D9) bound accounts, not people. Is that accepted as a speed bump, or is some cost imposed on account creation? | FR-A6, FR-C4, FR-D9 |
 | OPEN-36 | Do attributed contributions show a **full name** or a **username**? A real name is stronger accountability, more identifying under the GDPR, and makes the complement problem sharper. | FR-C15, OPEN-10, 3.3 |
-| OPEN-37 | Does the FR-D8 minimum review length apply on the **anonymous** path? Longer text is better data and a better stylometric fingerprint. Options: same minimum, a lower one, or a warning at submission time. | FR-D8, FR-C12, 3.3 |
+| OPEN-37 | Does the FR-D8 minimum review length apply on the **anonymous** path? Longer text is better data and a better stylometric fingerprint. Options: same minimum, a lower one, or a warning at submission time. **Sharpened 2026-09-10:** FR-D15 removed the numeric part of the fingerprint, so **prose is now the whole of it**, which makes this the last remaining lever on per-record disclosure. | FR-D8, FR-D15, FR-C12, 3.3 |
 | OPEN-38 | How are courses reconciled **across years** when a code or title changes? A rename, merge or code change breaks the year-over-year link FR-D4 and the deferred trendline depend on. Fuzzy matching, not parsing, and the one place a model would earn its place. Not needed until two years of data exist. | FR-D4, `design/catalogue-ingestion.md` |
 | OPEN-39 | Where does the cross-tier transaction live, given a role per module? `design/architecture-style.md` 8 argues the platform must own it, since no single-tier role can touch both. The exact division of labour between platform and module for a submission should be settled against real code. | FR-B11, FR-C13 |
 | OPEN-40 | Is the worker deployed with the web process or separately? Same codebase either way. Separate lets it restart without touching the web path, which matters given the Oracle reclamation risk. | 5.2, `design/architecture-style.md` |
@@ -999,6 +1069,7 @@ been deferred.
 | OPEN-29 | Hosting target. | **Oracle Cloud Always Free, for now**, running the application and Postgres on one EU-region ARM VM. Vercel Hobby, Render free and Fly.io were each disqualified on verified grounds; the known risks of the Oracle choice and the paid alternative are recorded in 5.2. Resolved 2026-09-10. |
 | OPEN-33 | Where does the course catalogue come from? | **Scraped from uclouvain.be**, with the faculty, programme and course structure discovered at runtime and nothing hardcoded. No API exists. robots.txt permits the paths used. See `design/catalogue-ingestion.md`. Resolved 2026-09-10. |
 | OPEN-16 | Trusted contributors, vetted catalogue, or untrusted plugins? | **Trusted contributors** (FR-B14). Outside people contribute by pull request into this repository; their code is reviewed and merged, and there is no plugin loader, registry or third-party artifact. Untrusted plugins were rejected as incompatible with FR-C, not merely expensive: untrusted in-process code with database access defeats every unlinkability guarantee, and sandboxing it properly is a larger project than Studens. A vetted catalogue was rejected as premature rather than wrong; it has the same architectural consequence and adds a registry, module versioning and an admission process with no users. Resolves the dependency in `design/architecture-style.md` 6: in-process modules are correct **permanently**, not provisionally. Resolved 2026-09-10. |
+| OPEN-19 | Is a minimum anonymity set required before an anonymous contribution is shown? | **No suppression threshold** (FR-C22). The question measured the wrong quantity: risk is driven by the silent set N minus A, not by the number of anonymous contributions M, and N is not available to the platform by design (no roster, no enrolment store), while an attacker has it. So no threshold could be a guarantee, and FR-C12 forbids claiming one. A count threshold would also hide nearly everything at launch and break FR-C9 verification, since a withheld anonymous contribution cannot be checked by its author. Replaced by FR-C21 (show the contributor the counts before they choose, since they hold the missing number) and FR-D15 (numeric dimensions aggregate-only on the anonymous path). The complement exposure remains, kept probabilistic only by the FR-C13 enforcement gap, and FR-C12 must disclose it. Full arithmetic and rejected alternatives in 3.3. Resolved 2026-09-10. |
 | OPEN-28 | Product name, and therefore the repository name? | **Studens.** Latin, *studēns*, present active participle of *studeō, studēre*: "studying, dedicating oneself to". It is the origin of the participle stem *student-* behind English *student*, French *étudiant* and Dutch *student*, so it reads natively in all three of the platform's languages. Chosen over **Sodalitas** by accepting a weaker (descriptive) trademark position in exchange for immediate legibility, which suits a free non commercial platform. Selection history and rejected names in 7.2. `studens.be` was available on 2026-09-09. **The BOIP trademark search remains outstanding and is not blocked by this decision.** Resolved 2026-09-09. |
 
 Resolved questions stay in the document rather than being deleted. A reader six months from
