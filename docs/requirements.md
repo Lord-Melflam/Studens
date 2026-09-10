@@ -755,6 +755,9 @@ below, including FR-D9.
 | FR-D18 | MUST | Importing third party content requires **permission from whoever holds it** before any import happens. The same rule that forbids reusing unlicensed code applies to reusing other people's writing. See OPEN-42. |
 | FR-D19 | MUST | **Assessment structure is scraped, never asked.** The catalogue publishes the evaluation method with weightings and the official contact hours, so a course page shows them from the reference module. Reviewers are asked only for what the catalogue cannot know. **[VERIFIED]** François, 2026-09-10. Verified against `cours-2025-lepl1503`. |
 | FR-D20 | MUST | **Numbers describe the course. Prose discusses the teaching.** No numeric or categorical field rates an identifiable person. Teaching quality is expressed in review text only, and never as a score. **[VERIFIED]** François, 2026-09-10. Reason in 3.4. |
+| FR-D21 | MUST | A reviewer **declares that they completed the course** before submitting. Required, and it blocks the review if not. Self-declared and unverifiable, consistent with FR-A6's good-faith model. Phrased as "completed" rather than "sat the exam", because some courses have no exam. Adopted from the EPL document's own rule. **[VERIFIED]** François, 2026-09-10. |
+| FR-D22 | COULD | A reviewer **may** state whether they passed or failed. **Optional.** **[VERIFIED]** François, 2026-09-10, overruling a recommendation that it be required. Resolves OPEN-44. |
+| FR-D23 | MUST | The pass or fail answer is **never displayed per review**, on either path. It contributes only to a coarse band (for instance most passed, mixed, many struggled), shown with the number of reviewers who answered, and only above a floor of five answers. Never an exact percentage. |
 
 #### Deferred to v2
 
@@ -777,6 +780,41 @@ improved after a change of lecturer is only meaningful if a review is attached t
 year's offering. A course code alone would silently average an old lecturer's course with a
 new one, which is the exact failure the trendline exists to expose. The catalogue must
 therefore carry a year dimension from the first schema (`design/module-boundaries.md`).
+
+**Pass or fail: optional, and never shown per review.** François's call, 2026-09-10. The
+recommendation was to require it; he chose optional and accepted the consequence, which is
+recorded here rather than glossed.
+
+**What is accepted.** The aggregate is computed over self-selected respondents, and people who
+failed are systematically less likely to answer, so the band skews optimistic. FR-D23
+therefore shows the number who answered alongside it, in the same spirit as FR-D10, so a
+reader can weigh it. The risk that remains is the ordinary one for any such figure: it may be
+quoted without its denominator.
+
+**What is not optional, and why.** The field is **never displayed per review** (FR-D23). An
+optional field whose absence is informative is not really optional: "did not say" reads as
+"failed", and the people most likely to omit it are precisely those it would expose. That is
+the same shape as FR-C17, where an unenforceable rule becomes harmful the moment it is stated
+publicly. Keeping the answer out of the per-review display is what makes "optional" mean
+optional. **If anyone later makes this visible per review, that trap returns**, so treat
+FR-D23 as load bearing rather than presentational.
+
+It is also published as a band and not a percentage. With few reviews and named reviewers, an
+exact figure plus a little outside knowledge narrows who failed. Note that a floor works here
+even though it did not for OPEN-19: the denominator is our own review count, not an unknown
+cohort.
+
+**Eligibility had to split out.** The original proposal used one field for two jobs, an
+eligibility gate and a calibration signal. An optional field cannot be a required gate, so
+FR-D21 now carries the eligibility declaration on its own: the reviewer states that they
+completed the course. That rule comes from the EPL document, and it is phrased as "completed"
+rather than "sat the exam" because several of these courses have no exam.
+
+**Why the field is worth collecting at all**, since it is now optional and biased: it is
+**not retro-fittable**. Nobody can be asked in 2029 whether they passed a course in 2026, so a
+field missing at collection time is missing forever from everything gathered before it. That
+makes it a 1.5-class item, cheap now and permanently lost later, independent of how good the
+resulting data turns out to be.
 
 **Why a number never rates a person (FR-D20).** This is the sharpest line in the module and
 it is worth the paragraph.
@@ -1092,7 +1130,7 @@ These block agreement. None may be silently assumed.
 | OPEN-41 | Backup cadence and retention, relative to the quota window. These two numbers set the bound on the FR-C3 cross-snapshot correlation, so they are a privacy parameter and not just an operational one. | FR-C3, FR-C12, NFR-O1 |
 | OPEN-42 | Permission to import the existing EPL reviews document. It has no licence and was shared inside a faculty drive, so republishing is a new purpose. The document itself names "un administrateur Drive EPL" as the contact, so there is an identifiable group to ask. **Blocks any import** (FR-D18). | FR-D17, FR-D18 |
 | ~~OPEN-43~~ | ~~Are FR-D5 to FR-D7 the right dimensions?~~ **RESOLVED 2026-09-10:** three reframed, three moved to the scraper. | closed |
-| OPEN-44 | Offer an optional **passed or failed** field? Their format is `[24-25, réussi]`. It is genuinely informative, since a failing student's view of difficulty is different information. It is also sensitive personal data about academic performance and an extra fingerprint on the anonymous path. Optional at most, never required. | FR-D5, FR-C12, 3.3 |
+| ~~OPEN-44~~ | ~~Offer an optional passed-or-failed field?~~ **RESOLVED 2026-09-10: yes, optional, aggregate only.** | closed |
 
 **OPEN-19 is now the load-bearing one.** With OPEN-25 and OPEN-31 resolved as Option 1, the
 complement problem in 3.3 has no structural mitigation left except a minimum anonymity set.
@@ -1140,6 +1178,7 @@ been deferred.
 | OPEN-37 | Does the FR-D8 minimum review length apply on the anonymous path? | **Same minimum on both paths, lowered to about 80 characters.** A per-path difference would announce that anonymous reviews are held to a lower standard, and the difference is itself a signal. Also a correction: the minimum was previously described as "the last remaining lever on per-record disclosure", which overstated it. Prose is identifying because it is prose; 150 to 80 barely moves stylometry. It is a **quality** control with a marginal privacy effect. The real controls are FR-D15 and FR-C21. If low-effort reviews dominate, add the structure rule the EPL document uses (an objective part, a subjective part, at least one positive and one negative) rather than raising the count. Resolved 2026-09-10. |
 | OPEN-38 | How are courses reconciled across years when a code or title changes? | **Answered with evidence rather than closed.** Verified 2026-09-10: `LINGI1113` exists only in 2012, `LFSAB1101` and `LFSAB1201` vanish after 2016, `LINFO2145` did not exist in 2019. `LINGI` became `LINFO` and `LFSAB` became `LEPL`. So a course's identity across years is not its code. Resolved structurally by splitting `courses` (stable identity a review attaches to) from `course_offerings` (code plus year, with that year's ECTS, title and teacher), plus FR-D16, which keeps a review whose offering is missing. Automated rename matching remains unnecessary until there is a reason. See `design/catalogue-ingestion.md` 3.2. Resolved 2026-09-10. |
 | OPEN-43 | Are FR-D5 to FR-D7 the right dimensions? | **Three reframed, three moved to the scraper.** The catalogue already publishes the evaluation method with weightings and the official contact hours (verified on `cours-2025-lepl1503`), so assessment structure is scraped rather than asked (FR-D19). The EPL document's `Devoir / Projet / Exam` table exists because a Word file cannot scrape; we can. Its lack of a star rating is not an argument against ratings either: its fields *are* aggregatable, it simply had no database, so the missing thing was never the star. Reviewers are asked only for what the catalogue cannot know: recommendation (FR-D5), workload against ECTS (FR-D6), difficulty as 5 categories (FR-D7), prose (FR-D8), and optionally absolute hours (FR-D6b). Teaching quality as a *number* is deferred indefinitely, per FR-D20. Resolved 2026-09-10. |
+| OPEN-44 | Offer an optional passed-or-failed field? | **Yes, and it stays optional** (FR-D22). François's call, 2026-09-10, overruling a recommendation that it be required: the self-selection bias in the resulting aggregate is accepted rather than traded against requiring a disclosure of failure. Two things were kept from that recommendation and are not optional. It is **never displayed per review** (FR-D23), because an optional field whose absence is informative is not really optional: "did not say" would read as "failed", and the people most likely to omit it are exactly those it would expose. And it is published as a **coarse band above a floor**, never a percentage, since with few reviews and named reviewers a percentage plus a little outside knowledge narrows who failed. Eligibility split out into FR-D21, because an optional field cannot serve as a required gate. Resolved 2026-09-10. |
 | OPEN-28 | Product name, and therefore the repository name? | **Studens.** Latin, *studēns*, present active participle of *studeō, studēre*: "studying, dedicating oneself to". It is the origin of the participle stem *student-* behind English *student*, French *étudiant* and Dutch *student*, so it reads natively in all three of the platform's languages. Chosen over **Sodalitas** by accepting a weaker (descriptive) trademark position in exchange for immediate legibility, which suits a free non commercial platform. Selection history and rejected names in 7.2. `studens.be` was available on 2026-09-09. **The BOIP trademark search remains outstanding and is not blocked by this decision.** Resolved 2026-09-09. |
 
 Resolved questions stay in the document rather than being deleted. A reader six months from
