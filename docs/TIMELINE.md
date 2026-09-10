@@ -15,7 +15,7 @@ gone wrong and what each failure changed.
 | | |
 |---|---|
 | Stage | **Working software.** Catalogue end to end; the review module is not built |
-| Commits | 18 |
+| Commits | 20 |
 | Requirements | 105, of which FR-A 10, FR-B 18, FR-C 22, FR-D 26, FR-E 7 |
 | Open questions | **14** open, 31 resolved |
 | Tests | **85**, plus 14 database isolation assertions |
@@ -270,6 +270,22 @@ links for 546 courses, so a course sits in 2.8 programmes on average.
 And the frontend got the tiers it never had, after François asked whether a user
 would drop straight into RYC. `apps/web` **was** RYC. See `LESSONS.md`
 section 5.
+
+### Phase 12: drawing the target product
+
+Before building the review submission path, the frontend was designed rather
+than invented screen by screen: `design/frontend-design.tex`, 13 pages of
+LaTeX and TikZ, marked proposed. Architecture, screen map, three personas, four
+scenarios, twelve use cases, and the anonymity seam drawn once.
+
+The colour decision came from a constraint rather than taste: every institution
+Studens will sit beside is blue, so a blue platform reads as an official
+university product, which is an affiliation it does not have. Institution logos
+are fetched by a script and never committed, because trademark applies whatever
+the copyright status of the file.
+
+The first version of the drawings had text overlapping in many places, from
+hand-computed layout with guessed text widths. See `LESSONS.md` section 1.
 
 ---
 

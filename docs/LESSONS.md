@@ -58,6 +58,39 @@ real run failed at the last step.
 entity encoding, `<br />` inside labels, nested parentheses, inconsistent
 hrefs. The fake site now serves both href forms and a test says why.
 
+### Output that was never looked at
+
+The frontend design draft was presented with text overlapping in many places:
+codes running into titles, three figures in an aggregate ribbon colliding,
+button labels wrapping out of their buttons, captions sitting on top of frames.
+
+Two failures, and the second is worse than the first.
+
+**The cause was hand-computed layout.** Every box had a `minimum width`, and its
+text was then placed at coordinates worked out by hand with the text's width
+guessed. Any string longer than the guess spilled out. The fix was structural:
+styles that derive `text width` from the box width, so text wraps inside a box
+and cannot overflow it, plus fitted containers instead of hand-sized ones and
+explicit column widths inside every wireframe.
+
+**But the real failure was not rendering all of it.** Four pages of thirteen
+were rendered and inspected; the rest were presented unseen. A document is
+output, and output that has not been looked at has not been checked. The rule
+that now applies: render **every** page and inspect it before presenting a
+visual artefact, exactly as a test suite is run in full rather than sampled.
+
+### Patching a systemic failure one instance at a time
+
+The same overlaps were then fixed three times in a row, individually: a button
+here, a column there, a caption after that. Each fix was correct and none
+addressed the cause, so the next render produced new overlaps in new places.
+
+The cause was only fixed after being told the problem was in **many** places,
+which was the clue that it was one problem rather than several.
+
+**Rule now in force.** Two instances of the same class of defect is the signal
+to stop fixing instances and go looking for the mechanism producing them.
+
 ### A sample that is not a sample
 
 `--max 60` took the head of a sorted list, which on EPL is sixty `ENANO`
@@ -167,6 +200,22 @@ late, because the result still looks complete.
 
 ---
 
+### Three versions of a format in one day
+
+The catalogue snapshot went from version 1 to 2 to 3 within hours. Version 2
+added faculty names, because the table they load into requires one. Version 3
+added programme titles and the programme a course was reached through, because
+browsing needs them.
+
+Neither addition was a change of mind. Both were data the crawl already had in
+its hands and discarded, and each was noticed only when something downstream
+finally asked for it.
+
+**Rule now in force.** Before designing a serialisation format, list what the
+consumers will need, including the ones not built yet. Where the traversal
+already knows something, keep it: the cost of an unused field is a few bytes,
+and the cost of a missing one is a re-crawl and a version bump.
+
 ## 5. A boundary that existed on one side only
 
 The backend had `platform`, `ref` and `ryc` as separate packages with
@@ -194,10 +243,11 @@ Small, and each cost real time.
 
 | Trap | What happened | Avoid by |
 |---|---|---|
-| `pkill -f` / `pgrep -f` | The pattern matched the shell **running the command**, which contains the string, so the shell killed itself. Twice, exit 144 | Kill by port (`ss -lntp`), or split the pattern (`"ingest-catalo""gue"`) so it cannot match your own command line |
+| `pkill -f` / `pgrep -f` | The pattern matched the shell **running the command**, which contains the string, so the shell killed itself. **Three times**, exit 144 and 143. The third time was after this row already existed | Kill by port (`ss -lntp`), or split the pattern (`"ingest-catalo""gue"`) so it cannot match your own command line. A trap written down is not a trap avoided: this one needed a habit, not a note |
 | `Prisma.raw(x).toString()` | Does not return SQL text, so `SET LOCAL ROLE` became a syntax error | A role name is an **identifier** and cannot be a bound parameter. Validate against a strict pattern, then interpolate |
 | npm type resolution | `@types/react` resolved to **19** while the stack chose React 18, and later nested under `apps/web` where a sibling package could not see it | Pin types to the runtime version exactly. A package that uses a library declares the types it needs rather than borrowing another package's |
 | Shell quoting in `psql -c` | Escaped pipes mangled the SQL and produced a comparison of two empty strings, which then reported a false verdict | Put non-trivial SQL in a file or a heredoc, never inline with escapes |
+| New toolchain, old `.gitignore` | Adding LaTeX meant `.aux`, `.out` and `.toc` files, which were staged for commit. Caught by the rule 6 review of staged files, not by foresight | A new build tool brings new generated files. Add them to `.gitignore` in the same change that introduces the tool |
 | A comment is not a violation | The frontend boundary test failed on a CSS comment that *explained* the rule it was checking | Strip comments before scanning source for forbidden words |
 
 ---
@@ -211,9 +261,13 @@ the stated one.
   address was inferred from context; the intended identity was a different one
   entirely. The permission prompt caught it before the first commit, which is
   the only reason it is a footnote rather than a rewritten history.
-  (The addresses are not reproduced here: this is a public repository, and the
-  pre-commit scan in rule 6 flagged them in this very file. Section 3 of this
-  document is about exactly that kind of inconsistency.)
+  (The addresses are not reproduced here, and the reason is its own small
+  lesson. The first draft of this entry quoted both of them, and the rule 6
+  pre-commit scan caught them **in this file**: a document about applying
+  standards consistently, about to leak personal data into a public repository.
+  One of the two was not public anywhere. Section 3 is about exactly that kind
+  of inconsistency, and it turns out to be easy to commit while writing about
+  it.)
 - **`CLAUDE.md` content was edited three times** when the instruction was to
   exclude the file in `.gitignore`. The mechanism asked for was not the mechanism
   attempted.
@@ -242,3 +296,62 @@ nobody is looking for.
 
 (This file necessarily discusses those characters, so it is the one place the
 check is expected to report a hit. Anywhere else is a real violation.)
+
+---
+
+## 9. The patterns underneath
+
+Twelve entries is enough to see that most of them are four mistakes wearing
+different clothes. This section is the useful part of the document.
+
+### The thing is verified; the thing that verifies it is not
+
+The isolation script checked grants and not its own ability to assume a role.
+The lint config was read and believed rather than shown a violation. The fixture
+proved a parser worked against markup tidier than the site it models. Four pages
+of thirteen were rendered and the rest presented unseen.
+
+In every case the artefact under test was examined carefully and **the
+instrument was taken on trust**. The instrument is the thing to distrust: it is
+the part whose failure is silent.
+
+The habit that follows: after building any check, break the thing it checks and
+watch it fail. Every gate in this repository has now been through that, and two
+of them were found to be worthless by it.
+
+### An absence is invisible
+
+The crawl discarded the programme it had traversed and nothing looked missing,
+because the faculty was still there. The schema lacked columns for fields the
+parser was already extracting, and the pages simply showed less. Every `.tsx`
+file was outside the lint gate, and the gate reported success. The join between
+the quota and the anonymous table does not exist, and that is the single most
+important property in the design.
+
+Present things announce themselves. **Absent things have to be looked for on
+purpose**, which is why the seam is now drawn with a red cross in the design
+document, and why several tests assert that a field is *not* there.
+
+### A rule written is not a rule applied
+
+The page cache was specified as a politeness rule in a design note and then not
+implemented, which cost a wasted crawl of 546 requests. The `pkill` trap was
+written into this file and then walked into again. Style rules produced em
+dashes until a grep enforced them.
+
+Writing a rule down feels like adopting it and is not the same act. **A rule
+needs a mechanism**: a test, a grep, a script, a gate. Where no mechanism is
+possible, expect the rule to be broken and check by hand at a fixed point, which
+for this project is the rule 6 review before every commit.
+
+### Standards point outward more easily than inward
+
+Reusing `tdaron`'s unlicensed code was refused, importing the EPL document
+without permission was refused, and then whole UCLouvain pages were nearly
+committed with a lecturer's name in them. A section was written about that
+inconsistency, and the first draft of it leaked two real email addresses.
+
+The pattern is not hypocrisy, it is attention: the standard is loaded when
+judging someone else's material and unloaded when handling one's own.
+**Consistency needs a checklist rather than good intentions**, which is what the
+rule 6 scan is, and it has now caught this twice.
