@@ -67,6 +67,20 @@ Recorded here as an observation, not as input to the code. If UCLouvain adds, me
 renames a faculty, the crawl finds it. If this list were in the source, it would be wrong
 within a year, which is the failure the no-hardcoding rule exists to prevent.
 
+**The chain is a discovery path, not an ownership tree.** **[VERIFIED]** 2026-09-10 from the
+EPL reviews document, which is full of `LLSMS`, `MGEST`, `MLSMM`, `LCPME` and `LFSA` codes:
+Louvain School of Management, CPME and FSA. EPL students take courses owned by other
+faculties, through options and minors.
+
+So **course to faculty is many-to-many**, and reaching a course through EPL's programmes says
+nothing about who owns it. Two consequences. The schema must model that relationship as a
+join rather than a foreign key. And the launch scoping in section 7 has to mean **courses
+reachable from EPL programmes**, not courses owned by EPL, or it excludes exactly the elective
+options students are agonising over at PAE time, which is the problem in 1.1.
+
+Worth noting the students' own grouping: their document is organised by **option and minor**,
+not by faculty. That is the mental model of someone building a PAE.
+
 **Note on the Saint-Louis faculties.** Five of the twenty (drtb, espb, ieeb, phlb, timb) are
 the former Université Saint-Louis Bruxelles. Different campus, different city, arguably a
 different student population. Worth knowing before treating "UCLouvain" as one homogeneous
@@ -96,6 +110,69 @@ every request or every course.
 
 **This is also where OPEN-32 came from.** UCLouvain itself identifies a course as code plus
 year. That was a derivation on 2026-09-10; the URL structure makes it an observation.
+
+### 3.1 Historical years, verified
+
+**[VERIFIED]** by direct request, 2026-09-10. François asked for historical scraping and
+doubted it would work. It does.
+
+**Current years are served directly. Older years redirect to an archive portal.**
+
+```
+  cours-2026-...  200   served directly
+  cours-2025-...  200   served directly
+  cours-2024-...  200   served directly
+  cours-2023-...  302 -> sites.uclouvain.be/archives-portail/cdc2023/cours-2023-...
+  cours-2019-...  301 -> sites.uclouvain.be/archives-portail/cdc2019/cours-2019-...
+  cours-2012-...  301 -> sites.uclouvain.be/archives-portail/cdc2012/cours-2012-...
+```
+
+So **the ingestion must follow redirects**, and it crosses to a different host to do it.
+Verified archive depth is **2012 or earlier**, which comfortably covers the decade of reviews
+the EPL document contains.
+
+An archived page still carries the fields we need. `cours-2012-lfsa2995` returns
+`10.0 crédits`, `Enseignant`, `Thèmes abordés` and `Langue`.
+
+**`cours-2026-...` already resolves**, which confirms the probe logic in section 3: next
+year's catalogue is published before the academic year starts, so `x+1` is not hypothetical.
+
+**Older pages use a different layout, and this is a real constraint.** The 2012 page has no
+`Q1` or `Q2` field and is branded "UCL" rather than "UCLouvain", the rebrand having happened
+in 2018. One parser will not fit every year. Section 6 requires failing loudly on an
+unparsable field, so the reconciliation is that **ECTS is required in every era** (it is
+present in 2012) while era-specific fields are permitted to be absent on archived years.
+Absent because the era lacks the field is not the same as absent because the parse broke, and
+the code has to distinguish the two.
+
+### 3.2 Course codes are not stable across years
+
+**[VERIFIED]** 2026-09-10. This is OPEN-38 with evidence rather than as a worry.
+
+The 404s encountered while probing are **course-specific, not year-specific**:
+
+| Code | Present | Gone by |
+|---|---|---|
+| `lfsa2995` | 2012 to 2024, continuous | still there |
+| `lfsab1101` | 2012 to 2016 | 2019 |
+| `lfsab1201` | 2012 to 2016 | 2019 |
+| `lingi1113` | 2012 only | 2014 |
+| `linfo2145` | 2024 onward | did not exist in 2019 |
+
+The pattern is a visible rename history: `LINGI` became `LINFO`, `LFSAB` became `LEPL`. So a
+course's identity across years is **not** its code, and a review of a 2016 `LFSAB1101` cannot
+be joined to a 2024 course by code.
+
+**Consequence for the model, and it corrects OPEN-32's first answer.** Two entities, not one:
+
+- **`courses`**, the stable identity a review attaches to.
+- **`course_offerings`**, one row per (course, year), holding the ECTS, title, teacher and
+  quarter as they were that year.
+
+A review references a course and states the year it concerns. If the offering exists we show
+that year's context; if it does not, the review is still kept. This makes historical scraping
+**useful but not load bearing**, which is the right shape for content on a third party's
+archive host that we do not control.
 
 ## 4. Is this allowed
 

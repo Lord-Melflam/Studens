@@ -374,18 +374,23 @@ schema is not a decision. One database, one schema per module, one distinct role
     institutions     institution_id, name
     faculties        faculty_id, institution_id, code
     programmes       programme_id, faculty_id, code, year
-    courses          course_id, institution_id, code, year, title, ects,
-                     language, quarter
-    course_teachers  course_id, teacher_name
+    courses          course_id, code                      <- stable identity
+    course_offerings offering_id, course_id, year, title, ects,
+                     language, quarter                    <- one row per year
+    offering_faculty offering_id, faculty_id              <- many-to-many
+    offering_teachers offering_id, teacher_name
 
   ryc                           (role: studens_ryc)
     reviews_attributed   review_id UUID, member_id FK, course_id FK,
+                         academic_year, rating, workload_hours, difficulty,
+                         body, advice, created_at, updated_at, status
+    reviews_anonymous    review_id UUID, course_id FK, academic_year,
                          rating, workload_hours, difficulty, body, advice,
-                         created_at, updated_at, status
-    reviews_anonymous    review_id UUID, course_id FK, rating,
-                         workload_hours, difficulty, body, advice,
                          created_at DATE, status
                          ^ no member column exists, in any form
+    reviews_imported     review_id UUID, course_id FK, academic_year,
+                         body, source, imported_by, imported_at
+                         ^ FR-D17: a third kind, never shown as a member's
 ```
 
 Three properties of `reviews_anonymous` are load bearing and none is incidental:
@@ -395,8 +400,11 @@ Three properties of `reviews_anonymous` are load bearing and none is incidental:
 - **`review_id` is a random UUID, never a sequence.** A `bigserial` publishes insertion
   order, and FR-C5 forbids identifiers acting as a de facto link. CC-E adds that it must not
   be content-derived either, or an attacker who guesses the text can confirm the row exists.
-- **No academic year column.** `course_id` already identifies code plus year (OPEN-32), so
-  there is nothing that can drift out of agreement with it.
+- **An explicit `academic_year`, corrected 2026-09-10.** The first draft had none, on the
+  reasoning that `course_id` already carried the year. That was wrong: reviewers are often
+  alumni stating a year years in the past (FR-D4), and course codes are not stable across
+  years, so `courses` now holds the stable identity and `course_offerings` holds the per-year
+  rows. The review states its own year, and FR-D16 keeps it even when no offering row exists.
 
 The quota is two columns and carries no timestamp, which is what
 `anonymous-rate-limiting.md` requires.

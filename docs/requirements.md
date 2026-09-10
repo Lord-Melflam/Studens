@@ -574,9 +574,19 @@ the record; it does not protect against there being only one plausible author.
 **RESOLVED 2026-09-10, OPEN-19: no suppression threshold.** The reasoning matters more than
 the answer, because the question as originally posed measured the wrong quantity.
 
-Let **N** be the cohort of a course, **A** the number of distinct attributed reviewers, and
-**M** the number of anonymous reviews. Under the stated one-review-per-person policy the
-anonymous authors are distinct people who did not post attributed, so:
+**Corrected 2026-09-10.** The first version of this arithmetic assumed the candidate authors
+were the course's *current* cohort. Evidence from the real EPL reviews document shows that is
+wrong: it holds reviews from **2017-2018** and one written about a 2012 placement four years
+after the fact. Reviewers are frequently alumni, and each states the year they took the course
+(FR-D4). So the arithmetic below applies per **(course, academic year)**, not per course, and
+the practical exposure is considerably smaller than first recorded. Correction noted here
+rather than quietly applied, because the first version was more alarming than the evidence
+supports.
+
+Let **N** be the cohort of a course **in a given academic year**, **A** the number of
+distinct attributed reviewers **for that year**, and **M** the number of anonymous reviews
+**for that year**. Under the stated one-review-per-person policy the anonymous authors are
+distinct people who did not post attributed, so:
 
 ```
 M  <=  N - A                 the silent set  S = N - A
@@ -590,6 +600,12 @@ outright.
 
 **So the risk is driven by N minus A, not by M.** OPEN-19 asked for a threshold on M, which is
 the number we can see, and that is the wrong one.
+
+**And it decays with age.** Because attributed reviewers on a course page span a decade, `A`
+for any single year is small, so the silent set for that year is large. The exposure
+concentrates on the **most recent** year, where named participation can be high relative to a
+cohort still in the building. A 2017 review's candidates are forty people who have mostly
+left the university. Time is the mitigation we did not design and do get.
 
 **And N is not available to us, by design.** FR-A6 means there is no roster, 1.4 rules out
 institutional integration, and `design/module-boundaries.md` refuses to store enrolment
@@ -713,11 +729,11 @@ below, including FR-D9.
 | FR-D1 | MUST | A Member can find a course by its **code** (for instance `LEPL1503`) with instant, typeahead search. |
 | FR-D2 | MUST | A Member can find a course by words in its **title**. Exact and prefix matching only in v1; semantic matching is deferred (1.4). |
 | FR-D3 | MUST | Each course has a page showing its identity, its aggregate ratings, and its reviews, newest first. |
-| FR-D4 | MUST | Every review displays the **academic year it concerns** and the date it was submitted. This answers the contextual obsolescence failure in 1.1 and is not optional. |
+| FR-D4 | MUST | Every review displays the **academic year the reviewer took the course**, chosen by them, and the date it was submitted. These are different and often years apart: alumni review courses they took long ago. **Corrected 2026-09-10** from the earlier reading that the year was the submission year. This answers the contextual obsolescence failure in 1.1 and is not optional. |
 | FR-D5 | MUST | A review carries an **overall rating**, 1 to 5. |
 | FR-D6 | MUST | A review carries **workload** as self-reported hours per week. |
 | FR-D7 | MUST | A review carries **perceived difficulty** on a fixed scale. |
-| FR-D8 | MUST | A review carries **review text**, with a minimum length to prevent low-effort entries. 150 characters proposed. See OPEN-37 for the interaction with the anonymous path. |
+| FR-D8 | MUST | A review carries **review text**, with a minimum length of about **80 characters**, the same on both paths. Its purpose is to block non-reviews, not to mandate an essay. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-37. |
 | FR-D9 | MUST | **On the attributed path only:** one review per Member per course per academic year. Not enforceable on the anonymous path, see below and FR-C13. |
 | FR-D10 | MUST | A course page shows the count of reviews it is aggregating, so a reader can judge how much weight the average carries. |
 | FR-D11 | SHOULD | A review carries an **advice** field, "tips for success in this course". |
@@ -725,6 +741,9 @@ below, including FR-D9.
 | FR-D13 | MUST | **Course pages are public; reviews require a session to read.** Code, title, ECTS, description and lecturer are UCLouvain's own published data and stay open. Reviews do not. **[VERIFIED]** François, 2026-09-10, delegated decision. |
 | FR-D14 | MUST | Review text is excluded from search engine indexing. |
 | FR-D15 | MUST | On the **anonymous** path, a review displays its text and date only. Rating, workload and difficulty contribute to the aggregate but are **not shown per review**. The value of those numbers is the aggregate; a per-review triple plus prose is a detailed fingerprint on a record meant to be unlinkable. **[VERIFIED]** François, 2026-09-10. Part of the OPEN-19 resolution. |
+| FR-D16 | MUST | A review may concern a course **offering that the catalogue does not hold**, because course codes are not stable across years and the archive may not reach far enough. The review is kept and displays its stated year; offering context is shown only when available. **[VERIFIED]** 2026-09-10, `design/catalogue-ingestion.md` 3.2. |
+| FR-D17 | MUST | An **imported** review, entered by an Administrator from an external source rather than submitted by a Member, is stored and displayed as a distinct kind of record: visibly marked as imported, carrying its source and its stated year, and never presented as a Member contribution. **[VERIFIED]** François, 2026-09-10. |
+| FR-D18 | MUST | Importing third party content requires **permission from whoever holds it** before any import happens. The same rule that forbids reusing unlicensed code applies to reusing other people's writing. See OPEN-42. |
 
 #### Deferred to v2
 
@@ -1021,11 +1040,14 @@ These block agreement. None may be silently assumed.
 | OPEN-34 | When MPA arrives, who owns enrolment: a platform service or MPA itself? Do not decide before there is a second consumer. | FR-B11, 1.0 |
 | OPEN-35 | Open registration means one person can hold many accounts, so the quota (FR-C4) and per course uniqueness (FR-D9) bound accounts, not people. Is that accepted as a speed bump, or is some cost imposed on account creation? | FR-A6, FR-C4, FR-D9 |
 | OPEN-36 | Do attributed contributions show a **full name** or a **username**? A real name is stronger accountability, more identifying under the GDPR, and makes the complement problem sharper. | FR-C15, OPEN-10, 3.3 |
-| OPEN-37 | Does the FR-D8 minimum review length apply on the **anonymous** path? Longer text is better data and a better stylometric fingerprint. Options: same minimum, a lower one, or a warning at submission time. **Sharpened 2026-09-10:** FR-D15 removed the numeric part of the fingerprint, so **prose is now the whole of it**, which makes this the last remaining lever on per-record disclosure. | FR-D8, FR-D15, FR-C12, 3.3 |
-| OPEN-38 | How are courses reconciled **across years** when a code or title changes? A rename, merge or code change breaks the year-over-year link FR-D4 and the deferred trendline depend on. Fuzzy matching, not parsing, and the one place a model would earn its place. Not needed until two years of data exist. | FR-D4, `design/catalogue-ingestion.md` |
+| ~~OPEN-37~~ | ~~Does the FR-D8 minimum review length apply on the anonymous path?~~ **RESOLVED 2026-09-10: same minimum on both paths, lowered to about 80 characters.** | closed |
+| ~~OPEN-38~~ | ~~How are courses reconciled across years when a code or title changes?~~ **RESOLVED 2026-09-10** by splitting courses from offerings. | closed |
 | OPEN-39 | Where does the cross-tier transaction live, given a role per module? `design/architecture-style.md` 8 argues the platform must own it, since no single-tier role can touch both. The exact division of labour between platform and module for a submission should be settled against real code. | FR-B11, FR-C13 |
 | OPEN-40 | Is the worker deployed with the web process or separately? Same codebase either way. Separate lets it restart without touching the web path, which matters given the Oracle reclamation risk. | 5.2, `design/architecture-style.md` |
 | OPEN-41 | Backup cadence and retention, relative to the quota window. These two numbers set the bound on the FR-C3 cross-snapshot correlation, so they are a privacy parameter and not just an operational one. | FR-C3, FR-C12, NFR-O1 |
+| OPEN-42 | Permission to import the existing EPL reviews document. It has no licence and was shared inside a faculty drive, so republishing is a new purpose. The document itself names "un administrateur Drive EPL" as the contact, so there is an identifiable group to ask. **Blocks any import** (FR-D18). | FR-D17, FR-D18 |
+| OPEN-43 | Are FR-D5 to FR-D7 the right dimensions? The real EPL document uses **Devoir** yes/no, **Projet** yes/no, **Exam** by *type* (including `ORAL`), and **Difficulté** as a *range* (`FACILE - MOYEN`). It has no star rating and no workload hours at all, which are two of our three numeric fields. Worth weighing a decade of actual use against a prototype sketch. | FR-D5, FR-D6, FR-D7 |
+| OPEN-44 | Offer an optional **passed or failed** field? Their format is `[24-25, réussi]`. It is genuinely informative, since a failing student's view of difficulty is different information. It is also sensitive personal data about academic performance and an extra fingerprint on the anonymous path. Optional at most, never required. | FR-D5, FR-C12, 3.3 |
 
 **OPEN-19 is now the load-bearing one.** With OPEN-25 and OPEN-31 resolved as Option 1, the
 complement problem in 3.3 has no structural mitigation left except a minimum anonymity set.
@@ -1070,6 +1092,8 @@ been deferred.
 | OPEN-33 | Where does the course catalogue come from? | **Scraped from uclouvain.be**, with the faculty, programme and course structure discovered at runtime and nothing hardcoded. No API exists. robots.txt permits the paths used. See `design/catalogue-ingestion.md`. Resolved 2026-09-10. |
 | OPEN-16 | Trusted contributors, vetted catalogue, or untrusted plugins? | **Trusted contributors** (FR-B14). Outside people contribute by pull request into this repository; their code is reviewed and merged, and there is no plugin loader, registry or third-party artifact. Untrusted plugins were rejected as incompatible with FR-C, not merely expensive: untrusted in-process code with database access defeats every unlinkability guarantee, and sandboxing it properly is a larger project than Studens. A vetted catalogue was rejected as premature rather than wrong; it has the same architectural consequence and adds a registry, module versioning and an admission process with no users. Resolves the dependency in `design/architecture-style.md` 6: in-process modules are correct **permanently**, not provisionally. Resolved 2026-09-10. |
 | OPEN-19 | Is a minimum anonymity set required before an anonymous contribution is shown? | **No suppression threshold** (FR-C22). The question measured the wrong quantity: risk is driven by the silent set N minus A, not by the number of anonymous contributions M, and N is not available to the platform by design (no roster, no enrolment store), while an attacker has it. So no threshold could be a guarantee, and FR-C12 forbids claiming one. A count threshold would also hide nearly everything at launch and break FR-C9 verification, since a withheld anonymous contribution cannot be checked by its author. Replaced by FR-C21 (show the contributor the counts before they choose, since they hold the missing number) and FR-D15 (numeric dimensions aggregate-only on the anonymous path). The complement exposure remains, kept probabilistic only by the FR-C13 enforcement gap, and FR-C12 must disclose it. Full arithmetic and rejected alternatives in 3.3. Resolved 2026-09-10. |
+| OPEN-37 | Does the FR-D8 minimum review length apply on the anonymous path? | **Same minimum on both paths, lowered to about 80 characters.** A per-path difference would announce that anonymous reviews are held to a lower standard, and the difference is itself a signal. Also a correction: the minimum was previously described as "the last remaining lever on per-record disclosure", which overstated it. Prose is identifying because it is prose; 150 to 80 barely moves stylometry. It is a **quality** control with a marginal privacy effect. The real controls are FR-D15 and FR-C21. If low-effort reviews dominate, add the structure rule the EPL document uses (an objective part, a subjective part, at least one positive and one negative) rather than raising the count. Resolved 2026-09-10. |
+| OPEN-38 | How are courses reconciled across years when a code or title changes? | **Answered with evidence rather than closed.** Verified 2026-09-10: `LINGI1113` exists only in 2012, `LFSAB1101` and `LFSAB1201` vanish after 2016, `LINFO2145` did not exist in 2019. `LINGI` became `LINFO` and `LFSAB` became `LEPL`. So a course's identity across years is not its code. Resolved structurally by splitting `courses` (stable identity a review attaches to) from `course_offerings` (code plus year, with that year's ECTS, title and teacher), plus FR-D16, which keeps a review whose offering is missing. Automated rename matching remains unnecessary until there is a reason. See `design/catalogue-ingestion.md` 3.2. Resolved 2026-09-10. |
 | OPEN-28 | Product name, and therefore the repository name? | **Studens.** Latin, *studēns*, present active participle of *studeō, studēre*: "studying, dedicating oneself to". It is the origin of the participle stem *student-* behind English *student*, French *étudiant* and Dutch *student*, so it reads natively in all three of the platform's languages. Chosen over **Sodalitas** by accepting a weaker (descriptive) trademark position in exchange for immediate legibility, which suits a free non commercial platform. Selection history and rejected names in 7.2. `studens.be` was available on 2026-09-09. **The BOIP trademark search remains outstanding and is not blocked by this decision.** Resolved 2026-09-09. |
 
 Resolved questions stay in the document rather than being deleted. A reader six months from
