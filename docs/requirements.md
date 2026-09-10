@@ -284,13 +284,13 @@ the legal position, so it blocks a large part of the design.
 |---|---|---|
 | FR-A1 | MUST | A Visitor can authenticate and become a Member. |
 | FR-A2 | MUST | A Member can end their session explicitly, on the current device. |
-| FR-A3 | MUST | Sessions expire after inactivity. Duration is **[OPEN-4]**. |
+| FR-A3 | MUST | Sessions expire after **14 days idle** and after **90 days absolute**, whichever comes first. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-4. |
 | FR-A4 | MUST | Authentication failures reveal nothing about whether an account exists. |
 | FR-A5 | SHOULD | A Member can see and revoke their active sessions. |
 | FR-A6 | MUST | Registration is **open to the public**. No institutional gating, no roster check, no invitation. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-3. |
-| FR-A7 | MUST | Authentication supports third party OAuth providers (Google, Microsoft named) and plain email addresses, so that no one is excluded by their email provider. |
+| FR-A7 | MUST | Authentication is **OAuth only**: Microsoft and Google. **No self-managed credentials**, so no password storage, no reset flow and no password breach surface. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-5. |
 | FR-A8 | MUST | Integrity is maintained **after** submission (moderation, reporting, sanctions), not by restricting entry. This is the trade FR-A6 makes. |
-| FR-A9 | MUST | A Member's email **domain** may be recorded as a trust signal, and may be shown on attributed contributions. It must never render on an anonymous one (FR-C16). |
+| FR-A9 | MUST | A Member's email **domain** may be recorded as a trust signal and shown on attributed contributions. It must never render on an anonymous one (FR-C16). The domain is taken from the **verified claim in the provider's token**, never from user input. |
 | FR-A10 | MUST | A trust signal is described as what it is: evidence of holding an address at a domain. It must not be labelled as proof of current enrolment. |
 
 #### Why registration is open, and what it costs
@@ -319,10 +319,35 @@ never describing either limit as an integrity guarantee. The honest description 
 bump that stops casual flooding, backed by moderation for anything determined. See
 **[OPEN-35]**.
 
-**[OPEN-5]** Identity provider. Narrowed by FR-A7: OAuth plus email, so **not** UCL SSO as
-the only route, and SSO is no longer needed to answer OPEN-3. What remains is which specific
-providers, and whether self-managed credentials exist at all, since supporting them means
-owning password storage, reset flows and breach risk. Cost must be zero either way (CON-1).
+#### Why Microsoft and Google, and nothing else
+
+**[VERIFIED]** François, 2026-09-10. Resolves OPEN-5.
+
+Checked on 2026-09-10 by DNS lookup:
+
+```
+uclouvain.be          MX -> uclouvain-be.mail.protection.outlook.com
+student.uclouvain.be  MX -> student-uclouvain-be.mail.protection.outlook.com
+```
+
+Both domains route mail through Microsoft. **UCLouvain runs on Microsoft 365**, so every
+student and staff member already holds a Microsoft identity. "Sign in with Microsoft"
+therefore covers the entire target population with no UCLouvain integration, nobody's
+permission, and no cost (CON-1). Google covers everyone else, which FR-A6 requires.
+
+**This makes the trust signal stronger than first recorded.** FR-A9 originally assumed a
+self-declared email domain. When the domain arrives inside a provider token it is
+**verified by Microsoft**, so a Member cannot claim `@student.uclouvain.be` without holding
+such an account. That is a real guarantee rather than a hint.
+
+**FR-A10 still stands unchanged.** A verified domain proves someone holds an account at
+UCLouvain. It does not prove current enrolment, because alumni keep their accounts until the
+university deprovisions them. Verified affiliation and current enrolment are different
+claims, and only the first is available to us.
+
+**No self-managed credentials.** Password storage, reset flows and breach liability buy
+nothing when the whole population already has a federated identity, and each is a real
+security surface. UCL SSO is also no longer needed: FR-A6 removed the reason to want it.
 
 ### 3.2 Module system (FR-B)
 
@@ -560,6 +585,8 @@ below, including FR-D9.
 | FR-D10 | MUST | A course page shows the count of reviews it is aggregating, so a reader can judge how much weight the average carries. |
 | FR-D11 | SHOULD | A review carries an **advice** field, "tips for success in this course". |
 | FR-D12 | SHOULD | A Member can see their own attributed reviews in one place, in order to edit them (FR-C14). |
+| FR-D13 | MUST | **Course pages are public; reviews require a session to read.** Code, title, ECTS, description and lecturer are UCLouvain's own published data and stay open. Reviews do not. **[VERIFIED]** François, 2026-09-10, delegated decision. |
+| FR-D14 | MUST | Review text is excluded from search engine indexing. |
 
 #### Deferred to v2
 
@@ -582,6 +609,20 @@ improved after a change of lecturer is only meaningful if a review is attached t
 year's offering. A course code alone would silently average an old lecturer's course with a
 new one, which is the exact failure the trendline exists to expose. The catalogue must
 therefore carry a year dimension from the first schema (`design/module-boundaries.md`).
+
+**Why reading reviews needs a session (FR-D13).** Three reasons, and none of them is
+friction for the intended user, because a student reading course reviews has an account
+already.
+
+It keeps the OPEN-1 pass test intact: a student still finds the course page by searching a
+code, because that page stays public. It gates the data that actually carries risk, since the
+sensitive material is not the course but the published opinion about a named lecturer, and
+5.1 records that restricted access formed part of the favourable balance in the one piece of
+precedent we have. And it shrinks the audience for the complement problem (3.3) at no product
+cost.
+
+What it gives up is casual discovery of review content and any search-engine reach for it.
+That is the intended trade, and FR-D14 makes it deliberate rather than accidental.
 
 **Rich reviews are easier to attribute.** Three numbers plus 150 or more characters of prose
 is a detailed record. Within a cohort of a dozen students, writing style alone can identify
@@ -674,13 +715,29 @@ A system can pass every test and still be the wrong system.
 
 ### 4.4 Operational (NFR-O)
 
-**[OPEN-9]** Expected user numbers, acceptable downtime, and backup and recovery
-expectations are all unknown. Performance and availability targets invented without them
-would be theatre, so none are stated here.
+**Scale, measured rather than guessed.** **[VERIFIED]** 2026-09-10, resolving OPEN-9.
+
+| | |
+|---|---|
+| EPL, the v1 module scope | about **2,200 students**, roughly 300 graduating a year |
+| UCLouvain, the catalogue scope | more than **35,000 students** across 20 faculties |
+| Realistic v1 active users | a few hundred |
+| Load shape | **calendar driven**: near-flat, with a spike at the PAE deadline |
+
+Two things follow. Any free tier absorbs this, so capacity is not a design driver and
+autoscaling is not a candidate (an application tier in front of a single database does not
+scale the bottleneck anyway). And because the spike is **predictable by date** rather than
+random, the answer to it is a calendar entry and a warm cache, not elastic infrastructure.
+
+**The uncomfortable half.** 2,200 students spread across hundreds of courses means master's
+electives run at perhaps 15 to 40 people. Small cohorts are the normal case, not the edge
+case, which makes OPEN-19 a live problem rather than a refinement.
 
 | ID | Priority | Requirement |
 |---|---|---|
 | NFR-O1 | MUST | Data is backed up, and a restore has been performed at least once to prove it works. |
+| NFR-O2 | MUST | The audit log required by FR-E1 lives in the database, not in platform logs. Verified 2026-09-10: the candidate free tiers retain runtime logs for as little as one hour. |
+| NFR-O3 | SHOULD | Read paths are cacheable, so a calendar-driven spike is absorbed by cache rather than capacity. |
 
 NFR-O1 is stated despite OPEN-9 because an untested backup is not a backup, and this
 project has a history of data loss on the development machine.
@@ -694,12 +751,90 @@ project has a history of data loss on the development machine.
 | CON-3 | **No deadline.** Time may be traded for quality. This forbids shortcuts justified by speed. **[VERIFIED]** François, 2026-09-09. |
 | CON-4 | **Git is the coordination mechanism.** Shared history is not rewritten. **[VERIFIED]** François, 2026-09-09. |
 
-**[OPEN-10]** Legal basis. The project is university-adjacent and based in Belgium, so the
-GDPR very likely applies, which would make lawful basis, data subject rights, retention and
-the role of the university substantive requirements rather than paperwork. This interacts
-directly with FR-C: strong unlinkability is the strongest answer to most of it, since
-data that cannot be linked to a person is far easier to defend. Needs confirmation, not
-assumption.
+### 5.1 Data protection
+
+**Resolved in outline 2026-09-10, and explicitly not legal advice.** Everything in this
+section is reasoning by a non-lawyer and **must be confirmed by someone qualified before
+anything is published to real users**. Closes OPEN-10 as an open question and replaces it
+with a review obligation.
+
+**The GDPR applies.** The project is established in Belgium and processes personal data of
+identifiable people. There was never much doubt.
+
+**The exposure is not where the effort has gone.** All of FR-C protects the reviewer. The
+harder problem is the **lecturer named in a review**: a third party who never signed up, never
+consented, and whose professional performance is being publicly assessed.
+
+| Data | Likely lawful basis |
+|---|---|
+| Account data, attributed reviews | **Contract**, Art 6(1)(b): necessary to provide the service the Member asked for |
+| **Anonymous reviews** | **Outside the GDPR entirely.** Recital 26: anonymous information is not personal data. This is the return on all of FR-C |
+| **A lecturer named in review text** | **Legitimate interests**, Art 6(1)(f), with a documented balancing test, plus the Art 14 duty to inform and the Art 21 right to object |
+
+**There is directly relevant precedent, with limits.** The German Federal Court of Justice
+upheld a teacher rating platform in BGH, 23 June 2009, VI ZR 196/08 (*spickmich.de*): teacher
+names and schools could be published without consent, and anonymous submission was not a bar,
+because freedom of expression is not tied to a specific person.
+
+Three caveats, and the third changed a product decision:
+
+1. It is **pre-GDPR**, decided under BDSG §29, which no longer exists in that form. The
+   balancing survives as Art 6(1)(f); the ruling does not transfer directly.
+2. It is **German**, so persuasive in Belgium rather than binding.
+3. **Access was restricted to registered users, and that formed part of the favourable
+   balance.** See FR-D13.
+
+**What this obliges us to do**, beyond the wording FR-C12 already requires: document the
+Art 6(1)(f) balancing test before launch, provide the Art 14 information to named lecturers,
+and honour Art 21 objections, which FR-C10 already makes technically possible since
+moderators can remove any contribution.
+
+### 5.2 Hosting
+
+**[VERIFIED]** François, 2026-09-10: **Oracle Cloud Always Free, for now.** Resolves OPEN-29.
+The application and Postgres run together on one Always Free ARM VM in an EU region
+(Frankfurt or Amsterdam).
+
+Chosen for what it makes possible rather than for being free: a genuinely long-running
+process, real Postgres with real transactions (which the atomic quota update in
+`design/anonymous-rate-limiting.md` requires), no cold start at the PAE peak, and no
+non-commercial restriction.
+
+**What was rejected, all verified 2026-09-10.**
+
+| Option | Verified finding | Why not |
+|---|---|---|
+| **Vercel Hobby** | Functions capped at 10s default and 60s maximum, no state between requests. No first-party Postgres (Blob and Global Config only). Hobby cannot connect to a repository owned by a GitHub organisation. Runtime logs kept 1 hour | Fights the architecture, needs a separate database anyway, and two constraints break on events we actively want |
+| | "Hobby teams are restricted to non-commercial personal use only ... financial gain of **anyone** involved in **any part of the production** of the project, **including a paid employee or consultant writing the code**" | Any future funding, grant or paid student job makes the deployment commercial. Donations are explicitly excluded; advertising is explicitly included |
+| **Render free** | Free Postgres **expires 30 days after creation** and is deleted after a 14-day grace period. Web service sleeps after 15 minutes, about a minute to wake | The data dies monthly. The cold start also lands at the exact moment of peak need |
+| **Fly.io** | No permanent free tier, card required, no free Postgres | Excluded by CON-1, which forbids trials that lapse into charges |
+| **Neon** | 0.5 GB per project, 100 CU-hours a month, scale-to-zero after 5 minutes, permanent, data not deleted | Not rejected. The best free Postgres found, and the fallback if Postgres has to leave the VM |
+
+**Three risks accepted, recorded so they are not a surprise later.**
+
+- **Unannounced reductions.** In June 2026 Oracle cut Always Free ARM from 4 OCPU and 24 GB to
+  2 OCPU and 12 GB with no blog post and no notification. Users found out when their instances
+  were shut down. Assume it can happen again.
+- **Idle reclamation.** Oracle reclaims instances that sit idle. A platform that is quiet
+  except at PAE deadlines looks exactly like an idle box, so a periodic health check is not
+  optional here, it is what stops the machine being taken away.
+- **Capacity.** Always Free ARM capacity is frequently unavailable at signup.
+
+Together these mean NFR-O1 is doing real work: the backup is what makes this choice
+reversible.
+
+**Jurisdiction, stated because CC-9 said it would matter.** Oracle and Neon are both **US
+companies**, so the CLOUD Act reaches them whichever region the data sits in. Given that the
+platform holds contributions intended to be unlinkable to their authors, about named third
+parties, this is a real residual exposure rather than a formality. It is not resolved by the
+current choice; it is accepted.
+
+**The paid alternative, per CON-1's requirement to state cost.** A Hetzner CX22 is roughly
+**4 EUR a month, about 48 EUR a year**, and removes every risk in this section at once: a
+German company, EU data, no reclamation, no unannounced cuts, no non-commercial clause, no
+cold starts. François's call on 2026-09-10 was Oracle "for now", so zero budget holds. The
+figure is recorded because the free choice is not free of cost, it is free of **money**, and
+the difference should be visible when the first reclamation happens.
 
 ## 6. Acceptance
 
@@ -715,13 +850,13 @@ These block agreement. None may be silently assumed.
 | ~~OPEN-1~~ | ~~What is the problem, in the words of the people who have it?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-2~~ | ~~What is explicitly out of scope for v1?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-3~~ | ~~Who is allowed to become a Member?~~ **RESOLVED 2026-09-10.** | closed |
-| OPEN-4 | Session lifetime and inactivity timeout? | FR-A3 |
-| OPEN-5 | Which identity provider? | FR-A1, CON-1 |
+| ~~OPEN-4~~ | ~~Session lifetime and inactivity timeout?~~ **RESOLVED 2026-09-10.** | closed |
+| ~~OPEN-5~~ | ~~Which identity provider?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-6~~ | ~~How to rate limit contributions without linking them?~~ **RESOLVED 2026-09-09: Option A, fixed window.** | closed |
 | OPEN-7 | Is the 24 hour moderation target sustainable? | FR-D, staffing |
 | OPEN-8 | How are Moderators appointed? | FR-E3 |
-| OPEN-9 | Expected load, acceptable downtime, recovery expectations? | NFR-O |
-| OPEN-10 | Does the GDPR apply, and what is the lawful basis? | CON-1, FR-C |
+| ~~OPEN-9~~ | ~~Expected load, acceptable downtime, recovery expectations?~~ **RESOLVED 2026-09-10.** | closed |
+| ~~OPEN-10~~ | ~~Does the GDPR apply, and what is the lawful basis?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-11~~ | ~~Is the first module written fresh, or does it salvage from the prototype?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-12~~ | ~~Is anonymous contribution a real product goal?~~ **RESOLVED 2026-09-09: yes, and it is the contributor's choice per contribution.** | closed |
 | ~~OPEN-13~~ | ~~What must the first module actually do?~~ **RESOLVED 2026-09-10.** | closed |
@@ -738,17 +873,18 @@ These block agreement. None may be silently assumed.
 | OPEN-24 | Threshold for automatic removal versus holding for a human? | FR-E5, FR-E6 |
 | ~~OPEN-25~~ | ~~Is per target uniqueness required (one review per course per person)?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-28~~ | ~~Product name and repository name?~~ **RESOLVED 2026-09-09: Studens.** | closed, BOIP check still outstanding |
-| OPEN-29 | Hosting target. **Vercel** raised as a free candidate. **Verify before designing around it:** (1) whether the free Hobby tier still prohibits commercial use, which a sponsored or funded student platform could trip; (2) that a stateful modular monolith fits its serverless model, which is doubtful; (3) that it provides no database, so Postgres still needs a separate free host. Unverified as of 2026-09-09. | CON-1, architecture |
+| ~~OPEN-29~~ | ~~Hosting target.~~ **RESOLVED 2026-09-10.** | closed |
 | OPEN-26 | What is the quota, and per what period? | FR-C4, design note |
 | ~~OPEN-27~~ | ~~Live adversary with database write stream access in the threat model?~~ **RESOLVED 2026-09-09: no.** | closed |
 | ~~OPEN-30~~ | ~~Where does AI actually sit?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-31~~ | ~~May a Member publish both an attributed and an anonymous review on the same course?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-32~~ | ~~Is a course reviewable as a code, or as a code plus academic year?~~ **RESOLVED 2026-09-10.** | closed |
-| OPEN-33 | Where does the course catalogue come from, and who maintains it? Hand-encoding is recurring data entry; importing depends on the institution's format and permission. | CON-1, OPEN-14, FR-B9 |
+| ~~OPEN-33~~ | ~~Where does the course catalogue come from, and who maintains it?~~ **RESOLVED 2026-09-10.** | closed |
 | OPEN-34 | When MPA arrives, who owns enrolment: a platform service or MPA itself? Do not decide before there is a second consumer. | FR-B11, 1.0 |
 | OPEN-35 | Open registration means one person can hold many accounts, so the quota (FR-C4) and per course uniqueness (FR-D9) bound accounts, not people. Is that accepted as a speed bump, or is some cost imposed on account creation? | FR-A6, FR-C4, FR-D9 |
 | OPEN-36 | Do attributed contributions show a **full name** or a **username**? A real name is stronger accountability, more identifying under the GDPR, and makes the complement problem sharper. | FR-C15, OPEN-10, 3.3 |
 | OPEN-37 | Does the FR-D8 minimum review length apply on the **anonymous** path? Longer text is better data and a better stylometric fingerprint. Options: same minimum, a lower one, or a warning at submission time. | FR-D8, FR-C12, 3.3 |
+| OPEN-38 | How are courses reconciled **across years** when a code or title changes? A rename, merge or code change breaks the year-over-year link FR-D4 and the deferred trendline depend on. Fuzzy matching, not parsing, and the one place a model would earn its place. Not needed until two years of data exist. | FR-D4, `design/catalogue-ingestion.md` |
 
 **OPEN-19 is now the load-bearing one.** With OPEN-25 and OPEN-31 resolved as Option 1, the
 complement problem in 3.3 has no structural mitigation left except a minimum anonymity set.
@@ -785,6 +921,12 @@ been deferred.
 | OPEN-30 | Where does AI sit? | **In the product, not the development pipeline.** Review summarisation, automated moderation, search improvement. Not coding assistants or CI tooling. Does not resolve OPEN-17 or OPEN-23. Resolved 2026-09-10. |
 | OPEN-31 | May a Member publish both attributed and anonymously on the same course? | **Policy says no, and the platform cannot enforce it.** Resolved with OPEN-25 as Option 1. The enforcement gap is what keeps the complement attack probabilistic rather than certain, hence FR-C17. See 3.3. Resolved 2026-09-10. |
 | OPEN-32 | Course code, or code plus academic year? | **Code plus academic year.** [DERIVED] from FR-D4 and the deferred trendline: averaging across a change of lecturer is the failure the trendline exists to expose. Resolved 2026-09-10. |
+| OPEN-4 | Session lifetime and inactivity timeout? | **14 days idle, 90 days absolute**, whichever first (FR-A3). No re-authentication step: a session can perform nothing destructive, since anonymous contributions are permanent for everyone and attributed edits are recoverable. Resolved 2026-09-10. |
+| OPEN-5 | Which identity provider? | **Microsoft and Google OAuth only, no self-managed credentials** (FR-A7). Verified by DNS: both `uclouvain.be` and `student.uclouvain.be` route mail through Microsoft, so the whole target population already holds a Microsoft identity. Side effect: the FR-A9 trust signal is verified by the provider rather than self-declared. Resolved 2026-09-10. |
+| OPEN-9 | Expected load, acceptable downtime, recovery expectations? | **EPL about 2,200 students; UCLouvain more than 35,000. A few hundred active, spiking by calendar at the PAE deadline.** Any free tier absorbs it, so capacity is not a design driver and autoscaling is not a candidate. Consequence recorded: cohorts of 15 to 40 are normal, which makes OPEN-19 live. See 4.4. Resolved 2026-09-10. |
+| OPEN-10 | Does the GDPR apply, and what is the lawful basis? | **Yes it applies.** Contract for accounts and attributed reviews; anonymous reviews fall outside the GDPR under Recital 26; **named lecturers** are the real exposure and rest on legitimate interests plus the Art 14 and Art 21 duties. See 5.1. **Closed as a question and reopened as a review obligation: this is non-lawyer reasoning and needs professional confirmation before launch.** Resolved 2026-09-10. |
+| OPEN-29 | Hosting target. | **Oracle Cloud Always Free, for now**, running the application and Postgres on one EU-region ARM VM. Vercel Hobby, Render free and Fly.io were each disqualified on verified grounds; the known risks of the Oracle choice and the paid alternative are recorded in 5.2. Resolved 2026-09-10. |
+| OPEN-33 | Where does the course catalogue come from? | **Scraped from uclouvain.be**, with the faculty, programme and course structure discovered at runtime and nothing hardcoded. No API exists. robots.txt permits the paths used. See `design/catalogue-ingestion.md`. Resolved 2026-09-10. |
 | OPEN-28 | Product name, and therefore the repository name? | **Studens.** Latin, *studēns*, present active participle of *studeō, studēre*: "studying, dedicating oneself to". It is the origin of the participle stem *student-* behind English *student*, French *étudiant* and Dutch *student*, so it reads natively in all three of the platform's languages. Chosen over **Sodalitas** by accepting a weaker (descriptive) trademark position in exchange for immediate legibility, which suits a free non commercial platform. Selection history and rejected names in 7.2. `studens.be` was available on 2026-09-09. **The BOIP trademark search remains outstanding and is not blocked by this decision.** Resolved 2026-09-09. |
 
 Resolved questions stay in the document rather than being deleted. A reader six months from
