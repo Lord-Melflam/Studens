@@ -24,6 +24,24 @@
  */
 import { PrismaClient, Prisma } from "@prisma/client";
 import type { Snapshot } from "./snapshot.js";
+import type { Block } from "./parse/rich.js";
+
+/**
+ * A block tree as a Json column value.
+ *
+ * Prisma's InputJsonValue requires an index signature, which a discriminated
+ * union does not have, so a structural cast is unavoidable. It is sound here
+ * because Block is built from string, boolean and array literals only: there
+ * is nothing in it that JSON cannot carry. If Block ever gains a Date, a Map
+ * or a class instance, this cast becomes a lie and the type must change first.
+ *
+ * Prisma also distinguishes SQL NULL from JSON null on a Json column. These
+ * fields are ABSENT, not the JSON value null, so DbNull is the right one: an
+ * absent field must read back as null, never as the string "null".
+ */
+function asJson(blocks: Block[] | null): Prisma.InputJsonValue | Prisma.NullTypes.DbNull {
+  return blocks === null ? Prisma.DbNull : (blocks as unknown as Prisma.InputJsonValue);
+}
 
 export interface LoadResult {
   year: number;
@@ -134,10 +152,10 @@ export async function loadSnapshot(
             ects: o.ects,
             language: o.language,
             quarter: o.quarter,
-            assessment: o.assessment,
+            assessment: asJson(o.assessment),
             contactHours: o.contactHours,
-            themes: o.themes,
-            content: o.content,
+            themes: asJson(o.themes),
+            content: asJson(o.content),
             owningFaculty: o.owningFaculty,
           },
           create: {
@@ -147,10 +165,10 @@ export async function loadSnapshot(
             ects: o.ects,
             language: o.language,
             quarter: o.quarter,
-            assessment: o.assessment,
+            assessment: asJson(o.assessment),
             contactHours: o.contactHours,
-            themes: o.themes,
-            content: o.content,
+            themes: asJson(o.themes),
+            content: asJson(o.content),
             owningFaculty: o.owningFaculty,
           },
         });

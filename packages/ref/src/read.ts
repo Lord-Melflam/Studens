@@ -16,9 +16,31 @@
  * handlers did not change at all. That was the claim; this is the receipt.
  */
 import { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import type { ParsedOffering, Snapshot } from "./index.js";
+import type { Block } from "./ingestion/parse/rich.js";
 import { load } from "./ingestion/snapshot.js";
 import { courseUrl } from "./ingestion/urls.js";
+
+/**
+ * A Json column back into a block tree.
+ *
+ * The only writer is `load.ts`, and the migration that introduced these
+ * columns dropped whatever was in them, so the shape is not in doubt. The
+ * check is here because a Json column's type says nothing: without it, a
+ * malformed row would reach the renderer as `any` and fail there instead,
+ * far from the cause.
+ *
+ * A row that fails the check reads as absent rather than throwing. A course
+ * page missing one field is better than a course page that will not load, and
+ * the field is rebuilt by the next ingestion either way.
+ */
+function blocksFrom(value: Prisma.JsonValue): Block[] | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  const first = value[0];
+  if (typeof first !== "object" || first === null || !("kind" in first)) return null;
+  return value as unknown as Block[];
+}
 
 export interface CourseSummary {
   code: string;
@@ -45,10 +67,10 @@ export interface CourseDetail extends CourseSummary {
   officialUrl: string;
   language: string | null;
   contactHours: string | null;
-  /** FR-D19: scraped, never asked of reviewers. */
-  assessment: string | null;
-  themes: string | null;
-  content: string | null;
+  /** FR-D19: scraped, never asked of reviewers. Structured, see rich.ts. */
+  assessment: Block[] | null;
+  themes: Block[] | null;
+  content: Block[] | null;
   owningFaculty: string | null;
   /** Faculties this course was reached through. Many-to-many on purpose. */
   reachedVia: string[];
@@ -275,9 +297,9 @@ export class DatabaseCatalogue implements Catalogue {
       officialUrl: courseUrl(row.year, row.course.code),
       language: row.language,
       contactHours: row.contactHours,
-      assessment: row.assessment,
-      themes: row.themes,
-      content: row.content,
+      assessment: blocksFrom(row.assessment),
+      themes: blocksFrom(row.themes),
+      content: blocksFrom(row.content),
       owningFaculty: row.owningFaculty,
       reachedVia: row.faculties.map((f) => f.faculty.code),
     };

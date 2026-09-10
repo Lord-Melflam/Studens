@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { api, type Aggregate, type CourseDetail, type PublishedReview } from "./api.js";
+import { ProseField } from "./Prose.js";
 import { Reviews } from "./Reviews.js";
 import { SubmitFlow } from "./SubmitFlow.js";
 
@@ -94,9 +95,9 @@ export function CoursePage({ course, onBack }: { course: CourseDetail; onBack: (
           value={course.reachedVia.length ? course.reachedVia.join(", ").toUpperCase() : null}
         />
         <Field label="Heures encadrées" value={course.contactHours} />
-        <Field label="Évaluation" value={course.assessment} />
-        <Field label="Thèmes abordés" value={course.themes} />
-        <Field label="Contenu" value={course.content} />
+        <ProseField label="Évaluation" blocks={course.assessment} />
+        <ProseField label="Thèmes abordés" blocks={course.themes} />
+        <ProseField label="Contenu" blocks={course.content} />
 
         <div className="field">
           <dt>Fiche officielle</dt>

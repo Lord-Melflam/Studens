@@ -12,7 +12,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { detectEra, parseOffering, ParseError } from "@studens/ref";
+import { blocksToText, detectEra, parseOffering, ParseError } from "@studens/ref";
 
 const dir = join(new URL("../..", import.meta.url).pathname, "test/fixtures/catalogue");
 const modern = readFileSync(join(dir, "modern-era.html"), "utf8");
@@ -62,8 +62,13 @@ describe("modern era: cours-2025-lepl1503", () => {
 
   it("reads the assessment method with its weightings (FR-D19)", () => {
     expect(o.assessment).toBeTruthy();
-    expect(o.assessment).toMatch(/35%/);
-    expect(o.assessment).toMatch(/55%/);
+    // Structured now, not a string: the weightings are still there, and so is
+    // the shape they were written in. test/catalogue/rich.test.ts covers the
+    // model itself; this only checks the field arrives through the parser.
+    const text = blocksToText(o.assessment!);
+    expect(text).toMatch(/35%/);
+    expect(text).toMatch(/55%/);
+    expect(o.assessment!.every((b) => ["p", "h", "list", "table"].includes(b.kind))).toBe(true);
   });
 
   it("reads the owning faculty, which is not the faculty it was reached through", () => {

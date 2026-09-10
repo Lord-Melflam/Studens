@@ -28,11 +28,14 @@ export interface Snapshot {
    *    course was reached through. Browsing by programme (FR-D24) is
    *    impossible without it, and the crawl was discarding it: it recorded the
    *    faculty of the programme it came from and threw the programme away.
+   * 4: assessment, themes and content became STRUCTURED BLOCKS instead of flat
+   *    strings. They are lists, and they were being stored with every list,
+   *    line break and heading removed. See parse/rich.ts.
    *
    * The version field exists to be used, so an older snapshot is refused
    * rather than silently loaded with a field missing.
    */
-  version: 3;
+  version: 4;
   /** When the crawl finished. */
   takenAt: string;
   /** The academic year crawled. */
@@ -79,9 +82,9 @@ const COURSE_CODE = /^[a-z]{3,6}\d{3,4}[a-z]?$/;
  * Every check here is a failure the crawl could plausibly produce.
  */
 export function validate(s: Snapshot): void {
-  if (s.version !== 3) {
+  if (s.version !== 4) {
     throw new SnapshotInvalid(
-      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 3)`,
+      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 4)`,
     );
   }
   if (s.faculties.length === 0) throw new SnapshotInvalid("no faculties discovered");

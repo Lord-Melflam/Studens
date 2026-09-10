@@ -194,15 +194,21 @@ model CourseOffering {
   quarter      String?
   /// FR-D19: scraped, never asked. The catalogue publishes the evaluation
   /// method with weightings.
-  assessment   String?
+  ///
+  /// Json, not String: these are lists written in a rich text editor, three
+  /// levels deep in places, and a flattened list of thirty items is unreadable.
+  /// The block model is in packages/ref/src/ingestion/parse/rich.ts, with the
+  /// tag counts measured across 546 pages that justify each part of it.
+  /// Nothing queries inside these columns, so jsonb costs nothing here.
+  assessment   Json?
   /// Official TEACHING hours. Not student effort: a different measurement
   /// from FR-D6, and must not be presented as the same thing.
   contactHours String?
   /// The rest of what the page publishes. Added 2026-09-10: the schema predated
   /// the parser, so these were missing and the database-backed catalogue could
   /// not show what the file-backed one already did.
-  themes       String?
-  content      String?
+  themes       Json?
+  content      Json?
   /// The entity acronym the page names as in charge, for instance "> MECA".
   /// Text rather than a Faculty reference because it is an entity code from a
   /// different vocabulary than the faculty slugs the crawl discovers, and

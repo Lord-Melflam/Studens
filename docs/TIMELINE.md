@@ -16,16 +16,16 @@ gone wrong and what each failure changed.
 |---|---|
 | Stage | **Working software.** Catalogue end to end, and reviews submitted and read on both paths |
 | Commits | 23 |
-| Requirements | 106, of which FR-A 10, FR-B 18, FR-C 23, FR-D 26, FR-E 7 |
+| Requirements | 108, of which FR-A 10, FR-B 18, FR-C 23, FR-D 28, FR-E 7 |
 | Open questions | **14** open, 31 resolved |
-| Tests | **131**, plus 15 database isolation assertions |
+| Tests | **151**, plus 15 database isolation assertions |
 | Code | ~5,000 lines TypeScript, ~800 SQL and Prisma, ~3,000 documentation |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
 ### What runs today
 
 ```bash
-npm run gates            # typecheck, lint, 131 tests, schema validation. No database needed
+npm run gates            # typecheck, lint, 151 tests, schema validation. No database needed
 npm run gates:db         # migrate, grant, then verify the schema isolation
 npm run ingest -- --faculty epl        # scrape uclouvain.be, politely. Cached after the first run
 npm run db:load                        # snapshot into PostgreSQL, in one transaction
@@ -367,6 +367,43 @@ confirmation step fails three tests. Recorded as FR-C23.
 Tests went from 85 to 131. The gates and the live endpoints were both run: the
 anonymous path returns no id (FR-C9), the attributed path returns one, and 400,
 401, 409 and 429 all come back where they should.
+
+---
+
+### Phase 15: the scraped fields get their structure back
+
+François, reading a course page: the evaluation, themes and content fields
+were "juste rempli tel quel", one unbroken blob with no line breaks, no
+paragraphs and no bullets.
+
+The cause was one line in the parser. Labels on a course page carry `<br />`
+inside them, cheerio joins text across a break with nothing, and every label
+lookup spanning a break was failing. The fix, `$("br").replaceWith(" ")`, ran
+once over the whole document. It fixed the labels and flattened 3,988 line
+breaks inside the values. `LESSONS.md` section 1.
+
+**Measured before designing anything.** Across the 546 cached pages and the
+1,390 values of those three fields: 4,040 `li`, 3,988 `br`, 818 `ul`, 523
+`strong`, 81 `ol`, 10 tables, and list nesting three levels deep. That is what
+the model has to carry, and nothing more.
+
+The fields are now structured blocks: paragraphs with their line breaks, lists
+ordered and unordered nested to any depth, headings, tables, and three inline
+emphasis flags. Stored as `jsonb`, snapshot format version 4, migration
+`20260910230000_structured_course_prose`.
+
+**Two properties worth keeping.** Structure is preserved, never invented: 106
+fields are still one long line because their authors wrote one paragraph, and
+adding breaks there would be fabricating. And no markup from UCLouvain reaches
+the browser (FR-D27): the parser converts the source's HTML into a closed set
+of shapes, the client builds its own elements, so there is no stored HTML and
+no sanitiser in the path.
+
+Tested from both ends, because either half can be right while the pair is
+wrong: `test/catalogue/rich.test.ts` on the parser, against fixtures shaped
+like the real markup rather than tidier than it, and `test/ui/prose.test.ts`
+on the renderer, which is where a list that arrives nested and renders flat
+would show. 143 tests to 151.
 
 ---
 

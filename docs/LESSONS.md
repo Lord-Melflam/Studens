@@ -117,6 +117,34 @@ smoke test that only exercises one neighbourhood tests one neighbourhood.
 
 ---
 
+### A narrow fix applied globally
+
+Course page labels carry `<br />` inside them, and cheerio joins text across a
+break with nothing, so `Faculté ou entité<br />en charge` read as
+`entitéen charge` and every label lookup spanning a break failed. The fix was
+one line, `$("br").replaceWith(" ")`, run once before anything read the
+document.
+
+It fixed the labels. It also replaced **3,988 line breaks inside the values**,
+which is where the structure of the long fields lived. Every list, every
+paragraph break and every heading in the evaluation, themes and content fields
+became a space, and those fields shipped as one unbroken blob of up to two
+thousand characters. Nothing failed. The parser tests passed, because they
+assert that `35%` and `55%` appear in the assessment text, and they did.
+
+Caught by François reading a course page, not by any gate.
+
+**The fix**: the substitution now runs on a clone of the one node being read,
+so it applies where it is wanted and nowhere else.
+
+**Generalised.** The bug was not the substitution, it was its *scope*. A
+document-wide mutation to solve a problem in one kind of node will hit every
+other kind, and the ones it damages are exactly the ones nobody is asserting
+on. When reaching for a global transform, the question is not "does this fix
+my case" but "what else does it touch, and would I notice".
+
+---
+
 ## 2. Requirements that were wrong, and only showed it when made concrete
 
 ### An over-broad rule is violated on day one and then ignored forever
@@ -316,8 +344,8 @@ check is expected to report a hit. Anywhere else is a real violation.)
 
 ## 9. The patterns underneath
 
-Thirteen entries is enough to see that most of them are a handful of mistakes
-wearing different clothes. This section is the useful part of the document.
+There are enough entries now to see that most of them are a handful of
+mistakes wearing different clothes. This section is the useful part of the document.
 
 ### The thing is verified; the thing that verifies it is not
 

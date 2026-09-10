@@ -37,3 +37,10 @@ export type { CourseDetail, CourseSummary } from "./api.js";
  * only ever written from the confirmation step (FR-C9).
  */
 export { next, EVENTS, STEPS, type Event, type Step, type Transition } from "./flow.js";
+
+/**
+ * The renderer for the catalogue's structured fields, and its model. Exported
+ * for test/ui: the parser and the renderer are tested separately, and blocks
+ * that arrive nested but render flat are the same bug to a reader.
+ */
+export { Blocks, ProseField, type Block, type Span } from "./Prose.js";

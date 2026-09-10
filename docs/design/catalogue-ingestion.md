@@ -389,7 +389,59 @@ A related confirmation from the same run: `LACTU2170` is reached through EPL pro
 owned by **LSBA**. Section 2's many-to-many claim, verified with real data rather than
 inferred from a students' document.
 
-## 8. Open questions raised here
+## 8.2 The long fields are lists, and were being stored as one line
+
+Found 2026-09-10, on a course page François was reading.
+
+`Modes d'évaluation`, `Thèmes abordés` and `Contenu` were scraped with
+`.text()`, which threw away every list, line break and heading the source had.
+A field of two thousand characters rendered as one unbroken paragraph. The
+parser tests did not notice, because they assert that the weightings appear in
+the assessment text, and they did.
+
+**Measured before deciding anything**, across the 546 cached course pages and
+the 1,390 values of those three fields:
+
+| tag | count | | tag | count |
+|---|---|---|---|---|
+| `li` | 4040 | | `i` | 109 |
+| `br` | 3988 | | `ol` | 81 |
+| `ul` | 818 | | `u` | 57 |
+| `strong` | 523 | | `code` | 45 |
+| `div` | 262 | | `table` | 10 |
+
+List nesting: 3,857 items at depth 1, 176 at depth 2, 7 at depth 3.
+
+So the model needs lists ordered and unordered, nested three deep, line breaks,
+inline emphasis, headings and tables, and nothing else. That is what
+`parse/rich.ts` produces.
+
+**Two bullet conventions are both in heavy use.** Some authors use
+`<ul><li>`; others type `- ` at the start of a line and separate lines with
+`<br />`. Real markup is honoured as markup. The typed convention is promoted
+to a list only for a **run of two or more consecutive marked lines**, so a
+single line opening with a hyphen stays a line: at a run of one, a dash and a
+bullet are indistinguishable and the dash is more likely.
+
+**Structure is preserved, never invented.** 106 of the fields are still a
+single long line after this change, and that is correct: their authors wrote
+one paragraph, with no break in the source. Adding breaks there would be
+fabricating a structure nobody wrote.
+
+**Stored as `jsonb`, not text** (`20260910230000_structured_course_prose`).
+Nothing queries inside these columns, so jsonb costs nothing, and the old text
+was discarded rather than converted: it is derived data, rebuilt from the page
+cache in seconds, and a converted value would be the flattened text wrapped in
+a block, which is the thing being fixed.
+
+**No markup reaches the browser** (FR-D27). The parser converts the source's
+HTML into a closed set of shapes and the client builds its own elements from
+them, so there is no stored HTML, no sanitiser and no `dangerouslySetInnerHTML`
+in the path. Link destinations are dropped and the link text kept: four `<a>`
+tags in 1,390 fields do not justify carrying an outbound redirect we do not
+control.
+
+## 9. Open questions raised here
 
 - **[OPEN-38]** How are courses reconciled **across years** when the code or title changes?
   A renamed course, a merged course, or a code change breaks the year-over-year link that

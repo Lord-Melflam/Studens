@@ -159,7 +159,7 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   say(`${offerings.length} offerings parsed`);
 
   return {
-    version: 3,
+    version: 4,
     takenAt: new Date().toISOString(),
     year,
     faculties,

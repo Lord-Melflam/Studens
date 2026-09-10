@@ -21,6 +21,12 @@ export {
   type DiscoveredFaculty,
 } from "./ingestion/snapshot.js";
 export { parseOffering, detectEra, type ParsedOffering, type Era } from "./ingestion/parse/offering.js";
+/**
+ * The block model for the long course-page fields. Exported because the API
+ * hands these to the browser: the shape is part of the contract, not an
+ * internal detail of the parser.
+ */
+export { richBlocks, blocksToText, type Block, type Span } from "./ingestion/parse/rich.js";
 export { academicYearFor, candidateYears, ROLLOVER } from "./ingestion/year.js";
 export { courseUrl } from "./ingestion/urls.js";
 export { ParseError, FetchError } from "./ingestion/errors.js";

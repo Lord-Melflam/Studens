@@ -20,7 +20,9 @@
  */
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
+import type { AnyNode } from "domhandler";
 import { ParseError } from "../errors.js";
+import { richBlocks, type Block } from "./rich.js";
 
 export type Era = "modern" | "archive";
 
@@ -36,10 +38,16 @@ export interface ParsedOffering {
   quarter: string | null;
   language: string | null;
   teachers: string[];
-  /** FR-D19: scraped, never asked of reviewers. */
-  assessment: string | null;
-  themes: string | null;
-  content: string | null;
+  /**
+   * FR-D19: scraped, never asked of reviewers.
+   *
+   * Structured, not flat text. These three fields are mostly lists written in
+   * a rich text editor, and a flattened list is unreadable at this length.
+   * See rich.ts for the model and the measurements behind it.
+   */
+  assessment: Block[] | null;
+  themes: Block[] | null;
+  content: Block[] | null;
   owningFaculty: string | null;
 }
 
@@ -59,23 +67,51 @@ export function detectEra(html: string): Era {
   throw new Error("unrecognised course page layout: neither fa_cell nor cdc_cell present");
 }
 
+/**
+ * Text with <br /> read as a space, on a COPY of the node.
+ *
+ * Labels carry <br />, and cheerio's .text() joins across it with nothing,
+ * turning "Faculté ou entité<br />en charge" into "entitéen charge" and
+ * silently failing every label lookup that spans the break.
+ *
+ * The first fix for that replaced every <br /> in the document with a space
+ * before anything read it, which fixed the labels and destroyed the structure
+ * of every value: 3,988 line breaks became spaces and the long fields rendered
+ * as one run-on blob. Hence the clone: the substitution now applies where it
+ * is wanted and nowhere else. See LESSONS.md.
+ */
+function flatText($: CheerioAPI, el: AnyNode): string {
+  const copy = $(el).clone();
+  copy.find("br").replaceWith(" ");
+  return copy.text().replace(/\s+/g, " ").trim();
+}
+
+/** A field as found on the page: its flat text, and the node it came from. */
+interface FieldValue {
+  text: string;
+  node: AnyNode;
+}
+
 /** label -> value, built from whichever markup this era uses. */
-function labelledFields($: CheerioAPI, era: Era): Map<string, string> {
-  const out = new Map<string, string>();
+function labelledFields($: CheerioAPI, era: Era): Map<string, FieldValue> {
+  const out = new Map<string, FieldValue>();
   if (era === "modern") {
     $("div.fa_row").each((_, row) => {
-      const label = $(row).find("div.fa_cell_1").first().text();
+      const label = $(row).find("div.fa_cell_1").first();
       const value = $(row).find("div.fa_cell_2").first();
-      if (!label.trim() || value.length === 0) return;
-      out.set(normalise(label), value.text().replace(/\s+/g, " ").trim());
+      if (label.length === 0 || !flatText($, label[0]!) || value.length === 0) return;
+      out.set(normalise(flatText($, label[0]!)), {
+        text: flatText($, value[0]!),
+        node: value[0]!,
+      });
     });
   } else {
     $("tr").each((_, row) => {
       const cells = $(row).children("td");
       if (cells.length < 2) return;
-      const label = $(cells[0]!).text();
-      if (!label.trim()) return;
-      out.set(normalise(label), $(cells[1]!).text().replace(/\s+/g, " ").trim());
+      const label = flatText($, cells[0]!);
+      if (!label) return;
+      out.set(normalise(label), { text: flatText($, cells[1]!), node: cells[1]! });
     });
   }
   return out;
@@ -86,19 +122,40 @@ function labelledFields($: CheerioAPI, era: Era): Map<string, string> {
  * Absent label  -> null (the era lacks it).
  * Present label with an empty value -> ParseError (the layout changed).
  */
+function find(fields: Map<string, FieldValue>, labels: string[]): FieldValue | null {
+  for (const [label, value] of fields) {
+    if (labels.some((want) => label.includes(normalise(want)))) return value;
+  }
+  return null;
+}
+
 function field(
-  fields: Map<string, string>,
+  fields: Map<string, FieldValue>,
   labels: string[],
   url: string,
   name: string,
 ): string | null {
-  for (const [label, value] of fields) {
-    if (labels.some((want) => label.includes(normalise(want)))) {
-      if (!value) throw new ParseError(url, name, "label present but value empty");
-      return value;
-    }
-  }
-  return null;
+  const found = find(fields, labels);
+  if (!found) return null;
+  if (!found.text) throw new ParseError(url, name, "label present but value empty");
+  return found.text;
+}
+
+/** The same lookup, keeping the structure of the value. */
+function richField(
+  $: CheerioAPI,
+  fields: Map<string, FieldValue>,
+  labels: string[],
+  url: string,
+  name: string,
+): Block[] | null {
+  const found = find(fields, labels);
+  if (!found) return null;
+  const blocks = richBlocks($, found.node);
+  // The same rule as `field`: a label with nothing under it means the layout
+  // changed, and is an error rather than an absence.
+  if (!blocks) throw new ParseError(url, name, "label present but value empty");
+  return blocks;
 }
 
 function parseEcts(headerCells: string[], url: string): number {
@@ -124,26 +181,22 @@ export function parseOffering(
   const era = detectEra(html);
   const $ = cheerio.load(html);
 
-  // Labels carry <br />, and cheerio's .text() joins across it with nothing,
-  // turning "Faculté ou entité<br />en charge" into "entitéen charge" and
-  // silently failing every label lookup that spans the break. Replace breaks
-  // with whitespace once, before anything reads text.
-  $("br").replaceWith(" ");
-
+  // NOTE: the document is NOT mutated here. Reading a label with <br /> as a
+  // space is done per node, on a clone, by flatText.
   const headerCells =
     era === "modern"
       ? $("div.fa_cell_0")
-          .map((_, el) => $(el).text().replace(/\s+/g, " ").trim())
+          .map((_, el) => flatText($, el))
           .get()
       : $("span.cdc_cell")
-          .map((_, el) => $(el).text().replace(/\s+/g, " ").trim())
+          .map((_, el) => flatText($, el))
           .get();
 
   if (headerCells.length === 0) {
     throw new ParseError(url, "header", "no header cells found");
   }
 
-  const rawTitle = $("h1").first().text().replace(/\s+/g, " ").trim();
+  const rawTitle = $("h1").length ? flatText($, $("h1")[0]!) : "";
   // The archive era puts the code in the heading: "Stage en entreprise [ LFSA2995 ]".
   const title = rawTitle.replace(/\s*\[\s*[A-Za-z]{3,6}\d{3,4}\s*\]\s*$/i, "").trim();
   if (!title) throw new ParseError(url, "title", "no h1 text");
@@ -175,14 +228,15 @@ export function parseOffering(
           .map((t) => t.split("(")[0]!.replace(/\s+/g, " ").trim())
           .filter((t) => t.length > 1)
       : [],
-    assessment: field(
+    assessment: richField(
+      $,
       fields,
       ["modes d'evaluation", "mode d'evaluation", "evaluation"],
       url,
       "assessment",
     ),
-    themes: field(fields, ["themes abordes"], url, "themes"),
-    content: field(fields, ["contenu"], url, "content"),
+    themes: richField($, fields, ["themes abordes"], url, "themes"),
+    content: richField($, fields, ["contenu"], url, "content"),
     owningFaculty: field(
       fields,
       ["faculte ou entite en charge", "faculte en charge", "entite en charge"],

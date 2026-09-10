@@ -1,3 +1,5 @@
+import type { Block } from "./Prose.js";
+
 /**
  * RYC's view of the API.
  *
@@ -20,9 +22,10 @@ export interface CourseDetail extends CourseSummary {
   officialUrl: string;
   language: string | null;
   contactHours: string | null;
-  assessment: string | null;
-  themes: string | null;
-  content: string | null;
+  /** FR-D19: scraped, and structured. See Prose.tsx for the model. */
+  assessment: Block[] | null;
+  themes: Block[] | null;
+  content: Block[] | null;
   owningFaculty: string | null;
   reachedVia: string[];
 }

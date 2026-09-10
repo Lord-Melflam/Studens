@@ -283,3 +283,48 @@ button.ghost {
 
 .sent .chip-anon, .sent .chip-named { display: inline-block; margin-bottom: 0.6rem; }
 .sent p { margin: 0 0 1.25rem; font-size: 0.95rem; }
+
+/* ---------------------------------------------------------------------------
+   Structured course-page fields.
+
+   These are the scraped fields (evaluation, themes, content). They are mostly
+   lists, often thirty items long and three levels deep, so the typography has
+   one job: let someone find the line that concerns them without reading the
+   whole field. Hanging indents and list markers do that; a wall of text does
+   not, which is what these fields were before.
+   --------------------------------------------------------------------------- */
+
+.prose { line-height: 1.5; }
+.prose > :first-child { margin-top: 0; }
+.prose > :last-child { margin-bottom: 0; }
+.prose p { margin: 0 0 0.6rem; }
+
+.prose ul, .prose ol { margin: 0 0 0.6rem; padding-left: 1.4rem; }
+.prose li { margin-bottom: 0.25rem; }
+/* Nested lists sit tighter: the indent already carries the level. */
+.prose li > ul, .prose li > ol { margin: 0.25rem 0 0.35rem; }
+.prose li > p { margin: 0; }
+.prose li > p + * { margin-top: 0.25rem; }
+
+.prose h4 {
+  margin: 1rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.prose code {
+  font-size: 0.9em;
+  padding: 0.05rem 0.25rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+/* Course pages carry wide tables. Scroll inside the field rather than making
+   the whole page scroll sideways. */
+.prose-table { overflow-x: auto; margin-bottom: 0.6rem; }
+.prose-table table { border-collapse: collapse; font-size: 0.88rem; }
+.prose-table td {
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--line);
+  vertical-align: top;
+}
