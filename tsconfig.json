@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/platform" },
+    { "path": "packages/ref" },
+    { "path": "packages/ryc" },
+    { "path": "apps/api" },
+    { "path": "apps/worker" }
+  ]
+}

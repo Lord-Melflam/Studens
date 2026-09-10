@@ -1,6 +1,6 @@
-# Deliberately minimal. The stack is not chosen yet (docs/requirements.md), so this file
-# covers only what is certain: secrets, OS noise and editor noise. Add stack specific
-# entries when a stack is actually decided, not before.
+# Covers secrets, OS noise, editor noise and build output. The stack was chosen on
+# 2026-09-10 (docs/requirements.md 1.6), so the Node entries below are now warranted;
+# they were deliberately absent before that.
 
 # Local working context, deliberately untracked. Holds machine specific environment
 # details and personal notes that have no place in a public repository. The engineering
@@ -33,6 +33,17 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# Node, TypeScript and build output. Nothing generated is committed.
+node_modules/
+dist/
+*.tsbuildinfo
+.eslintcache
+coverage/
+
+# Prisma generated client
+prisma/generated/
+prisma/migrations/dev.db*
 
 # Logs and local scratch
 *.log

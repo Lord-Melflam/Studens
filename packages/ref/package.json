@@ -1,0 +1,10 @@
+{
+  "name": "@studens/ref",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "studens": { "tier": "reference" },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": "./dist/index.js" }
+}

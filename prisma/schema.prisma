@@ -1,0 +1,299 @@
+// Studens database schema.
+//
+// One database, one schema per module, per docs/requirements.md 1.7 and
+// docs/design/architecture-style.md section 12. A role per schema is granted in
+// migrations, not here: that is what makes FR-B3 enforceable by the database
+// rather than by convention.
+//
+// CROSS-SCHEMA REFERENCES ARE PLAIN IDS, NOT PRISMA RELATIONS.
+// A Prisma relation must be declared on both sides, so a relation from
+// ryc.ReviewAttributed to platform.Member would require a back-relation on
+// Member, making tier 1 depend on tier 3. That inverts FR-B10's dependency
+// direction. Plain ids also survive module extraction unchanged, which is the
+// property FR-B10 and FR-B11 exist to preserve. The cost is that referential
+// integrity across schemas is not enforced by Prisma; add it in a migration if
+// it is ever wanted.
+
+generator client {
+  provider = "prisma-client-js"
+  // multiSchema is what makes a schema per module possible, and a schema per
+  // module is what makes FR-B3 enforceable by the database rather than by
+  // convention (docs/design/architecture-style.md section 8). It is a Prisma
+  // preview feature as of 5.22, so it is declared deliberately rather than
+  // stumbled into: if it is ever removed upstream, the boundary enforcement
+  // needs rethinking, not quietly dropping.
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["platform", "ref", "ryc"]
+}
+
+// ---------------------------------------------------------------------------
+// platform  (tier 1)
+// ---------------------------------------------------------------------------
+
+model Tenant {
+  id      String   @id @default(uuid())
+  name    String
+  members Member[]
+
+  @@schema("platform")
+}
+
+model Member {
+  /// FR-A6: registration is open. FR-A7: OAuth only, no stored credentials.
+  id              String   @id @default(uuid())
+  provider        String
+  providerSubject String
+  /// FR-A9: taken from the verified provider token, never from user input.
+  /// FR-A10: evidence of holding an address at a domain, never proof of enrolment.
+  emailDomain     String
+  displayName     String?
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  role            String   @default("member")
+  createdAt       DateTime @default(now())
+
+  quota    MemberQuota?
+  sessions Session[]
+
+  @@unique([provider, providerSubject])
+  @@index([tenantId])
+  @@schema("platform")
+}
+
+model MemberQuota {
+  /// FR-C4 and design/anonymous-rate-limiting.md: a FIXED WINDOW counter.
+  /// Deliberately two columns and NO per-submission timestamp. A precise
+  /// timestamp here would allow joining a member to a contribution by time,
+  /// which is the whole point of the accepted design. Rolling windows need
+  /// exactly those timestamps, so they are forbidden too.
+  memberId    String   @id
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  windowStart DateTime @db.Date
+  used        Int      @default(0)
+
+  @@schema("platform")
+}
+
+model Session {
+  /// FR-A5 needs revocation, so sessions are recorded. This is a revocation
+  /// check rather than a session store: any instance can still serve any
+  /// request, which is the property CC-3 wanted.
+  id         String    @id @default(uuid())
+  memberId   String
+  member     Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  issuedAt   DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([memberId])
+  @@schema("platform")
+}
+
+model AuditLog {
+  /// FR-E1. NFR-O2: this lives in the database because the candidate free
+  /// tiers retain runtime logs for as little as an hour.
+  /// FR-B12: a record here may name an actor and a target, because the actor
+  /// is a moderator. It must never name a contribution's AUTHOR.
+  id            String   @id @default(uuid())
+  actorMemberId String
+  action        String
+  targetKind    String
+  targetId      String
+  at            DateTime @default(now())
+
+  @@index([actorMemberId])
+  @@index([targetKind, targetId])
+  @@schema("platform")
+}
+
+// ---------------------------------------------------------------------------
+// ref  (tier 2)  FR-B9: no data about Members.
+// ---------------------------------------------------------------------------
+
+model Institution {
+  /// See requirements 1.6: identity fields here are not uncontested facts.
+  id         String    @id @default(uuid())
+  name       String
+  faculties  Faculty[]
+
+  @@schema("ref")
+}
+
+model Faculty {
+  id            String      @id @default(uuid())
+  institutionId String
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  code          String
+  name          String
+
+  programmes Programme[]
+  offerings  OfferingFaculty[]
+
+  @@unique([institutionId, code])
+  @@schema("ref")
+}
+
+model Programme {
+  id        String  @id @default(uuid())
+  facultyId String
+  faculty   Faculty @relation(fields: [facultyId], references: [id])
+  code      String
+  year      Int
+  title     String
+
+  @@unique([code, year])
+  @@schema("ref")
+}
+
+model Course {
+  /// The STABLE identity a review attaches to. Codes are not stable across
+  /// years (LINGI became LINFO, LFSAB became LEPL), so per-year data lives on
+  /// CourseOffering. See catalogue-ingestion.md 3.2 and OPEN-38.
+  id        String           @id @default(uuid())
+  code      String           @unique
+  offerings CourseOffering[]
+
+  @@schema("ref")
+}
+
+model CourseOffering {
+  /// One row per (course, academic year). `year` is the FIRST year of the
+  /// academic year, matching UCLouvain's own URLs: 2025-2026 is 2025.
+  id           String  @id @default(uuid())
+  courseId     String
+  course       Course  @relation(fields: [courseId], references: [id])
+  year         Int
+  title        String
+  ects         Decimal @db.Decimal(4, 2)
+  language     String?
+  quarter      String?
+  /// FR-D19: scraped, never asked. The catalogue publishes the evaluation
+  /// method with weightings.
+  assessment   String?
+  /// Official TEACHING hours. Not student effort: a different measurement
+  /// from FR-D6, and must not be presented as the same thing.
+  contactHours String?
+
+  faculties OfferingFaculty[]
+  teachers  OfferingTeacher[]
+
+  @@unique([courseId, year])
+  @@schema("ref")
+}
+
+model OfferingFaculty {
+  /// Many-to-many on purpose. EPL students take LSM, CPME and FSA courses, so
+  /// reaching a course through a faculty says nothing about who owns it.
+  offeringId String
+  offering   CourseOffering @relation(fields: [offeringId], references: [id])
+  facultyId  String
+  faculty    Faculty        @relation(fields: [facultyId], references: [id])
+
+  @@id([offeringId, facultyId])
+  @@schema("ref")
+}
+
+model OfferingTeacher {
+  /// Lecturer names are third-party personal data from a public source.
+  /// Permitted here (FR-B9 forbids data about MEMBERS), and the reason
+  /// requirements 5.1 exists. FR-D20: no numeric field ever rates this person.
+  id          String         @id @default(uuid())
+  offeringId  String
+  offering    CourseOffering @relation(fields: [offeringId], references: [id])
+  teacherName String
+
+  @@index([offeringId])
+  @@schema("ref")
+}
+
+// ---------------------------------------------------------------------------
+// ryc  (tier 3)
+//
+// THREE separate tables, not one with a flag. FR-C6 and FR-C20: the anonymity
+// guarantee is structural, so it does not depend on application code staying
+// correct forever.
+// ---------------------------------------------------------------------------
+
+model ReviewAttributed {
+  /// Ordinary personal data (FR-C7). Editable by its author (FR-C14).
+  /// memberId is a plain id, not a relation: see the note at the top.
+  id             String   @id @default(uuid())
+  memberId       String
+  courseId       String
+  /// FR-D4: the year the reviewer TOOK the course, chosen by them. Often years
+  /// before submission, because alumni review. FR-D16: kept even when no
+  /// CourseOffering row exists for that year.
+  academicYear   Int
+  recommendation Int
+  workloadVsEcts Int
+  difficulty     Int
+  hoursPerWeek   Int?
+  /// FR-D22: optional. FR-D23: never displayed per review, aggregate band only.
+  passed         Boolean?
+  body           String
+  advice         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  status         String   @default("published")
+
+  /// FR-D9: one per member per course per year, on THIS path only.
+  /// FR-C13: not enforceable on the anonymous path, and FR-C17 forbids
+  /// claiming otherwise in public wording.
+  @@unique([memberId, courseId, academicYear])
+  @@index([courseId])
+  @@schema("ryc")
+}
+
+model ReviewAnonymous {
+  /// NO MEMBER COLUMN OF ANY KIND. FR-C2, FR-C20. Not nullable, not renamed,
+  /// not hashed. If you are about to add one, read docs/requirements.md 3.3
+  /// first: the answer is no.
+  ///
+  /// FR-C18: a random uuid. Never a sequence, which would publish insertion
+  /// order (FR-C5), and never derived from content, which would let an
+  /// attacker who guesses the text confirm the row exists.
+  id             String   @id @default(uuid())
+  courseId       String
+  academicYear   Int
+  recommendation Int
+  workloadVsEcts Int
+  difficulty     Int
+  hoursPerWeek   Int?
+  passed         Boolean?
+  body           String
+  advice         String?
+  /// Day precision, enforced by the column type. A precise timestamp here
+  /// would be a de facto join key against the quota counter (FR-C5, and
+  /// design/anonymous-rate-limiting.md 4.1).
+  createdAt      DateTime @db.Date
+  status         String   @default("published")
+
+  /// NO tenant column. FR-C19: the tenant is derived from the course, never
+  /// from the submitting member, or tenancy writes an author attribute onto
+  /// an anonymous record and breaches FR-C16.
+  @@index([courseId])
+  @@schema("ryc")
+}
+
+model ReviewImported {
+  /// FR-D17: entered by an Administrator from an external source. A third
+  /// kind of record, never presented as a Member contribution: it has no
+  /// member behind it, so no eligibility check and no quota applied.
+  /// FR-D18: importing needs permission from whoever holds the content first
+  /// (OPEN-42).
+  id           String   @id @default(uuid())
+  courseId     String
+  academicYear Int
+  body         String
+  source       String
+  importedBy   String
+  importedAt   DateTime @default(now())
+
+  @@index([courseId])
+  @@schema("ryc")
+}

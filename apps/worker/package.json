@@ -1,0 +1,13 @@
+{
+  "name": "@studens/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "studens": { "tier": "app" },
+  "main": "./dist/index.js",
+  "dependencies": {
+    "@studens/platform": "*",
+    "@studens/ref": "*",
+    "@studens/ryc": "*"
+  }
+}

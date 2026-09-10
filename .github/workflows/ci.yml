@@ -1,0 +1,50 @@
+# FR-B15: these gates pass regardless of who authored the change, including the
+# project owner. A gate the author can bypass is not a control.
+#
+# FR-B14 made code review the security boundary, and with a team of one, review
+# of the owner's own code is self-review. These checks are what stands in for
+# organisational independence, so they run on every push and every pull request
+# and they must be required in branch protection. Enabling that is a repository
+# setting, not a file: see docs/CONTRIBUTING.md.
+#
+# The gates need no secrets. Schema validation does not connect to a database.
+
+name: gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint, including the FR-B6 boundary rule
+        run: npm run lint
+
+      - name: Architecture and anonymity gates
+        run: npm run test
+
+      - name: Validate the database schema
+        run: npm run schema:validate
