@@ -43,10 +43,22 @@ connection pool, so a connection cannot escalate at all.
 Then, for real data:
 
 ```bash
-npm run ingest -- --faculty epl --max 40   # scrapes uclouvain.be, politely
-npm run dev:api                            # terminal 1
-npm run dev:web                            # terminal 2, then localhost:5173
+npm run ingest -- --faculty epl   # scrapes uclouvain.be, politely. 546 courses
+npm run db:load                   # the snapshot into PostgreSQL, in one transaction
+npm run dev:api                   # terminal 1
+npm run dev:web                   # terminal 2, then localhost:5173
 ```
+
+The first crawl takes a few minutes and is polite about it. Every page is then cached
+under `data/page-cache`, so a re-run costs about nine seconds and no requests at all. Use
+`--max 40` for a smaller slice while working on the parser.
+
+**`dev:api` sets `STUDENS_DEV_IDENTITY=1`.** Submission needs a Member (FR-C4) and FR-A is
+not built, so without it the review form refuses to open and looks broken. The fence is in
+the code, not the script: the variable must be set explicitly, it is refused when
+`NODE_ENV=production` whatever else is set, and the process prints a warning naming FR-A
+at every start. Production does not run this script. `npm run dev:api:anon` runs without
+it, which is how to see what a signed-out visitor sees. Both go away when FR-A ships.
 
 **Work inside the Linux filesystem, not on a Windows mount.** Measured on this
 project: 300 small file writes took 0.03 s on ext4 and 4.0 s on `/mnt/c`, which
@@ -110,9 +122,35 @@ itself denied, so all the checks ran as the table owner with full access and the
 actually running as, and raises if it cannot assume it, because a check that
 cannot confirm its own identity proves nothing.
 
-**If either is failing, do not weaken it.** Read `docs/requirements.md` 3.3
-first. Both encode decisions with recorded reasoning behind them, and every
+**If any of them is failing, do not weaken it.** Read `docs/requirements.md` 3.3
+first. They encode decisions with recorded reasoning behind them, and every
 requirement ID in a failure message points at that reasoning.
+
+## Four more gates on the review path
+
+The submission path is the first code that touches the anonymity kernel, so its
+rules are held by tests rather than by comments.
+
+`test/ui/review-flow.test.ts` asserts, over every step and every event of the
+submission state machine, that **no step other than the confirmation can write
+an anonymous review** (FR-C23). The named branch sends in one press and the
+anonymous branch costs one more, and that asymmetry is the design rather than an
+oversight: only one of the two can be taken back. Deleting the confirmation step
+fails three of these.
+
+`test/ui/path-honesty.test.ts` asserts that the fork's two cards **name no
+capability that is not built** (FR-D28). That screen is where a permanent choice
+is made by comparing two lists, so a claim that is not true today biases the
+decision, and it biases it away from anonymity. When FR-C14 and FR-D12 ship,
+update this test in the same change, not before.
+
+`test/architecture/design-tokens.test.ts` keeps the two colours that mean
+*attributed* and *anonymous* out of the themeable palette. A per-institution
+theme is planned and must never be able to make the two paths look alike.
+
+`test/ryc/validate.test.ts` covers what a review must be before either path will
+take it. The rules are shared deliberately (FR-C6): a lower bar on the anonymous
+path would itself be a signal.
 
 ## Writing style in this repository
 

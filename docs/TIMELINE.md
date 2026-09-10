@@ -15,11 +15,11 @@ gone wrong and what each failure changed.
 | | |
 |---|---|
 | Stage | **Working software.** Catalogue end to end, and reviews submitted and read on both paths |
-| Commits | 23 |
-| Requirements | 110, of which FR-A 10, FR-B 18, FR-C 23, FR-D 30, FR-E 7 |
+| Commits | 27 |
+| Requirements | **106**: 88 functional (FR-A 10, FR-B 18, FR-C 23, FR-D 30, FR-E 7) and 18 non-functional. Recounted 2026-09-10, having been carried forward by arithmetic for several entries and drifted |
 | Open questions | **14** open, 31 resolved |
 | Tests | **186**, plus 15 database isolation assertions |
-| Code | ~5,000 lines TypeScript, ~800 SQL and Prisma, ~3,000 documentation |
+| Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
 ### What runs today
