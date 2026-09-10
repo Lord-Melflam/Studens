@@ -68,6 +68,23 @@ export function Shell() {
       ) : (
         <Home />
       )}
+
+      {/*
+        Studens borrows the visual register of the institutions it serves, and a
+        per-institution theme is planned. That makes it easy to mistake for an
+        institutional product, and it is not one. Borrowing colours is ordinary;
+        implying affiliation is not, so this line carries in words what a colour
+        cannot. See docs/design/frontend-design.tex, section 2.
+
+        The wording deliberately says nothing about what the modules do. The
+        first draft said "the institutions whose courses it lists", which the
+        FR-B16 gate rejected: that is RYC's domain, and it would be wrong the
+        day MPA ships. The gate improved the copy.
+      */}
+      <footer className="disclaimer">
+        Studens est un projet indépendant. Il n&apos;est affilié à aucune
+        université ni haute école.
+      </footer>
     </main>
   );
 }

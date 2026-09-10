@@ -1,5 +1,9 @@
 /* RYC's own styles. Owned by the module, imported by the module, so the shell
-   never learns what a course page looks like (FR-B16). */
+   never learns what a course page looks like (FR-B16).
+
+   Tokens come from the shell. The two that carry meaning, --named and --anon,
+   are the attributed and anonymous paths and must be used for nothing else:
+   a reader has to be able to tell the two apart without reading a word. */
 
 .module-intro { margin: 0 0 1.25rem; color: var(--muted); }
 
@@ -84,8 +88,8 @@
   padding: 0.7rem 0.85rem;
   margin-bottom: 1.5rem;
   font-size: 0.9rem;
-  background: var(--warn-bg);
-  border: 1px solid var(--warn-line);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
   border-radius: 6px;
 }
 
@@ -99,3 +103,26 @@ dl { margin: 0; }
 .reviews-absent { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
 .reviews-absent h3 { margin: 0 0 0.4rem; font-size: 1rem; }
 .reviews-absent p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+/* The two path chips. These are the only place --named and --anon may appear,
+   and a test asserts that (test/architecture/design-tokens.test.ts). */
+.chip-named {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--named);
+  border-radius: 999px;
+  background: var(--named-soft);
+  color: var(--named);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.chip-anon {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--anon);
+  border-radius: 999px;
+  background: var(--anon-soft);
+  color: var(--anon);
+  font-size: 0.75rem;
+  font-weight: 600;
+}

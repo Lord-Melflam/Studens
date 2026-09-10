@@ -1,16 +1,41 @@
 /* The shell's frame. Deliberately does not style anything a module renders:
    if this file grows selectors like .course or .results, FR-B16 has been lost.
-   Design tokens are shared on :root so modules inherit a coherent look
-   without the shell knowing what they draw. */
 
+   THE TOKENS BELOW COME IN TWO GROUPS AND THE SPLIT IS LOAD BEARING.
+
+   A per-institution theme is planned: a student at UCLouvain would see
+   UCLouvain's blues, one at ULB would see ULB's. That is fine for chrome and
+   forbidden for the two path colours, because those carry meaning. A theme
+   that recoloured --named or --anon could make an attributed contribution and
+   an anonymous one look alike, which is the one thing the interface must never
+   do (FR-C15, FR-C16, and requirements.md 3.3).
+
+   Splitting them now costs nothing. Shipping one flat set and splitting later
+   means auditing every theme that already exists.
+   See docs/design/frontend-design.tex, section on themes. */
+
+/* --- GROUP 1: chrome. A theme MAY override any of these. ---------------- */
 :root {
+  --accent: #1b4a8f;        /* the shipped primary, kept */
+  --accent-soft: #e8eff8;
+  --sky: #5eb3e4;           /* from the UCLouvain mark */
   --ink: #16191d;
   --muted: #5b6470;
   --line: #dfe3e8;
   --bg: #fbfbfc;
-  --accent: #1b4a8f;
-  --warn-bg: #fff8e6;
-  --warn-line: #e6c86a;
+}
+
+/* --- GROUP 2: meaning. A theme MUST NOT override any of these. ----------
+   Declared separately so the boundary is visible, and asserted by
+   test/architecture/design-tokens.test.ts so it stays visible. */
+:root {
+  --named: #1e7a5f;         /* the attributed path, everywhere */
+  --named-soft: #e4f1ec;
+  --anon: #6b3fa0;          /* the anonymous path, everywhere */
+  --anon-soft: #efe8f8;
+  --warn: #b5820e;
+  --warn-soft: #fbf2d9;
+  --danger: #9e2b20;
 }
 
 * { box-sizing: border-box; }
@@ -84,4 +109,12 @@ header { margin-bottom: 1.75rem; }
   border: 0;
   padding: 0;
   cursor: pointer;
+}
+
+.disclaimer {
+  margin-top: 3.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.78rem;
+  color: var(--muted);
 }

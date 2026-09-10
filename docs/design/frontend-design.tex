@@ -30,31 +30,39 @@
 % ---------------------------------------------------------------------------
 % Palette.
 %
-% Studens is deliberately NOT BLUE. Every Belgian institution it will sit
-% beside is: UCLouvain #011E41 with #5EB3E4, EPL #1C4F9C, ULB #00529C. A blue
-% student platform reads as an official university product, which is precisely
-% the affiliation Studens does not have and must not imply. So the identity is
-% a deep teal-green, adjacent to the academic register without borrowing it.
+% HOMOGENEOUS WITH THE INSTITUTIONS, by François's decision of 2026-09-10.
+% An earlier draft argued for a deliberately non-blue identity so the product
+% could never read as an official university product. Overruled: the platform
+% should sit visually alongside the institutions it serves, and a per
+% institution theme is planned (see the theming section).
 %
-% Two colours are FUNCTIONAL rather than decorative and are used consistently
-% throughout, including in the wireframes: the attributed path is slate, the
-% anonymous path is violet. The two must never be confusable anywhere in the
-% product, so they never share a colour.
+% The primary is #1B4A8F, which the shipped app already uses, so the code and
+% this document now agree rather than proposing different things. The sky
+% accent is #5EB3E4, taken directly from the UCLouvain mark. Gold with navy is
+% the ordinary academic pairing and carries attention without clashing.
+%
+% TWO COLOURS ARE FUNCTIONAL, NOT DECORATIVE, and they are the reason the
+% others are constrained: the attributed path is teal-green and the anonymous
+% path is violet, everywhere, at every size. Both are chosen to be
+% distinguishable from the blue chrome AND from each other, because the whole
+% point is that a reader can never confuse the two paths. They are therefore
+% the one part of the palette a theme may not touch.
 % ---------------------------------------------------------------------------
-\definecolor{ink}{HTML}{1A1714}
-\definecolor{studens}{HTML}{14594E}
-\definecolor{studenslt}{HTML}{E6F0ED}
-\definecolor{ochre}{HTML}{B26A00}
-\definecolor{ochrelt}{HTML}{FBF1DF}
-\definecolor{named}{HTML}{3E5C76}
-\definecolor{namedlt}{HTML}{E8EDF2}
-\definecolor{anon}{HTML}{5B3E90}
-\definecolor{anonlt}{HTML}{EDE7F6}
-\definecolor{line}{HTML}{D6D2CC}
-\definecolor{muted}{HTML}{6B6560}
-\definecolor{paper}{HTML}{FBFAF8}
+\definecolor{ink}{HTML}{16191D}
+\definecolor{studens}{HTML}{1B4A8F}
+\definecolor{studenslt}{HTML}{E8EFF8}
+\definecolor{sky}{HTML}{5EB3E4}
+\definecolor{ochre}{HTML}{B5820E}
+\definecolor{ochrelt}{HTML}{FBF2D9}
+\definecolor{named}{HTML}{1E7A5F}
+\definecolor{namedlt}{HTML}{E4F1EC}
+\definecolor{anon}{HTML}{6B3FA0}
+\definecolor{anonlt}{HTML}{EFE8F8}
+\definecolor{line}{HTML}{DFE3E8}
+\definecolor{muted}{HTML}{5B6470}
+\definecolor{paper}{HTML}{FBFBFC}
 \definecolor{danger}{HTML}{9E2B20}
-% Institution marks, for reference only.
+% Institution marks, for reference.
 \definecolor{uclnavy}{HTML}{011E41}
 \definecolor{ucllight}{HTML}{5EB3E4}
 \definecolor{eplblue}{HTML}{1C4F9C}
@@ -193,43 +201,58 @@ it closer to signing something than to ticking something.
 \end{why}
 
 % ===========================================================================
-\section{Colour, and why Studens is not blue}
+\section{Colour}
+
+Studens sits visually alongside the institutions it serves. François's
+decision, 2026-09-10.
 
 \begin{center}
 \begin{tikzpicture}[x=1cm,y=1cm]
-  % institution marks
-  \node[lbl,anchor=west] at (0,3.1) {The institutions it will sit beside};
-  \node[anchor=west] at (0,2.35) {\includegraphics[height=8mm]{frontend/logos/uclouvain.pdf}};
-  \node[anchor=west] at (4.3,2.35) {\includegraphics[height=8mm]{frontend/logos/epl.pdf}};
-  \node[anchor=west] at (7.6,2.35) {\includegraphics[height=8mm]{frontend/logos/ulb.pdf}};
+  \node[cell={6.0cm}{\sffamily\scriptsize\color{muted}}] at (0,3.15) {The institutions it serves};
+  \node[anchor=west] at (0,2.4)   {\includegraphics[height=8mm]{frontend/logos/uclouvain.pdf}};
+  \node[anchor=west] at (4.3,2.4) {\includegraphics[height=8mm]{frontend/logos/epl.pdf}};
+  \node[anchor=west] at (7.6,2.4) {\includegraphics[height=8mm]{frontend/logos/ulb.pdf}};
 
-  \node[lbl,anchor=west] at (0,1.5) {Their marks are all blue};
-  \fill[uclnavy] (0,0.7) rectangle (1.1,1.25);
-  \fill[ucllight] (1.2,0.7) rectangle (2.3,1.25);
-  \fill[eplblue] (2.4,0.7) rectangle (3.5,1.25);
-  \fill[ulbblue] (3.6,0.7) rectangle (4.7,1.25);
-  \node[tiny,anchor=west] at (0,0.45) {UCLouvain navy, UCLouvain light, EPL, ULB};
+  \node[cell={6.0cm}{\sffamily\scriptsize\color{muted}}] at (0,1.55) {Their marks};
+  \fill[uclnavy]  (0,0.75) rectangle (1.1,1.3);
+  \fill[ucllight] (1.2,0.75) rectangle (2.3,1.3);
+  \fill[eplblue]  (2.4,0.75) rectangle (3.5,1.3);
+  \fill[ulbblue]  (3.6,0.75) rectangle (4.7,1.3);
+  \node[cell={5.0cm}{\sffamily\tiny\color{muted}}] at (0,0.55) {UCLouvain, UCLouvain clair, EPL, ULB};
 
-  \node[lbl,anchor=west] at (6.4,1.5) {Studens is not};
-  \fill[studens] (6.4,0.7) rectangle (7.5,1.25);
-  \fill[ochre] (7.6,0.7) rectangle (8.7,1.25);
-  \node[tiny,anchor=west] at (6.4,0.45) {\#14594E, \#B26A00};
+  \node[cell={4.0cm}{\sffamily\scriptsize\color{muted}}] at (6.4,1.55) {Studens};
+  \fill[studens] (6.4,0.75) rectangle (7.5,1.3);
+  \fill[sky]     (7.6,0.75) rectangle (8.7,1.3);
+  \fill[ochre]   (8.8,0.75) rectangle (9.9,1.3);
+  \node[cell={4.2cm}{\sffamily\tiny\color{muted}}] at (6.4,0.55) {\#1B4A8F, \#5EB3E4, \#B5820E};
 \end{tikzpicture}
 \end{center}
 
-A blue student platform, sitting next to blue institutional marks, reads as an
-official university product. Studens is not affiliated with any institution and
-must not imply that it is. So the identity is a deep teal-green: adjacent to the
-academic register without borrowing from it.
+The primary is \textbf{\#1B4A8F}, which the shipped application already uses, so
+the code and this document now agree instead of proposing different things. The
+sky accent \textbf{\#5EB3E4} is taken directly from the UCLouvain mark. Gold
+with navy is the ordinary academic pairing and carries attention without
+clashing.
+
+\begin{careful}
+One consequence to handle in words rather than in colour. A platform that looks
+institutional can be mistaken for an institutional product, and Studens is not
+affiliated with any institution.
+
+\textbf{Proposed:} a short, permanent line in the footer of every page saying
+Studens is independent and not affiliated with the institutions whose courses it
+lists. One sentence, costs nothing, and it is the honest place to carry that
+rather than expecting a colour to carry it.
+\end{careful}
 
 \subsection{Two colours that are functional, not decorative}
 
 \begin{center}
 \begin{tikzpicture}[x=1cm,y=1cm]
-  \node[namedchip,minimum width=3.2cm,minimum height=6mm] at (0,0) {Sous mon nom};
-  \node[anonchip,minimum width=3.2cm,minimum height=6mm] at (4.6,0) {Anonyme};
-  \node[tiny,anchor=north,text width=3.4cm,align=center] at (0,-0.5) {slate \#3E5C76\\the attributed path};
-  \node[tiny,anchor=north,text width=3.4cm,align=center] at (4.6,-0.5) {violet \#5B3E90\\the anonymous path};
+  \node[namedchip,minimum width=3.2cm,minimum height=6mm,text width=3.0cm,align=center] at (0,0) {Sous mon nom};
+  \node[anonchip,minimum width=3.2cm,minimum height=6mm,text width=3.0cm,align=center] at (4.6,0) {Anonyme};
+  \node[cell={3.6cm}{\sffamily\tiny\color{muted}}] at (-1.8,-0.45) {vert \#1E7A5F\\la voie nomm\'ee};
+  \node[cell={3.6cm}{\sffamily\tiny\color{muted}}] at (2.8,-0.45) {violet \#6B3FA0\\la voie anonyme};
 \end{tikzpicture}
 \end{center}
 
@@ -238,17 +261,43 @@ scanning a course page can tell attributed from anonymous without reading a
 word, and a contributor mid-submission can tell which path they are on at a
 glance.
 
-\begin{careful}
-This is the visual half of FR-C15, which requires the status to be publicly
-visible. It has a limit that the drawing cannot fix: FR-C16 forbids showing
-\emph{any} other author attribute on an anonymous contribution, including a
-trust tier or an email domain. The violet chip is the only thing an anonymous
-review may carry about its author.
-\end{careful}
+Both are chosen to be distinguishable from the blue chrome \emph{and} from each
+other. That is why the rest of the palette is constrained rather than free: if
+the primary moves, these two have to stay clear of it.
+
+\subsection{Themes, and the one thing a theme may not touch}
+
+A per-institution theme is planned: a student at UCLouvain would see UCLouvain's
+blues, one at ULB would see ULB's. That is a good idea and it is cheap to keep
+possible, provided one line is drawn now.
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}p{4.6cm}p{4.4cm}p{5.0cm}@{}}
+\toprule
+& \textbf{Themeable} & \textbf{Why} \\
+\midrule
+Chrome: primary, accent, links, buttons, headers & \textbf{yes} & Decoration. Nothing depends on which blue it is \\[1.5mm]
+Neutrals: ink, paper, lines & yes, within contrast limits & Same \\[1.5mm]
+\textbf{The attributed and anonymous colours} & \textbf{never} & They carry meaning. A theme that recoloured them could make the two paths look alike, and that is the one thing the interface must never do \\[1.5mm]
+Warning and danger & no & Also meaning, and a theme could make a warning look ordinary \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{why}
+This is a 1.5-class decision: cheap now, expensive later. If the design tokens
+ship as one flat set, a theme will recolour everything in it, including the two
+colours the anonymity design leans on. Splitting them now costs nothing.
+
+\textbf{Concretely:} two groups of CSS custom properties, one themeable and one
+not, with the second declared where a theme cannot reach it. To be recorded as
+an open question if the theming plan is confirmed.
+\end{why}
 
 \subsection{Institution marks: usable here, not shippable}
 
-The marks above are reproduced in this draft to show what the product will sit
+The marks above are reproduced in this draft to show what the product sits
 beside. Two separate problems stand between that and shipping them.
 
 \begin{center}
@@ -266,15 +315,17 @@ EPL & CC BY-SA 4.0 & Trademark, plus share-alike in an MIT repository \\
 
 ``Public domain'' on Commons means below the threshold of originality for
 \emph{copyright}. It says nothing about trademark, and trademark is the harder
-problem: a university mark inside a third-party student app implies endorsement
-that does not exist.
+problem.
+
+This matters more now that the palette is institutional. Borrowing an
+institution's colours is ordinary; reproducing its mark is a claim about who
+you are.
 
 \begin{openq}
 \textbf{Proposed:} the product shows an institution's \emph{name} as text, never
-its mark, until permission exists in writing. The logos stay out of the
-repository entirely (\texttt{scripts/fetch-logos.sh}, gitignored).
-
-To be recorded as a new open question if accepted.
+its mark, until permission exists in writing. Logos stay out of the repository
+(\texttt{scripts/fetch-logos.sh}, gitignored). A theme can match an
+institution's colours without reproducing its mark.
 \end{openq}
 
 \newpage

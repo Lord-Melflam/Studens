@@ -79,6 +79,20 @@ output, and output that has not been looked at has not been checked. The rule
 that now applies: render **every** page and inspect it before presenting a
 visual artefact, exactly as a test suite is run in full rather than sampled.
 
+### A gate improving copy nobody asked it to review
+
+The independence line added to the shell's footer first read "the institutions
+whose *courses* it lists". The FR-B16 gate rejected it: "courses" is RYC's
+domain, and the shell may not know what a module draws.
+
+It was right for a reason beyond the rule. That sentence would have become
+*wrong* the day MPA ships, because MPA is not about courses. A boundary
+check written to protect the architecture caught a factual error in product
+copy.
+
+**Worth remembering** when a gate objects to something that looks harmless: ask
+what the gate is actually protecting before reaching for the exemption.
+
 ### Patching a systemic failure one instance at a time
 
 The same overlaps were then fixed three times in a row, individually: a button
