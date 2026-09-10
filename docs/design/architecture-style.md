@@ -8,7 +8,7 @@
 | Date | 2026-09-10 |
 | Decides | `CLAUDE.md` open decision "Architecture style" |
 | Constrained by | FR-C2, FR-C6, FR-C13, FR-B3, FR-B9 to FR-B13, CON-1, CON-3, section 5.2 |
-| Depends on | **OPEN-16**, see section 6 |
+| Depends on | ~~OPEN-16~~ **resolved 2026-09-10: trusted contributors.** The dependency in section 6 is discharged, see 6.1 |
 | Raises | OPEN-39, OPEN-40, OPEN-41 |
 | Corrects | FR-B9 and FR-C3, both found to be wrong when the schema was drawn. See section 13 |
 
@@ -201,6 +201,63 @@ for it.
 ask-questions-do-not-fetch-data rule are precisely what make a module extractable later:
 replace an in-process call with a network call and the module's storage becomes its own
 database. That is the CC-2 argument, and it is already recorded as a requirement.
+
+### 6.1 OPEN-16 resolved: trusted contributors
+
+**[VERIFIED]** François, 2026-09-10, taking the recommendation. FR-B14 and FR-B15.
+
+**All module code lives in this repository and is admitted by review before merge.** No
+plugin loader, no registry, no third-party artifact loaded at runtime. Outside contributors
+are welcome, as contributors: they open a pull request like anyone else.
+
+**What that discharges.** Row one of the table in section 6 applies, so **in-process modules
+are correct permanently, not provisionally**. The architecture no longer has an open
+dependency, and no sandbox work is queued behind it.
+
+**Untrusted plugins were rejected on security and feasibility, not effort.** Untrusted code
+sharing a process with database access defeats every FR-C guarantee at once, and no lint rule
+or convention constrains it. Doing it properly needs process isolation, a capability-based
+API in place of database access, resource limits, and a reviewed capability surface, which is
+a larger piece of engineering than the whole of Studens. It does not fit one 2 OCPU VM. And it
+would make the platform a distribution channel for unreviewed code that touches students'
+personal data, with nobody available to police it. If untrusted modules are ever genuinely
+wanted, **FR-C has to be renegotiated first and in the open**, because it cannot survive them.
+
+**A vetted catalogue was rejected as premature, not wrong.** It has the *same* architectural
+consequence as trusted contributors, so it buys nothing here, while adding a registry, module
+versioning, a compatibility contract, an admission process and a deprecation story. That is
+software product line machinery, and there are no third-party modules to manage. It is the
+natural successor to this decision rather than a competitor to it.
+
+**Costs accepted.**
+
+- **Nobody can ship independently.** Every module rides our release cadence and lives in our
+  repository. That is a real limit on the vision's "collaborations might be easy".
+- **Review is the bottleneck, and it is one person.** If contributions arrive faster than
+  they can be reviewed, contributors leave. This is the most likely way the decision fails,
+  and it is a people problem rather than a technical one.
+- **We inherit maintenance for merged modules.** A contributor who disappears leaves us their
+  code, which is Lehman's laws applied to donated work.
+- **FR-B7 loses its forcing function.** The module contract still has to be documented well
+  enough for an outsider, but nothing external now fails if it is not, so it is easy to let
+  slide.
+
+**The consequence that matters most.** Review is no longer a quality practice, it is **the
+security boundary**: every guarantee in FR-C now rests on the fact that all code touching the
+database was read by someone. Two things follow. OPEN-18 (who may approve a merge) becomes a
+security question rather than a workflow preference. And with a team of one, review of the
+owner's own code is self-review, so the automated gates have to hold regardless of author,
+which is what FR-B15 states. This is the SQA reading's point about CI gates standing in for
+organisational independence when a team is too small to provide it.
+
+**What would change the answer.**
+
+| Trigger | Response |
+|---|---|
+| Contributions arrive faster than review capacity | Move to a **vetted catalogue** with delegated review, which is option 2 and the natural next step. Not to untrusted |
+| A contributor has a real need to ship on their own cadence | Same as above |
+| A module must run code we cannot review, for instance an institution's integration holding its own secrets | Sandbox **that module only**. The trusted core stays in process |
+| Anyone proposes untrusted arbitrary plugins | Refuse while FR-C stands. Renegotiate FR-C first, explicitly, or not at all |
 
 ## 7. The refinement: why the proposal is C and not B
 
