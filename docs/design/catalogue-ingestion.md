@@ -7,7 +7,7 @@
 | Decided by | François, 2026-09-10 |
 | Resolves | `requirements.md` OPEN-33 |
 | Implements | FR-B9 (the catalogue is a reference module), supports FR-D1 to FR-D4 |
-| Raises | OPEN-38 |
+| Raises | OPEN-38, OPEN-45 |
 
 ## 0. Decision
 
@@ -303,6 +303,61 @@ with zero reviews each makes every page look abandoned, and it makes the small-c
 in OPEN-19 worse everywhere at once instead of in one place we can watch. A complete
 catalogue with a scoped module gives the honest version of both, and widening is a
 configuration change rather than a migration.
+
+## 8. What the first live runs taught
+
+**[VERIFIED]** by running it, 2026-09-10. Four things the design did not anticipate, three
+of which were bugs that only a live run could find.
+
+**Href forms are not consistent, and this was a real bug.** The faculty index links
+`/prog-2025-fsa1ba` with a leading slash. A programme listing links
+`cours-2025-lepl1101` **without one**. A link pattern requiring the slash finds 43 programmes
+and then zero courses, so the crawl walks the whole chain and fails at the last step with
+nothing to show.
+
+The lesson is about the test rather than the code: the fake site in `test/catalogue` used the
+tidy form for everything, so the suite passed while reality failed. It now serves **both**
+forms deliberately, and a test says why.
+
+**A programme's landing page carries no course list.** `prog-2025-sinf1ba` yields zero course
+links. The listing lives on a suffix, and which suffix depends on the level:
+
+| Suffix | sinf1ba (bachelor) | info2m (master) |
+|---|---|---|
+| `-programme` | 46 courses | 85 courses |
+| `-programme_annual_blocks` | 46 courses | **0** |
+
+So `-programme` is tried first and `-programme_annual_blocks` is the bachelor-era fallback.
+These are URL grammar rather than an entity list: see the note on the constant in `urls.ts`.
+
+**The scale, measured.** EPL alone reaches **546 distinct courses** across 43 programmes. That
+is the catalogue for one faculty of twenty, which puts the "scrape all, launch EPL" decision
+in section 7 on a real number.
+
+**Sampling has to spread, not take the head.** A `--max 60` run returned sixty `ENANO`
+courses, one alphabetical neighbourhood, and every labelled field came back empty. That
+looked exactly like a parser failure and was not. `maxOfferings` now samples across the
+discovered list, and a spread sample of 40 gives 22 different code prefixes with 31 fully
+populated.
+
+### 8.1 The catalogue contains courses taught at other institutions
+
+The genuine discovery, and it is a modelling fact rather than a bug.
+
+`cours-2025-enano2401` carries exactly three labelled fields: **Institution de référence**
+(Université de Namur), the course's **code at that institution**, and the **UCLouvain faculty
+in charge**. No teachers, no assessment, no content, because UCLouvain does not own the
+course. Returning `null` for those is correct, and the "absent by era" machinery in
+`errors.ts` turns out to serve a second purpose it was not designed for: absent because
+another university owns it.
+
+Two consequences. A review of such a course is a review of a course **at Namur**, which is not
+what any requirement currently says. And it arrives before the multi-institution vision does,
+inside what looked like a single-tenant v1. Recorded as **OPEN-45**.
+
+A related confirmation from the same run: `LACTU2170` is reached through EPL programmes and
+owned by **LSBA**. Section 2's many-to-many claim, verified with real data rather than
+inferred from a students' document.
 
 ## 8. Open questions raised here
 

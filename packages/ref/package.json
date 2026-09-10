@@ -3,8 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "studens": { "tier": "reference" },
+  "studens": {
+    "tier": "reference"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": "./dist/index.js" }
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0"
+  }
 }
