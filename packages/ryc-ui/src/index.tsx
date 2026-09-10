@@ -1,0 +1,32 @@
+/**
+ * RYC's registration with the shell.
+ *
+ * FR-B18: the shell knows a module only through this. A name, a route, a short
+ * description and a component. Adding a module changes the shell's registry and
+ * nothing else, which is FR-B4 applied to the frontend.
+ *
+ * Nothing about courses or reviews leaves this package.
+ */
+import { Ryc } from "./Ryc.js";
+import "./ryc.css";
+
+export interface ModuleRegistration {
+  /** Stable identifier, used in the route. */
+  id: string;
+  /** What a Member sees in the shell's navigation. */
+  name: string;
+  /** One line, shown on the shell's home screen. */
+  summary: string;
+  component: () => JSX.Element;
+}
+
+export const rycModule: ModuleRegistration = {
+  id: "ryc",
+  name: "Rate Your Courses",
+  summary:
+    "Ce que valent vraiment les cours, d'après les étudiants qui les ont suivis.",
+  component: Ryc,
+};
+
+export { Ryc };
+export type { CourseDetail, CourseSummary } from "./api.js";

@@ -421,6 +421,9 @@ two is cheap; if they do not, the platform is a monolith in the bad sense.
 | FR-B12 | MUST | No log, metric or trace record may carry a Member identifier and a contribution target identifier together. This is FR-C5 applied to telemetry, which is written by infrastructure rather than by reviewed code. |
 | FR-B13 | MUST | Cross-module aggregation is keyed on reference data, never on a Member, wherever the anonymous path is involved. |
 | FR-B14 | MUST | **All module code lives in this repository and is admitted by review before merge.** No runtime loading of third-party code, no plugin mechanism, no module registry. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-16. |
+| FR-B16 | MUST | **The frontend has the same tiers as the backend.** `apps/web` is the SHELL: navigation, and a registry of the modules a Member may use (FR-B1). A module's user interface lives in the module's own package, not in the shell. **[VERIFIED]** François, 2026-09-10. |
+| FR-B17 | MUST | A Member entering the platform arrives at the **shell**, not inside a module. Landing directly in one module is a development convenience and must not become the product. |
+| FR-B18 | MUST | The shell knows a module only through its registration: a name, a route, and a component. Adding a module changes the registry and nothing else, which is FR-B4 applied to the frontend. |
 | FR-B15 | MUST | Because FR-B14 makes review the security boundary, the automated gates (FR-B6, FR-C8, and the schema tests in the design notes) must pass regardless of who authored the change, including the project owner. A gate that can be bypassed by the author is not a control. |
 
 FR-B6 is deliberate. A boundary that is only a convention erodes; a boundary the pipeline
@@ -443,6 +446,34 @@ module written by the core team, and the honest answers span a wide range:
 **[OPEN-16]** Which of these is the target? FR-B8's least-privilege declaration is worth
 doing under any of them, and is the cheapest thing that keeps the harder options reachable.
 Building for the third before you have the first would violate CON-3 and section 4.3.
+
+#### The frontend needs the same boundaries as the backend
+
+**[VERIFIED]** François, 2026-09-10, raised as "a user won't directly drop to the ryc in the
+end product?" The answer is no, and the question exposed a gap worth recording.
+
+When the first screen was built, `apps/web` **was** RYC: the course search lived in the
+application's own `App.tsx`. The backend had `platform`, `ref` and `ryc` as separate packages
+with boundaries the build enforces, and the frontend had none. So adding MPA would have meant
+editing RYC's files, which is exactly what FR-B4 forbids.
+
+1.5 item 3 already said why this had to be fixed immediately rather than later:
+
+> The module contract is a real interface, not a convention. If modules reach into each other,
+> the boundary cannot later be turned into a public extension point. This is FR-B, and it is
+> the load-bearing decision of the whole project.
+
+Cheap with one module and a few small files. Expensive with two. Hence FR-B16 to FR-B18.
+
+**What the shell is, and is not.** It is navigation plus a registry: a module declares a name,
+a route and a component, and the shell mounts it. It is **not** a plugin loader (FR-B14: all
+module code is in this repository and reviewed before merge), and it does not know what a
+course or a review is.
+
+Note what is deliberately still missing from it: authentication. FR-A exists but nothing is
+built, so the shell currently lets anyone in. That is honest for a catalogue that FR-D13 makes
+public anyway, and it becomes load bearing the moment reviews exist, because FR-D13 also says
+reviews need a session to read.
 
 ### 3.3 The anonymity seam (FR-C)
 
@@ -754,6 +785,8 @@ below, including FR-D9.
 | FR-D17 | MUST | An **imported** review, entered by an Administrator from an external source rather than submitted by a Member, is stored and displayed as a distinct kind of record: visibly marked as imported, carrying its source and its stated year, and never presented as a Member contribution. **[VERIFIED]** François, 2026-09-10. |
 | FR-D18 | MUST | Importing third party content requires **permission from whoever holds it** before any import happens. The same rule that forbids reusing unlicensed code applies to reusing other people's writing. See OPEN-42. |
 | FR-D19 | MUST | **Assessment structure is scraped, never asked.** The catalogue publishes the evaluation method with weightings and the official contact hours, so a course page shows them from the reference module. Reviewers are asked only for what the catalogue cannot know. **[VERIFIED]** François, 2026-09-10. Verified against `cours-2025-lepl1503`. |
+| FR-D24 | MUST | A Member can **browse the courses of a programme**, not only search for one. **[VERIFIED]** François, 2026-09-10. Reason in 3.4: the problem in 1.1 is choosing electives blind, which is a discovery problem, and search only answers it for someone who already knows the code. |
+| FR-D25 | MUST | Programmes are listed per faculty, as discovered by ingestion. A course appears under **every** programme it is reachable from, because reaching a course through one faculty says nothing about who owns it (`design/catalogue-ingestion.md` 2). |
 | FR-D20 | MUST | **Numbers describe the course. Prose discusses the teaching.** No numeric or categorical field rates an identifiable person. Teaching quality is expressed in review text only, and never as a score. **[VERIFIED]** François, 2026-09-10. Reason in 3.4. |
 | FR-D21 | MUST | A reviewer **declares that they completed the course** before submitting. Required, and it blocks the review if not. Self-declared and unverifiable, consistent with FR-A6's good-faith model. Phrased as "completed" rather than "sat the exam", because some courses have no exam. Adopted from the EPL document's own rule. **[VERIFIED]** François, 2026-09-10. |
 | FR-D22 | COULD | A reviewer **may** state whether they passed or failed. **Optional.** **[VERIFIED]** François, 2026-09-10, overruling a recommendation that it be required. Resolves OPEN-44. |
@@ -815,6 +848,27 @@ rather than "sat the exam" because several of these courses have no exam.
 field missing at collection time is missing forever from everything gathered before it. That
 makes it a 1.5-class item, cheap now and permanently lost later, independent of how good the
 resulting data turns out to be.
+
+**Why browsing matters more than searching (FR-D24).** Added 2026-09-10 after looking at
+the first working screen, and it corrects a gap between this document's own problem statement
+and its own pass test.
+
+1.1 says students choose electives **blind**. That is a discovery problem: "I do not know
+which courses to consider." But FR-D1 and FR-D2 offer search by code and by title, and the
+1.1 pass test is a student searching `LEPL1503`. **That tests looking up a course you already
+know about.** Someone holding the code has usually already heard of the course; the student
+staring at their PAE is asking which options exist in their programme and which are worth
+taking, and search cannot answer that.
+
+Two pieces of evidence that browsing is the real need. The EPL document is organised **by
+option and minor with no search at all**, so a decade of actual use produced a browsable
+structure rather than a searchable one. And the data already exists: ingestion discovers 43
+programmes for EPL and which courses each reaches, so this is a query rather than a scraping
+project.
+
+The pass test in 1.1 is left as it stands, because it is still a necessary condition. It is
+now understood to be **narrower than the problem**, which is worth remembering the next time
+a test looks satisfiable.
 
 **Why a number never rates a person (FR-D20).** This is the sharpest line in the module and
 it is worth the paragraph.

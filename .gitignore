@@ -49,6 +49,7 @@ prisma/migrations/dev.db*
 # one, since it is derived data from a third party's website and it goes stale.
 data/
 
+
 # Logs and local scratch
 *.log
 tmp/

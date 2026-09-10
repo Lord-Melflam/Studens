@@ -1,29 +1,31 @@
-/* Plain and legible. No framework: the app has one screen, and a CSS framework
-   would be a dependency and a decision that nothing yet justifies. */
+/* RYC's own styles. Owned by the module, imported by the module, so the shell
+   never learns what a course page looks like (FR-B16). */
 
-:root {
-  --ink: #16191d;
-  --muted: #5b6470;
-  --line: #dfe3e8;
-  --bg: #fbfbfc;
-  --accent: #1b4a8f;
-  --warn-bg: #fff8e6;
-  --warn-line: #e6c86a;
+.module-intro { margin: 0 0 1.25rem; color: var(--muted); }
+
+.tabs { display: flex; gap: 0.4rem; margin-bottom: 1rem; }
+.tabs button {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.8rem;
+  color: var(--muted);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
 }
+.tabs button.on { color: #fff; background: var(--accent); border-color: var(--accent); }
 
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  color: var(--ink);
-  background: var(--bg);
+.picker { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
+.picker select {
+  display: block;
+  margin-top: 0.3rem;
+  padding: 0.5rem;
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
 }
-
-main { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
-
-header h1 { margin: 0; font-size: 1.9rem; letter-spacing: -0.01em; }
-.tagline { margin: 0.25rem 0 2rem; color: var(--muted); }
 
 .search { display: block; font-size: 0.85rem; color: var(--muted); }
 .search input {
@@ -40,13 +42,13 @@ header h1 { margin: 0; font-size: 1.9rem; letter-spacing: -0.01em; }
 .search input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 
 .meta, .empty { color: var(--muted); font-size: 0.88rem; }
-.error { color: #a3231b; font-size: 0.9rem; }
+.browse-title { margin: 0.5rem 0 0.2rem; font-size: 1.25rem; }
 
 .results { list-style: none; margin: 1.25rem 0 0; padding: 0; }
 .results li + li { margin-top: 0.4rem; }
 .results button {
   display: grid;
-  grid-template-columns: 6.5rem 1fr;
+  grid-template-columns: 7rem 1fr;
   gap: 0.15rem 0.9rem;
   width: 100%;
   padding: 0.7rem 0.85rem;
@@ -92,13 +94,8 @@ dl { margin: 0; }
 .field dt { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .field dd { margin: 0.3rem 0 0; }
 
+.official { color: var(--accent); word-break: break-all; font-size: 0.92rem; }
+
 .reviews-absent { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
 .reviews-absent h3 { margin: 0 0 0.4rem; font-size: 1rem; }
 .reviews-absent p { margin: 0; color: var(--muted); font-size: 0.9rem; }
-
-.official {
-  color: var(--accent);
-  word-break: break-all;
-  font-size: 0.92rem;
-}
-.official:hover { text-decoration-thickness: 2px; }

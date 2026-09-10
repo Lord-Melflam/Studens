@@ -69,12 +69,31 @@ function summarise(o: ParsedOffering): CourseSummary {
   };
 }
 
+export interface FacultySummary {
+  code: string;
+  name: string;
+  programmes: number;
+}
+
+export interface ProgrammeSummary {
+  code: string;
+  title: string;
+  faculty: string;
+  courses: number;
+}
+
 /** What a consumer may ask the catalogue. Storage does not appear in it. */
 export interface Catalogue {
   readonly year: number;
   readonly size: number;
   search(query: string, limit?: number): CourseSummary[] | Promise<CourseSummary[]>;
   get(code: string): (CourseDetail | null) | Promise<CourseDetail | null>;
+  /** FR-D24 and FR-D25: browsing, not only searching. */
+  faculties(): FacultySummary[] | Promise<FacultySummary[]>;
+  programmes(facultyCode: string): ProgrammeSummary[] | Promise<ProgrammeSummary[]>;
+  coursesOfProgramme(
+    programmeCode: string,
+  ): (CourseSummary[] | null) | Promise<CourseSummary[] | null>;
 }
 
 export class SnapshotCatalogue implements Catalogue {
@@ -109,6 +128,46 @@ export class SnapshotCatalogue implements Catalogue {
     // Code matches first: someone typing LEPL1503 wants that course, not a
     // course whose description mentions it.
     return [...byCode, ...byTitle].slice(0, limit).map(summarise);
+  }
+
+  faculties(): FacultySummary[] {
+    return this.snapshot.faculties.map((f) => ({
+      code: f.code,
+      name: f.name,
+      programmes: this.snapshot.programmes.filter((p) => p.faculty === f.code).length,
+    }));
+  }
+
+  programmes(facultyCode: string): ProgrammeSummary[] {
+    const known = new Set(this.snapshot.offerings.map((o) => o.code));
+    return this.snapshot.programmes
+      .filter((p) => p.faculty === facultyCode.toLowerCase())
+      .map((p) => ({
+        code: p.code,
+        title: p.title,
+        faculty: p.faculty,
+        // Only courses actually present in this snapshot: a scoped run holds a
+        // sample, and claiming a count we cannot show would be a lie.
+        courses: new Set(
+          this.snapshot.reachedVia
+            .filter((r) => r.programme === p.code && known.has(r.code))
+            .map((r) => r.code),
+        ).size,
+      }))
+      .filter((p) => p.courses > 0)
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }
+
+  coursesOfProgramme(programmeCode: string): CourseSummary[] | null {
+    const code = programmeCode.toLowerCase();
+    if (!this.snapshot.programmes.some((p) => p.code === code)) return null;
+    const codes = new Set(
+      this.snapshot.reachedVia.filter((r) => r.programme === code).map((r) => r.code),
+    );
+    return this.snapshot.offerings
+      .filter((o) => codes.has(o.code))
+      .sort((a, b) => a.code.localeCompare(b.code))
+      .map(summarise);
   }
 
   get(code: string): CourseDetail | null {
@@ -223,4 +282,65 @@ export class DatabaseCatalogue implements Catalogue {
       reachedVia: row.faculties.map((f) => f.faculty.code),
     };
   }
+
+  async faculties(): Promise<FacultySummary[]> {
+    const rows = await this.prisma.faculty.findMany({
+      include: { _count: { select: { programmes: true } } },
+      orderBy: { code: "asc" },
+    });
+    return rows
+      .map((f) => ({ code: f.code, name: f.name, programmes: f._count.programmes }))
+      .filter((f) => f.programmes > 0);
+  }
+
+  async programmes(facultyCode: string): Promise<ProgrammeSummary[]> {
+    const rows = await this.prisma.programme.findMany({
+      where: { year: this.year, faculty: { code: facultyCode.toLowerCase() } },
+      include: { faculty: true, _count: { select: { offerings: true } } },
+      orderBy: { title: "asc" },
+    });
+    return rows
+      .filter((p) => p._count.offerings > 0)
+      .map((p) => ({
+        code: p.code,
+        title: p.title,
+        faculty: p.faculty.code,
+        courses: p._count.offerings,
+      }));
+  }
+
+  async coursesOfProgramme(programmeCode: string): Promise<CourseSummary[] | null> {
+    const programme = await this.prisma.programme.findUnique({
+      where: { code_year: { code: programmeCode.toLowerCase(), year: this.year } },
+    });
+    if (!programme) return null;
+    const rows = await this.prisma.programmeOffering.findMany({
+      where: { programmeId: programme.id },
+      include: { offering: { include: { course: true, teachers: true } } },
+    });
+    return rows
+      .map(({ offering }) => ({
+        code: offering.course.code,
+        title: offering.title,
+        year: offering.year,
+        ects: Number(offering.ects),
+        quarter: offering.quarter,
+        teachers: offering.teachers.map((t) => t.teacherName),
+        external: offering.teachers.length === 0 && offering.assessment === null,
+      }))
+      .sort((a, b) => a.code.localeCompare(b.code));
+  }
+}
+
+/**
+ * Browse support for the database-backed catalogue (FR-D24, FR-D25).
+ *
+ * Counts are of courses actually present, not of courses the programme
+ * nominally contains: a scoped ingestion run holds a sample, and a count we
+ * cannot then show would be a lie.
+ */
+export interface BrowseQueries {
+  faculties(): Promise<FacultySummary[]>;
+  programmes(facultyCode: string): Promise<ProgrammeSummary[]>;
+  coursesOfProgramme(programmeCode: string): Promise<CourseSummary[] | null>;
 }

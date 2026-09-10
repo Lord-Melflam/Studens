@@ -41,6 +41,31 @@ export async function catalogueRoutes(source: {
     void Promise.resolve(catalogue.search(q)).then((results) => res.json({ query: q, results }));
   });
 
+  /** FR-D24 and FR-D25: browsing, for the student who does not know the code. */
+  router.get("/faculties", (_req, res) => {
+    void Promise.resolve(catalogue.faculties()).then((faculties) => res.json({ faculties }));
+  });
+
+  router.get("/faculties/:code/programmes", (req, res) => {
+    void Promise.resolve(catalogue.programmes(req.params.code)).then((programmes) => {
+      if (programmes.length === 0) {
+        res.status(404).json({ error: "no such faculty in this catalogue year" });
+        return;
+      }
+      res.json({ faculty: req.params.code, programmes });
+    });
+  });
+
+  router.get("/programmes/:code/courses", (req, res) => {
+    void Promise.resolve(catalogue.coursesOfProgramme(req.params.code)).then((courses) => {
+      if (!courses) {
+        res.status(404).json({ error: "no such programme in this catalogue year" });
+        return;
+      }
+      res.json({ programme: req.params.code, courses });
+    });
+  });
+
   /** FR-D3: the course page. */
   router.get("/courses/:code", (req, res) => {
     void Promise.resolve(catalogue.get(req.params.code)).then((course) => {

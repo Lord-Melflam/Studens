@@ -22,34 +22,66 @@ export interface DiscoveredFaculty {
 export interface Snapshot {
   /**
    * Schema version of this FILE format, so a reader can refuse an old one.
-   * Bumped to 2 on 2026-09-10 when faculties gained their names: ref.Faculty
-   * requires one, and the faculty index already carries it in the link text.
+   * 2: faculties gained their names, because ref.Faculty requires one and the
+   *    faculty index already carries it in the link text.
+   * 3: programmes gained their titles, and reachedVia gained the PROGRAMME a
+   *    course was reached through. Browsing by programme (FR-D24) is
+   *    impossible without it, and the crawl was discarding it: it recorded the
+   *    faculty of the programme it came from and threw the programme away.
+   *
    * The version field exists to be used, so an older snapshot is refused
-   * rather than silently loaded with a code where a name belongs.
+   * rather than silently loaded with a field missing.
    */
-  version: 2;
+  version: 3;
   /** When the crawl finished. */
   takenAt: string;
   /** The academic year crawled. */
   year: number;
   /** Faculties as DISCOVERED, never as configured. */
   faculties: DiscoveredFaculty[];
-  programmes: Array<{ code: string; faculty: string }>;
+  programmes: Array<{ code: string; faculty: string; title: string }>;
   offerings: ParsedOffering[];
-  /** Which faculties each offering was reached through. Many-to-many on purpose. */
-  reachedVia: Array<{ code: string; faculty: string }>;
+  /**
+   * How each offering was reached. Many-to-many on BOTH axes on purpose: a
+   * course appears in several programmes, and those programmes can belong to
+   * different faculties (FR-D25).
+   */
+  reachedVia: Array<{ code: string; faculty: string; programme: string }>;
 }
 
 export class SnapshotInvalid extends Error {}
+
+/**
+ * A plausible UCLouvain course code.
+ *
+ * Measured across 555 codes discovered from EPL on 2026-09-10, which produced
+ * exactly four shapes:
+ *
+ *   AAAAA9999    480   enano2401
+ *   AAAA9999      69   lbir1111
+ *   AAAA9999A      4   lbio1237b
+ *   AAAAA9999A     2   lbira2110b
+ *
+ * The trailing letter is the part that matters: an earlier version of this
+ * pattern forbade it and rejected a complete 546-course crawl over
+ * `lbio1237b`. Six of 555 carry one, and they are real courses students take:
+ * the EPL reviews document discusses LEPL2214, whose catalogue entry is
+ * `lepl2214a`.
+ *
+ * Kept strict rather than permissive on purpose. This is the check that stops
+ * a parser reading something that is not a course code at all, so widening it
+ * to `.+` would remove the only guard against that.
+ */
+const COURSE_CODE = /^[a-z]{3,6}\d{3,4}[a-z]?$/;
 
 /**
  * Refuse to promote a snapshot that would make the catalogue worse.
  * Every check here is a failure the crawl could plausibly produce.
  */
 export function validate(s: Snapshot): void {
-  if (s.version !== 2) {
+  if (s.version !== 3) {
     throw new SnapshotInvalid(
-      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 2)`,
+      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 3)`,
     );
   }
   if (s.faculties.length === 0) throw new SnapshotInvalid("no faculties discovered");
@@ -60,7 +92,7 @@ export function validate(s: Snapshot): void {
     if (!Number.isFinite(o.ects) || o.ects <= 0) {
       throw new SnapshotInvalid(`${o.code}: ECTS is required in every era, got ${o.ects}`);
     }
-    if (!/^[a-z]{3,6}\d{3,4}$/.test(o.code)) {
+    if (!COURSE_CODE.test(o.code)) {
       throw new SnapshotInvalid(`${o.code}: not a plausible course code`);
     }
     if (!o.title) throw new SnapshotInvalid(`${o.code}: empty title`);

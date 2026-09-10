@@ -210,7 +210,19 @@ website is the fastest way to get blocked and to deserve it:
   the traffic can ask us to stop instead of guessing.
 - Full crawls run **rarely**: once per academic year is the natural cadence, since that is
   how often the catalogue changes, plus a manual trigger.
-- Conditional requests and caching wherever the server supports them.
+- **An on-disk page cache**, on by default (`data/page-cache`, gitignored). This was written
+  down here as a politeness rule and then not implemented, and the cost showed up
+  immediately: a full crawl of 546 courses was thrown away because the snapshot format
+  changed mid-run, so the same pages were fetched twice for nothing. Developing an ingestion
+  means re-running it, and without a cache every iteration is another few hundred requests at
+  the university's expense. Course pages change roughly once a year, so the default maximum
+  age is 30 days. `--no-cache` forces a fresh crawl.
+
+  The cache must never be able to fail a run: a missing or unreadable entry is a miss, and a
+  failure to write one is ignored. It is an optimisation, not a dependency.
+
+  The CLI reports both numbers, so the cost of a run is visible: `N requests to uclouvain.be,
+  M served from cache`.
 
 ## 5. Prior art, and why none of it is used
 
@@ -340,7 +352,25 @@ looked exactly like a parser failure and was not. `maxOfferings` now samples acr
 discovered list, and a spread sample of 40 gives 22 different code prefixes with 31 fully
 populated.
 
-### 8.1 The catalogue contains courses taught at other institutions
+#### 8.2 Browsing needed data the crawl was discarding
+
+**[VERIFIED]** 2026-09-10, on adding FR-D24.
+
+The crawl walks faculty, then programme, then course. To record how a course was reached it
+kept `{code, faculty}` and **threw the programme away**, keeping only the faculty of the
+programme it came from.
+
+That made browsing by programme impossible from the snapshot, and the loss was invisible
+precisely because the faculty was still there: nothing looked missing. The schema had the same
+hole from the other end, holding `Programme` and `CourseOffering` with nothing joining them,
+even though the crawl had walked exactly that relationship to find the courses.
+
+Fixed in snapshot version 3, which also keeps programme titles from the faculty index link
+text, and by a `ProgrammeOffering` join table. The general lesson: a crawl that discards a
+relationship it traversed is the easiest kind of data loss to miss, because the result still
+looks complete.
+
+## 8.1 The catalogue contains courses taught at other institutions
 
 The genuine discovery, and it is a modelling fact rather than a bug.
 

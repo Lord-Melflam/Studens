@@ -31,4 +31,6 @@ export {
   DatabaseCatalogue,
   type CourseSummary,
   type CourseDetail,
+  type FacultySummary,
+  type ProgrammeSummary,
 } from "./read.js";

@@ -13,7 +13,7 @@
     "apps/*"
   ],
   "scripts": {
-    "typecheck": "tsc --build && tsc -p apps/web --noEmit",
+    "typecheck": "tsc --build && tsc -p packages/ryc-ui --noEmit && tsc -p apps/web --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
     "gates": "npm run typecheck && npm run lint && npm run test && npm run schema:validate",

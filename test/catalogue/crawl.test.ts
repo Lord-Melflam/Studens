@@ -211,3 +211,31 @@ describe("a broken run cannot corrupt the live catalogue", () => {
     await expect(load(path)).rejects.toThrow();
   });
 });
+
+describe("course code validation", () => {
+  /**
+   * Real shapes, measured from 555 codes discovered on 2026-09-10. The
+   * suffixed forms cost a complete 546-course crawl once, because the pattern
+   * forbade them.
+   */
+  const real = ["enano2401", "lbir1111", "lbio1237b", "lbira2110b", "lepl2214a", "lmapr2019a"];
+  const notCodes = ["", "x", "lepl", "1503", "not a code", "lepl-1503", "toolongprefix1234"];
+
+  async function promoteWithCode(code: string): Promise<void> {
+    const { mkdtemp } = await import("node:fs/promises");
+    const dir = await mkdtemp(join(tmpdir(), "studens-code-"));
+    const good = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    await promote(
+      { ...good, offerings: [{ ...good.offerings[0]!, code }] },
+      join(dir, "c.json"),
+    );
+  }
+
+  it.each(real)("accepts the real code %s", async (code) => {
+    await expect(promoteWithCode(code)).resolves.toBeUndefined();
+  });
+
+  it.each(notCodes)("rejects %j, which is not a course code", async (code) => {
+    await expect(promoteWithCode(code)).rejects.toThrow(/not a plausible course code/);
+  });
+});

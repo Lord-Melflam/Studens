@@ -146,7 +146,27 @@ model Programme {
   year      Int
   title     String
 
+  offerings ProgrammeOffering[]
+
   @@unique([code, year])
+  @@schema("ref")
+}
+
+model ProgrammeOffering {
+  /// Which courses a programme reaches. Added 2026-09-10 for FR-D24: the
+  /// schema had Programme and CourseOffering and nothing joining them, so
+  /// browsing by programme was impossible even though the crawl walked exactly
+  /// this relationship to find the courses in the first place.
+  ///
+  /// Many-to-many on both sides (FR-D25): a course appears in several
+  /// programmes, and those programmes can sit in different faculties.
+  programmeId String
+  programme   Programme      @relation(fields: [programmeId], references: [id])
+  offeringId  String
+  offering    CourseOffering @relation(fields: [offeringId], references: [id])
+
+  @@id([programmeId, offeringId])
+  @@index([offeringId])
   @@schema("ref")
 }
 
@@ -189,8 +209,9 @@ model CourseOffering {
   /// reconciling them is not needed to display it.
   owningFaculty String?
 
-  faculties OfferingFaculty[]
-  teachers  OfferingTeacher[]
+  faculties  OfferingFaculty[]
+  teachers   OfferingTeacher[]
+  programmes ProgrammeOffering[]
 
   @@unique([courseId, year])
   @@schema("ref")

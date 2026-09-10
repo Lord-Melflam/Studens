@@ -86,12 +86,16 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   say(`${faculties.length} faculties`);
 
   // 2. programmes per faculty
-  const programmes: Array<{ code: string; faculty: string }> = [];
+  const programmes: Array<{ code: string; faculty: string; title: string }> = [];
   for (const { code: faculty } of faculties) {
     const url = `${BASE}/fr/catalogue-formations/faculte-${year}-${faculty}`;
     const page = await fetcher.get(url);
     for (const link of extractLinks(page.html, programmeLinkPattern(year), url, "programme links")) {
-      programmes.push({ code: link.code, faculty });
+      programmes.push({
+        code: link.code,
+        faculty,
+        title: link.text || link.code.toUpperCase(),
+      });
     }
   }
   say(`${programmes.length} programme links`);
@@ -100,7 +104,7 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   //    recorded once per faculty it was reached through: many-to-many on
   //    purpose, because reaching a course through EPL says nothing about who
   //    owns it (section 2).
-  const reachedVia: Array<{ code: string; faculty: string }> = [];
+  const reachedVia: Array<{ code: string; faculty: string; programme: string }> = [];
   const seen = new Set<string>();
   for (const programme of programmes) {
     // The landing page carries no course list; the listing lives on one of the
@@ -121,7 +125,14 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
     }
     if (!links) continue;
     for (const link of links) {
-      reachedVia.push({ code: link.code, faculty: programme.faculty });
+      // Keep the PROGRAMME, not only its faculty. Discarding it was what made
+      // FR-D24 impossible, and the loss was invisible because the faculty was
+      // still there.
+      reachedVia.push({
+        code: link.code,
+        faculty: programme.faculty,
+        programme: programme.code,
+      });
       seen.add(link.code);
     }
   }
@@ -148,7 +159,7 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   say(`${offerings.length} offerings parsed`);
 
   return {
-    version: 2,
+    version: 3,
     takenAt: new Date().toISOString(),
     year,
     faculties,

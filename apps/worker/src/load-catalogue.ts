@@ -38,11 +38,13 @@ async function main(): Promise<void> {
   console.log(
     `\ndone in ${seconds}s as ${role ?? "the connecting user"}\n` +
       `  faculties        ${r.faculties}\n` +
+      `  programmes       ${r.programmes}\n` +
       `  courses created  ${r.coursesCreated}\n` +
       `  courses reused   ${r.coursesReused}   (ids kept, so reviews stay attached)\n` +
       `  offerings        ${r.offerings}\n` +
       `  teacher rows     ${r.teachers}\n` +
-      `  faculty links    ${r.facultyLinks}`,
+      `  faculty links    ${r.facultyLinks}\n` +
+      `  programme links  ${r.programmeLinks}`,
   );
 }
 

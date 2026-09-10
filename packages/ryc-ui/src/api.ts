@@ -1,8 +1,10 @@
 /**
- * The only place the frontend knows about the API. Types are declared here
- * rather than imported from @studens/ref on purpose: the browser must not
- * depend on a Node-only package, and the API response is a contract in its own
- * right (FR-B11).
+ * RYC's view of the API.
+ *
+ * The module talks HTTP and declares its own response types. It does NOT
+ * import @studens/ref: that package reads files and is Node only, and a
+ * browser reaching module storage would break FR-B11 whatever the language.
+ * The API response is a contract in its own right.
  */
 export interface CourseSummary {
   code: string;
@@ -15,7 +17,6 @@ export interface CourseSummary {
 }
 
 export interface CourseDetail extends CourseSummary {
-  /** The official UCLouvain page for this offering. */
   officialUrl: string;
   language: string | null;
   contactHours: string | null;
@@ -24,6 +25,19 @@ export interface CourseDetail extends CourseSummary {
   content: string | null;
   owningFaculty: string | null;
   reachedVia: string[];
+}
+
+export interface FacultySummary {
+  code: string;
+  name: string;
+  programmes: number;
+}
+
+export interface ProgrammeSummary {
+  code: string;
+  title: string;
+  faculty: string;
+  courses: number;
 }
 
 async function json<T>(url: string): Promise<T> {
@@ -37,4 +51,13 @@ export const api = {
   search: (q: string) =>
     json<{ query: string; results: CourseSummary[] }>(`/api/courses?q=${encodeURIComponent(q)}`),
   course: (code: string) => json<CourseDetail>(`/api/courses/${encodeURIComponent(code)}`),
+  faculties: () => json<{ faculties: FacultySummary[] }>("/api/faculties"),
+  programmes: (faculty: string) =>
+    json<{ faculty: string; programmes: ProgrammeSummary[] }>(
+      `/api/faculties/${encodeURIComponent(faculty)}/programmes`,
+    ),
+  coursesOfProgramme: (programme: string) =>
+    json<{ programme: string; courses: CourseSummary[] }>(
+      `/api/programmes/${encodeURIComponent(programme)}/courses`,
+    ),
 };

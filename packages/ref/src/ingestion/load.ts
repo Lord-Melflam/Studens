@@ -29,9 +29,11 @@ export interface LoadResult {
   year: number;
   institutions: number;
   faculties: number;
+  programmes: number;
   coursesCreated: number;
   coursesReused: number;
   offerings: number;
+  programmeLinks: number;
   teachers: number;
   facultyLinks: number;
 }
@@ -64,11 +66,13 @@ export async function loadSnapshot(
     year: snapshot.year,
     institutions: 0,
     faculties: 0,
+    programmes: 0,
     coursesCreated: 0,
     coursesReused: 0,
     offerings: 0,
     teachers: 0,
     facultyLinks: 0,
+    programmeLinks: 0,
   };
 
   await prisma.$transaction(
@@ -99,6 +103,22 @@ export async function loadSnapshot(
         facultyIds.set(f.code, row.id);
       }
       result.faculties = facultyIds.size;
+
+      // Programmes. Same stability reasoning as courses: matched on
+      // (code, year), never recreated, because ProgrammeOffering references
+      // them and a fresh id would drop every link.
+      const programmeIds = new Map<string, string>();
+      for (const p of snapshot.programmes) {
+        const facultyId = facultyIds.get(p.faculty);
+        if (!facultyId) continue;
+        const row = await tx.programme.upsert({
+          where: { code_year: { code: p.code, year: snapshot.year } },
+          update: { title: p.title, facultyId },
+          create: { code: p.code, year: snapshot.year, title: p.title, facultyId },
+        });
+        programmeIds.set(p.code, row.id);
+      }
+      result.programmes = programmeIds.size;
 
       for (const o of snapshot.offerings) {
         // Rule 1: match on code, keep the existing id.
@@ -146,16 +166,37 @@ export async function loadSnapshot(
           result.teachers += o.teachers.length;
         }
 
-        const via = snapshot.reachedVia
-          .filter((r) => r.code === o.code)
-          .map((r) => facultyIds.get(r.faculty))
-          .filter((id): id is string => Boolean(id));
+        const reached = snapshot.reachedVia.filter((r) => r.code === o.code);
+
+        const via = new Set(
+          reached
+            .map((r) => facultyIds.get(r.faculty))
+            .filter((id): id is string => Boolean(id)),
+        );
         await tx.offeringFaculty.deleteMany({ where: { offeringId: offering.id } });
-        if (via.length) {
+        if (via.size) {
           await tx.offeringFaculty.createMany({
-            data: [...new Set(via)].map((facultyId) => ({ offeringId: offering.id, facultyId })),
+            data: [...via].map((facultyId) => ({ offeringId: offering.id, facultyId })),
           });
-          result.facultyLinks += new Set(via).size;
+          result.facultyLinks += via.size;
+        }
+
+        // FR-D24: which programmes reach this course. Replaced per offering,
+        // which is safe because nothing references the join rows.
+        const inProgrammes = new Set(
+          reached
+            .map((r) => programmeIds.get(r.programme))
+            .filter((id): id is string => Boolean(id)),
+        );
+        await tx.programmeOffering.deleteMany({ where: { offeringId: offering.id } });
+        if (inProgrammes.size) {
+          await tx.programmeOffering.createMany({
+            data: [...inProgrammes].map((programmeId) => ({
+              programmeId,
+              offeringId: offering.id,
+            })),
+          });
+          result.programmeLinks += inProgrammes.size;
         }
       }
     },

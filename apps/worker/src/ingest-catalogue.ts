@@ -18,10 +18,22 @@ interface Args {
   max?: number;
   out: string;
   delayMs: number;
+  /**
+   * On-disk page cache. On by default, because developing the ingestion means
+   * re-running it and every re-run without a cache is another few hundred
+   * requests at the university's expense. Learned the hard way: a full crawl
+   * was thrown away because the snapshot format changed mid-run.
+   */
+  cacheDir: string | undefined;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { faculties: [], out: "data/catalogue.json", delayMs: 700 };
+  const args: Args = {
+    faculties: [],
+    out: "data/catalogue.json",
+    delayMs: 700,
+    cacheDir: "data/page-cache",
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
     const value = argv[i + 1];
@@ -47,6 +59,9 @@ function parseArgs(argv: string[]): Args {
         args.delayMs = Number(value);
         i += 1;
         break;
+      case "--no-cache":
+        args.cacheDir = undefined;
+        break;
       default:
         throw new Error(`unknown argument: ${flag}`);
     }
@@ -61,12 +76,16 @@ function parseArgs(argv: string[]): Args {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const started = Date.now();
+  const fetcher = new PoliteFetcher({
+    delayMs: args.delayMs,
+    cacheDir: args.cacheDir,
+  });
 
   const snapshot = await crawl({
     ...(args.year !== undefined ? { year: args.year } : {}),
     ...(args.faculties.length ? { onlyFaculties: args.faculties } : {}),
     ...(args.max !== undefined ? { maxOfferings: args.max } : {}),
-    fetcher: new PoliteFetcher({ delayMs: args.delayMs }),
+    fetcher: fetcher,
     onProgress: (m) => console.log(`  ${m}`),
   });
 
@@ -75,7 +94,9 @@ async function main(): Promise<void> {
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
   console.log(
     `\nwrote ${args.out}: year ${snapshot.year}, ` +
-      `${snapshot.faculties.length} faculties, ${snapshot.offerings.length} offerings, ${seconds}s`,
+      `${snapshot.faculties.length} faculties, ${snapshot.programmes.length} programmes, ` +
+      `${snapshot.offerings.length} offerings, ${seconds}s\n` +
+      `  ${fetcher.requestCount} requests to uclouvain.be, ${fetcher.cacheHits} served from cache`,
   );
 }
 
