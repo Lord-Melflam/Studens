@@ -22,3 +22,4 @@ export {
 export { parseOffering, detectEra, type ParsedOffering, type Era } from "./ingestion/parse/offering.js";
 export { academicYearFor, candidateYears, ROLLOVER } from "./ingestion/year.js";
 export { ParseError, FetchError } from "./ingestion/errors.js";
+export { Catalogue, type CourseSummary, type CourseDetail } from "./read.js";

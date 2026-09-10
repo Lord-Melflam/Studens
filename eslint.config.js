@@ -34,12 +34,12 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["**/*.ts"],
+    files: ["**/*.ts", "**/*.tsx"],
     rules: { "no-restricted-imports": ["error", deepImportBan] },
   },
   {
     // Tier 1 depends on nothing.
-    files: ["packages/platform/**/*.ts"],
+    files: ["packages/platform/**/*.ts", "packages/platform/**/*.tsx"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -58,7 +58,7 @@ export default tseslint.config(
   },
   {
     // Tier 2 depends on nothing.
-    files: ["packages/ref/**/*.ts"],
+    files: ["packages/ref/**/*.ts", "packages/ref/**/*.tsx"],
     rules: {
       "no-restricted-imports": [
         "error",

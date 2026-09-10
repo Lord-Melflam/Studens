@@ -3,11 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "studens": { "tier": "app" },
+  "studens": {
+    "tier": "app"
+  },
   "main": "./dist/index.js",
   "dependencies": {
     "@studens/platform": "*",
     "@studens/ref": "*",
-    "@studens/ryc": "*"
+    "@studens/ryc": "*",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6"
   }
 }
