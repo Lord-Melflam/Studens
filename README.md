@@ -55,6 +55,7 @@ Specifications live in `docs/`, and they are the authoritative description of th
 | `docs/design/module-boundaries.md` | How modules share without coupling. Rejects a global shared module, and explains why |
 | `docs/design/anonymous-rate-limiting.md` | Accepted: enforcing contribution limits without linking a contribution to a person |
 | `docs/design/catalogue-ingestion.md` | Accepted: scraping the course catalogue, with the structure discovered rather than hardcoded |
+| `docs/design/frontend-design.tex` | Proposed: how the end product should look and behave. Architecture, user scenarios, use cases and screens. Build with `xelatex`; the PDF and the institution logos are gitignored |
 
 Requirements are marked `[VERIFIED]`, `[DERIVED]`, `[PRIOR-ART]` or `[OPEN]`. Nothing is
 agreed while it is still `[OPEN]`, and open questions are collected in section 7. That

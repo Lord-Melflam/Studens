@@ -1,0 +1,949 @@
+% Studens: frontend design draft.
+%
+% Build:  cd docs/design && xelatex frontend-design.tex   (twice, for the toc)
+% Logos:  scripts/fetch-logos.sh   (they are gitignored: see the file for why)
+%
+% Status: PROPOSED. Nothing here is a decision. It is a drawing of the target
+% product for review, so that the review submission path is built against an
+% agreed shape rather than invented one screen at a time.
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\setmainfont{DejaVu Serif}
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}[Scale=0.86]
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,shapes.geometric,arrows.meta,calc,fit,backgrounds,
+                decorations.pathreplacing,shadows.blur,patterns}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+% ---------------------------------------------------------------------------
+% Palette.
+%
+% Studens is deliberately NOT BLUE. Every Belgian institution it will sit
+% beside is: UCLouvain #011E41 with #5EB3E4, EPL #1C4F9C, ULB #00529C. A blue
+% student platform reads as an official university product, which is precisely
+% the affiliation Studens does not have and must not imply. So the identity is
+% a deep teal-green, adjacent to the academic register without borrowing it.
+%
+% Two colours are FUNCTIONAL rather than decorative and are used consistently
+% throughout, including in the wireframes: the attributed path is slate, the
+% anonymous path is violet. The two must never be confusable anywhere in the
+% product, so they never share a colour.
+% ---------------------------------------------------------------------------
+\definecolor{ink}{HTML}{1A1714}
+\definecolor{studens}{HTML}{14594E}
+\definecolor{studenslt}{HTML}{E6F0ED}
+\definecolor{ochre}{HTML}{B26A00}
+\definecolor{ochrelt}{HTML}{FBF1DF}
+\definecolor{named}{HTML}{3E5C76}
+\definecolor{namedlt}{HTML}{E8EDF2}
+\definecolor{anon}{HTML}{5B3E90}
+\definecolor{anonlt}{HTML}{EDE7F6}
+\definecolor{line}{HTML}{D6D2CC}
+\definecolor{muted}{HTML}{6B6560}
+\definecolor{paper}{HTML}{FBFAF8}
+\definecolor{danger}{HTML}{9E2B20}
+% Institution marks, for reference only.
+\definecolor{uclnavy}{HTML}{011E41}
+\definecolor{ucllight}{HTML}{5EB3E4}
+\definecolor{eplblue}{HTML}{1C4F9C}
+\definecolor{ulbblue}{HTML}{00529C}
+
+\color{ink}
+\pagecolor{paper}
+
+\titleformat{\section}{\sffamily\Large\bfseries\color{studens}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\sffamily\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\sffamily\normalsize\bfseries\color{muted}}{}{0em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\sffamily\footnotesize\color{muted}Studens frontend design draft \textbf{·} proposed, not decided \textbf{·} \thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% Callout boxes
+\newtcolorbox{why}[1][]{colback=studenslt,colframe=studens,boxrule=0.6pt,
+  arc=2pt,left=3mm,right=3mm,top=2mm,bottom=2mm,
+  fonttitle=\sffamily\bfseries\small,title=Why,#1}
+\newtcolorbox{careful}[1][]{colback=ochrelt,colframe=ochre,boxrule=0.6pt,
+  arc=2pt,left=3mm,right=3mm,top=2mm,bottom=2mm,
+  fonttitle=\sffamily\bfseries\small,title=Careful,#1}
+\newtcolorbox{openq}[1][]{colback=white,colframe=muted,boxrule=0.6pt,
+  arc=2pt,left=3mm,right=3mm,top=2mm,bottom=2mm,
+  fonttitle=\sffamily\bfseries\small,title=Still open,#1}
+
+% Screen wireframe frame
+\tikzset{
+  screen/.style={draw=line,fill=white,rounded corners=3pt,line width=0.7pt},
+  chrome/.style={fill=ink!6,draw=line,rounded corners=3pt,line width=0.7pt},
+  field/.style={draw=line,fill=paper,rounded corners=2pt,line width=0.5pt},
+  btn/.style={draw=studens,fill=studens,rounded corners=2pt,text=white,
+              font=\sffamily\scriptsize,inner sep=2pt},
+  btnq/.style={draw=line,fill=white,rounded corners=2pt,text=ink,
+               font=\sffamily\scriptsize,inner sep=2pt},
+  lbl/.style={font=\sffamily\scriptsize\color{muted}},
+  lblb/.style={font=\sffamily\scriptsize\bfseries},
+  tiny/.style={font=\sffamily\tiny\color{muted}},
+  namedchip/.style={draw=named,fill=namedlt,rounded corners=6pt,
+                    font=\sffamily\tiny\bfseries\color{named},inner sep=2pt},
+  anonchip/.style={draw=anon,fill=anonlt,rounded corners=6pt,
+                   font=\sffamily\tiny\bfseries\color{anon},inner sep=2pt},
+  flow/.style={-{Stealth[length=2.4mm]},line width=0.8pt,studens},
+  flowa/.style={-{Stealth[length=2.4mm]},line width=0.8pt,anon},
+  flown/.style={-{Stealth[length=2.4mm]},line width=0.8pt,named},
+  box/.style={draw=line,fill=white,rounded corners=3pt,line width=0.7pt,
+              align=center,font=\sffamily\small,inner sep=3pt},
+  tier/.style={draw=studens,fill=studenslt,rounded corners=3pt,line width=0.7pt,
+               align=center,font=\sffamily\small,inner sep=3pt},
+  % ---------------------------------------------------------------------
+  % Width-aware boxes. `wbox` takes a width and sets BOTH minimum width and
+  % text width from it, so text wraps inside the box instead of overflowing.
+  % Hand-placing text at guessed coordinates was the cause of every overlap in
+  % the first draft of this document, so no diagram below does it any more.
+  % ---------------------------------------------------------------------
+  wbox/.style n args={2}{draw=line,fill=white,rounded corners=3pt,line width=0.7pt,
+    align=center,inner sep=2.5pt,minimum width=#1,text width={#1-7pt},
+    minimum height=#2,font=\sffamily\scriptsize},
+  wtier/.style n args={2}{wbox={#1}{#2},draw=studens,fill=studenslt},
+  wghost/.style n args={2}{wbox={#1}{#2},dashed,fill=paper},
+  wnamed/.style n args={2}{wbox={#1}{#2},draw=named,fill=namedlt},
+  wanon/.style n args={2}{wbox={#1}{#2},draw=anon,fill=anonlt},
+  wfork/.style n args={2}{wbox={#1}{#2},draw=ochre,fill=ochrelt},
+  % a text cell inside a wireframe: width is explicit, so columns cannot collide
+  cell/.style n args={2}{anchor=north west,text width=#1,align=left,font=#2,
+    inner sep=0pt,outer sep=0pt},
+}
+
+\begin{document}
+
+% ===========================================================================
+\begin{titlepage}
+\centering
+\vspace*{2.2cm}
+{\sffamily\fontsize{34}{40}\selectfont\bfseries\color{studens}Studens}\\[2mm]
+{\sffamily\large\color{muted}Frontend design draft}\\[10mm]
+\begin{tikzpicture}
+  \draw[studens,line width=1.2pt] (0,0) -- (5,0);
+\end{tikzpicture}\\[10mm]
+{\sffamily\normalsize How the end product is meant to look and behave:\\
+architecture, user scenarios, use cases and screens.}\\[16mm]
+
+\begin{tcolorbox}[width=0.86\textwidth,colback=ochrelt,colframe=ochre,
+  arc=2pt,fonttitle=\sffamily\bfseries,title={Status: proposed, not decided}]
+\sffamily\small
+Nothing in this document is a decision. It exists so that the review
+submission path is built against an agreed shape rather than invented one
+screen at a time.
+
+Every screen and every flow here is traced back to a requirement in
+\texttt{requirements.md}. Where this document proposes something the
+requirements do not yet contain, it says so and records it as an open question
+rather than smuggling it in as a drawing.
+\end{tcolorbox}
+
+\vfill
+{\sffamily\footnotesize\color{muted}François Meli \textbf{·} 2026-09-10 \textbf{·} \texttt{docs/design/frontend-design.tex}}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ===========================================================================
+\section{Four principles, taken from the specification}
+
+These are not aesthetic preferences. Each one is a requirement expressed as a
+drawing rule, and each is testable by looking at a screen.
+
+\begin{enumerate}[leftmargin=*,itemsep=2mm]
+\item \textbf{Nothing that does not exist is shown.} No greyed-out feature, no
+  empty ratings panel, no ``coming soon''. A placeholder claims the platform
+  does something it cannot, and goal~2 prefers a small app that genuinely
+  works. Where a thing is absent, a sentence says so.
+
+\item \textbf{The anonymity choice is a fork in the road, not a checkbox.}
+  FR-C9 makes an anonymous contribution permanent and unrecoverable for its
+  author, forever. A toggle beside a submit button is the wrong shape for a
+  decision of that weight, so it gets its own step, its own colour, and its own
+  confirmation (FR-C11).
+
+\item \textbf{Numbers describe the course; prose discusses the teaching.}
+  FR-D20. No screen anywhere shows a numeric or categorical rating attached to
+  an identifiable person.
+
+\item \textbf{The shell is not a module.} FR-B16 to FR-B18. The shell shows
+  navigation and a module registry; it never learns what a course is. This is
+  enforced by a test, and it should be visible in the drawings too.
+\end{enumerate}
+
+\begin{why}
+Principle 2 is the one that shapes the most pixels. Every other student review
+platform treats anonymity as a preference. Here it is irreversible, which makes
+it closer to signing something than to ticking something.
+\end{why}
+
+% ===========================================================================
+\section{Colour, and why Studens is not blue}
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+  % institution marks
+  \node[lbl,anchor=west] at (0,3.1) {The institutions it will sit beside};
+  \node[anchor=west] at (0,2.35) {\includegraphics[height=8mm]{frontend/logos/uclouvain.pdf}};
+  \node[anchor=west] at (4.3,2.35) {\includegraphics[height=8mm]{frontend/logos/epl.pdf}};
+  \node[anchor=west] at (7.6,2.35) {\includegraphics[height=8mm]{frontend/logos/ulb.pdf}};
+
+  \node[lbl,anchor=west] at (0,1.5) {Their marks are all blue};
+  \fill[uclnavy] (0,0.7) rectangle (1.1,1.25);
+  \fill[ucllight] (1.2,0.7) rectangle (2.3,1.25);
+  \fill[eplblue] (2.4,0.7) rectangle (3.5,1.25);
+  \fill[ulbblue] (3.6,0.7) rectangle (4.7,1.25);
+  \node[tiny,anchor=west] at (0,0.45) {UCLouvain navy, UCLouvain light, EPL, ULB};
+
+  \node[lbl,anchor=west] at (6.4,1.5) {Studens is not};
+  \fill[studens] (6.4,0.7) rectangle (7.5,1.25);
+  \fill[ochre] (7.6,0.7) rectangle (8.7,1.25);
+  \node[tiny,anchor=west] at (6.4,0.45) {\#14594E, \#B26A00};
+\end{tikzpicture}
+\end{center}
+
+A blue student platform, sitting next to blue institutional marks, reads as an
+official university product. Studens is not affiliated with any institution and
+must not imply that it is. So the identity is a deep teal-green: adjacent to the
+academic register without borrowing from it.
+
+\subsection{Two colours that are functional, not decorative}
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \node[namedchip,minimum width=3.2cm,minimum height=6mm] at (0,0) {Sous mon nom};
+  \node[anonchip,minimum width=3.2cm,minimum height=6mm] at (4.6,0) {Anonyme};
+  \node[tiny,anchor=north,text width=3.4cm,align=center] at (0,-0.5) {slate \#3E5C76\\the attributed path};
+  \node[tiny,anchor=north,text width=3.4cm,align=center] at (4.6,-0.5) {violet \#5B3E90\\the anonymous path};
+\end{tikzpicture}
+\end{center}
+
+The two contribution paths never share a colour, anywhere, at any size. A reader
+scanning a course page can tell attributed from anonymous without reading a
+word, and a contributor mid-submission can tell which path they are on at a
+glance.
+
+\begin{careful}
+This is the visual half of FR-C15, which requires the status to be publicly
+visible. It has a limit that the drawing cannot fix: FR-C16 forbids showing
+\emph{any} other author attribute on an anonymous contribution, including a
+trust tier or an email domain. The violet chip is the only thing an anonymous
+review may carry about its author.
+\end{careful}
+
+\subsection{Institution marks: usable here, not shippable}
+
+The marks above are reproduced in this draft to show what the product will sit
+beside. Two separate problems stand between that and shipping them.
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}p{4.2cm}p{4.0cm}p{5.6cm}@{}}
+\toprule
+\textbf{Mark} & \textbf{Copyright, per Commons} & \textbf{What still blocks use} \\
+\midrule
+UCLouvain & Public domain & Trademark \\
+ULB & Public domain & Trademark \\
+EPL & CC BY-SA 4.0 & Trademark, plus share-alike in an MIT repository \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+``Public domain'' on Commons means below the threshold of originality for
+\emph{copyright}. It says nothing about trademark, and trademark is the harder
+problem: a university mark inside a third-party student app implies endorsement
+that does not exist.
+
+\begin{openq}
+\textbf{Proposed:} the product shows an institution's \emph{name} as text, never
+its mark, until permission exists in writing. The logos stay out of the
+repository entirely (\texttt{scripts/fetch-logos.sh}, gitignored).
+
+To be recorded as a new open question if accepted.
+\end{openq}
+
+\newpage
+% ===========================================================================
+\section{Frontend architecture}
+
+The frontend has the same tiers as the backend, for the reason recorded in
+\texttt{requirements.md}~3.2: without them, adding a second module means editing
+the first one's files.
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+
+% ---- browser boundary drawn LAST via a fitted node, so nothing is clipped
+\node[wtier={13.2cm}{1.15cm}] (shell) at (0,3.15)
+  {\textbf{Shell}\ \ \tiny(\texttt{apps/web})\\[0.6mm]
+   \tiny navigation \textbf{·} module registry \textbf{·} session \textbf{·} design tokens};
+
+\node[wbox={3.9cm}{1.5cm},draw=studens] (ryc) at (-4.5,1.35)
+  {\textbf{RYC}\\[0.5mm]\tiny\texttt{packages/ryc-ui}\\[0.3mm]\tiny parcourir \textbf{·} chercher \textbf{·} avis};
+\node[wghost={3.9cm}{1.5cm}] (mpa) at (0,1.35)
+  {\textbf{MPA}\\[0.5mm]\tiny pas construit\\[0.3mm]\tiny planification};
+\node[wghost={3.9cm}{1.5cm}] (next) at (4.5,1.35)
+  {\textbf{module suivant}\\[0.5mm]\tiny une ligne dans le registre};
+
+\node[wbox={13.2cm}{0.85cm},fill=paper] (http) at (0,0.05)
+  {HTTP, JSON \ \tiny chaque module d\'eclare ses propres types de r\'eponse};
+
+\draw[flow] (shell.south -| ryc.north) -- (ryc.north);
+\draw[flow] (shell.south -| mpa.north) -- (mpa.north);
+\draw[flow] (shell.south -| next.north) -- (next.north);
+\draw[flow] (ryc.south) -- (ryc.south |- http.north);
+\draw[flow] (mpa.south) -- (mpa.south |- http.north);
+
+\begin{scope}[on background layer]
+  \node[draw=line,dashed,rounded corners=4pt,fit=(shell)(ryc)(next)(http),
+        inner sep=6pt] (browser) {};
+\end{scope}
+\node[lbl,fill=paper,inner sep=1.5pt,anchor=west] at ($(browser.north west)+(0.45,0)$) {navigateur};
+
+% ---- server
+\node[wbox={3.9cm}{0.85cm}] (api) at (-4.5,-2.15) {\texttt{apps/api}};
+\node[wtier={3.9cm}{0.85cm}] (plat) at (0,-2.15) {platform\\[0.3mm]\tiny quota, identit\'e};
+\node[wbox={3.9cm}{0.85cm}] (ref) at (4.5,-2.15) {ref\\[0.3mm]\tiny catalogue};
+\node[wbox={13.2cm}{0.85cm},fill=ink!5] (db) at (0,-3.35)
+  {PostgreSQL \ \tiny\textbf{·} une base, un sch\'ema et un r\^ole par module};
+
+\draw[flow] (api) -- (plat);
+\draw[flow] (plat) -- (ref);
+\draw[flow] (plat.south) -- (plat.south |- db.north);
+
+\begin{scope}[on background layer]
+  \node[draw=line,dashed,rounded corners=4pt,fit=(api)(ref)(db),inner sep=6pt] (server) {};
+\end{scope}
+\node[lbl,fill=paper,inner sep=1.5pt,anchor=west] at ($(server.north west)+(0.45,0)$) {serveur, un seul d\'eployable};
+
+\draw[flow,dashed] (http.south) -- (http.south |- server.north);
+\end{tikzpicture}
+\end{center}
+
+\begin{why}
+Three properties are worth reading off the diagram.
+
+\textbf{Arrows point down only.} The shell knows its modules; no module knows
+the shell, and no module knows another module (FR-B10, FR-B18).
+
+\textbf{No module talks to the database.} A module's browser code talks HTTP and
+declares its own response types. \texttt{@studens/ref} reads files and is Node
+only, so a browser reaching module storage would break FR-B11 whatever the
+language.
+
+\textbf{Adding a module is one line.} \texttt{apps/web/src/shell/registry.ts} is
+the only file in the shell allowed to import a module package, which a test
+enforces.
+\end{why}
+
+
+\newpage
+% ===========================================================================
+\section{Screen map}
+
+Every box is a screen that exists or is proposed. Nothing else is planned.
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+
+\node[wtier={3.6cm}{0.9cm}]  (home)   at (0,5.1)   {\textbf{Modules}\\[0.3mm]\tiny l'accueil du shell};
+\node[wghost={3.0cm}{0.9cm}] (signin) at (-5.0,5.1) {Se connecter\\[0.3mm]\tiny FR-A, pas construit};
+\node[wghost={3.0cm}{0.9cm}] (acct)   at (5.0,5.1)  {Mon compte\\[0.3mm]\tiny sessions, FR-A5};
+\draw[flow] (signin) -- (home);
+\draw[flow,dashed] (home) -- (acct);
+
+\node[wbox={3.6cm}{0.65cm},draw=studens] (ryc) at (0,3.75) {\textbf{RYC}};
+\draw[flow] (home) -- (ryc);
+
+\node[wbox={3.0cm}{0.9cm}]  (browse) at (-3.7,2.35) {Parcourir\\[0.3mm]\tiny FR-D24};
+\node[wbox={3.0cm}{0.9cm}]  (search) at (0,2.35)    {Chercher\\[0.3mm]\tiny FR-D1, FR-D2};
+\node[wghost={3.0cm}{0.9cm}] (mine)  at (3.7,2.35)  {Mes avis\\[0.3mm]\tiny FR-D12, nomm\'es seulement};
+\draw[flow] (ryc) -- (browse);
+\draw[flow] (ryc) -- (search);
+\draw[flow,dashed] (ryc) -- (mine);
+
+\node[wbox={3.0cm}{0.9cm}] (prog) at (-3.7,1.0) {Programme\\[0.3mm]\tiny FR-D25};
+\draw[flow] (browse) -- (prog);
+
+\node[wtier={4.6cm}{0.95cm}] (course) at (-1.5,-0.45)
+  {\textbf{Fiche de cours}\\[0.3mm]\tiny FR-D3, FR-D4, FR-D19};
+\draw[flow] (prog) |- (course.west);
+\draw[flow] (search) -- (course.north);
+
+\node[wghost={3.0cm}{0.9cm}] (own) at (3.7,-0.45) {Modifier\\[0.3mm]\tiny FR-C14, nomm\'es seulement};
+\draw[flow,dashed] (mine) -- (own);
+
+\node[wfork={4.6cm}{0.95cm}] (fork) at (-1.5,-2.15)
+  {\textbf{Sous mon nom, ou anonyme ?}\\[0.3mm]\tiny FR-C11, FR-C21};
+\draw[flow] (course) -- node[lbl,fill=paper,inner sep=1.5pt] {donner un avis} (fork);
+
+\node[wnamed={3.2cm}{0.9cm}] (nform) at (-4.4,-3.85) {Formulaire\\[0.3mm]\tiny modifiable ensuite};
+\node[wanon={3.2cm}{0.9cm}]  (aform) at (1.4,-3.85)  {Formulaire\\[0.3mm]\tiny d\'efinitif};
+\draw[flown] (fork.south) -- (nform.north);
+\draw[flowa] (fork.south) -- (aform.north);
+
+\node[wanon={3.2cm}{0.9cm}] (aconf) at (1.4,-5.35) {Confirmer\\[0.3mm]\tiny FR-C11, irr\'eversible};
+\draw[flowa] (aform) -- (aconf);
+
+\node[wbox={3.0cm}{0.65cm}] (done) at (-1.5,-6.75) {Publi\'e};
+\draw[flown] (nform.south) |- (done.west);
+\draw[flowa] (aconf.south) |- (done.east);
+
+\node[wghost={3.4cm}{0.7cm}] (queue)   at (5.6,-3.85) {File d'attente};
+\node[wghost={3.4cm}{0.7cm}] (mdetail) at (5.6,-5.05) {Traiter un avis};
+\draw[flow,dashed] (queue) -- (mdetail);
+\draw[flow,dashed] (aform.east) -- (queue.west);
+
+\begin{scope}[on background layer]
+  \node[draw=line,dashed,rounded corners=3pt,fit=(queue)(mdetail),inner sep=6pt] (modbox) {};
+\end{scope}
+\node[lbl,fill=paper,inner sep=1.5pt,anchor=west] at ($(modbox.north west)+(0.3,0)$) {mod\'eration, FR-E};
+
+\node[lbl,anchor=north west,text width=3.0cm] at (-8.4,-1.6)
+  {trait plein: construit\\ou sp\'ecifi\'e\\[1.5mm] trait pointill\'e:\\propos\'e, pas construit};
+\end{tikzpicture}
+\end{center}
+
+\begin{careful}
+\textbf{``Mes avis'' has no anonymous half, and cannot.} FR-C9 makes an anonymous
+contribution unrecoverable by its author: nobody can prove they wrote it,
+including them. A screen listing ``your'' anonymous reviews would require
+exactly the link the design forbids. The screen therefore says so, rather than
+being absent without explanation.
+\end{careful}
+
+\newpage
+% ===========================================================================
+\section{Who uses it}
+
+Three people, taken from the actors in \texttt{requirements.md}~2 and the module
+specification in~3.4. They are not invented: each corresponds to a role the
+requirements already name.
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}p{3.5cm}p{5.4cm}p{5.4cm}@{}}
+\toprule
+& \textbf{What they want} & \textbf{What they fear} \\
+\midrule
+\textbf{The Researcher}\newline{\footnotesize a student building a PAE} &
+To know which electives are worth taking before the deadline, and what each will
+actually cost in hours &
+Choosing a course that wrecks a quadrimester, and having no way to tell in
+advance \\[2mm]
+\textbf{The Contributor}\newline{\footnotesize a student or alumnus who took it} &
+To warn or recommend, usefully and in their own words &
+Being identified as the person who criticised a lecturer who will grade them or
+their friends \\[2mm]
+\textbf{The Moderator}\newline{\footnotesize AC-4} &
+To remove what is defamatory or names a third party, quickly &
+Having no way to act, or acting on the wrong thing \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{why}
+The Contributor's fear is the entire reason FR-C exists. It is worth stating in
+the persona rather than only in the requirements, because every drawing decision
+about the fork traces back to it.
+\end{why}
+
+% ===========================================================================
+\section{Scenario 1: the PAE deadline}
+
+\textit{Late September. A master's student in computer science has to submit
+their annual programme and has four elective slots to fill. They know their
+programme code and nothing about most of the options.}
+
+This is the scenario the pass test in \texttt{requirements.md}~1.1 describes, and
+the one v1 must satisfy.
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\foreach \i/\x/\t/\s in {
+  1/0/{Ouvre Studens}/{arrive au shell, pas dans un module},
+  2/3.5/{Choisit RYC}/{FR-B17},
+  3/7.0/{Parcourt INFO2M}/{85 cours, FR-D24},
+  4/10.5/{Ouvre 3 fiches}/{ECTS, \'evaluation, avis}}
+  {
+   \node[box,minimum width=3.1cm,minimum height=1.15cm,text width=2.8cm] (n\i) at (\x,0) {\footnotesize\textbf{\t}\\[0.4mm]\tiny \s};
+  }
+\draw[flow] (n1)--(n2); \draw[flow] (n2)--(n3); \draw[flow] (n3)--(n4);
+\node[box,minimum width=3.1cm,minimum height=1.15cm,text width=2.8cm,draw=studens,fill=studenslt] (n5) at (10.5,-1.9)
+  {\footnotesize\textbf{D\'ecide}\\[0.4mm]\tiny sans avoir ouvert Discord};
+\draw[flow] (n4)--(n5);
+\end{tikzpicture}
+\end{center}
+
+\subsection{What they see: the two screens that matter}
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+
+% ---------------- screen A: parcourir un programme
+% Every text node below has an EXPLICIT text width via the `cell` style, so
+% columns cannot collide however long the strings get.
+\begin{scope}[shift={(0,0)}]
+  \node[screen,minimum width=7.2cm,minimum height=8.8cm,anchor=north west] at (0,0) {};
+  \node[cell={3.0cm}{\sffamily\scriptsize\bfseries}] at (0.28,-0.28) {Studens};
+  \node[cell={6.4cm}{\sffamily\tiny\color{muted}}] at (0.28,-0.68) {modules / Rate Your Courses};
+  \draw[line] (0.18,-1.02) -- (7.02,-1.02);
+
+  \node[btn,anchor=north west,minimum width=2.5cm,minimum height=0.48cm,
+        text width=2.3cm,align=center] at (0.28,-1.24) {Parcourir};
+  \node[btnq,anchor=north west,minimum width=2.5cm,minimum height=0.48cm,
+        text width=2.3cm,align=center] at (2.92,-1.24) {Chercher};
+
+  \node[cell={6.4cm}{\sffamily\scriptsize}] at (0.28,-1.98) {Master en sciences informatiques};
+  \node[cell={6.4cm}{\sffamily\tiny\color{muted}}] at (0.28,-2.34) {85 cours, ann\'ee 2025-2026};
+
+  \foreach \i/\c/\t/\e in {0/{LINFO2145}/{Cloud Computing}/{5 ECTS · Q1 · anglais},
+                           1/{LINFO2252}/{Software Maintenance\ldots}/{5 ECTS · Q2},
+                           2/{LINFO2255}/{Software Testing}/{5 ECTS · Q1},
+                           3/{LELEC2760}/{Secure electronic circuits}/{5 ECTS · Q2},
+                           4/{LDATA2010}/{Information visualisation}/{5 ECTS · Q1}} {
+    \node[field,anchor=north west,minimum width=6.74cm,minimum height=0.86cm] at (0.28,-2.72-\i*0.94) {};
+    \node[cell={1.6cm}{\sffamily\tiny\bfseries\color{studens}}] at (0.42,-2.90-\i*0.94) {\c};
+    \node[cell={4.6cm}{\sffamily\scriptsize}]                   at (2.20,-2.86-\i*0.94) {\t};
+    \node[cell={4.6cm}{\sffamily\tiny\color{muted}}]            at (2.20,-3.24-\i*0.94) {\e};
+  }
+  \node[cell={2.0cm}{\sffamily\tiny\color{muted}}] at (0.28,-7.52) {...};
+  \node[cell={6.4cm}{\sffamily\scriptsize\color{muted}}] at (0.28,-9.05) {A. Parcourir un programme};
+\end{scope}
+
+% ---------------- screen B: fiche de cours
+\begin{scope}[shift={(7.8,0)}]
+  \node[screen,minimum width=7.2cm,minimum height=8.8cm,anchor=north west] at (0,0) {};
+  \node[cell={2.0cm}{\sffamily\tiny\color{muted}}] at (0.28,-0.28) {retour};
+  \node[cell={1.9cm}{\sffamily\scriptsize\bfseries\color{studens}}] at (0.28,-0.66) {LINFO2145};
+  \node[cell={4.4cm}{\sffamily\small\bfseries}]                     at (2.28,-0.62) {Cloud Computing};
+  \node[cell={6.4cm}{\sffamily\tiny\color{muted}}] at (0.28,-1.12) {5 ECTS · Q1 · anglais · 2025-2026};
+  \draw[line] (0.18,-1.44) -- (7.02,-1.44);
+
+  % aggregate ribbon: three reserved columns, each with its own text width
+  \node[field,anchor=north west,minimum width=6.74cm,minimum height=1.52cm,
+        fill=studenslt,draw=studens] at (0.28,-1.62) {};
+  \node[cell={4.0cm}{\sffamily\tiny\color{muted}}] at (0.44,-1.74) {D'APRÈS 14 AVIS};
+  \foreach \cx/\cl/\cv in {0.44/{RECOMMAND\'E}/{4 / 5},
+                           2.66/{CHARGE}/{plus lourd},
+                           4.78/{DIFFICULT\'E}/{difficile}} {
+    \node[cell={1.95cm}{\sffamily\tiny\color{muted}}]     at (\cx,-2.10) {\cl};
+    \node[cell={1.95cm}{\sffamily\scriptsize\bfseries}]   at (\cx,-2.40) {\cv};
+  }
+  \draw[line] (2.52,-2.06) -- (2.52,-2.70);
+  \draw[line] (4.64,-2.06) -- (4.64,-2.70);
+  \node[cell={6.4cm}{\sffamily\tiny\color{muted}}] at (0.44,-2.80) {la plupart ont r\'eussi (11 r\'eponses sur 14)};
+
+  \node[cell={6.4cm}{\sffamily\tiny\color{muted}}] at (0.28,-3.36) {ÉVALUATION · FICHE OFFICIELLE};
+  \node[cell={6.5cm}{\sffamily\tiny}] at (0.28,-3.66)
+    {Examen \'ecrit 60\%, projet de groupe 40\%. En seconde session, seul l'examen peut \^etre refait.};
+
+  \draw[line] (0.18,-4.34) -- (7.02,-4.34);
+  \node[cell={6.4cm}{\sffamily\tiny\color{muted}}] at (0.28,-4.48) {AVIS};
+
+  \node[field,anchor=north west,minimum width=6.74cm,minimum height=1.42cm] at (0.28,-4.76) {};
+  \node[namedchip,anchor=north west,minimum width=1.55cm,text width=1.35cm,align=center] at (0.42,-4.88) {Marie D.};
+  \node[cell={4.3cm}{\sffamily\tiny\color{muted}}] at (2.16,-4.92) {a suivi en 2024-2025};
+  \node[cell={6.4cm}{\sffamily\tiny}] at (0.42,-5.30)
+    {Beaucoup de mati\`ere mais tr\`es bien structur\'e. Le projet Azure prend plus de temps que pr\'evu, comptez 8h par semaine au Q1.};
+
+  \node[field,anchor=north west,minimum width=6.74cm,minimum height=1.42cm] at (0.28,-6.32) {};
+  \node[anonchip,anchor=north west,minimum width=1.55cm,text width=1.35cm,align=center] at (0.42,-6.44) {Anonyme};
+  \node[cell={4.3cm}{\sffamily\tiny\color{muted}}] at (2.16,-6.48) {a suivi en 2023-2024};
+  \node[cell={6.4cm}{\sffamily\tiny}] at (0.42,-6.86)
+    {Le cours est dense et l'examen porte sur des d\'etails. Le passage sur les blockchains m'a sembl\'e moins utile que le reste.};
+
+  \node[btn,anchor=north west,minimum width=3.1cm,minimum height=0.48cm,
+        text width=2.9cm,align=center] at (0.28,-7.92) {Donner mon avis};
+  \node[cell={3.3cm}{\sffamily\tiny\color{muted}}] at (3.60,-8.02) {fiche officielle UCLouvain};
+  \node[cell={6.4cm}{\sffamily\scriptsize\color{muted}}] at (0.28,-9.05) {B. Fiche de cours};
+\end{scope}
+\end{tikzpicture}
+\end{center}
+
+\begin{why}
+Three things on screen B are requirements rather than taste.
+
+\textbf{The aggregate carries its own denominator} (``d'apr\`es 14 avis'',
+``11 r\'eponses''). FR-D10 and FR-D23: a number without its count invites being
+quoted without it.
+
+\textbf{The anonymous review shows a violet chip and nothing else about its
+author.} No trust tier, no domain, no institution (FR-C16). The named one shows
+a name because that is what attributed means.
+
+\textbf{The assessment block is labelled ``fiche officielle''.} It is scraped
+(FR-D19), so it is UCLouvain's claim and not a student's, and the interface
+should not blur the two.
+\end{why}
+
+\begin{openq}
+\textbf{Course titles do not fit.} Real ones run long: \emph{Software
+Maintenance and Evolution}, \emph{Valorisation financi\`ere des engagements
+actuariels}. Screen A truncates at roughly 27 characters, so every row keeps the
+same height and the list stays scannable, which is the point of a list.
+
+The alternative is variable-height rows, which reads worse and makes the
+programme list harder to scan. Truncation is proposed rather than decided,
+because it hides information and the full title is one tap away on the course
+page.
+\end{openq}
+
+
+\newpage
+% ===========================================================================
+\section{Scenario 2: the fork}
+
+\textit{A student finished a course last year. It was badly run and they want to
+say so, but the lecturer still teaches courses they will take.}
+
+This is the scenario the whole of FR-C exists for, and the one screen sequence
+that must not be got wrong.
+
+\subsection{The flow}
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+
+\node[wbox={4.4cm}{0.7cm}] (start) at (0,0) {Fiche de cours \tiny · donner mon avis};
+
+\node[wbox={5.4cm}{1.35cm}] (form) at (0,-1.35)
+  {\textbf{Le formulaire}\\[0.4mm]\tiny ann\'ee suivie · recommand\'e · charge · difficult\'e\\[0.2mm]\tiny texte (80 car. min) · j'ai termin\'e le cours};
+\draw[flow] (start) -- (form);
+
+\node[wfork={5.4cm}{0.9cm}] (fork) at (0,-2.95)
+  {\textbf{Sous mon nom, ou anonyme ?}\\[0.3mm]\tiny une \'etape \`a elle seule, pas une case \`a cocher};
+\draw[flow] (form) -- (fork);
+
+% named branch
+\node[wnamed={4.9cm}{1.5cm}] (named) at (-3.6,-4.9)
+  {\textbf{Sous mon nom}\\[0.4mm]\tiny modifiable plus tard (FR-C14)\\[0.2mm]\tiny visible dans « Mes avis »\\[0.2mm]\tiny votre nom appara\^it sur la fiche};
+\draw[flown] (fork.south) -| (named.north);
+
+% anonymous branch
+\node[wanon={4.9cm}{1.5cm}] (anon) at (3.6,-4.9)
+  {\textbf{Anonyme}\\[0.4mm]\tiny \textbf{d\'efinitif}: ni modification ni suppression\\[0.2mm]\tiny absent de « Mes avis », pour toujours\\[0.2mm]\tiny personne ne peut prouver que c'est vous};
+\draw[flowa] (fork.south) -| (anon.north);
+
+\node[wanon={4.9cm}{1.25cm},draw=anon,line width=1.1pt] (confirm) at (3.6,-6.85)
+  {\textbf{Confirmation}\\[0.4mm]\tiny « ce cours a 11 avis nomm\'es et aucun anonyme »\\[0.2mm]\tiny FR-C21 · vous seul connaissez la taille du groupe};
+\draw[flowa] (anon) -- (confirm);
+
+\node[wbox={4.9cm}{0.7cm}] (queue) at (3.6,-8.35) {File de mod\'eration \tiny · FR-E};
+\draw[flowa] (confirm) -- (queue);
+\node[wbox={4.9cm}{0.7cm}] (nqueue) at (-3.6,-6.85) {File de mod\'eration \tiny · FR-E};
+\draw[flown] (named) -- (nqueue);
+
+\node[wbox={4.4cm}{0.7cm}] (pub) at (0,-9.65) {Publi\'e sur la fiche};
+\draw[flown] (nqueue.south) |- (pub.west);
+\draw[flowa] (queue.south) |- (pub.east);
+\end{tikzpicture}
+\end{center}
+
+\begin{why}
+\textbf{The fork is a step, not a control on the form.} FR-C9 makes the
+anonymous choice permanent and unprovable, forever. A radio button next to
+\emph{Envoyer} invites a decision of that weight to be made without reading it.
+
+\textbf{The anonymous branch has one extra screen and the named branch does
+not.} Asymmetry is the point: only one of the two cannot be undone.
+
+\textbf{The confirmation shows counts, not reassurance.} FR-C21. The platform
+does not know the cohort size and never will (\texttt{requirements.md}~3.3), so
+it hands over the only two numbers it has and lets the person who knows the
+third decide.
+\end{why}
+
+\subsection{The fork, drawn}
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \node[screen,minimum width=15.0cm,minimum height=6.6cm,anchor=north west] at (0,0) {};
+
+  \node[cell={9.0cm}{\sffamily\small\bfseries}] at (0.35,-0.35) {Comment voulez-vous publier cet avis ?};
+  \node[cell={13.8cm}{\sffamily\scriptsize\color{muted}}] at (0.35,-0.85)
+    {Ce choix ne peut pas \^etre chang\'e apr\`es l'envoi. Lisez les deux avant de choisir.};
+
+  % --- named card
+  \node[field,anchor=north west,minimum width=6.9cm,minimum height=4.4cm,
+        draw=named,line width=0.9pt] at (0.35,-1.55) {};
+  \node[namedchip,anchor=north west,minimum width=2.1cm,text width=1.9cm,align=center] at (0.6,-1.8) {Sous mon nom};
+  \node[cell={6.4cm}{\sffamily\scriptsize\bfseries}] at (0.6,-2.4) {Marie Dupont};
+  \foreach \i/\t in {0/{Votre nom appara\^it sur la fiche du cours.},
+                     1/{Vous pouvez le modifier plus tard.},
+                     2/{Il appara\^it dans « Mes avis ».},
+                     3/{Vous pouvez demander sa suppression.}} {
+    \node[cell={6.3cm}{\sffamily\tiny}] at (0.9,-2.9-\i*0.42) {\t};
+    \node[cell={0.3cm}{\sffamily\tiny\color{named}}] at (0.6,-2.9-\i*0.42) {•};
+  }
+  \node[btnq,anchor=north west,minimum width=6.4cm,minimum height=0.5cm,
+        text width=6.2cm,align=center,draw=named] at (0.6,-5.35) {Publier sous mon nom};
+
+  % --- anonymous card
+  \node[field,anchor=north west,minimum width=6.9cm,minimum height=4.4cm,
+        draw=anon,line width=0.9pt,fill=anonlt] at (7.75,-1.55) {};
+  \node[anonchip,anchor=north west,minimum width=2.1cm,text width=1.9cm,align=center] at (8.0,-1.8) {Anonyme};
+  \node[cell={6.4cm}{\sffamily\scriptsize\bfseries\color{anon}}] at (8.0,-2.4) {D\'efinitif};
+  \foreach \i/\t in {0/{Aucun nom, aucune facult\'e, aucun domaine.},
+                     1/{\textbf{Impossible \`a modifier ou supprimer.}},
+                     2/{N'appara\^it pas dans « Mes avis ».},
+                     3/{Vous ne pourrez pas prouver qu'il est de vous.}} {
+    \node[cell={6.3cm}{\sffamily\tiny}] at (8.3,-2.9-\i*0.42) {\t};
+    \node[cell={0.3cm}{\sffamily\tiny\color{anon}}] at (8.0,-2.9-\i*0.42) {•};
+  }
+  \node[field,anchor=north west,minimum width=6.4cm,minimum height=0.62cm,
+        fill=ochrelt,draw=ochre] at (8.0,-4.62) {};
+  \node[cell={6.2cm}{\sffamily\tiny}] at (8.15,-4.72)
+    {Ce cours a \textbf{11 avis nomm\'es} et \textbf{aucun avis anonyme}. Vous seriez le premier.};
+  \node[btnq,anchor=north west,minimum width=6.4cm,minimum height=0.5cm,
+        text width=6.2cm,align=center,draw=anon] at (8.0,-5.35) {Continuer en anonyme};
+\end{tikzpicture}
+\end{center}
+
+\begin{careful}
+The ochre box on the anonymous card is the whole of FR-C21 in one sentence, and
+it is the honest form of a protection the platform cannot give.
+
+The complement problem in \texttt{requirements.md}~3.3 is driven by the number
+of \emph{silent} students in a cohort, which Studens does not know and
+deliberately never will. So it shows the two numbers it does have, and leaves
+the judgement to the only person holding the third. That is informed risk, not
+prevented risk, and the wording should not pretend otherwise.
+\end{careful}
+
+
+\newpage
+% ===========================================================================
+\section{Scenario 3: the alumnus}
+
+\textit{Someone who graduated three years ago remembers a course that was worth
+taking, and wants to say so.}
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\foreach \i/\x/\t/\s in {
+  1/0/{Cherche le code}/{le cours existe encore},
+  2/3.8/{Choisit l'ann\'ee}/{2022-2023, pas cette ann\'ee},
+  3/7.6/{\'Ecrit son avis}/{« j'ai termin\'e ce cours »},
+  4/11.4/{Publi\'e, dat\'e}/{FR-D4: l'ann\'ee suivie}}
+  {\node[wbox={3.4cm}{1.1cm}] (n\i) at (\x,0) {\textbf{\t}\\[0.4mm]\tiny \s};}
+\draw[flow] (n1)--(n2); \draw[flow] (n2)--(n3); \draw[flow] (n3)--(n4);
+\end{tikzpicture}
+\end{center}
+
+Two things this scenario forces on the interface, both already requirements.
+
+\textbf{The year is chosen, not assumed.} FR-D4: the academic year is the one
+the reviewer \emph{took} the course, which here is three years before they are
+typing. Defaulting it to the current year would silently mislabel most
+contributions from alumni, who are a large share of the useful ones.
+
+\textbf{A review can outlive its course.} FR-D16: codes change and courses
+retire, so a review may name a year for which no catalogue entry exists. The
+course page shows the review with its stated year and simply has no offering
+context to show beside it.
+
+\begin{careful}
+This is also the scenario that makes the complement problem mild. A 2022 cohort
+has dispersed, so the candidate set for an anonymous review of that year is both
+large and hard to enumerate. The exposure concentrates on the \emph{current}
+year, which is worth remembering when deciding how prominently to show recent
+reviews.
+\end{careful}
+
+% ===========================================================================
+\section{Scenario 4: something has to come down}
+
+\textit{A review names a lecturer and calls them incompetent, with no argument.
+The lecturer complains.}
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[wbox={3.6cm}{0.95cm}] (rep) at (0,0) {Signalement\\[0.3mm]\tiny ou plainte directe};
+\node[wghost={3.6cm}{0.95cm}] (q) at (4.2,0) {File d'attente\\[0.3mm]\tiny FR-E, worker};
+\node[wghost={4.4cm}{0.95cm}] (act) at (8.9,0) {Le mod\'erateur retire\\[0.3mm]\tiny FR-C10, statut chang\'e};
+\draw[flow] (rep)--(q); \draw[flow] (q)--(act);
+
+\node[wbox={4.4cm}{0.95cm}] (audit) at (8.9,-1.7) {\'Ecrit dans l'audit\\[0.3mm]\tiny FR-E1, acteur + cible};
+\draw[flow] (act)--(audit);
+\node[wanon={4.6cm}{0.95cm}] (nosanc) at (2.6,-1.7)
+  {\textbf{Aucune sanction d'auteur}\\[0.3mm]\tiny FR-E7: personne ne sait qui c'est};
+\draw[flowa,dashed] (act.west) -- (nosanc.east);
+\end{tikzpicture}
+\end{center}
+
+\begin{why}
+The moderator's screen shows the review, its target and its date, and offers
+removal. It shows \textbf{no author} for an anonymous review, because there is
+none to show, and therefore offers no warn-or-suspend action for it (FR-E7).
+
+That is not a missing feature to fill in later. Content can be removed; the
+author cannot be reached, ever. The screen has to make that legible or a
+moderator will look for the button that does not exist.
+
+Removal is a \emph{status change} and never a delete (FR-C9), which is why no
+role holds DELETE on the anonymous table.
+\end{why}
+
+\newpage
+% ===========================================================================
+\section{Use cases}
+
+Each row is a use case, its actor, and the requirements it exercises. Where the
+current build does not cover it, the column says so.
+
+\begin{center}
+\sffamily\scriptsize
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{}p{1.15cm}p{3.4cm}p{1.9cm}p{4.4cm}p{3.3cm}@{}}
+\toprule
+& \textbf{Use case} & \textbf{Actor} & \textbf{Requirements} & \textbf{State} \\
+\midrule
+UC-1 & Browse a programme's courses & Visitor & FR-D24, FR-D25 & \textbf{built} \\
+UC-2 & Find a course by code or title & Visitor & FR-D1, FR-D2 & \textbf{built} \\
+UC-3 & Read a course page & Visitor & FR-D3, FR-D4, FR-D19 & \textbf{built}, catalogue only \\
+UC-4 & Sign in & Visitor & FR-A1, FR-A7 & not built \\
+UC-5 & Read the reviews of a course & Member & FR-D13, FR-D14, FR-D15 & not built, needs UC-4 \\
+UC-6 & Submit an attributed review & Member & FR-D5 to FR-D8, FR-D21, FR-C14 & not built \\
+UC-7 & Submit an anonymous review & Member & FR-C2, FR-C9, FR-C11, FR-C13, FR-C21 & not built, the kernel \\
+UC-8 & Edit an attributed review & Member & FR-C14, FR-D12 & not built \\
+UC-9 & Report a review & Member & FR-E & not built \\
+UC-10 & Remove a review & Moderator & FR-C10, FR-E1 & not built \\
+UC-11 & Refresh the catalogue & Administrator & FR-B9, FR-D19 & \textbf{built}, CLI in the worker \\
+UC-12 & Import historical reviews & Administrator & FR-D17, FR-D18 & blocked on OPEN-42 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{careful}
+\textbf{UC-7 is the only one that touches the anonymity kernel}, and it is the
+next thing to build. It is also the only use case whose write path is restricted
+at the database level: \texttt{studens\_platform} is the sole role that may
+insert into the anonymous table, because only it can perform the FR-C13 quota
+check in the same transaction.
+
+There is deliberately \textbf{no use case} for a Member managing their anonymous
+reviews. FR-C9 makes it impossible, and listing it as ``not built'' would
+suggest it is merely unfinished.
+\end{careful}
+
+% ===========================================================================
+\section{The seam, drawn once}
+
+The frontend has one job in all of this: never to create a link the backend has
+been built to avoid.
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+
+\node[wbox={4.0cm}{0.8cm}] (ui) at (0,0.4) {L'\'ecran du formulaire};
+
+\node[wtier={5.6cm}{1.15cm}] (kernel) at (0,-1.4)
+  {\textbf{Le noyau, dans platform}\\[0.4mm]\tiny une transaction: v\'erifie le quota, \'ecrit l'avis};
+\draw[flow] (ui) -- (kernel);
+
+\node[wnamed={4.7cm}{1.2cm}] (namedT) at (-5.5,-3.75)
+  {\texttt{ryc.ReviewAttributed}\\[0.4mm]\tiny \texttt{memberId} pr\'esent, assum\'e (FR-C7)};
+\node[wbox={4.1cm}{1.2cm},draw=studens] (quota) at (0,-3.75)
+  {\texttt{platform.MemberQuota}\\[0.4mm]\tiny un compteur, aucun horodatage};
+\node[wanon={4.9cm}{1.2cm}] (anonT) at (5.5,-3.75)
+  {\texttt{ryc.ReviewAnonymous}\\[0.4mm]\tiny \textbf{aucune colonne membre}, date au jour};
+
+\draw[flown] (kernel.south) -| (namedT.north);
+\draw[flowa] (kernel.south) -| (anonT.north);
+\draw[flow]  (kernel.south) -- (quota.north);
+
+% the link that does not exist
+% the join that does NOT exist: drawn in the gap so its absence is visible
+\draw[danger,line width=1.1pt,dashed] (quota.east) -- (anonT.west);
+\draw[danger,line width=1.1pt] ($(quota.east)!0.5!(anonT.west)+(-0.22,-0.22)$)
+   -- ($(quota.east)!0.5!(anonT.west)+(0.22,0.22)$);
+\draw[danger,line width=1.1pt] ($(quota.east)!0.5!(anonT.west)+(-0.22,0.22)$)
+   -- ($(quota.east)!0.5!(anonT.west)+(0.22,-0.22)$);
+\node[draw=danger,fill=paper,rounded corners=2pt,inner sep=2.5pt,
+      font=\sffamily\tiny\bfseries\color{danger},text width=2.4cm,align=center]
+      (nolink) at (2.9,-2.35) {aucune jointure\\n'existe ici};
+\draw[danger,line width=0.5pt] (nolink.south) -- ($(quota.east)!0.5!(anonT.west)+(0,0.3)$);
+
+\node[cell={11.6cm}{\sffamily\tiny\color{muted}}] at (-5.8,-4.75)
+  {Le compteur et l'avis sont \'ecrits dans la m\^eme transaction, et rien ne les relie
+   dans le sch\'ema. C'est tout le raisonnement de \texttt{architecture-style.md} section~3.};
+\end{tikzpicture}
+\end{center}
+
+\begin{why}
+The red dashed line is the point of the drawing: it marks a join that is
+\emph{absent}, which is the hardest kind of design decision to see in a
+codebase and the easiest to undo by accident.
+
+The frontend can break this without touching the backend. Sending the two
+writes as two requests with a shared correlation id, logging a submission event
+with both the member and the course, or putting a draft id in browser storage
+that also reaches the server, would each rebuild the link in a place nobody is
+looking. FR-B12 covers the logging case; the others are matters of not doing
+them.
+\end{why}
+
+% ===========================================================================
+\section{What this draft raises}
+
+Recorded here rather than added to \texttt{requirements.md}, because none of it
+is decided yet.
+
+\begin{enumerate}[leftmargin=*,itemsep=1.5mm]
+\item \textbf{Institution marks are not shippable.} Copyright is the easy half;
+  trademark is the hard one, and a university mark in a third-party student app
+  implies an endorsement that does not exist. Proposed: the institution's
+  \emph{name} as text until permission exists in writing.
+
+\item \textbf{Long course titles do not fit a scannable list.} Truncation at
+  roughly 27 characters is proposed. It hides information, and the alternative,
+  variable-height rows, makes the list harder to scan.
+
+\item \textbf{The language of the interface is not decided.} This draft is in
+  French because the target users are francophone and their own document is
+  French. But FR-D19 shows scraped text in whatever language the catalogue
+  publishes it, and the vision includes Dutch-speaking institutions. So the
+  interface language and the content language are two questions, not one.
+
+\item \textbf{Nothing here is designed for a phone.} A student at the PAE
+  deadline is plausibly on one. Every screen above assumes a wide viewport, and
+  the two-column fork in particular does not survive a narrow one.
+
+\item \textbf{The moderator's screens are sketched, not designed.} Scenario 4
+  shows the flow, and FR-E has seven requirements with several still open
+  (OPEN-7, OPEN-8, OPEN-24). Designing them before those close would be
+  guessing.
+\end{enumerate}
+
+\vfill
+\begin{center}
+\begin{tcolorbox}[width=0.94\textwidth,colback=studenslt,colframe=studens,
+  arc=2pt,fonttitle=\sffamily\bfseries,title={What would make this wrong}]
+\sffamily\small
+The riskiest assumption in this document is that browsing a programme is what a
+student actually reaches for at the PAE deadline. It is inferred from their own
+document being organised by option and minor, which is evidence but not proof.
+
+The cheapest way to find out is to put screen A in front of four EPL students
+and watch which of the two tabs they touch first. That costs an afternoon and
+would settle it before the review module is built on top of it.
+\end{tcolorbox}
+\end{center}
+
+\end{document}

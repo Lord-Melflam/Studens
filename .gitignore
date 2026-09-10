@@ -50,6 +50,16 @@ prisma/migrations/dev.db*
 data/
 
 
+# Institution logos and the built design PDFs. Fetched with
+# scripts/fetch-logos.sh, never committed: the EPL mark is CC BY-SA 4.0, and a
+# logo is a trademark whatever the copyright status of the file.
+docs/design/frontend/logos/
+docs/design/*.pdf
+docs/design/*.aux
+docs/design/*.log
+docs/design/*.out
+docs/design/*.toc
+
 # Logs and local scratch
 *.log
 tmp/
