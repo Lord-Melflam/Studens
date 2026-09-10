@@ -7,7 +7,7 @@
 | Decided by | François, 2026-09-09 |
 | Date | 2026-09-09 |
 | Resolves | `requirements.md` OPEN-6, OPEN-27 |
-| Still open | OPEN-25 (per target uniqueness), OPEN-26 (quota and period) |
+| Still open | OPEN-26 (quota and period), OPEN-35 (one person, many accounts) |
 | Implements | FR-C4, constrained by FR-C2, FR-C3, FR-C5 |
 
 ## 0. Decision
@@ -143,15 +143,32 @@ design, an acceptable one. It should still be stated rather than discovered.
 
 ### 4.3 Per target uniqueness is not achievable anonymously
 
-"One review per course per person" cannot be enforced on the anonymous path without a per
-member, per course marker, which is Option C and is rejected. Consequences:
+**RESOLVED 2026-09-10: Option 1.** Per target uniqueness applies to the **attributed path
+only** (`requirements.md` FR-C13, FR-D9). On the anonymous path the quota is the only limit,
+and a determined Member can spend several of their allowance on one course. François,
+2026-09-10, closing OPEN-25 and OPEN-31.
 
-- Per target uniqueness can be offered on the **attributed** path only.
-- On the anonymous path, the quota is the only limit, and a determined Member can spend
-  several of their allowance on one course.
+"One review per course per person" cannot be enforced anonymously without a per member, per
+course marker, which is Option C and is rejected.
 
-This is a **product** decision, not just a technical one, and it should be settled
-deliberately. **[OPEN-25]**
+**Blind signatures do not rescue it either.** Option B could issue a one-time token per
+member per course, spent at submission without revealing the spender. But the **issuance**
+record is itself a member-and-course pair. A member issued a token for course C, and one
+anonymous review of C, reproduces the same exposure one step earlier. Unlinkable issuance
+would need considerably more machinery than Option B describes. Recorded so that this is not
+proposed later as an easy fix.
+
+**Two consequences of the resolution, and the second is counterintuitive.**
+
+First, a Member can post an attributed review of a course **and** an anonymous one, and the
+platform cannot detect it.
+
+Second, that gap is load bearing. It is what stops an attacker excluding the attributed
+reviewers from the candidate set for an anonymous review, so it keeps the complement problem
+(`requirements.md` 3.3) probabilistic rather than certain. Which means the platform must not
+publicly claim one review per person per course as a global rule: doing so would restore the
+attacker's certainty. That is FR-C17, and it is the rare case where an **unenforceable rule is
+safer left unstated than stated**.
 
 ## 5. Recommendation
 
@@ -181,8 +198,8 @@ That is Verification applied to a privacy property rather than to a feature.
 
 ## 7. Open questions raised here
 
-- **[OPEN-25]** Is per target uniqueness required? If yes, it applies to attributed
-  contributions only.
+- ~~**[OPEN-25]**~~ **RESOLVED 2026-09-10: yes, attributed path only.** Option 1. See 4.3,
+  and `requirements.md` FR-C13 and FR-C17.
 - **[OPEN-26]** What is the actual quota, and per what period?
 - ~~**[OPEN-27]**~~ **RESOLVED 2026-09-09: no.** A live adversary with database write stream
   access is out of the threat model. Option A stands, and FR-C12 carries the obligation to

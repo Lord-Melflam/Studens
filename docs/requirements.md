@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Status | **Draft**, not agreed |
-| Version | 0.1 |
-| Date | 2026-09-09 |
+| Version | 0.2 |
+| Date | 2026-09-10 |
 | Author | François Meli |
 
 ## 0. How to read this document
@@ -61,8 +61,47 @@ Anything worth keeping from RYC must be re-argued on its own merits and re-marke
 **[VERIFIED]** François, 2026-09-09. This is direction, not v1 scope. See 1.3.
 
 A **virtual buddy or advisor for students**: a single place covering the things that make
-student life better, grown over months and years into a catalogue of modules. Candidates
-named so far are RYC (course reviews), a planning generator, and "some AI stuff".
+student life better, grown over months and years into a catalogue of modules.
+
+**The catalogue is open ended and driven by user needs.** More modules will come as needs
+are observed; the list below is what exists today, not a plan. **[VERIFIED]** François,
+2026-09-10.
+
+Two modules are named so far, **in order of urgency as observed in the institutions**:
+
+| # | Module | Name | What it is |
+|---|---|---|---|
+| 1 | **RYC** | Rate Your Courses | Course reviews, with anonymity as a per review choice and not the default (3.3). The intended first module. |
+| 2 | **MPA** | My Planning Advisor | Planning and scheduling help. Vision, not v1. |
+
+**[VERIFIED]** François, 2026-09-10, for both names and the ordering.
+
+Module names are internal identifiers, not product names, so they need no domain or
+trademark check. Only **Studens** does (7.2).
+
+Two notes on the ordering, because it carries weight it does not yet have evidence for:
+
+- It is a **priority claim**, not just a list. RYC is first because it answers the more
+  urgent observed need. That is the right basis for ordering, and it means the order should
+  change if the evidence does.
+- "What we see in the institutions" is **observation, not the students' own words**, which
+  is what OPEN-1 asks for. The two are close but not the same: an observed need is what a
+  problem looks like from outside. Recording the distinction so that OPEN-1 is not treated
+  as answered by this ordering.
+
+**AI is not a third module.** It is a capability layered into the platform as the work
+progresses, on the belief that AI used properly makes things better. **[VERIFIED]** François,
+2026-09-10.
+
+It means **product features, not developer tooling**. **[VERIFIED]** François, 2026-09-10,
+resolving OPEN-30. Named candidates: summarising reviews into a qualitative overview,
+automated moderation of review content (FR-E4), and improving search and recommendation.
+AI coding assistants and CI pipeline tooling are explicitly **not** what this refers to.
+
+That answer makes two things live rather than resolving them. All three candidates send review
+text to a model, so **OPEN-23** (does contribution text leave the platform) and **OPEN-10**
+(GDPR) apply to each. And hosted inference costs money while self-hosting needs hardware the
+team does not have, so **OPEN-17** stands. None of it is in v1 (1.4), so none of it blocks.
 
 Two properties of the destination matter more than the feature list, because they are
 expensive to retrofit and cheap to keep open:
@@ -79,13 +118,53 @@ licence to build them now. The stated preference for a small app that genuinely 
 
 ### 1.1 Problem statement
 
-**[OPEN-1]** Still needed, and now narrower. "Improving student life" is a direction, not a
-problem statement: nothing can fail a test against it, which makes Validation (NFR-Q5)
-impossible. What is needed is the **first** concrete problem, named in the words of the
-students who have it, together with how they currently cope without you.
+**[VERIFIED]** François, 2026-09-10. Resolves OPEN-1.
 
-Vision answers "where is this going". A problem statement answers "why would anyone use
-v1". Only the second can be validated, and only the second tells you what to build first.
+**Students choose elective courses blind.**
+
+The moment it happens is the **PAE**, *programme annuel de l'étudiant*: the point each year
+where a student commits to their annual course list. The only information available at that
+moment is the official syllabus description, which routinely diverges from the lived
+experience of the course on the three things that decide whether the choice was right:
+workload, teaching style, and how hard the evaluation actually is.
+
+**Why the information exists but does not reach the people who need it.** Three separate
+failures, and each one is fixable:
+
+| Failure | What happens |
+|---|---|
+| **Information decay** | Peer feedback is given in real-time chat, mostly Discord, and is buried within weeks. Every cohort re-asks the same questions from scratch. |
+| **No aggregation** | There is qualitative feedback but no numbers, so courses cannot be compared. One person's opinion cannot be told apart from a general view. |
+| **Contextual obsolescence** | Feedback is undated, so a reader cannot tell whether it still holds after a change of lecturer or curriculum. |
+
+**How students cope today.** Informal Discord servers and word of mouth. These work
+socially and fail as planning tools: not searchable, not persistent, not comparable, and
+restricted to whoever is in the right server. The recurring cost falls on senior students
+and teaching assistants, who answer the same questions every September.
+
+**Where this is observed.** UCLouvain, École Polytechnique de Louvain (EPL). The first year
+is largely mandatory, so the problem concentrates in the elective-heavy later years of
+computer science and software engineering, where it shows up as annual "PAE anxiety" among
+peers. **[VERIFIED]** François, 2026-09-10, first-hand as an EPL master's student.
+
+**What it costs when the choice is wrong:** courses that do not match the student's skills
+or goals; an underestimated elective that causes burnout or failure in a core course; and
+the duplicated effort of answering the same questions every year.
+
+#### The validation test
+
+This is the test v1 has to pass. It is the whole point of NFR-Q5, so it is written to be
+failable rather than agreeable.
+
+| | |
+|---|---|
+| **Pass** | A student searches a course by code, for instance `LEPL1503`, and sees a distribution of ratings, date-stamped feedback and workload estimates in one place, before their PAE deadline. |
+| **Fail** | A student has to join an external messaging platform and wait for a peer to reply in order to get basic qualitative feedback on a course. |
+
+**One limit, stated so it is not forgotten.** This is first-hand observation of peers, not
+interviews. It is specific enough to build against and to fail against, which is what 1.1
+needed. It is not yet evidence that the solution is wanted, so NFR-Q5 validation with real
+students remains outstanding, and the pass test above is what that validation should run.
 
 ### 1.2 Product summary
 
@@ -93,10 +172,11 @@ A web application that authenticated users log into and then use as a host for *
 Modules are self-contained functional areas, basic or advanced. **[VERIFIED]** François,
 2026-09-09.
 
-**RYC** ("Rate Your Courses"), an anonymous course review tool, is the intended first
-module as a *concept*. **[VERIFIED]** François, 2026-09-09. The existing RYC repository is
-a discarded prototype and is not the module. See 0.1. Whether the module is written fresh
-here, or salvages anything from that repository, is **[OPEN-11]**.
+**RYC** ("Rate Your Courses"), a course review tool where **anonymity is an option and not
+the default** (3.3), is the intended first module as a *concept*. **[VERIFIED]** François,
+2026-09-09. The existing RYC repository is a discarded prototype and is not the module. See
+0.1. Whether the module is written fresh here, or salvages anything from that repository, is
+**[OPEN-11]**.
 
 ### 1.3 In scope for v1
 
@@ -110,10 +190,21 @@ here, or salvages anything from that repository, is **[OPEN-11]**.
 Named explicitly, because the vision in 1.0 is large and scope control is the main risk to
 a project with no deadline. Everything here is *deferred*, not rejected.
 
-- A second module. The planning generator and any AI feature are vision, not v1.
+**[VERIFIED]** François, 2026-09-10, for the whole list. Resolves OPEN-2.
+
+- A second module. **MPA** (My Planning Advisor) is vision, not v1.
+- Any AI capability. Not deferred as a *module*, because it is not one (1.0): deferred as a
+  capability, meaning v1 ships with none of it and assumes none of it. See OPEN-30.
+- **RYC analytics.** The trendline, distribution graphs, workload index and teaching quality
+  rating are v2. See 3.4 for each one's reason.
+- **Semantic search and recommendations.** Code and title matching only in v1.
+- **Any synchronisation with institutional systems.** No student roster integration, no
+  enrolment import, no verification against university records. FR-A6 is the direct
+  consequence of this being impossible rather than merely deferred.
 - Third party module authors. The contract is designed with them in mind (1.5), but v1
   ships with modules written by the core team only.
-- More than one institution. v1 serves one, with tenancy kept possible (1.5).
+- More than one institution. v1 serves **UCLouvain** (OPEN-14 resolved), with tenancy kept
+  possible in the schema and the interface defaulted to it (1.5 item 1).
 - Secondary education. Out of scope permanently, not merely deferred. See OPEN-15.
 
 ### 1.5 Decisions that are expensive to reverse
@@ -128,10 +219,43 @@ Everything else should be decided as late as possible.
 | 2 | **Identity is not assumed to be one provider.** | UCL SSO, another university's SSO, and self-managed accounts differ. Hard-coding one identity shape reaches into session handling, authorisation and every module. |
 | 3 | **The module contract is a real interface**, not a convention. | If modules reach into each other, the boundary cannot later be turned into a public extension point. This is FR-B, and it is the load-bearing decision of the whole project. |
 | 4 | **No user identifier leaks into module storage.** | If module rows carry user IDs, unlinkability cannot be added afterwards. See FR-C, conditional on OPEN-12. |
+| 5 | **Shared data is split by whether it is about a person.** The course catalogue and a student's enrolment (PAE) are separate things, stored separately, even though both look like "programme data". | A single shared store holding member enrolment is a linkage engine: it turns "who could have written this anonymous review" from an inference into a query. Splitting them now costs nothing; separating them later is a migration of the most sensitive table in the system. See `design/module-boundaries.md` section 2. **[DERIVED]** 2026-09-10. |
 
 Note what is deliberately absent: multi-tenant routing, an institution admin UI, a plugin
 loader, a module marketplace. Those are the expensive parts, and none is needed to keep the
 corresponding door open.
+
+### 1.6 Institution and implementation strategy
+
+**[VERIFIED]** François, 2026-09-10. Resolves OPEN-14 and OPEN-11.
+
+**v1 serves UCLouvain**, and the second institution arrives only after v1 has demonstrated
+adoption and stability there. The reason given is the right one: building multi-tenant
+routing before product-market fit adds operational complexity and splits attention. Candidate
+institutions afterwards, by proximity and demand, include ULB, ULiège, UMons and partner
+hautes écoles.
+
+What is built now to keep that door open is only what 1.5 item 1 already requires: the tenant
+column in the schema, and an interface that defaults to UCLouvain rather than assuming it.
+
+**Unverified:** the intention to fetch a registry of Belgian higher education institutions
+from a public educational API. No such API has been identified or checked. Treat it as a hope,
+not a plan, until one is found.
+
+**The first module is written fresh.** The prototype was a scaffolded proof of concept whose
+value was validation, not longevity, so its code is not carried over.
+
+**But the stack is retained**, meaning the prototype's languages, core libraries and
+frameworks, in order to avoid re-running an evaluation that was already made. This resolves
+most of the stack question, and it should be read as a deliberate decision rather than an
+inheritance. Two conditions on it:
+
+- **The architecture is not part of the stack.** The prototype claimed microservices. That
+  claim carries no weight here (0.1), and retaining React, Express, Postgres and Prisma says
+  nothing about how the application is structured. The architecture-style decision is separate
+  and still open.
+- **Docker is not currently usable** in the development WSL environment, so any Compose-based
+  workflow has a prerequisite outside this repository.
 
 ## 2. Actors
 
@@ -163,11 +287,42 @@ the legal position, so it blocks a large part of the design.
 | FR-A3 | MUST | Sessions expire after inactivity. Duration is **[OPEN-4]**. |
 | FR-A4 | MUST | Authentication failures reveal nothing about whether an account exists. |
 | FR-A5 | SHOULD | A Member can see and revoke their active sessions. |
+| FR-A6 | MUST | Registration is **open to the public**. No institutional gating, no roster check, no invitation. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-3. |
+| FR-A7 | MUST | Authentication supports third party OAuth providers (Google, Microsoft named) and plain email addresses, so that no one is excluded by their email provider. |
+| FR-A8 | MUST | Integrity is maintained **after** submission (moderation, reporting, sanctions), not by restricting entry. This is the trade FR-A6 makes. |
+| FR-A9 | MUST | A Member's email **domain** may be recorded as a trust signal, and may be shown on attributed contributions. It must never render on an anonymous one (FR-C16). |
+| FR-A10 | MUST | A trust signal is described as what it is: evidence of holding an address at a domain. It must not be labelled as proof of current enrolment. |
 
-**[OPEN-5]** Identity provider: self-managed credentials, UCL SSO, or a third party?
-Self-managed means owning password storage, reset flows and breach risk. SSO removes that
-burden and answers FR-A1 and OPEN-3 together, but couples the project to UCL and may not
-be obtainable by a student project. Cost must be zero either way (CON-1).
+#### Why registration is open, and what it costs
+
+**[VERIFIED]** François, 2026-09-10.
+
+There is no public roster of active UCLouvain students available to a third party, and no
+route to one for a student project. Gating on institutional verification would therefore mean
+either an integration nobody will grant us, or friction that kills adoption. So the platform
+runs on **good faith at the door and moderation after the fact**.
+
+That is the right call for a zero-budget project with no institutional standing. It has two
+consequences that must not be quietly forgotten, because they weaken claims made elsewhere
+in this document.
+
+**A domain is not an enrolment check.** `@student.uclouvain.be` proves someone holds, or once
+held, an address at that domain. Alumni keep addresses. So the tier means "plausibly
+affiliated", never "currently enrolled", and FR-A10 exists to stop the interface saying
+otherwise.
+
+**One person can be many Members, so per-member limits bound less than they appear.** Open
+registration with free email providers means the quota (FR-C4) and per course uniqueness
+(FR-D9, FR-C13) are limits per **account**, not per person. Anyone willing to make accounts
+can exceed both. This is not an argument for closing registration; it is an argument for
+never describing either limit as an integrity guarantee. The honest description is a speed
+bump that stops casual flooding, backed by moderation for anything determined. See
+**[OPEN-35]**.
+
+**[OPEN-5]** Identity provider. Narrowed by FR-A7: OAuth plus email, so **not** UCL SSO as
+the only route, and SSO is no longer needed to answer OPEN-3. What remains is which specific
+providers, and whether self-managed credentials exist at all, since supporting them means
+owning password storage, reset flows and breach risk. Cost must be zero either way (CON-1).
 
 ### 3.2 Module system (FR-B)
 
@@ -184,6 +339,11 @@ two is cheap; if they do not, the platform is a monolith in the bad sense.
 | FR-B6 | SHOULD | Violations of FR-B3 fail the build, rather than relying on reviewer vigilance. |
 | FR-B7 | SHOULD | The module contract is documented well enough for someone outside the core team to write a module against it. |
 | FR-B8 | SHOULD | A module declares what it needs (storage, user attributes, network) rather than being granted everything by default. |
+| FR-B9 | MUST | Shared, impersonal, read-mostly data (the course catalogue and similar) lives in a **reference module** that holds **no personal data** in any column. Feature modules read it; only its owner writes it. **[DERIVED]** 2026-09-10, `design/module-boundaries.md`. |
+| FR-B10 | MUST | Dependencies point one way: feature module to reference module to platform service. No feature module depends on another feature module, directly or through shared tables. Extends FR-B3 and FR-B6. |
+| FR-B11 | MUST | Where a module needs something the platform knows about a Member, it asks a question with a narrow answer, rather than fetching the underlying data. **Ask questions, do not fetch data.** |
+| FR-B12 | MUST | No log, metric or trace record may carry a Member identifier and a contribution target identifier together. This is FR-C5 applied to telemetry, which is written by infrastructure rather than by reviewed code. |
+| FR-B13 | MUST | Cross-module aggregation is keyed on reference data, never on a Member, wherever the anonymous path is involved. |
 
 FR-B6 is deliberate. A boundary that is only a convention erodes; a boundary the pipeline
 enforces does not. This is Verification applied to architecture itself.
@@ -216,8 +376,69 @@ contradiction is resolved or quietly lost.
 contribution, whether to publish anonymously or under their real account.
 **[VERIFIED]** François, 2026-09-09. Resolves OPEN-12.
 
+**Transparent by default. Anonymity is a choice, not an obligation.** In RYC the default is
+to publish under the contributor's real account; the contributor opts in to anonymity for a
+given review. **[VERIFIED]** François, 2026-09-10. Resolves the default half of OPEN-22.
+
 That choice is a genuine product improvement and a significant engineering complication.
 The traps below are not hypothetical; they are the standard ways optional anonymity fails.
+
+#### The complement problem, and why transparency by default makes it worse
+
+Recorded here because François has flagged it as an open worry ("figure out how to avoid
+bad surprises") and it has a precise form. **[DERIVED]**, 2026-09-10, from the default
+decision above. Not yet reviewed by François.
+
+FR-C2 through FR-C6 protect an anonymous review by making sure nothing **inside** the
+record points at its author. They say nothing about what the **other** records reveal.
+
+Take a course with a cohort of 12 students, where each student may leave one review. Nine
+students publish attributed reviews. One anonymous review appears. The author of that
+anonymous review is one of the **three** students who did not publish attributed. If eleven
+publish attributed, the anonymous author is identified with certainty, and no property of
+the anonymous record itself was breached to do it.
+
+Three things follow, and they are uncomfortable:
+
+1. **The attack uses only public data.** No database access, no timestamps, no correlation.
+   A reader with the enrolment list and the page in front of them can do it. That puts it
+   inside the FR-C3 threat model, not outside it.
+2. **Higher attributed participation makes it worse.** A transparent default drives exactly
+   that, so the default chosen for good product reasons works against the guarantee. This is
+   a real tension, not a bug to fix in code.
+3. **It is worst in small cohorts**, which is most electives and every seminar. This is the
+   same underlying issue as OPEN-19, arriving from the other direction: OPEN-19 asks whether
+   there are enough anonymous reviews to hide in, and this asks whether there are enough
+   **silent** members to hide among.
+
+**How this was resolved, and what is left standing.** The attack depends on a rule: that a
+member may leave only one review per course, so that publishing attributed removes you from
+the candidate set. **[VERIFIED]** François, 2026-09-10, Option 1: the rule is enforced on the
+**attributed path only** (FR-C13). Two things follow, and they pull in opposite directions.
+
+The good half: per course uniqueness **cannot** be enforced anonymously, because doing so
+requires a member-and-course marker, which is the rejected Option C of
+`design/anonymous-rate-limiting.md` and a direct breach of FR-C2. So in fact nothing stops a
+member from posting an attributed review of a course **and** an anonymous one. An attacker
+cannot safely exclude the attributed reviewers, and the complement narrows to a probability
+rather than a certainty.
+
+The bad half: that only holds **while the platform does not claim otherwise**. Announcing
+"one review per course per person" as a global rule tells an attacker to exclude every
+attributed reviewer, which hands them the certainty the engineering had denied them. The rule
+would then be unenforceable **and** actively harmful. Hence FR-C17: the uniqueness claim is
+scoped to the attributed path in public wording, and the anonymous path is never described as
+limited to one per course.
+
+This is an uncomfortable place to be. The guarantee partly rests on an enforcement gap rather
+than on a mechanism, which is weaker than the rest of FR-C and must be described honestly
+under FR-C12. It is not a reason to add the marker: adding it would replace a probabilistic
+exposure with a certain one.
+
+The remaining mitigations all cost product value: withhold cohort size, do not list attributed
+reviewers per course, or suppress anonymous reviews below a threshold (OPEN-19). None is free,
+and none is chosen yet. **OPEN-19 is now the only structural lever left**, which promotes it
+from a refinement to a decision that matters.
 
 #### Two paths, not one path with a flag
 
@@ -235,6 +456,11 @@ The traps below are not hypothetical; they are the standard ways optional anonym
 | FR-C10 | MUST | Moderators and Administrators **can** remove any contribution, anonymous or attributed. FR-C9 constrains the contributor, never the platform. |
 | FR-C11 | MUST | Before an anonymous contribution is submitted, the contributor is shown that it is permanent and irreversible, and confirms. |
 | FR-C12 | MUST | The public privacy statement describes the guarantee at exactly its real strength, including the FR-C3 scope limit. It must not overclaim. |
+| FR-C13 | MUST | Per course uniqueness (FR-D9) is enforced on the **attributed** path only. On the anonymous path the quota (FR-C4) is the only limit. **[VERIFIED]** François, 2026-09-10, Option 1. |
+| FR-C14 | MUST | An **attributed** contribution can be edited by its author. Contrast FR-C9, which is not a policy choice but a structural consequence. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-22. |
+| FR-C15 | MUST | Whether a contribution is anonymous or attributed **is** publicly visible: attributed shows the author, anonymous shows an explicit badge. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-21. |
+| FR-C16 | MUST | **No trust tier, domain, institution or other author attribute renders on an anonymous contribution.** The anonymous badge is the only marker it carries. **[DERIVED]** 2026-09-10. |
+| FR-C17 | MUST | The platform must not publicly state or imply that one person can leave only one anonymous review of a course. It cannot enforce that, and asserting it narrows the candidate set for an attacker. **[DERIVED]** 2026-09-10. |
 
 **The threat model boundary, decided 2026-09-09.** **[VERIFIED]** François. Rate limiting
 uses Option A of `design/anonymous-rate-limiting.md`: a fixed window counter on the member
@@ -306,31 +532,62 @@ Users must understand, at the moment of choosing, that anonymous means **permane
 irreversible**: no editing, no deletion, no proving it was theirs. That is the honest
 consequence of a guarantee worth having.
 
-### 3.4 First module (FR-D)
+### 3.4 First module: RYC (FR-D)
 
-**No requirements yet. [OPEN-13]**
+**[VERIFIED]** François, 2026-09-10. Resolves OPEN-13. The v1 / v2 split is his call of the
+same date: build the core, defer the analytics.
 
-The first module's behaviour has not been specified. The prototype sketched one shape, and
-that sketch is recorded below as prior art to argue with, not as requirements to implement.
+RYC answers the problem in 1.1: it replaces "ask in Discord and hope" with a searchable,
+persistent, comparable record of what a course is actually like.
 
-**[PRIOR-ART]**, from the discarded RYC repository, read 2026-09-09:
+The shape borrowed deliberately is an **app store review page**, not a discussion forum.
+One considered review per person per course, not a thread. This drives several decisions
+below, including FR-D9.
 
-| Sketched | Detail |
+#### v1
+
+| ID | Priority | Requirement |
+|---|---|---|
+| FR-D1 | MUST | A Member can find a course by its **code** (for instance `LEPL1503`) with instant, typeahead search. |
+| FR-D2 | MUST | A Member can find a course by words in its **title**. Exact and prefix matching only in v1; semantic matching is deferred (1.4). |
+| FR-D3 | MUST | Each course has a page showing its identity, its aggregate ratings, and its reviews, newest first. |
+| FR-D4 | MUST | Every review displays the **academic year it concerns** and the date it was submitted. This answers the contextual obsolescence failure in 1.1 and is not optional. |
+| FR-D5 | MUST | A review carries an **overall rating**, 1 to 5. |
+| FR-D6 | MUST | A review carries **workload** as self-reported hours per week. |
+| FR-D7 | MUST | A review carries **perceived difficulty** on a fixed scale. |
+| FR-D8 | MUST | A review carries **review text**, with a minimum length to prevent low-effort entries. 150 characters proposed. See OPEN-37 for the interaction with the anonymous path. |
+| FR-D9 | MUST | **On the attributed path only:** one review per Member per course per academic year. Not enforceable on the anonymous path, see below and FR-C13. |
+| FR-D10 | MUST | A course page shows the count of reviews it is aggregating, so a reader can judge how much weight the average carries. |
+| FR-D11 | SHOULD | A review carries an **advice** field, "tips for success in this course". |
+| FR-D12 | SHOULD | A Member can see their own attributed reviews in one place, in order to edit them (FR-C14). |
+
+#### Deferred to v2
+
+Listed because they were specified and deliberately set aside, not forgotten. François's
+call, 2026-09-10.
+
+| Feature | Why it waits |
 |---|---|
-| Review states | `PENDING`, `APPROVED`, `FLAGGED`, `REJECTED` |
-| Escalation | 3 or more community flags hide a review pending review |
-| Moderator view | content, anonymous ID and timestamp only |
-| Anonymous ID | `'anon_' + crypto.randomBytes(16).toString('hex')` |
-| Service target | 24 hour manual review |
+| **Sentiment trendline**, year over year | Cannot work at launch: it needs several years of data before it says anything. Nothing is lost by waiting, and FR-D4 keeps the data being collected for it. |
+| **Distribution graphs** ("30% found this very difficult") | Over a handful of reviews this is both uninformative and identifying. Blocked on OPEN-19. |
+| **Workload index** (reported hours against official ECTS) | Needs ECTS from the catalogue, so it is blocked on OPEN-33. Cheap once that lands. |
+| **Teaching quality** as a fourth separate rating | Deferred to keep the submission form short. Partly covered by FR-D5 and the review text. |
+| **Semantic search and recommendations** | Needs a model. See OPEN-17. |
 
-Points worth challenging before any of it is adopted. A 24 hour manual review target is an
-operational commitment that needs a staffed rota, which a team of two or three with no
-budget may not be able to honour (CON-1, CON-2). A fixed threshold of 3 flags is trivially
-gamed by three coordinating accounts. And a random per-review identifier only delivers
-unlinkability if nothing else in the system correlates the records, which is exactly what
-FR-C5 is about.
+#### Two consequences worth reading before implementing
 
-Writing this section is a prerequisite for building anything.
+**Courses are identified by code plus academic year.** **[DERIVED]** 2026-09-10, resolving
+OPEN-32. It follows from FR-D4 and from the deferred trendline: detecting whether a course
+improved after a change of lecturer is only meaningful if a review is attached to a specific
+year's offering. A course code alone would silently average an old lecturer's course with a
+new one, which is the exact failure the trendline exists to expose. The catalogue must
+therefore carry a year dimension from the first schema (`design/module-boundaries.md`).
+
+**Rich reviews are easier to attribute.** Three numbers plus 150 or more characters of prose
+is a detailed record. Within a cohort of a dozen students, writing style alone can identify
+an author, and no schema decision prevents that. This is a real cost of FR-D8's quality
+goal, it is not fixable in code, and FR-C12 therefore has to disclose it rather than
+pretending the anonymity guarantee is stronger than it is. See OPEN-37.
 
 ### 3.5 Moderation and administration (FR-E)
 
@@ -440,7 +697,7 @@ project has a history of data loss on the development machine.
 **[OPEN-10]** Legal basis. The project is university-adjacent and based in Belgium, so the
 GDPR very likely applies, which would make lawful basis, data subject rights, retention and
 the role of the university substantive requirements rather than paperwork. This interacts
-directly with FR-C: strong unlinkability is the most robust answer to most of it, since
+directly with FR-C: strong unlinkability is the strongest answer to most of it, since
 data that cannot be linked to a person is far easier to defend. Needs confirmation, not
 assumption.
 
@@ -455,9 +712,9 @@ These block agreement. None may be silently assumed.
 
 | ID | Question | Blocks |
 |---|---|---|
-| OPEN-1 | What is the problem, in the words of the people who have it? | Everything |
-| OPEN-2 | What is explicitly out of scope for v1? | Scope control |
-| OPEN-3 | Who is allowed to become a Member? | AC-2, FR-A, OPEN-5 |
+| ~~OPEN-1~~ | ~~What is the problem, in the words of the people who have it?~~ **RESOLVED 2026-09-10.** | closed |
+| ~~OPEN-2~~ | ~~What is explicitly out of scope for v1?~~ **RESOLVED 2026-09-10.** | closed |
+| ~~OPEN-3~~ | ~~Who is allowed to become a Member?~~ **RESOLVED 2026-09-10.** | closed |
 | OPEN-4 | Session lifetime and inactivity timeout? | FR-A3 |
 | OPEN-5 | Which identity provider? | FR-A1, CON-1 |
 | ~~OPEN-6~~ | ~~How to rate limit contributions without linking them?~~ **RESOLVED 2026-09-09: Option A, fixed window.** | closed |
@@ -465,35 +722,46 @@ These block agreement. None may be silently assumed.
 | OPEN-8 | How are Moderators appointed? | FR-E3 |
 | OPEN-9 | Expected load, acceptable downtime, recovery expectations? | NFR-O |
 | OPEN-10 | Does the GDPR apply, and what is the lawful basis? | CON-1, FR-C |
-| OPEN-11 | Is the first module written fresh, or does it salvage from the prototype? | 1.2, FR-D |
+| ~~OPEN-11~~ | ~~Is the first module written fresh, or does it salvage from the prototype?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-12~~ | ~~Is anonymous contribution a real product goal?~~ **RESOLVED 2026-09-09: yes, and it is the contributor's choice per contribution.** | closed |
-| OPEN-13 | What must the first module actually do? | FR-D, everything downstream |
-| OPEN-14 | Which single institution does v1 serve, and when does the second arrive? | 1.5 item 1, tenancy |
+| ~~OPEN-13~~ | ~~What must the first module actually do?~~ **RESOLVED 2026-09-10.** | closed |
+| ~~OPEN-14~~ | ~~Which single institution does v1 serve, and when does the second arrive?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-15~~ | ~~Are secondary school users in the vision?~~ **RESOLVED 2026-09-09: no.** Higher education only. | closed |
 | OPEN-16 | Trusted contributors, vetted catalogue, or untrusted plugins? | FR-B7, FR-B8, security model |
-| OPEN-17 | How does an AI module fit a zero budget constraint? | CON-1, vision 1.0 |
+| OPEN-17 | How does **any** AI capability fit a zero budget constraint? Reframed 2026-09-10: AI is not a module (1.0), so the cost question applies wherever it lands, not to one deferrable feature. | CON-1, vision 1.0, OPEN-30 |
 | OPEN-18 | Who governs contributions? Review authority, merge rights, and how an outside module is accepted. **Licence part resolved 2026-09-09: MIT.** | Outside collaboration, OPEN-16 |
-| OPEN-19 | Is a minimum anonymity set required before an anonymous contribution is shown? | FR-C5 |
+| OPEN-19 | Is a minimum anonymity set required before an anonymous contribution is shown? Sharpened 2026-09-10 by the complement problem in 3.3: the set that matters may be the **silent** members, not the anonymous ones. | FR-C5, OPEN-31 |
 | ~~OPEN-20~~ | ~~Can a contributor manage their own anonymous contributions?~~ **RESOLVED 2026-09-09: no. No editing, no deletion, ever.** | closed |
-| OPEN-21 | Is anonymous or attributed status publicly visible on a contribution? | FR-C5, product |
-| OPEN-22 | Default mode? Can an **attributed** contribution be edited, deleted, or made anonymous later? | FR-C, product |
+| ~~OPEN-21~~ | ~~Is anonymous or attributed status publicly visible on a contribution?~~ **RESOLVED 2026-09-10.** | closed |
+| ~~OPEN-22~~ | ~~Can an attributed contribution be edited, deleted, or made anonymous later?~~ **RESOLVED 2026-09-10.** | closed |
 | OPEN-23 | Does contribution text leave the platform to a third party inference service? | FR-E4, CON-1, OPEN-10, OPEN-17 |
 | OPEN-24 | Threshold for automatic removal versus holding for a human? | FR-E5, FR-E6 |
-| OPEN-25 | Is per target uniqueness required (one review per course per person)? | FR-C4, design note |
+| ~~OPEN-25~~ | ~~Is per target uniqueness required (one review per course per person)?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-28~~ | ~~Product name and repository name?~~ **RESOLVED 2026-09-09: Studens.** | closed, BOIP check still outstanding |
 | OPEN-29 | Hosting target. **Vercel** raised as a free candidate. **Verify before designing around it:** (1) whether the free Hobby tier still prohibits commercial use, which a sponsored or funded student platform could trip; (2) that a stateful modular monolith fits its serverless model, which is doubtful; (3) that it provides no database, so Postgres still needs a separate free host. Unverified as of 2026-09-09. | CON-1, architecture |
 | OPEN-26 | What is the quota, and per what period? | FR-C4, design note |
 | ~~OPEN-27~~ | ~~Live adversary with database write stream access in the threat model?~~ **RESOLVED 2026-09-09: no.** | closed |
+| ~~OPEN-30~~ | ~~Where does AI actually sit?~~ **RESOLVED 2026-09-10.** | closed |
+| ~~OPEN-31~~ | ~~May a Member publish both an attributed and an anonymous review on the same course?~~ **RESOLVED 2026-09-10.** | closed |
+| ~~OPEN-32~~ | ~~Is a course reviewable as a code, or as a code plus academic year?~~ **RESOLVED 2026-09-10.** | closed |
+| OPEN-33 | Where does the course catalogue come from, and who maintains it? Hand-encoding is recurring data entry; importing depends on the institution's format and permission. | CON-1, OPEN-14, FR-B9 |
+| OPEN-34 | When MPA arrives, who owns enrolment: a platform service or MPA itself? Do not decide before there is a second consumer. | FR-B11, 1.0 |
+| OPEN-35 | Open registration means one person can hold many accounts, so the quota (FR-C4) and per course uniqueness (FR-D9) bound accounts, not people. Is that accepted as a speed bump, or is some cost imposed on account creation? | FR-A6, FR-C4, FR-D9 |
+| OPEN-36 | Do attributed contributions show a **full name** or a **username**? A real name is stronger accountability, more identifying under the GDPR, and makes the complement problem sharper. | FR-C15, OPEN-10, 3.3 |
+| OPEN-37 | Does the FR-D8 minimum review length apply on the **anonymous** path? Longer text is better data and a better stylometric fingerprint. Options: same minimum, a lower one, or a warning at submission time. | FR-D8, FR-C12, 3.3 |
 
-OPEN-22 is narrower than it was. The anonymous side is settled by FR-C9. What remains is
-the attributed side, where all three operations are technically possible, plus which mode
-the interface offers first. Defaults matter more than they look: the default becomes what
-most people pick, and that determines the size of the anonymity set that OPEN-19 is about.
+**OPEN-19 is now the load-bearing one.** With OPEN-25 and OPEN-31 resolved as Option 1, the
+complement problem in 3.3 has no structural mitigation left except a minimum anonymity set.
+It was a refinement when it was written; it is now the only lever. It cannot be answered
+before there is a view on how thin real course pages will be at launch, which makes it the
+first thing to revisit after the catalogue exists.
 
 **OPEN-17 is a real conflict, not a detail.** CON-1 forbids paid services. Hosted language
 model inference is a paid service, and self-hosting a useful model needs hardware nobody on
-this team currently has. Either the AI module is not free, or it is not what people expect
-by "AI stuff". Better resolved now than discovered later.
+this team currently has. OPEN-30 confirmed all three intended uses are product features over
+review text, which makes the conflict concrete rather than hypothetical. Nothing in v1
+depends on it (1.4), so it does not block, but it should not be treated as solved by having
+been deferred.
 
 ### 7.1 Resolved
 
@@ -505,6 +773,18 @@ by "AI stuff". Better resolved now than discovered later.
 | OPEN-6 | How to rate limit without linking? | **Option A, fixed window.** A counter on the member record, nothing on the contribution. No cryptography. See `design/anonymous-rate-limiting.md`. Resolved 2026-09-09. |
 | OPEN-27 | Live database write stream adversary in the threat model? | **No.** Proportionality judgement for a small free project. Consequence: the residual correlation in design note 4.1 is knowingly accepted, and FR-C12 requires the privacy statement to disclose it rather than claim absolute unlinkability. Resolved 2026-09-09. |
 | OPEN-18 (licence part) | Which licence? | **MIT.** Permissive, chosen over AGPL with the trade-off understood: anyone may host a derivative commercially without contributing back, in exchange for the lowest possible barrier to the outside contributors the vision depends on (1.0). Inbound equals outbound, so no contributor licence agreement is needed. The remaining half of OPEN-18, contribution governance, stays open. Resolved 2026-09-09. |
+| OPEN-1 | What is the problem, in the words of the people who have it? | **Students choose elective courses blind at PAE time.** Full statement, root causes, current coping (Discord and word of mouth) and a failable pass/fail test in 1.1. Caveat recorded: first-hand observation of peers, not interviews, so NFR-Q5 validation with real students is still outstanding. Resolved 2026-09-10. |
+| OPEN-2 | What is explicitly out of scope for v1? | **Listed in 1.4.** Second module, all AI, RYC analytics, semantic search, any institutional system integration, third party module authors, more than one institution, secondary education. Resolved 2026-09-10. |
+| OPEN-3 | Who is allowed to become a Member? | **Anyone.** Open public registration via OAuth or email, no institutional gating, because no student roster is obtainable by a third party. Integrity moves to post-submission moderation (FR-A6 to FR-A10). Two costs recorded in 3.1: a domain is not an enrolment check, and one person can hold many accounts. See OPEN-35. Resolved 2026-09-10. |
+| OPEN-11 | Is the first module written fresh, or does it salvage from the prototype? | **Written fresh, stack retained.** No code carried over; the prototype's languages, core libraries and frameworks are kept to avoid re-running the evaluation. Its microservices claim is explicitly not retained. See 1.6. Resolved 2026-09-10. |
+| OPEN-13 | What must the first module actually do? | **Specified in 3.4**, FR-D1 to FR-D12. Search by code and title, course page, overall rating, workload hours, difficulty, review text with a minimum length, academic year on every review, one review per member per course on the attributed path. Analytics deferred to v2. Resolved 2026-09-10. |
+| OPEN-14 | Which single institution does v1 serve, and when does the second arrive? | **UCLouvain**, second only after v1 shows adoption and stability. Preparation limited to the tenant column and an interface defaulted to UCLouvain. See 1.6. Resolved 2026-09-10. |
+| OPEN-21 | Is anonymous or attributed status publicly visible? | **Yes.** Attributed shows the author, anonymous shows an explicit badge (FR-C15). Constrained by FR-C16: no author attribute may render on an anonymous contribution. Resolved 2026-09-10. |
+| OPEN-22 | Can an attributed contribution be edited, deleted, or made anonymous later? | **Editing: yes** (FR-C14). Conversion to anonymous is not offered: anyone who saw it already knows the author, and FR-C9 would then forbid deletion, leaving a contribution the author cannot remove whose authorship is known. Resolved 2026-09-10. |
+| OPEN-25 | Is per target uniqueness required? | **Yes, attributed path only** (Option 1). Not enforceable anonymously without a member-and-course marker, which FR-C2 forbids. FR-C13. Resolved 2026-09-10. |
+| OPEN-30 | Where does AI sit? | **In the product, not the development pipeline.** Review summarisation, automated moderation, search improvement. Not coding assistants or CI tooling. Does not resolve OPEN-17 or OPEN-23. Resolved 2026-09-10. |
+| OPEN-31 | May a Member publish both attributed and anonymously on the same course? | **Policy says no, and the platform cannot enforce it.** Resolved with OPEN-25 as Option 1. The enforcement gap is what keeps the complement attack probabilistic rather than certain, hence FR-C17. See 3.3. Resolved 2026-09-10. |
+| OPEN-32 | Course code, or code plus academic year? | **Code plus academic year.** [DERIVED] from FR-D4 and the deferred trendline: averaging across a change of lecturer is the failure the trendline exists to expose. Resolved 2026-09-10. |
 | OPEN-28 | Product name, and therefore the repository name? | **Studens.** Latin, *studēns*, present active participle of *studeō, studēre*: "studying, dedicating oneself to". It is the origin of the participle stem *student-* behind English *student*, French *étudiant* and Dutch *student*, so it reads natively in all three of the platform's languages. Chosen over **Sodalitas** by accepting a weaker (descriptive) trademark position in exchange for immediate legibility, which suits a free non commercial platform. Selection history and rejected names in 7.2. `studens.be` was available on 2026-09-09. **The BOIP trademark search remains outstanding and is not blocked by this decision.** Resolved 2026-09-09. |
 
 Resolved questions stay in the document rather than being deleted. A reader six months from
@@ -639,10 +919,21 @@ do not translate the way they appear to.
 | **Université** | A Belgian university, such as UCL. | |
 | **Secondary school** | Pre-higher education. Permanently out of scope, OPEN-15. | |
 | **Module** | A self-contained functional area of the platform, section 3.2. | A code module or npm package. |
+| **RYC** | Rate Your Courses. The first module, section 1.0. | Not the discarded prototype repository of the same name, see 0.1. |
+| **MPA** | My Planning Advisor. The second named module, section 1.0. Vision, not v1. | |
 
 ## 9. Sources
 
-- François Meli, project context, 2026-09-09. **Authoritative.**
+- François Meli, project context, 2026-09-09 and 2026-09-10. **Authoritative.**
+  2026-09-10 added: module names RYC and MPA and their ordering, the open ended catalogue,
+  AI as a capability rather than a module, and transparency as the default in RYC. Later the
+  same day, written answers to nine open questions (OPEN-1, 2, 3, 11, 13, 14, 21, 25, 30, 31),
+  supplied as documents, plus the v1/v2 split of the RYC feature set and Option 1 on per
+  course uniqueness. Role and date placeholders in those documents were left unfilled and are
+  deliberately not recorded: there is no engineering team, design lead, faculty contact or
+  governance committee, and no launch date.
+- `design/anonymous-rate-limiting.md` (Accepted 2026-09-09) and
+  `design/module-boundaries.md` (Proposed 2026-09-10). Design notes in this repository.
 - <https://github.com/Lord-Melflam/RYC>, README, `docs/PRIVACY.md`, `docs/MODERATION.md`,
   `SECURITY.md`, read 2026-09-09. **Prior art only, not authoritative**, see 0.1.
   `docs/API.md` exists and has not been read. Given its status, reading it is low priority.
