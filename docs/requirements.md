@@ -242,6 +242,14 @@ column in the schema, and an interface that defaults to UCLouvain rather than as
 from a public educational API. No such API has been identified or checked. Treat it as a hope,
 not a plan, until one is found.
 
+**A caution on institution identity, since it will look like a trivial field.** UCLouvain
+traces its lineage to the university founded at Leuven in **1425**, while the French-speaking
+UCLouvain dates from the 1968 split that created Louvain-la-Neuve, and both institutions claim
+that lineage. So a founding year is not a neutral fact about a tenant, and neither is a name:
+five of the twenty faculties are the former Université Saint-Louis Bruxelles
+(`design/catalogue-ingestion.md` 2). Do not stamp identity fields onto a tenant row as though
+they were uncontested.
+
 **The first module is written fresh.** The prototype was a scaffolded proof of concept whose
 value was validation, not longevity, so its code is not carried over.
 
@@ -730,9 +738,10 @@ below, including FR-D9.
 | FR-D2 | MUST | A Member can find a course by words in its **title**. Exact and prefix matching only in v1; semantic matching is deferred (1.4). |
 | FR-D3 | MUST | Each course has a page showing its identity, its aggregate ratings, and its reviews, newest first. |
 | FR-D4 | MUST | Every review displays the **academic year the reviewer took the course**, chosen by them, and the date it was submitted. These are different and often years apart: alumni review courses they took long ago. **Corrected 2026-09-10** from the earlier reading that the year was the submission year. This answers the contextual obsolescence failure in 1.1 and is not optional. |
-| FR-D5 | MUST | A review carries an **overall rating**, 1 to 5. |
-| FR-D6 | MUST | A review carries **workload** as self-reported hours per week. |
-| FR-D7 | MUST | A review carries **perceived difficulty** on a fixed scale. |
+| FR-D5 | MUST | A review carries a **recommendation**, 1 to 5, phrased as "would you take this course again". **Reframed 2026-09-10** from a generic "overall rating", which conflated content, teaching and difficulty into one number meaning different things to different readers. A recommendation is actionable, which is what a PAE decision needs. |
+| FR-D6 | MUST | A review carries **workload against expectation** on a 5-point scale, from much lighter than its ECTS to much heavier. **Reframed 2026-09-10** from mandatory hours per week: absolute self-reported hours have poor construct validity, since the same course honestly yields 4 hours from one student and 15 from another, so the average measures the population rather than the course. Relative to ECTS is the native phrasing ("5 ECTS but feels like 10") and feeds the deferred workload index directly. |
+| FR-D6b | COULD | A review may carry **absolute hours per week**, optional. Keeps honest data from reviewers who actually track it without making everyone guess. |
+| FR-D7 | MUST | A review carries **difficulty** on a **5-point categorical** scale. **Reframed 2026-09-10** from a 1-to-10 slider, which implies precision nobody has. A decade of use in the EPL document converged on categories, and its `FACILE - MOYEN` entries show people want to hedge, which a 5-point scale allows. |
 | FR-D8 | MUST | A review carries **review text**, with a minimum length of about **80 characters**, the same on both paths. Its purpose is to block non-reviews, not to mandate an essay. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-37. |
 | FR-D9 | MUST | **On the attributed path only:** one review per Member per course per academic year. Not enforceable on the anonymous path, see below and FR-C13. |
 | FR-D10 | MUST | A course page shows the count of reviews it is aggregating, so a reader can judge how much weight the average carries. |
@@ -740,10 +749,12 @@ below, including FR-D9.
 | FR-D12 | SHOULD | A Member can see their own attributed reviews in one place, in order to edit them (FR-C14). |
 | FR-D13 | MUST | **Course pages are public; reviews require a session to read.** Code, title, ECTS, description and lecturer are UCLouvain's own published data and stay open. Reviews do not. **[VERIFIED]** François, 2026-09-10, delegated decision. |
 | FR-D14 | MUST | Review text is excluded from search engine indexing. |
-| FR-D15 | MUST | On the **anonymous** path, a review displays its text and date only. Rating, workload and difficulty contribute to the aggregate but are **not shown per review**. The value of those numbers is the aggregate; a per-review triple plus prose is a detailed fingerprint on a record meant to be unlinkable. **[VERIFIED]** François, 2026-09-10. Part of the OPEN-19 resolution. |
+| FR-D15 | MUST | On the **anonymous** path, a review displays its text and date only. Recommendation, workload and difficulty contribute to the aggregate but are **not shown per review**. The value of those numbers is the aggregate; a per-review triple plus prose is a detailed fingerprint on a record meant to be unlinkable. **[VERIFIED]** François, 2026-09-10. Part of the OPEN-19 resolution. |
 | FR-D16 | MUST | A review may concern a course **offering that the catalogue does not hold**, because course codes are not stable across years and the archive may not reach far enough. The review is kept and displays its stated year; offering context is shown only when available. **[VERIFIED]** 2026-09-10, `design/catalogue-ingestion.md` 3.2. |
 | FR-D17 | MUST | An **imported** review, entered by an Administrator from an external source rather than submitted by a Member, is stored and displayed as a distinct kind of record: visibly marked as imported, carrying its source and its stated year, and never presented as a Member contribution. **[VERIFIED]** François, 2026-09-10. |
 | FR-D18 | MUST | Importing third party content requires **permission from whoever holds it** before any import happens. The same rule that forbids reusing unlicensed code applies to reusing other people's writing. See OPEN-42. |
+| FR-D19 | MUST | **Assessment structure is scraped, never asked.** The catalogue publishes the evaluation method with weightings and the official contact hours, so a course page shows them from the reference module. Reviewers are asked only for what the catalogue cannot know. **[VERIFIED]** François, 2026-09-10. Verified against `cours-2025-lepl1503`. |
+| FR-D20 | MUST | **Numbers describe the course. Prose discusses the teaching.** No numeric or categorical field rates an identifiable person. Teaching quality is expressed in review text only, and never as a score. **[VERIFIED]** François, 2026-09-10. Reason in 3.4. |
 
 #### Deferred to v2
 
@@ -766,6 +777,40 @@ improved after a change of lecturer is only meaningful if a review is attached t
 year's offering. A course code alone would silently average an old lecturer's course with a
 new one, which is the exact failure the trendline exists to expose. The catalogue must
 therefore carry a year dimension from the first schema (`design/module-boundaries.md`).
+
+**Why a number never rates a person (FR-D20).** This is the sharpest line in the module and
+it is worth the paragraph.
+
+Section 5.1 puts the lecturer exposure on legitimate interests, Art 6(1)(f), which requires a
+balancing test. **Argued criticism defends well in that balance; an unargued score does not.**
+A numeric rating attached to an identifiable person is a bare assertion with nothing behind
+it, and there is no way for the subject to engage with it. Prose can be argued, qualified,
+dated and answered.
+
+The students reached the same conclusion without any legal reasoning: the EPL document's own
+rule deletes unargued criticism, giving the example "Cours très nul" with no justification.
+
+So teaching quality lives in review text and never in a field. That is one sentence to hold,
+it costs almost nothing in product value, and it is the difference between a platform that
+publishes reasoned student experience and one that publishes scores about named staff.
+
+**Why assessment structure is scraped and not asked (FR-D19).** The catalogue publishes it in
+detail. `cours-2025-lepl1503` gives the evaluation method with weightings, down to the
+conditional rule that shifts the group-work weight depending on the written exam score, plus
+official contact hours (`30.0 h + 30.0 h`).
+
+So the reviewer is asked only for what the catalogue cannot know: how heavy it actually felt,
+how hard it actually was, and whether they would do it again. Three fields left the form and
+became free, reliable, factual data with no moderation burden.
+
+The EPL document's `Devoir / Projet / Exam` table is not a counter-example. It exists because
+a Word file cannot scrape a website. Copy the insight, which is that assessment structure is
+the decisive planning fact, and take it from the source.
+
+If the published assessment turns out to diverge from reality often, the cheap fix is a single
+"did the assessment match what was published" flag, not re-asking for the whole structure. The
+signal already exists in their document: one LEPL2212 review reports exam weightings that do
+not match what was advertised.
 
 **Why reading reviews needs a session (FR-D13).** Three reasons, and none of them is
 friction for the intended user, because a student reading course reviews has an account
@@ -1046,7 +1091,7 @@ These block agreement. None may be silently assumed.
 | OPEN-40 | Is the worker deployed with the web process or separately? Same codebase either way. Separate lets it restart without touching the web path, which matters given the Oracle reclamation risk. | 5.2, `design/architecture-style.md` |
 | OPEN-41 | Backup cadence and retention, relative to the quota window. These two numbers set the bound on the FR-C3 cross-snapshot correlation, so they are a privacy parameter and not just an operational one. | FR-C3, FR-C12, NFR-O1 |
 | OPEN-42 | Permission to import the existing EPL reviews document. It has no licence and was shared inside a faculty drive, so republishing is a new purpose. The document itself names "un administrateur Drive EPL" as the contact, so there is an identifiable group to ask. **Blocks any import** (FR-D18). | FR-D17, FR-D18 |
-| OPEN-43 | Are FR-D5 to FR-D7 the right dimensions? The real EPL document uses **Devoir** yes/no, **Projet** yes/no, **Exam** by *type* (including `ORAL`), and **Difficulté** as a *range* (`FACILE - MOYEN`). It has no star rating and no workload hours at all, which are two of our three numeric fields. Worth weighing a decade of actual use against a prototype sketch. | FR-D5, FR-D6, FR-D7 |
+| ~~OPEN-43~~ | ~~Are FR-D5 to FR-D7 the right dimensions?~~ **RESOLVED 2026-09-10:** three reframed, three moved to the scraper. | closed |
 | OPEN-44 | Offer an optional **passed or failed** field? Their format is `[24-25, réussi]`. It is genuinely informative, since a failing student's view of difficulty is different information. It is also sensitive personal data about academic performance and an extra fingerprint on the anonymous path. Optional at most, never required. | FR-D5, FR-C12, 3.3 |
 
 **OPEN-19 is now the load-bearing one.** With OPEN-25 and OPEN-31 resolved as Option 1, the
@@ -1094,6 +1139,7 @@ been deferred.
 | OPEN-19 | Is a minimum anonymity set required before an anonymous contribution is shown? | **No suppression threshold** (FR-C22). The question measured the wrong quantity: risk is driven by the silent set N minus A, not by the number of anonymous contributions M, and N is not available to the platform by design (no roster, no enrolment store), while an attacker has it. So no threshold could be a guarantee, and FR-C12 forbids claiming one. A count threshold would also hide nearly everything at launch and break FR-C9 verification, since a withheld anonymous contribution cannot be checked by its author. Replaced by FR-C21 (show the contributor the counts before they choose, since they hold the missing number) and FR-D15 (numeric dimensions aggregate-only on the anonymous path). The complement exposure remains, kept probabilistic only by the FR-C13 enforcement gap, and FR-C12 must disclose it. Full arithmetic and rejected alternatives in 3.3. Resolved 2026-09-10. |
 | OPEN-37 | Does the FR-D8 minimum review length apply on the anonymous path? | **Same minimum on both paths, lowered to about 80 characters.** A per-path difference would announce that anonymous reviews are held to a lower standard, and the difference is itself a signal. Also a correction: the minimum was previously described as "the last remaining lever on per-record disclosure", which overstated it. Prose is identifying because it is prose; 150 to 80 barely moves stylometry. It is a **quality** control with a marginal privacy effect. The real controls are FR-D15 and FR-C21. If low-effort reviews dominate, add the structure rule the EPL document uses (an objective part, a subjective part, at least one positive and one negative) rather than raising the count. Resolved 2026-09-10. |
 | OPEN-38 | How are courses reconciled across years when a code or title changes? | **Answered with evidence rather than closed.** Verified 2026-09-10: `LINGI1113` exists only in 2012, `LFSAB1101` and `LFSAB1201` vanish after 2016, `LINFO2145` did not exist in 2019. `LINGI` became `LINFO` and `LFSAB` became `LEPL`. So a course's identity across years is not its code. Resolved structurally by splitting `courses` (stable identity a review attaches to) from `course_offerings` (code plus year, with that year's ECTS, title and teacher), plus FR-D16, which keeps a review whose offering is missing. Automated rename matching remains unnecessary until there is a reason. See `design/catalogue-ingestion.md` 3.2. Resolved 2026-09-10. |
+| OPEN-43 | Are FR-D5 to FR-D7 the right dimensions? | **Three reframed, three moved to the scraper.** The catalogue already publishes the evaluation method with weightings and the official contact hours (verified on `cours-2025-lepl1503`), so assessment structure is scraped rather than asked (FR-D19). The EPL document's `Devoir / Projet / Exam` table exists because a Word file cannot scrape; we can. Its lack of a star rating is not an argument against ratings either: its fields *are* aggregatable, it simply had no database, so the missing thing was never the star. Reviewers are asked only for what the catalogue cannot know: recommendation (FR-D5), workload against ECTS (FR-D6), difficulty as 5 categories (FR-D7), prose (FR-D8), and optionally absolute hours (FR-D6b). Teaching quality as a *number* is deferred indefinitely, per FR-D20. Resolved 2026-09-10. |
 | OPEN-28 | Product name, and therefore the repository name? | **Studens.** Latin, *studēns*, present active participle of *studeō, studēre*: "studying, dedicating oneself to". It is the origin of the participle stem *student-* behind English *student*, French *étudiant* and Dutch *student*, so it reads natively in all three of the platform's languages. Chosen over **Sodalitas** by accepting a weaker (descriptive) trademark position in exchange for immediate legibility, which suits a free non commercial platform. Selection history and rejected names in 7.2. `studens.be` was available on 2026-09-09. **The BOIP trademark search remains outstanding and is not blocked by this decision.** Resolved 2026-09-09. |
 
 Resolved questions stay in the document rather than being deleted. A reader six months from

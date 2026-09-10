@@ -32,6 +32,14 @@ Checked on 2026-09-10:
 - **The pages carry every field the module needs**, verified against
   `uclouvain.be/cours-2025-linfo2145`: ECTS (`5.00 crédits`), code, title, teacher, language
   of instruction, quarter, formal and recommended prerequisites, `Thèmes abordés`, `Contenu`.
+- **They also carry the assessment method with weightings**, verified against
+  `cours-2025-lepl1503`: "Examen écrit ... (35%), Evaluation du travail de groupe ... (55%),
+  Participation ... (5%), Peer-review ... (5%)", including the conditional rule that shifts the
+  group-work weight by written-exam score. Plus **official contact hours** (`30.0 h + 30.0 h`).
+  This is why FR-D19 scrapes assessment structure instead of asking reviewers for it, which
+  removed three fields from the submission form. Note that contact hours are **teaching hours,
+  not student effort**: they are a different measurement from FR-D6 and must not be presented
+  as the same thing.
 
 PDF versions of programmes also exist (`prog-2025-dati2m.pdf`). Not used: HTML is easier to
 parse and carries the same content.
