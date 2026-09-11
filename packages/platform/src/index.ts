@@ -16,3 +16,23 @@ export {
   QUOTA_PER_WINDOW,
   WINDOW_DAYS,
 } from "./quota.js";
+
+/**
+ * Sessions (FR-A1 to FR-A5). The token lives in the browser; only its hash is
+ * stored. See design/authentication.md.
+ */
+export {
+  createSession,
+  verifySession,
+  revokeSession,
+  listSessions,
+  hashToken,
+  newToken,
+  secretEquals,
+  NoSession,
+  IDLE_DAYS,
+  ABSOLUTE_DAYS,
+  type SessionIdentity,
+  type SessionOptions,
+  type ListedSession,
+} from "./session.js";

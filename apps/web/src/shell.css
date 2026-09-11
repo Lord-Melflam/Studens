@@ -118,3 +118,31 @@ header { margin-bottom: 1.75rem; }
   font-size: 0.78rem;
   color: var(--muted);
 }
+
+/* The account control. Pushed to the right of the header, quiet by default:
+   who you are is context, not the point of the page. */
+.account { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; }
+.account .domain { color: var(--muted); }
+.account button {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.25rem 0.6rem;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.account button:hover { border-color: var(--accent); }
+.account button:disabled { opacity: 0.55; cursor: default; }
+/* Marks the development sign-in as what it is, so a screenshot of it can never
+   be mistaken for the real thing. */
+.account .dev {
+  margin-left: 0.3rem;
+  padding: 0 0.3rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: 3px;
+}

@@ -9,7 +9,7 @@ import { Router, json } from "express";
 import { PrismaClient } from "@prisma/client";
 import { QuotaExceeded, quotaRemaining } from "@studens/platform";
 import { ReviewInvalid, reviewsFor, submitAnonymous, submitAttributed, type ReviewInput } from "@studens/ryc";
-import { identify, NotAuthenticated } from "../identity.js";
+import { identify, identifyIfAny, NotAuthenticated } from "../identity.js";
 
 export function reviewRoutes(prisma: PrismaClient): Router {
   const router = Router();
@@ -33,13 +33,11 @@ export function reviewRoutes(prisma: PrismaClient): Router {
         prisma.reviewAnonymous.count({ where: { courseId: course.id, status: "published" } }),
       ]);
 
-      let remaining: number | null = null;
-      try {
-        const who = await identify(prisma);
-        remaining = await quotaRemaining(who.memberId, { client: prisma });
-      } catch {
-        remaining = null;
-      }
+      // A GET must not start a session: SameSite=Lax sends the cookie on a
+      // cross-site top-level GET, so a GET that changes state is reachable from
+      // another site. See design/authentication.md 0.3.
+      const who = await identifyIfAny(prisma, req);
+      const remaining = who ? await quotaRemaining(who.memberId, { client: prisma }) : null;
       res.json({ course: course.code, named, anonymous, quotaRemaining: remaining });
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
@@ -61,12 +59,7 @@ export function reviewRoutes(prisma: PrismaClient): Router {
       }
       const { reviews, aggregate } = await reviewsFor(prisma, course.id);
 
-      let signedIn = true;
-      try {
-        await identify(prisma);
-      } catch {
-        signedIn = false;
-      }
+      const signedIn = (await identifyIfAny(prisma, req)) !== null;
       if (!signedIn) {
         res.json({ aggregate, reviews: [], sessionRequired: true });
         return;
@@ -77,7 +70,7 @@ export function reviewRoutes(prisma: PrismaClient): Router {
 
   router.post("/courses/:code/reviews", (req, res) => {
     void (async () => {
-      const who = await identify(prisma);
+      const who = await identify(prisma, req, res);
 
       const course = await prisma.course.findUnique({ where: { code: req.params.code.toLowerCase() } });
       if (!course) {
