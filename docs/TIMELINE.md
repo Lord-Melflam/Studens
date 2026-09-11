@@ -10,14 +10,14 @@ gone wrong and what each failure changed.
 
 ---
 
-## State, as of 2026-09-10
+## State, as of 2026-09-11
 
 | | |
 |---|---|
 | Stage | **Working software.** Catalogue end to end, and reviews submitted and read on both paths |
-| Commits | 27 |
-| Requirements | **106**: 88 functional (FR-A 10, FR-B 18, FR-C 23, FR-D 30, FR-E 7) and 18 non-functional. Recounted 2026-09-10, having been carried forward by arithmetic for several entries and drifted |
-| Open questions | **14** open, 31 resolved |
+| Commits | 28 |
+| Requirements | **108**: 90 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7) and 18 non-functional. Counted, not carried forward |
+| Open questions | **13** open, 32 resolved |
 | Tests | **186**, plus 15 database isolation assertions |
 | Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
@@ -71,10 +71,12 @@ empty ratings panel would claim the platform does something it cannot.
 | Rate limiting by fixed-window counter, no timestamps | `design/anonymous-rate-limiting.md` |
 | Catalogue scraped, structure discovered not hardcoded | `design/catalogue-ingestion.md` |
 | Trusted contributors, all module code in this repository | `requirements.md` FR-B14 |
+| Branch per change, pull request, one approval, squash merge | `requirements.md` FR-B19, `CONTRIBUTING.md` |
+| Owner review required on guarantees and on the instruments that prove them | `requirements.md` FR-B20, `.github/CODEOWNERS` |
 | Oracle Cloud Always Free, one EU VM | `requirements.md` 5.2 |
 | Microsoft and Google OAuth only, no stored passwords | `requirements.md` 3.1 |
 
-### The 14 open questions
+### The 13 open questions
 
 Grouped by who can answer them, because that is what decides when they close.
 
@@ -83,10 +85,10 @@ Grouped by who can answer them, because that is what decides when they close.
 username on attributed reviews), OPEN-7 (whether a 24 hour moderation target is
 sustainable).
 
-**Needs François, and consequential:** OPEN-18 (who may approve a merge, which
-FR-B14 turned into a security question), OPEN-35 (one person can hold many
+**Needs François, and consequential:** OPEN-35 (one person can hold many
 accounts, so per-member limits bound accounts rather than people), OPEN-45
 (courses taught at other institutions, which arrived inside a single-tenant v1).
+OPEN-18 closed on 2026-09-11, once there was a second person to review.
 
 **Blocked on something outside the repository:** OPEN-42 (permission from the
 EPL drive administrators, which blocks any import), OPEN-17 and OPEN-23 (AI cost
@@ -100,9 +102,9 @@ deployment), OPEN-41 (backup cadence, now a privacy parameter), OPEN-34
 
 ### Not yet done, and known
 
-- **Branch protection requiring the `gates` job** is a repository setting, not a
-  file, so it cannot be verified from here. Without it FR-B15 is a document
-  rather than a control.
+- **Administrators are exempt from branch protection**, by decision on
+  2026-09-11. The rules bind `wilfred33`; they do not bind the owner. FR-B15
+  records the deviation and the two ways to close it.
 - Only **EPL** is ingested. The crawl covers all 20 faculties; the module
   launches scoped, by decision.
 - `apps/worker` has the two CLIs and no queue. Moderation has no consumer yet.
@@ -444,6 +446,51 @@ and the roles were covered, the content rules were covered by a manual curl.
 
 ---
 
+### Phase 17: a development cycle, because there are two of us now
+
+`wilfred33` was added to the repository, so the git workflow stopped being a
+preference and became a control. It had been `[OPEN]` since the start, and
+OPEN-18 had already been sharpened to "who may approve a merge is a security
+question, not a workflow question", because FR-B14 makes review the boundary
+every FR-C guarantee rests on.
+
+**Decided** (FR-B19). Short lived branches off `main`, one pull request per
+change, one approval from someone who is not the author, both CI jobs green,
+squash merge so `main` carries one commit per reviewed unit, linear history.
+Git flow was rejected on its own terms: `develop` and release branches exist to
+support several released versions at once, and this project has one environment
+and no releases, so it would have cost two merges per change and bought nothing.
+
+**Branch protection is on**, which it had never been. Required checks `gates`
+and `database`, branch up to date first, approvals dismissed on new commits, the
+last pusher cannot be the approver, conversations resolved, no force pushes, no
+deletions. Verified by reading the settings back rather than trusting the write.
+
+**`.github/CODEOWNERS`** answers the governance half of OPEN-18 (FR-B20). It
+lists two kinds of path: things that *are* a guarantee (schema, migrations,
+grants, the kernel, the two submission paths, the read path that strips author
+attributes) and things that *verify* one (the isolation script, the architecture
+and kernel tests, the lint boundary rule, the CI workflow). The second kind is
+there because `LESSONS.md` section 9 records that the instrument is the part
+taken on trust.
+
+**One deviation, recorded rather than hidden.** François chose to leave
+administrators exempt from the protection, so the owner can still push straight
+to `main`. FR-B15 was not weakened to match: it now states the rule, the
+deviation, what it costs (on the owner's own changes review is self-review
+again, the exact condition FR-B15 exists to compensate for) and the two ways to
+close it. A requirement that quietly agrees with whatever the repository does is
+not a requirement.
+
+**A pull request template** carries the four questions hard rule 8 demands, and
+one checkbox that is not a formality: if the change adds or alters a gate, break
+the thing it checks and paste the failure. Two gates in this repository were
+found to be worthless for want of exactly that.
+
+This entry was itself the first pull request.
+
+---
+
 ## Next
 
 1. **Authentication** (FR-A). It is now the only thing between the review path
@@ -454,4 +501,4 @@ and the roles were covered, the content rules were covered by a manual curl.
    has a schema and no consumer.
 3. **Editing an attributed review** (FR-C14) and "Mes avis" (FR-D12), both of
    which the fork already promises on screen.
-4. Branch protection, which only François can enable.
+4. ~~Branch protection~~ done 2026-09-11, see phase 17.
