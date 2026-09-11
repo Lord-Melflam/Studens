@@ -973,6 +973,30 @@ default, and it consumes moderator time the team may not have (OPEN-7).
 **[OPEN-8]** How is a Moderator appointed, and by whom? Unanswered, this becomes a
 privilege escalation path.
 
+### 3.6 The shape of the product (FR-F)
+
+Added 2026-09-12. Everything before this described what the product *does*; none
+of it described what a person meets. Full reasoning, with the alternatives and
+the costs, in `design/information-architecture.md`.
+
+| ID | Priority | Requirement |
+|---|---|---|
+| FR-F1 | MUST | The product has **three zones**: a public site needing no account, a sign-in and first-run sequence, and the app itself. All three ship in **one deployable** (1.7). A separate static marketing site was rejected: it doubles what must be built and deployed and puts the design tokens in two places. Cost accepted: the public pages are served by a single-page application, so first paint is slow and a search engine sees an empty document. What would change it: evidence that people are not finding Studens, at which point pre-rendering only the public routes is contained, because they share nothing with app state. |
+| FR-F2 | MUST | The **public zone** is reachable with no account and explains the product: what it is, the problem from 1.1, what RYC does, what is deliberately absent, that Studens is affiliated with nobody, and what anonymity does **not** protect (FR-C12). It must never require a session to be read. |
+| FR-F3 | MUST | **Signing in and creating an account are the same act.** FR-A6 makes registration open and FR-A7 removes passwords, so a provider subject we have not seen simply becomes a Member. Two labels exist because a visitor joining and a visitor returning look for different words, not because there are two paths. |
+| FR-F4 | MUST | A Member's **first sign-in leads to a first-run sequence**, one question per screen with a Next button, in the register of setting up a new machine. Rejected: one long form, which asks a person to absorb every question before answering any, and the first question this product asks is about anonymity. |
+| FR-F5 | MUST | The sequence is **resumable**: progress is stored per step, so closing the tab does not restart it. This is also what makes each step testable on its own. |
+| FR-F6 | MUST | **Only the username is required** (OPEN-36). Every other field is optional, skippable, and settable later from the profile. A first run that cannot be escaped is a first run people lie to. |
+| FR-F7 | MUST | **No profile field renders on any contribution, attributed or anonymous.** FR-C16 forbids author attributes on the anonymous path; this extends it to the attributed path for profile fields, because a public "3rd year, SINF" beside a named review sharpens the complement attack (3.3) against every *anonymous* review of the same course. A named reviewer consents for themselves and cannot consent for the silent ones. **[DERIVED]** 2026-09-12. |
+| FR-F8 | MUST | Profile fields with **no consumer today** (programme, year of study, interests, notification preferences) are collected anyway. **[VERIFIED]** François, 2026-09-12, over a recommendation to defer them to the module that needs them. The recorded cost: under GDPR minimisation they are data we are accountable for holding and cannot justify by pointing at a use, and they enlarge the attribute set behind 3.3. FR-F6 and FR-F7 are what make it acceptable, and neither may be relaxed while FR-F8 stands. |
+| FR-F9 | MUST | A Member names their **institution**, and it is **self-declared**. Neither it nor the email domain may be presented as proof of enrolment (FR-A10). Where the declared institution disagrees with the email domain, the declaration wins and nothing is said: exchange students, alumni and personal accounts are all ordinary under FR-A6. |
+| FR-F10 | MUST | Institutions are **data, not code**: a seeded table, so adding one is a row. |
+| FR-F11 | MUST | An institution is shown by **name, city and colours, never by its mark**. Consistent with `design/frontend-design.tex` 2.3: the marks are trademarked whatever their copyright status, EPL's CC BY-SA fights our MIT licence, and a grid of university logos on a sign-up page is the sharpest possible implied endorsement. **[VERIFIED]** François, 2026-09-12. Revisit only with written permission. |
+| FR-F12 | MUST | The picker shows **every listed institution** and allows only those whose catalogue is ingested to be chosen. Today that is UCLouvain alone. The unavailable ones must be labelled with the reason, since a grid of disabled cards otherwise reads as broken. **[VERIFIED]** François, 2026-09-12. |
+| FR-F13 | MUST | Choosing an institution **does not set a tenant**. FR-C19 derives an anonymous contribution's tenant from the target, never the author, and that is unchanged: this field is a preference. |
+| FR-F14 | MUST | The first-run sequence can be **replayed by anyone**, from the profile, and the development sign-in creates a Member with no progress so the sequence is what a developer lands on. An onboarding completed once is an onboarding nobody can test. |
+| FR-F15 | SHOULD | The app's home screen presents the modules as substance rather than as a menu: what a Member can do now, what changed since they last looked, what is coming. Deliberately unspecified further until it is drawn in `design/frontend-design.tex`. |
+
 ## 4. Non-functional requirements
 
 ### 4.1 MEA (NFR-M)
