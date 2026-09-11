@@ -52,6 +52,14 @@ jobs:
   # A separate job because it needs a database. The gates above deliberately
   # need no infrastructure and no secrets, so they stay fast and can never be
   # skipped for want of a service.
+  #
+  # 2026-09-11: this job used to run the migrations and the isolation script and
+  # nothing else, while the 23 kernel tests skipped silently in BOTH jobs. Every
+  # run was green and reported "23 skipped", and nobody read that line. The tests
+  # that cover the quota race, the role boundary and the FR-D15 filtering had
+  # therefore never run in CI at all. `npm run gates:db` now ends with
+  # `test:db`, which sets STUDENS_REQUIRE_DB=1 so an unreachable database fails
+  # this job instead of quietly emptying it.
   database:
     runs-on: ubuntu-latest
     services:
@@ -84,5 +92,5 @@ jobs:
       # This is the check the architecture argument rests on: a role per schema,
       # and a feature module that genuinely cannot read platform data or bypass
       # the anonymity kernel. See scripts/verify-isolation.sql.
-      - name: Migrate, then verify the schema isolation
+      - name: Migrate, verify the schema isolation, then run the kernel tests
         run: npm run gates:db

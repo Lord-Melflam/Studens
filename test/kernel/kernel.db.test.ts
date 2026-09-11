@@ -1,11 +1,20 @@
 /**
  * The anonymity kernel, against a real PostgreSQL.
  *
- * Skipped when no database is reachable, so `npm run gates` stays
- * infrastructure-free. Run by `npm run gates:db` and by the CI database job.
+ * These are the most important tests in the repository: they check the property
+ * the architecture was chosen for.
  *
- * These are the most important tests in the repository: they check the
- * property the architecture was chosen for.
+ * They are skipped when no database is reachable, so `npm run gates` stays
+ * infrastructure-free. That skip was silent, and on 2026-09-11 it turned out
+ * that all 23 of them had NEVER run in CI: the `gates` job has no database, and
+ * the `database` job ran migrations and the isolation script but never vitest.
+ * Every run reported "23 skipped" in green. The docstring here claimed the
+ * opposite, which is how it went unnoticed.
+ *
+ * Hence STUDENS_REQUIRE_DB. Where these tests are supposed to run, the variable
+ * is set and an unreachable database is a hard failure rather than a skip. A
+ * suite that cannot tell whether it ran proves nothing, which is the same
+ * lesson as the isolation script that could not tell which role it was.
  */
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
@@ -20,6 +29,16 @@ try {
 } catch {
   reachable = false;
 }
+
+if (process.env["STUDENS_REQUIRE_DB"] === "1" && !reachable) {
+  throw new Error(
+    "STUDENS_REQUIRE_DB=1, but no database is reachable, so the kernel tests " +
+      "would have been skipped. These cover the quota race, the role boundary " +
+      "and the FR-D15 and FR-C16 filtering. Start PostgreSQL and re-run, or " +
+      "unset the variable if you meant to run without a database.",
+  );
+}
+
 const dbit = reachable ? it : it.skip;
 
 const NOW = new Date("2026-09-10T12:00:00Z");

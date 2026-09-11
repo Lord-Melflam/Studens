@@ -28,7 +28,7 @@ sudo -u postgres createuser --createdb --createrole "$USER"
 sudo -u postgres createdb -O "$USER" studens
 
 cp .env.example .env      # the local default needs no password: see below
-npm run gates:db          # migrate, grant, then verify the schema isolation
+npm run gates:db          # migrate, grant, verify the isolation, run the kernel tests
 ```
 
 **There is no password to manage locally.** `.env.example` connects over the unix
@@ -90,9 +90,95 @@ red gate because you wrote the change yourself, and never make a gate advisory:
 architecture degrades to an unstructured monolith if FR-B6's gate becomes
 optional.
 
-**Branch protection on `main` must require the `gates` job.** That is a
-repository setting rather than a file, so it is not version controlled and has
-to be checked by hand. If it is off, FR-B15 is not enforced.
+**Branch protection on `main` requires both CI jobs.** Enabled 2026-09-11. It is
+a repository setting rather than a file, so it is not version controlled and has
+to be checked by hand: `gh api repos/Lord-Melflam/Studens/branches/main/protection`.
+
+## How we work
+
+Decided 2026-09-11, when the second developer joined. Until then the repository
+had one developer and no protection at all, which is why none of this existed.
+
+### The cycle, in five steps
+
+```bash
+git switch main && git pull                 # 1. start from main, always
+git switch -c wil/moderation-queue          # 2. a branch per change
+                                            # 3. work, committing as you go
+npm run gates && npm run gates:db           # 4. both green before you ask anyone
+gh pr create --fill                         # 5. a pull request, never a push to main
+```
+
+Branch names are `<who>/<what>`: `fm/oauth-microsoft`, `wil/moderation-queue`.
+Nothing enforces it; it just makes `git branch -a` readable for the other person.
+
+**Nothing lands on `main` except through a pull request.** One approval, from
+someone who is not the author, and both CI jobs green. GitHub will not let you
+approve your own, which is the point: FR-B14 makes review the security boundary,
+and with two people mutual review is possible for the first time.
+
+### What the protection actually enforces
+
+| Rule | Why it is on |
+|---|---|
+| `gates` and `database` must pass | FR-B15. These are the checks that stand in for organisational independence. `database` runs the kernel tests, which until 2026-09-11 had never run in CI at all |
+| Branch up to date with `main` first | Two green branches can still be red together. Cheap here: CI takes about 40 seconds |
+| 1 approval, not from the author | FR-B14 |
+| Approvals dismissed on new commits | An approval that survives a later push covers code nobody read |
+| The last pusher cannot be the approver | Same reason, one step further |
+| Code owner review on the paths in `.github/CODEOWNERS` | OPEN-18. See that file for which paths and why |
+| Conversations resolved | A review comment that is merged unanswered was not a review |
+| Linear history, no force push, no deletion | "Do not rewrite shared history" made mechanical |
+
+**One deliberate hole: administrators are not bound by any of it.** François can
+push straight to `main`. That is a choice made on 2026-09-11, not an oversight,
+and `docs/requirements.md` FR-B15 records it as a deviation with what would close
+it. Read it before concluding the rules are optional: they are not optional for
+anyone who is not an administrator, and the discipline is expected of
+administrators too.
+
+### Merging
+
+**Squash by default.** One commit on `main` per reviewed unit, which is what
+"admitted by review before merge" means. The squashed commit takes the PR title
+and the PR body, so write the body as the commit message you want to survive.
+Merge commits are disabled. Rebase is available when every commit on the branch
+is meaningful and self-contained; say so in the PR when you use it.
+
+Branches are deleted on merge. Keep them short lived: a branch open for a week
+is a branch that will conflict.
+
+### Commit messages
+
+Written for the other developer, not for a changelog.
+
+- An imperative subject line, about 70 characters: `Add the review submission path, on both routes`.
+- A body that says **why**, names the requirement IDs, and names what was
+  rejected. Commit messages here routinely run twenty lines. That is deliberate:
+  `git log` is where a decision is found six months later.
+- No AI attribution of any kind. No em dashes, no double dashes.
+
+**Conventional Commits (`feat:`, `fix:`) is deliberately not used.** It exists to
+drive automated semantic versioning and changelogs; this project publishes no
+package and cuts no releases, so it would add a prefix with no consumer and
+shorten the part that actually carries the reasoning. If we ever publish
+versioned releases, adopt it then.
+
+### Worktrees
+
+A personal convenience, not policy. `git worktree add ../studens-fix fm/fix`
+gives you a second checkout so a long branch and an urgent fix can both be open.
+Use it or do not. Three things about this repository if you do:
+
+1. **Each worktree needs its own `npm install`.** npm workspaces do not share
+   `node_modules` across worktrees.
+2. **There is one local PostgreSQL and one `.env`.** Two worktrees running
+   `npm run db:migrate` or `npm run db:load` fight over the same database. Either
+   keep everything that touches `prisma/` in one worktree, or give the second one
+   its own `DATABASE_URL` and its own database.
+3. **Copy `data/page-cache` across.** It is gitignored, so a fresh worktree has
+   none and `npm run ingest` will re-crawl 546 pages instead of finishing in nine
+   seconds. Be kind to uclouvain.be.
 
 ## The two gates worth understanding before you change anything
 

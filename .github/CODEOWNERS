@@ -1,0 +1,43 @@
+# Who must read a change before it can land.
+#
+# FR-B14 made code review the security boundary rather than a quality practice:
+# every FR-C guarantee rests on all database-touching code having been read by
+# someone who knows what it guarantees. OPEN-18 asked who may approve a merge.
+# This file is that answer, for the paths where getting it wrong is not
+# recoverable.
+#
+# The list is not "important files". It is two specific kinds:
+#
+#   1. Things that ARE a guarantee: the schema and its migrations, the grant
+#      matrix, the anonymity kernel, the two submission paths, the read path
+#      that strips author attributes.
+#   2. Things that VERIFY a guarantee: the isolation script, the architecture
+#      and kernel tests, the lint boundary rule, the CI workflow. LESSONS.md
+#      section 9 records that the verified thing gets read carefully and the
+#      instrument gets taken on trust, so the instruments are listed too.
+#
+# Everything else needs one approval from anyone (branch protection), not from
+# a named person.
+#
+# WHAT WOULD CHANGE THIS. A third developer who knows FR-C well enough to
+# review the kernel gets added here, and the bottleneck goes away. Until then
+# François is a bottleneck on these paths by choice, because a mistake in them
+# publishes rows that can never be unlinked or recalled.
+
+# The anonymity guarantee, in the places it actually lives
+/prisma/                                  @Lord-Melflam
+/packages/platform/                       @Lord-Melflam
+/packages/ryc/src/submit.ts               @Lord-Melflam
+/packages/ryc/src/read.ts                 @Lord-Melflam
+
+# The instruments that prove it
+/scripts/verify-isolation.sql             @Lord-Melflam
+/test/architecture/                       @Lord-Melflam
+/test/kernel/                             @Lord-Melflam
+/test/ui/review-flow.test.ts              @Lord-Melflam
+/test/ui/path-honesty.test.ts             @Lord-Melflam
+/eslint.config.js                         @Lord-Melflam
+/.github/                                 @Lord-Melflam
+
+# The specification the rest of it answers to
+/docs/requirements.md                     @Lord-Melflam

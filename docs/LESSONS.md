@@ -117,6 +117,41 @@ smoke test that only exercises one neighbourhood tests one neighbourhood.
 
 ---
 
+### A suite that reported success and had quietly emptied itself
+
+`test/kernel/kernel.db.test.ts` holds the 23 tests that cover the thing this
+whole architecture was chosen for: the quota race, the role boundary that stops
+a feature module writing an anonymous row, and the FR-D15 and FR-C16 filtering
+that happens server side. They skip when no database is reachable, so that
+`npm run gates` stays infrastructure free.
+
+The skip was silent, and nothing ever ran them. The `gates` CI job has no
+database service. The `database` job ran the migrations and the isolation script
+and **never invoked vitest at all**. So every run since the tests were written
+printed `Tests 163 passed | 23 skipped` in green, and the 23 most important
+tests in the repository had never executed in CI once.
+
+The file's own docstring said "Run by `npm run gates:db` and by the CI database
+job". It was not, and had never been. A comment asserting coverage is the
+easiest place for coverage to go missing, because it answers the question
+without anyone checking.
+
+Found on 2026-09-11 while deciding which checks should gate a merge. Making
+those jobs required would have been worse than leaving them optional: a required
+check that skips the tests it exists for converts an absence into an assurance.
+
+**Rule now in force.** `npm run gates:db` ends with `test:db`, which sets
+`STUDENS_REQUIRE_DB=1`; where these tests are supposed to run, an unreachable
+database is a hard failure with a named reason, not a skip. Verified by running
+it with the database down and watching it exit 1.
+
+**Generalised.** A conditional skip is a silent branch, and a green run tells
+you nothing about which branch it took. Anywhere a test can decide not to run,
+something has to assert that it did: the count, an environment flag, or both.
+This is the same shape as the isolation script that could not confirm which role
+it was running as. That one proved nothing while claiming to prove fourteen
+things; this one proved nothing while claiming to prove twenty-three.
+
 ### A narrow fix applied globally
 
 Course page labels carry `<br />` inside them, and cheerio joins text across a
