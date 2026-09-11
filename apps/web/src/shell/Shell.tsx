@@ -9,7 +9,7 @@
  */
 import { Account } from "./Account.js";
 import { modules } from "./registry.js";
-import { navigate, useRoute } from "./route.js";
+import { APP_PREFIX, moduleIdFrom, navigate, usePath } from "../router.js";
 
 function Home() {
   return (
@@ -20,7 +20,7 @@ function Home() {
       <ul className="modules">
         {modules.map((m) => (
           <li key={m.id}>
-            <button type="button" onClick={() => navigate(m.id)}>
+            <button type="button" onClick={() => navigate(`${APP_PREFIX}/${m.id}`)}>
               <span className="name">{m.name}</span>
               <span className="summary">{m.summary}</span>
             </button>
@@ -36,19 +36,19 @@ function Home() {
 }
 
 export function Shell() {
-  const routeId = useRoute();
+  const routeId = moduleIdFrom(usePath());
   const active = modules.find((m) => m.id === routeId) ?? null;
   const Module = active?.component;
 
   return (
     <main>
       <header>
-        <button type="button" className="brand" onClick={() => navigate(null)}>
+        <button type="button" className="brand" onClick={() => navigate(APP_PREFIX)}>
           Studens
         </button>
         {active && (
           <nav className="crumbs">
-            <button type="button" onClick={() => navigate(null)}>
+            <button type="button" onClick={() => navigate(APP_PREFIX)}>
               modules
             </button>
             <span aria-hidden="true">/</span>
@@ -61,7 +61,7 @@ export function Shell() {
       {routeId && !active ? (
         <p className="error">
           Module inconnu: « {routeId} ».{" "}
-          <button type="button" className="linkish" onClick={() => navigate(null)}>
+          <button type="button" className="linkish" onClick={() => navigate(APP_PREFIX)}>
             retour aux modules
           </button>
         </p>

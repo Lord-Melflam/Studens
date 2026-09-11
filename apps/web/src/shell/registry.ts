@@ -12,8 +12,8 @@
  * FR-B1 says a Member sees only the modules they are entitled to use. That
  * filtering is not here yet, because authentication is not built: see 3.2.
  */
-import { rycModule, type ModuleRegistration } from "@studens/ryc-ui";
+import { rycModule, type ModuleRegistration, type ModulePresentation } from "@studens/ryc-ui";
 
 export const modules: ModuleRegistration[] = [rycModule];
 
-export type { ModuleRegistration };
+export type { ModuleRegistration, ModulePresentation };

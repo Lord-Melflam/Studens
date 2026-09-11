@@ -18,7 +18,7 @@ gone wrong and what each failure changed.
 | Commits | 28 |
 | Requirements | **108**: 90 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7) and 18 non-functional. Counted, not carried forward |
 | Open questions | **13** open, 32 resolved |
-| Tests | **241**, plus 15 database isolation assertions |
+| Tests | **252**, plus 15 database isolation assertions |
 | Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
@@ -572,6 +572,50 @@ Appendix A, a start to finish walkthrough of registering both applications,
 checked against the vendor documentation rather than recalled.
 
 202 tests to 241.
+
+---
+
+### Phase 21: the public zone
+
+The first of the three zones from phase 20. A stranger now meets a site rather
+than a sign-in wall: what Studens is, the problem it exists for, how it works,
+what is and is not built, what anonymity protects and what it does not, and who
+is behind it.
+
+**Paths, not hashes.** The old router put the module id after a `#`, which was
+fine while everything sat behind a session: nobody shares a link to an
+authenticated screen. A public page is the opposite, and `studens.be/#/a-propos`
+is a link that looks like a mistake. Cost, written down rather than discovered:
+the server must answer unknown paths with `index.html` or a refresh on
+`/a-propos` is a 404. Vite does it in development; production does not have it
+yet.
+
+**The boundary gate shaped the copy, three times.** FR-B16 forbids RYC's
+vocabulary anywhere in `apps/web`, and a landing page explaining RYC needs
+exactly that vocabulary. Rather than weaken the rule, the module now presents
+itself: `ModuleRegistration.presentation` carries the problem statement, the
+steps and the status, and the public pages lay out words they do not
+understand. The same reason the registry exists, one zone further out. When MPA
+ships, a landing page written in RYC's words would have been wrong rather than
+merely coupled.
+
+It also caught `changer d'avis`, the French idiom, because `avis` is RYC's word
+for a review. Reworded rather than exempted. And it caught a privacy page that
+explained the complement problem in terms of courses; it now speaks the
+platform's own vocabulary, which is what FR-C already uses and what will still
+be true for the second module.
+
+**A gate for the opposite direction.** The architecture test enforces the
+negative, that no domain word appears in the shell. A page could satisfy that by
+saying nothing at all. `test/ui/public-zone.test.ts` enforces the positive: the
+module's own sentences must actually reach the page. Verified by hardcoding the
+copy into the landing page and watching it fail.
+
+The first mutation of that test was worthless and worth recording: changing the
+module's text passed, because the test reads the same source the page renders.
+The property is about the wiring, so the wiring is what has to be broken.
+
+241 tests to 252.
 
 ---
 
