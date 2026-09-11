@@ -14,6 +14,7 @@ import { PrismaClient } from "@prisma/client";
 import { catalogueRoutes } from "./routes/catalogue.js";
 import { reviewRoutes } from "./routes/reviews.js";
 import { sessionRoutes } from "./routes/session.js";
+import { authRoutes } from "./routes/auth.js";
 import { devIdentityEnabled } from "./identity.js";
 
 export const process_role = "web" as const;
@@ -37,6 +38,7 @@ export async function createApp(source: AppSource = {}) {
   // catalogue is database-backed, since the kernel writes to the same database.
   if (!source.snapshotPath) {
     const prisma = new PrismaClient();
+    app.use("/api", authRoutes(prisma));
     app.use("/api", sessionRoutes(prisma));
     app.use("/api", reviewRoutes(prisma));
   }

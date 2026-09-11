@@ -18,7 +18,7 @@ gone wrong and what each failure changed.
 | Commits | 28 |
 | Requirements | **108**: 90 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7) and 18 non-functional. Counted, not carried forward |
 | Open questions | **13** open, 32 resolved |
-| Tests | **202**, plus 15 database isolation assertions |
+| Tests | **241**, plus 15 database isolation assertions |
 | Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
@@ -527,6 +527,51 @@ cross-site top-level GET, so no state-changing endpoint may be a GET. Every
 write here was a POST already; now that has a reason attached.
 
 16 new tests, 186 to 202.
+
+---
+
+### Phase 19: OpenID Connect, provable before the applications exist
+
+The second of the four authentication pull requests, and it merges what the
+design note had as steps two and three: the flow, and Microsoft and Google as
+configuration. Their issuers, scopes and claim names are public facts, so the
+only thing still missing is two secrets in `.env`.
+
+**Tested against a provider that really exists for the length of the test.** The
+fake serves a discovery document and a JWKS over HTTP and signs real RS256
+tokens. So the signature check, the JWKS fetch and the claim validation are the
+code that will face Microsoft, rather than a stub returning what it was told to.
+Mocking `fetch` would have tested the mock.
+
+**One decision with a security consequence worth reading.** Microsoft's
+multi-tenant metadata declares a templated issuer,
+`https://login.microsoftonline.com/{tenantid}/v2.0`, while a real token carries
+the signing tenant's id. Comparing as strings rejects every genuine token;
+skipping the comparison accepts a token from anywhere. So the placeholder is
+filled from the token's own `tid`, which must be a GUID, and the result must
+equal what the provider published. Tested against empty strings, `..`, non-GUIDs
+and a hostile issuer.
+
+**A gap the tests found, which is the point of writing them.** The replay test
+failed: replaying a callback with the captured cookie created a second session.
+Our state cookie is cleared as it is read, which stops a back button but not a
+deliberate replay, because clearing a cookie is an instruction to the browser.
+What actually refuses it is the provider denying the reused code, which
+RFC 6749 section 4.1.2 makes a MUST.
+
+The first fake provider did not implement that MUST, so it was **laxer than any
+real provider** and hid the dependency completely, which is the same failure as
+a fixture tidier than reality. The fake now enforces it, the test asserts the
+replay fails, and section 0.7 of the design note records that this one property
+is discharged by the provider rather than by us, with what it would take to
+bring it in house.
+
+Also here: `openid email profile` and nothing more, which is what keeps the
+Google app free of verification, warning screens and seven day expiry; and
+Appendix A, a start to finish walkthrough of registering both applications,
+checked against the vendor documentation rather than recalled.
+
+202 tests to 241.
 
 ---
 

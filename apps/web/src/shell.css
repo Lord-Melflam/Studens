@@ -146,3 +146,14 @@ header { margin-bottom: 1.75rem; }
   border: 1px solid var(--warn);
   border-radius: 3px;
 }
+/* A real sign-in is a link, because the browser has to leave for the provider. */
+.account .signin {
+  font-size: 0.82rem;
+  padding: 0.25rem 0.6rem;
+  color: var(--ink);
+  text-decoration: none;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.account .signin:hover { border-color: var(--accent); }
