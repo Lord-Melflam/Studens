@@ -18,7 +18,7 @@ gone wrong and what each failure changed.
 | Commits | 28 |
 | Requirements | **108**: 90 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7) and 18 non-functional. Counted, not carried forward |
 | Open questions | **13** open, 32 resolved |
-| Tests | **252**, plus 15 database isolation assertions |
+| Tests | **258**, plus 15 database isolation assertions |
 | Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
@@ -605,6 +605,28 @@ explained the complement problem in terms of courses; it now speaks the
 platform's own vocabulary, which is what FR-C already uses and what will still
 be true for the second module.
 
+**Reworked once François supplied procyo.be's structure**, which no automated
+client can read: Vercel's bot protection refuses every one of them, so it
+arrived pasted by hand.
+
+What transferred: a realistic product mock in the hero rather than a paragraph
+about the product, benefit-titled cards instead of abstract statements, a
+"where the data comes from" section, and a numbered getting-started. What did
+not: Procyo sells to brokers, so "Book a demo" is on every screen; the
+equivalent here is a free account. And Procyo needs a cookie consent banner.
+Studens does not, because it runs no analytics, and **saying that is worth more
+than a banner**, so the page says it and a test asserts it stays true.
+
+The mock is the module's own, built from the real components and the real CSS,
+so it cannot drift into advertising a screen the product does not have. A test
+asserts the anonymous contribution in it shows no author and no numbers,
+because that is what the server actually returns.
+
+One thing procyo.be has that Studens structurally cannot fake: a fr/nl/en
+switcher. The name was chosen precisely because it reads natively in all three,
+and the product is French-only with no internationalisation. Not papered over
+with a switcher that does nothing; raised as a gap instead.
+
 **A gate for the opposite direction.** The architecture test enforces the
 negative, that no domain word appears in the shell. A page could satisfy that by
 saying nothing at all. `test/ui/public-zone.test.ts` enforces the positive: the
@@ -615,7 +637,7 @@ The first mutation of that test was worthless and worth recording: changing the
 module's text passed, because the test reads the same source the page renders.
 The property is about the wiring, so the wiring is what has to be broken.
 
-241 tests to 252.
+241 tests to 252, then 258 after the rework below.
 
 ---
 

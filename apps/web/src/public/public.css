@@ -55,8 +55,17 @@ a.cta:hover { background: #16407c; }
   padding: 3.5rem 1.5rem;
 }
 
-/* --- hero --------------------------------------------------------------- */
-.hero { text-align: center; padding-top: 5rem !important; padding-bottom: 4rem !important; }
+/* --- hero ---------------------------------------------------------------
+   Two columns: the claim, and the product actually doing the thing. A mock
+   beats a paragraph describing a mock, which is why it earns half the fold. */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 3rem;
+  align-items: center;
+  padding-top: 4.5rem !important;
+  padding-bottom: 4rem !important;
+}
 .kicker {
   margin: 0 0 1rem;
   font-size: 0.78rem;
@@ -73,13 +82,87 @@ a.cta:hover { background: #16407c; }
 }
 .lede {
   max-width: 38rem;
-  margin: 0 auto 2rem;
+  margin: 0 0 1rem;
   font-size: 1.12rem;
   line-height: 1.6;
   color: var(--muted);
 }
-.hero-actions { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
+.hero-module {
+  margin: 0 0 2rem;
+  font-size: 1rem;
+  line-height: 1.55;
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--accent-soft);
+}
+.hero-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; }
 .hero-fine { margin: 1.6rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.hero .kicker, .hero h1 { text-align: left; }
+
+/* The mock leans and is clipped at the fold: a browser window, not a diagram. */
+.hero-mock {
+  max-height: 30rem;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(22, 25, 29, 0.14), 0 2px 8px rgba(22, 25, 29, 0.06);
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+}
+
+/* --- eyebrows above section headings ------------------------------------ */
+.eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- highlights: what you get, titled by the benefit --------------------- */
+.highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.6rem 2.5rem;
+  list-style: none;
+  margin: 2rem 0;
+  padding: 0;
+}
+.highlights li { padding-left: 1rem; border-left: 2px solid var(--accent-soft); }
+.highlights h3 { margin: 0 0 0.4rem; font-size: 1.02rem; line-height: 1.35; }
+.highlights p { margin: 0; color: var(--muted); line-height: 1.6; font-size: 0.94rem; }
+
+/* --- sources ------------------------------------------------------------ */
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 1.6rem 0 0; padding: 0; }
+.chips li {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+/* --- getting started: 01 / 02 / 03 -------------------------------------- */
+.process {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 2rem;
+  list-style: none;
+  margin: 2.5rem 0;
+  padding: 0;
+}
+.pr-n {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--accent-soft);
+}
+.process h3 { margin: 0 0 0.4rem; font-size: 1.02rem; }
+.process p { margin: 0; color: var(--muted); line-height: 1.6; font-size: 0.94rem; }
+
+.mc-more { display: inline-block; margin-top: 0.8rem; font-size: 0.86rem; color: var(--accent); }
 
 /* --- bands -------------------------------------------------------------- */
 .band { border-top: 1px solid var(--line); }
@@ -259,6 +342,11 @@ a.cta:hover { background: #16407c; }
   padding-top: 1.2rem;
   border-top: 1px solid var(--line);
   color: var(--muted);
+}
+
+@media (max-width: 58rem) {
+  .hero { grid-template-columns: 1fr; gap: 2.5rem; }
+  .hero-mock { max-height: 22rem; }
 }
 
 @media (max-width: 44rem) {

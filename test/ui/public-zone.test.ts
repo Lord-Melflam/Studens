@@ -66,6 +66,50 @@ describe("the public pages say what the modules say", () => {
   });
 });
 
+describe("the landing page shows the product, not only words about it", () => {
+  it("renders the module's own mock, which the shell cannot draw", () => {
+    const html = render("/");
+    // FR-B16 stops apps/web from knowing what a course page looks like, so the
+    // mock is the module's. If this disappears, the page has gone back to
+    // describing a screenshot instead of showing one.
+    expect(html).toContain('class="showcase"');
+  });
+
+  it("the mock shows an anonymous contribution with no author and no numbers", () => {
+    const html = render("/");
+    const anon = html.slice(html.indexOf("review-anonymous"));
+    // The marketing mock must not advertise a product we do not ship. FR-D15
+    // and FR-C16 mean the server returns neither, so neither appears here.
+    expect(anon).toContain("chip-anon");
+    expect(anon.slice(0, anon.indexOf("</article>"))).not.toMatch(/recommandé \d\/5/);
+  });
+
+  it("names where the data comes from, in the module's words", () => {
+    const body = text(render("/"));
+    expect(body).toContain(rycModule.presentation.sources.title);
+    for (const item of rycModule.presentation.sources.items) {
+      expect(body).toContain(item);
+    }
+  });
+
+  it("carries the module's benefit headings", () => {
+    const body = text(render("/"));
+    for (const h of rycModule.presentation.highlights) {
+      expect(body).toContain(h.title);
+    }
+  });
+
+  it("ends on the module's own first action, not a generic one", () => {
+    expect(text(render("/"))).toContain(rycModule.presentation.firstAction.title);
+  });
+
+  it("says there is nothing to accept, because there is no analytics cookie", () => {
+    // A claim worth a test: it stops being true the moment someone adds a
+    // tracker, and the page would then be lying rather than merely stale.
+    expect(text(render("/"))).toMatch(/aucun cookie|rien à accepter/i);
+  });
+});
+
 describe("FR-F3: signing in and creating an account are one act", () => {
   it("both labels lead to the same place", () => {
     const html = render("/");

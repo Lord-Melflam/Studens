@@ -8,6 +8,7 @@
  * Nothing about courses or reviews leaves this package.
  */
 import { Ryc } from "./Ryc.js";
+import { Showcase } from "./Showcase.js";
 import "./ryc.css";
 
 export interface ModuleRegistration {
@@ -45,6 +46,28 @@ export interface ModulePresentation {
   problem: { title: string; body: string[] };
   /** What it actually does, as steps rather than features. */
   steps: Array<{ title: string; body: string }>;
+  /**
+   * Concrete promises, titled by what the reader gets rather than by what the
+   * software has. "Nothing is asked that the catalogue already knows" rather
+   * than "catalogue integration".
+   */
+  highlights: Array<{ title: string; body: string }>;
+  /** Where the module's own data comes from, named in plain words. */
+  sources: { title: string; body: string; items: string[] };
+  /**
+   * The last step of "getting started", which is the only one that is not the
+   * platform's. Signing in and choosing a name are the same whatever module
+   * you came for; what you do next is not.
+   */
+  firstAction: { title: string; body: string };
+  /**
+   * A static mock of the module's own screen, owned by the module.
+   *
+   * The public zone places it and cannot read it. Built from the real
+   * components, so it cannot drift into showing something the product does not
+   * do.
+   */
+  showcase: () => JSX.Element;
 }
 
 export const rycModule: ModuleRegistration = {
@@ -79,6 +102,34 @@ export const rycModule: ModuleRegistration = {
         body: "Le choix se fait sur un écran à lui seul, après avoir écrit. L'anonymat est définitif et sans lien avec votre compte: c'est une garantie de structure, pas une promesse.",
       },
     ],
+    highlights: [
+      {
+        title: "Rien ne vous est demandé que l’université publie déjà",
+        body: "ECTS, quadrimestre, langue, heures encadrées, mode d’évaluation avec ses pondérations : tout ça est repris automatiquement. Vous n’écrivez que ce que la fiche officielle ne peut pas dire.",
+      },
+      {
+        title: "Des chiffres qui viennent avec leur dénominateur",
+        body: "Une moyenne de 4,1 sur 23 avis ne veut pas dire la même chose que sur 2. Le nombre est toujours affiché à côté, et un taux de réussite n’apparaît qu’au-delà de cinq réponses.",
+      },
+      {
+        title: "Une année sur chaque avis",
+        body: "Un cours change de titulaire, de barème, de projet. Savoir qu’un avis date de 2019 est aussi important que ce qu’il dit.",
+      },
+      {
+        title: "Vous restez maître de ce que vous signez",
+        body: "Le choix entre votre nom et l’anonymat se fait après avoir écrit, sur un écran à lui seul, avec les chiffres qui vous concernent sous les yeux.",
+      },
+    ],
+    sources: {
+      title: "Le catalogue officiel, directement",
+      body: "Les fiches ne sont pas recopiées à la main : elles sont reprises du site de l’université et rafraîchies. Un lien vers la fiche officielle est affiché sur chaque cours, parce que c’est elle qui fait foi.",
+      items: ["UCLouvain", "546 cours", "43 programmes", "année académique en cours"],
+    },
+    firstAction: {
+      title: "Vous cherchez un cours",
+      body: "Et vous lisez. Écrire le vôtre peut attendre le jour où vous aurez quelque chose à dire.",
+    },
+    showcase: Showcase,
   },
 };
 

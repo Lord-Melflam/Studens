@@ -1,12 +1,13 @@
 /**
  * The first page a stranger sees.
  *
- * Its job is to be understood by someone who has never heard of this, in the
- * order they will ask: what is it, what problem does it solve, how does it
- * work, can I trust it with what I write, and what does it cost me.
+ * The order follows the questions someone actually asks, in the order they ask
+ * them: what is this, what problem does it solve, how does it work, what does
+ * it look like, what exists today, where does the information come from, can I
+ * trust it with what I write, and how do I start.
  *
- * Every concrete claim about a module comes from that module's own
- * `presentation`. This file knows there are modules and nothing more.
+ * Every concrete claim comes from a module's own `presentation`, including the
+ * mock. This file knows there are modules and nothing more (FR-B16).
  */
 import { modules } from "../shell/registry.js";
 import { linkProps } from "../router.js";
@@ -14,51 +15,63 @@ import { linkProps } from "../router.js";
 export function Landing() {
   const live = modules.filter((m) => m.presentation.status === "live");
   const first = live[0] ?? modules[0];
+  const p = first?.presentation;
+  const Mock = p?.showcase;
 
   return (
     <>
       <section className="hero">
-        <p className="kicker">Pour les étudiants de l&apos;enseignement supérieur</p>
-        <h1>
-          Ce que personne ne vous dit
-          <br />
-          avant de choisir.
-        </h1>
-        <p className="lede">
-          Studens rassemble, au même endroit et de façon durable, ce que les
-          étudiants savent déjà et se répètent chaque année. Gratuit, indépendant,
-          et ouvert.
-        </p>
-        <div className="hero-actions">
-          <a className="cta big" {...linkProps("/connexion")}>
-            Créer un compte
-          </a>
-          <a className="ghost big" {...linkProps("/modules")}>
-            Voir ce que ça fait
-          </a>
+        <div className="hero-text">
+          <p className="kicker">Pour les étudiants de l&apos;enseignement supérieur</p>
+          <h1>
+            Moins de temps à deviner.
+            <br />
+            Plus de temps à choisir.
+          </h1>
+          <p className="lede">
+            Studens rassemble ce que les étudiants savent déjà et se répètent
+            chaque année. Au même endroit, daté, et qui ne disparaît pas en
+            septembre.
+          </p>
+          {/* The concrete promise is the module's to make, not the shell's. */}
+          {first && <p className="hero-module">{first.summary}</p>}
+          <div className="hero-actions">
+            <a className="cta big" {...linkProps("/connexion")}>
+              Créer un compte
+            </a>
+            <a className="ghost big" {...linkProps("/modules")}>
+              Voir ce que ça fait
+            </a>
+          </div>
+          <p className="hero-fine">
+            Gratuit. Connexion avec votre compte Microsoft ou Google, aucun mot
+            de passe à retenir, rien à installer.
+          </p>
         </div>
-        <p className="hero-fine">
-          Connexion avec votre compte Microsoft ou Google. Aucun mot de passe à
-          retenir, et rien à installer.
-        </p>
+        {Mock && (
+          <div className="hero-mock">
+            <Mock />
+          </div>
+        )}
       </section>
 
-      {first && (
-        <section className="band">
-          <h2>{first.presentation.problem.title}</h2>
+      {p && (
+        <section className="band alt">
+          <h2>{p.problem.title}</h2>
           <div className="prose-cols">
-            {first.presentation.problem.body.map((p, i) => (
-              <p key={i}>{p}</p>
+            {p.problem.body.map((para, i) => (
+              <p key={i}>{para}</p>
             ))}
           </div>
         </section>
       )}
 
-      {first && (
-        <section className="band alt">
-          <h2>Comment ça marche</h2>
+      {p && (
+        <section className="band">
+          <p className="eyebrow">Comment ça marche</p>
+          <h2>Trois étapes, et vous n&apos;écrivez qu&apos;à la troisième</h2>
           <ol className="steps-grid">
-            {first.presentation.steps.map((s, i) => (
+            {p.steps.map((s, i) => (
               <li key={s.title}>
                 <span className="step-n">{i + 1}</span>
                 <h3>{s.title}</h3>
@@ -69,12 +82,43 @@ export function Landing() {
         </section>
       )}
 
-      <section className="band">
-        <h2>Ce qui existe, et ce qui n&apos;existe pas encore</h2>
+      {p && (
+        <section className="band alt">
+          <p className="eyebrow">Ce que ça vous apporte</p>
+          <h2>Les détails qui changent une décision</h2>
+          <ul className="highlights">
+            {p.highlights.map((h) => (
+              <li key={h.title}>
+                <h3>{h.title}</h3>
+                <p>{h.body}</p>
+              </li>
+            ))}
+          </ul>
+          <a className="cta" {...linkProps("/connexion")}>
+            Créer un compte
+          </a>
+        </section>
+      )}
+
+      {p && (
+        <section className="band sources">
+          <p className="eyebrow">D&apos;où viennent les informations</p>
+          <h2>{p.sources.title}</h2>
+          <p className="band-lede">{p.sources.body}</p>
+          <ul className="chips">
+            {p.sources.items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="band alt">
+        <p className="eyebrow">Ce qui existe</p>
+        <h2>Rien n&apos;est annoncé comme prêt tant que ça ne l&apos;est pas</h2>
         <p className="band-lede">
-          Rien n&apos;est affiché ici comme disponible tant que ça ne l&apos;est
-          pas. Une petite chose qui marche vraiment vaut mieux qu&apos;une grande
-          qui ne marche pas.
+          Une petite chose qui fonctionne vraiment vaut mieux qu&apos;une grande
+          qui ne fonctionne pas. Ce qui manque est écrit ici plutôt que promis.
         </p>
         <ul className="module-cards">
           {modules.map((m) => (
@@ -87,6 +131,9 @@ export function Landing() {
               </div>
               <p className="mc-summary">{m.summary}</p>
               <p className="mc-note">{m.presentation.statusNote}</p>
+              <a className="mc-more" {...linkProps("/modules")}>
+                En savoir plus
+              </a>
             </li>
           ))}
         </ul>
@@ -98,32 +145,37 @@ export function Landing() {
       </section>
 
       {/*
-        The anonymity pitch is the hardest thing on this page to write
-        honestly. FR-C12 requires the limits to be stated, not just the
-        promise, so the summary here links to the page that states them rather
-        than claiming more than the design can deliver.
+        FR-C12 requires the LIMITS to be stated, not only the promise. The
+        summary here links to the page that states them rather than claiming
+        more than the design can deliver.
       */}
-      <section className="band alt">
-        <h2>Dire les choses sans les payer</h2>
+      <section className="band">
+        <p className="eyebrow">Dire les choses sans les payer</p>
+        <h2>L&apos;anonymat est une garantie de structure, pas une promesse</h2>
         <div className="two-up">
           <div>
             <p>
               Vous choisissez, à chaque publication, entre votre nom et
-              l&apos;anonymat. L&apos;anonymat n&apos;est pas un réglage de
-              confiance: ce que vous publiez anonymement n&apos;est relié à
-              votre compte nulle part, pas même dans notre base de données.
+              l&apos;anonymat. Ce que vous publiez anonymement n&apos;est relié à
+              votre compte nulle part : la table n&apos;a pas de champ pour ça.
             </p>
             <p>
               C&apos;est aussi définitif. Personne ne peut le modifier ni le
-              retirer, y compris nous, parce que personne ne peut savoir lequel
-              est le vôtre.
+              retirer, nous compris, parce que personne ne peut savoir lequel est
+              le vôtre.
+            </p>
+            <p>
+              <strong>Et aucun cookie d&apos;analyse.</strong> Il n&apos;y a rien
+              à accepter en arrivant ici, parce qu&apos;il n&apos;y a rien qui
+              vous suit.
             </p>
           </div>
           <div className="callout">
             <h3>Ce que ça ne protège pas</h3>
             <p>
-              Aucune garantie n&apos;est absolue, et nous préférons le dire ici
-              plutôt que dans des conditions que personne ne lit.
+              Aucune garantie n&apos;est absolue. Ce que vous écrivez peut vous
+              désigner, et nous préférons l&apos;écrire ici plutôt que dans des
+              conditions que personne ne lit.
             </p>
             <a className="ghost" {...linkProps("/confidentialite")}>
               Lire les limites
@@ -132,12 +184,36 @@ export function Landing() {
         </div>
       </section>
 
-      <section className="band final">
-        <h2>Commencer</h2>
-        <p className="band-lede">
-          Un compte prend moins d&apos;une minute et ne demande ni mot de passe
-          ni carte bancaire.
-        </p>
+      <section className="band alt">
+        <p className="eyebrow">Commencer</p>
+        <h2>Moins d&apos;une minute</h2>
+        <ol className="process">
+          <li>
+            <span className="pr-n">01</span>
+            <h3>Vous vous connectez</h3>
+            <p>
+              Avec le compte Microsoft ou Google que vous avez déjà. Pas de mot
+              de passe à créer, pas de carte bancaire, pas de vérification
+              d&apos;inscription.
+            </p>
+          </li>
+          <li>
+            <span className="pr-n">02</span>
+            <h3>Vous choisissez un pseudonyme</h3>
+            <p>
+              C&apos;est lui qui apparaît quand vous publiez quelque chose sous
+              votre nom. Nous ne gardons pas le nom que votre fournisseur nous
+              envoie, et du reste de votre profil, rien n&apos;est obligatoire.
+            </p>
+          </li>
+          {p && (
+            <li>
+              <span className="pr-n">03</span>
+              <h3>{p.firstAction.title}</h3>
+              <p>{p.firstAction.body}</p>
+            </li>
+          )}
+        </ol>
         <a className="cta big" {...linkProps("/connexion")}>
           Créer un compte
         </a>
