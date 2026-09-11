@@ -18,14 +18,14 @@ gone wrong and what each failure changed.
 | Commits | 28 |
 | Requirements | **108**: 90 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7) and 18 non-functional. Counted, not carried forward |
 | Open questions | **13** open, 32 resolved |
-| Tests | **186**, plus 15 database isolation assertions |
+| Tests | **202**, plus 15 database isolation assertions |
 | Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
 ### What runs today
 
 ```bash
-npm run gates            # typecheck, lint, 186 tests, schema validation. No database needed
+npm run gates            # typecheck, lint, tests, schema validation. No database needed
 npm run gates:db         # migrate, grant, then verify the schema isolation
 npm run ingest -- --faculty epl        # scrape uclouvain.be, politely. Cached after the first run
 npm run db:load                        # snapshot into PostgreSQL, in one transaction
@@ -488,6 +488,45 @@ the thing it checks and paste the failure. Two gates in this repository were
 found to be worthless for want of exactly that.
 
 This entry was itself the first pull request.
+
+---
+
+### Phase 18: sessions, and the seam authentication will slot into
+
+FR-A is the last thing between the review path and a real user. It is four pull
+requests, because one would not be reviewable and review is the security
+boundary here. This is the first.
+
+`docs/design/authentication.md` records six decisions with what each costs:
+server-side sessions rather than a stateless token (revocation and FR-A5 need
+the list anyway), the cookie carrying a random token whose SHA-256 alone is
+stored, `SameSite=Lax` and deliberately not `Strict` (the provider redirects
+back as a top-level cross-site GET, which `Strict` would block), providers as
+configuration rather than an SDK each, PKCE state in a short-lived signed cookie
+rather than a table, and OPEN-36 resolved as a username chosen at first sign-in.
+
+**The sharpest of those is what is not stored.** The provider hands us a display
+name; we keep the subject, the email domain and the chosen username, and discard
+the rest. Data never held cannot leak, be requested, or be correlated.
+
+**The token is not the row id.** A session table whose primary key is the cookie
+makes any stored snapshot a set of working cookies, and the FR-C3 threat model
+already assumes an adversary may hold one. A test asserts that the token appears
+nowhere in the stored row.
+
+**The development identity changed shape.** It used to answer "who is this" out
+of thin air, bypassing the session layer entirely. It now signs a fixed member
+IN and issues a real session, so every local request runs the code path
+production will use, and swapping in a real provider changes only where the
+member comes from. Both fences were checked live: with the variable unset the
+endpoint answers 404, and with secure cookies on the cookie carries the
+`__Host-` prefix and `Secure`.
+
+**A GET no longer signs anyone in.** `SameSite=Lax` still sends the cookie on a
+cross-site top-level GET, so no state-changing endpoint may be a GET. Every
+write here was a POST already; now that has a reason attached.
+
+16 new tests, 186 to 202.
 
 ---
 

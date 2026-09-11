@@ -13,6 +13,7 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { catalogueRoutes } from "./routes/catalogue.js";
 import { reviewRoutes } from "./routes/reviews.js";
+import { sessionRoutes } from "./routes/session.js";
 import { devIdentityEnabled } from "./identity.js";
 
 export const process_role = "web" as const;
@@ -35,7 +36,9 @@ export async function createApp(source: AppSource = {}) {
   // Reviews need a member, and a member needs FR-A. Mounted only when the
   // catalogue is database-backed, since the kernel writes to the same database.
   if (!source.snapshotPath) {
-    app.use("/api", reviewRoutes(new PrismaClient()));
+    const prisma = new PrismaClient();
+    app.use("/api", sessionRoutes(prisma));
+    app.use("/api", reviewRoutes(prisma));
   }
 
   // Anything unmatched under /api is a 404 as JSON, not an HTML error page.

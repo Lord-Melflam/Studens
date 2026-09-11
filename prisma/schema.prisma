@@ -84,6 +84,11 @@ model Session {
   /// check rather than a session store: any instance can still serve any
   /// request, which is the property CC-3 wanted.
   id         String    @id @default(uuid())
+  /// SHA-256 of the token in the cookie. The token itself is never stored, so
+  /// a stored snapshot of this table is not a set of working cookies. The
+  /// FR-C3 threat model already assumes an adversary may hold one.
+  /// See design/authentication.md 0.2.
+  tokenHash  String    @unique
   memberId   String
   member     Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
   issuedAt   DateTime  @default(now())

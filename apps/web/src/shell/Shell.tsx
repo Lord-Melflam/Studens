@@ -7,6 +7,7 @@
  * This file knows nothing about courses, reviews, ECTS or programmes. If it
  * ever does, the boundary in FR-B16 has been lost.
  */
+import { Account } from "./Account.js";
 import { modules } from "./registry.js";
 import { navigate, useRoute } from "./route.js";
 
@@ -54,6 +55,7 @@ export function Shell() {
             <span className="here">{active.name}</span>
           </nav>
         )}
+        <Account />
       </header>
 
       {routeId && !active ? (
