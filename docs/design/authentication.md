@@ -116,6 +116,39 @@ choose confusable usernames. Uniqueness is enforced; visual confusability is not
 **What would change it.** Evidence that pseudonymous reviews are materially
 worse in practice, which would be a validation finding rather than an argument.
 
+### 7. Single use of the authorization code is the provider's guarantee
+
+Not ours, and this is worth stating because the code reads as though it were.
+
+The callback clears the sign-in state cookie as it reads it. That stops a
+refresh or a back button from replaying a sign-in. It does not stop a
+deliberate replay, because clearing a cookie is an instruction to the browser
+and an attacker replaying a captured callback can simply send it again, at
+which point our `state` check passes.
+
+What actually fails is the second exchange of the same code. RFC 6749
+section 4.1.2: *"If an authorization code is used more than once, the
+authorization server MUST deny the request and SHOULD revoke (when possible)
+all tokens previously issued based on that authorization code."* Both providers
+are obliged to enforce it, and a code's recommended lifetime is ten minutes.
+
+**Cost accepted.** One security property in this flow is discharged by the
+provider rather than by us. A provider that ignored that MUST would leave a
+replay window to anyone already holding both the callback URL and the sign-in
+cookie.
+
+**What would change it.** If that ever needed to be ours, it is a short-lived
+table of spent codes, keyed by hash, with the same shape as the quota counter.
+It was not built now because it is machinery for a guarantee the standard
+already places on the other side, and untested machinery in an auth path is its
+own risk.
+
+**How it stays visible.** `test/auth/callback.db.test.ts` replays a callback and
+asserts that it fails. The fake provider in that test enforces the MUST, which
+it did not in the first draft: it exchanged the same code twice, which is laxer
+than any real provider and hid this dependency completely. A fixture more
+permissive than reality is the same failure as one tidier than it.
+
 ## 1. What is built in which order
 
 Four pull requests, because one would not be reviewable, and review is the
@@ -146,3 +179,104 @@ separate decision with its own note.
 No "sign in with an institutional account only" gate. FR-A6 settled that
 registration is open, and FR-A10 requires the email domain to be described as
 evidence of holding an address at a domain, never as proof of enrolment.
+
+## Appendix A: registering the two applications
+
+A one-time task for whoever owns the accounts. Verified against the vendor
+documentation on 2026-09-12; both consoles move, so the shape matters more than
+the exact label.
+
+**Both are free.** No subscription, no card, no trial that lapses. Microsoft
+Entra app registrations are included in the free tier, and Google OAuth clients
+cost nothing. Nothing here touches CON-1.
+
+### The redirect URIs, which must match exactly
+
+A redirect URI is compared character for character. A trailing slash is a
+different URI.
+
+| Environment | Microsoft | Google |
+|---|---|---|
+| Local | `http://localhost:3001/api/auth/callback/microsoft` | `http://localhost:3001/api/auth/callback/google` |
+| Later, deployed | `https://<host>/api/auth/callback/microsoft` | `https://<host>/api/auth/callback/google` |
+
+Add the local one now. Add the deployed one when there is a host, on the same
+registration: one application can hold several redirect URIs, so this does not
+need registering twice.
+
+### Microsoft
+
+1. Go to <https://entra.microsoft.com> and sign in.
+2. If the account has more than one tenant, use the **Settings** icon in the top
+   bar to switch to the one you want the app registered in. **An app registration
+   cannot be moved between tenants afterwards**, so pick deliberately.
+3. **Entra ID** > **App registrations** > **New registration**.
+4. **Name**: `Studens`. Users see this on the consent screen, and it can be
+   changed later.
+5. **Supported account types**: **Any Entra ID Tenant + Personal Microsoft
+   accounts**.
+
+   This is the one choice with a requirement behind it. FR-A6 makes registration
+   open to the public: no institutional gating, no roster check. Picking
+   *Single tenant* would restrict sign-in to one directory, which is precisely
+   the gate FR-A6 rules out, and would also exclude alumni whose university
+   account has been closed, who FR-D16 exists to serve.
+6. **Redirect URI**: platform **Web**, then the Microsoft URI from the table.
+7. **Register**.
+8. On **Overview**, copy the **Application (client) ID**. This is not a secret.
+9. **Manage** > **Certificates & secrets** > **Client secrets** > **New client
+   secret**. Description `studens-local`, expiry **6 months** (Microsoft caps it
+   at 24 and recommends under 12; short is fine, and a calendar entry to rotate
+   it is part of the job).
+10. Copy the secret **Value**, not the Secret ID. **It is never shown again after
+    you leave the page.** If it is lost, delete it and make another.
+
+### Google
+
+Google's order is the reverse: the consent screen comes before the credential.
+
+1. Go to <https://console.cloud.google.com> and create a project, `studens`.
+2. **APIs & Services** > **OAuth consent screen** (recently branded *Google Auth
+   Platform*). Fill in **Branding**: app name `Studens`, a support email, a
+   developer contact email.
+3. **Audience**: **External**. *Internal* only exists for a Google Workspace
+   organisation and would limit sign-in to its members, which FR-A6 rules out.
+4. **Scopes**: add only `openid`, `email`, `profile`.
+
+   This is worth getting right, because it decides whether the app needs
+   verification. Those three are non-sensitive, and Google's documentation is
+   explicit: with only these, users see **no warning screen**, authorizations
+   **do not expire after seven days**, and **no app verification is required**.
+   Adding any sensitive scope changes all three. We need nothing beyond them:
+   FR-A9 wants the email domain, and OPEN-36 decided the display name is
+   discarded.
+5. While the publishing status is **Testing** the app is limited to 100 named
+   test users. Add your own address to get started, and press **Publish** before
+   any real student uses it.
+6. **Credentials** > **Create credentials** > **OAuth client ID** >
+   **Web application**. Name `Studens web`.
+7. **Authorized redirect URIs**: the Google URI from the table.
+8. **Create**, then copy the **Client ID** and **Client secret**.
+
+### Where the four values go
+
+Into `.env`, which is gitignored, by the person who created them:
+
+```
+STUDENS_MS_CLIENT_ID=...
+STUDENS_MS_CLIENT_SECRET=...
+STUDENS_GOOGLE_CLIENT_ID=...
+STUDENS_GOOGLE_CLIENT_SECRET=...
+STUDENS_SESSION_SECRET=...        # openssl rand -base64 32
+```
+
+`.env.example` carries the names with empty values and is the only tracked copy.
+
+**Never paste a client secret into a chat, an issue, a pull request or a commit
+message.** The repository is public, so anything committed is permanently
+cloneable, and a transcript is a file on disk. If one is exposed, delete it in
+the console and create another: rotating takes a minute, and an exposed secret
+lets anyone impersonate this application to the provider.
+
+A client **ID** is not a secret and appears in the browser on every sign-in.
+Only the **secret** matters.

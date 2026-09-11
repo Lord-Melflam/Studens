@@ -24,6 +24,10 @@ export default defineConfig({
       "@studens/platform": src("platform"),
       "@studens/ref": src("ref"),
       "@studens/ryc": src("ryc"),
+      // The API, so a test can stand the real app up over HTTP rather than
+      // reimplementing its routing. Resolved to source like the rest, so the
+      // test exercises what is written and not what was last built.
+      "@studens/api": fileURLToPath(new URL("./apps/api/src/index.ts", import.meta.url)),
       // The frontend module's entry point is .tsx, hence the explicit path.
       "@studens/ryc-ui": fileURLToPath(
         new URL("./packages/ryc-ui/src/index.tsx", import.meta.url),

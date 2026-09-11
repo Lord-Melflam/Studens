@@ -9,11 +9,14 @@
  * The catalogue is reached through @studens/ref's public read interface, never
  * by touching its storage (FR-B11).
  */
+import { loadDotEnv } from "./env.js";
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { catalogueRoutes } from "./routes/catalogue.js";
 import { reviewRoutes } from "./routes/reviews.js";
 import { sessionRoutes } from "./routes/session.js";
+import { authRoutes } from "./routes/auth.js";
+import { configuredProviders } from "@studens/platform";
 import { devIdentityEnabled } from "./identity.js";
 
 export const process_role = "web" as const;
@@ -37,6 +40,7 @@ export async function createApp(source: AppSource = {}) {
   // catalogue is database-backed, since the kernel writes to the same database.
   if (!source.snapshotPath) {
     const prisma = new PrismaClient();
+    app.use("/api", authRoutes(prisma));
     app.use("/api", sessionRoutes(prisma));
     app.use("/api", reviewRoutes(prisma));
   }
@@ -51,6 +55,14 @@ export async function createApp(source: AppSource = {}) {
 
 const isEntry = process.argv[1]?.endsWith("index.js") ?? false;
 if (isEntry) {
+  /**
+   * ESM hoists imports, so this cannot run before them and does not try to.
+   * It does not need to: nothing in this application reads `process.env` at
+   * module scope, only inside functions called per request or from here. If
+   * that ever stops being true, the value read at import time will be the one
+   * from the real environment and not from `.env`, and it will be silent.
+   */
+  const envFile = loadDotEnv();
   const port = Number(process.env["PORT"] ?? 3001);
   // The database unless a snapshot is named explicitly.
   const snapshotPath = process.env["CATALOGUE_SNAPSHOT"];
@@ -60,6 +72,14 @@ if (isEntry) {
         console.log(
           `api listening on http://localhost:${port} ` +
             `(catalogue: ${snapshotPath ?? "database"})`,
+        );
+        // Say what is configured, because the alternative is silence that
+        // looks identical to a missing credential. An absence is invisible
+        // unless something prints it (LESSONS.md section 9).
+        const providers = configuredProviders().map((p) => p.label);
+        console.log(
+          `  .env: ${envFile}  |  sign-in providers: ` +
+            (providers.length > 0 ? providers.join(", ") : "none configured"),
         );
         if (devIdentityEnabled()) {
           // Loud on purpose. This is the one thing standing between the review

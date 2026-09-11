@@ -43,6 +43,7 @@
     "vitest": "^2.1.4"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0"
+    "@prisma/client": "^5.22.0",
+    "jose": "^6.2.12"
   }
 }
