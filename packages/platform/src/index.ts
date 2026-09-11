@@ -36,3 +36,28 @@ export {
   type SessionOptions,
   type ListedSession,
 } from "./session.js";
+
+/** OpenID Connect (FR-A1, FR-A7). See design/authentication.md. */
+export {
+  beginAuthorization,
+  completeAuthorization,
+  discover,
+  issuerMatches,
+  challengeFor,
+  emailDomainFrom,
+  clearOidcCaches,
+  OidcError,
+  type ProviderConfig,
+  type Authorization,
+  type ProviderIdentity,
+} from "./oidc.js";
+
+export {
+  configuredProviders,
+  providerById,
+  registerProvider,
+  clearExtraProviders,
+} from "./providers.js";
+
+/** Signed short-lived values, used by the sign-in attempt state. */
+export { signValue, readSignedValue, BadSignedValue } from "./signed.js";

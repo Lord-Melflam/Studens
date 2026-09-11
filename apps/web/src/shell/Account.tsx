@@ -19,8 +19,14 @@ interface SessionState {
   devSignInAvailable: boolean;
 }
 
+interface Provider {
+  id: string;
+  label: string;
+}
+
 export function Account() {
   const [state, setState] = useState<SessionState | null>(null);
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
@@ -28,6 +34,12 @@ export function Account() {
       .then((r) => (r.ok ? (r.json() as Promise<SessionState>) : null))
       .then(setState)
       .catch(() => setState(null));
+    // Which providers this deployment can offer. Empty until the credentials
+    // exist, and the buttons simply do not appear rather than failing on press.
+    fetch("/api/auth/providers")
+      .then((r) => (r.ok ? (r.json() as Promise<{ providers: Provider[] }>) : null))
+      .then((d) => setProviders(d?.providers ?? []))
+      .catch(() => setProviders([]));
   }, []);
 
   useEffect(load, [load]);
@@ -74,11 +86,19 @@ export function Account() {
 
   return (
     <div className="account">
-      {state.devSignInAvailable ? (
+      {providers.map((p) => (
+        // A link, not a fetch: the browser must follow the redirect to the
+        // provider itself, and an XHR cannot.
+        <a key={p.id} className="signin" href={`/api/auth/${p.id}/start`}>
+          se connecter avec {p.label}
+        </a>
+      ))}
+      {state.devSignInAvailable && (
         <button type="button" onClick={() => void signIn()} disabled={busy}>
           se connecter <span className="dev">dev</span>
         </button>
-      ) : (
+      )}
+      {providers.length === 0 && !state.devSignInAvailable && (
         <span className="domain">connexion pas encore disponible</span>
       )}
     </div>
