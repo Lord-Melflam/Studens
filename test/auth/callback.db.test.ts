@@ -31,6 +31,8 @@ if (process.env["STUDENS_REQUIRE_DB"] === "1" && !reachable) {
 const dbit = reachable ? it : it.skip;
 
 const CLIENT_ID = "studens-route-test";
+/** The one catalogue row this test creates so the app will start. */
+const CATALOGUE_CODE = "ztst9999";
 let idp: Server;
 let idpOrigin = "";
 let api: Server;
@@ -106,6 +108,22 @@ beforeAll(async () => {
   const a = idp.address();
   idpOrigin = `http://127.0.0.1:${typeof a === "object" && a ? a.port : 0}`;
 
+  // createApp refuses to start against an empty catalogue, deliberately: a
+  // course page with nothing behind it would be worse than a clear failure.
+  // So a test that stands the real app up has to supply one. One course is
+  // enough; this test is about sign-in, not the catalogue.
+  await prisma.courseOffering.deleteMany({ where: { course: { code: CATALOGUE_CODE } } });
+  await prisma.course.deleteMany({ where: { code: CATALOGUE_CODE } });
+  const course = await prisma.course.create({ data: { code: CATALOGUE_CODE } });
+  await prisma.courseOffering.create({
+    data: {
+      courseId: course.id,
+      year: new Date().getUTCFullYear(),
+      title: "Cours de test",
+      ects: 5,
+    },
+  });
+
   const app = await createApp();
   api = createServer(app);
   await new Promise<void>((r) => api.listen(0, "127.0.0.1", r));
@@ -121,6 +139,8 @@ afterAll(async () => {
   if (reachable) {
     await prisma.session.deleteMany({ where: { member: { provider: "fake" } } });
     await prisma.member.deleteMany({ where: { provider: "fake" } });
+    await prisma.courseOffering.deleteMany({ where: { course: { code: CATALOGUE_CODE } } });
+    await prisma.course.deleteMany({ where: { code: CATALOGUE_CODE } });
   }
   await prisma.$disconnect();
 });
