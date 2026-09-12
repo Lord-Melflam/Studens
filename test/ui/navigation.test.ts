@@ -101,3 +101,47 @@ describe("the app is no longer one directional", () => {
     expect(html).toContain('class="account"');
   });
 });
+
+describe("the account panel exists and promises nothing it cannot do", () => {
+  it("is a shell screen, not a module", () => {
+    // /app/moi resolves to no module: the shell renders it itself. A module
+    // claiming that id would simply never mount.
+    expect(activeModuleFor("/fr/app/moi")).toBeNull();
+  });
+
+  it("has every string it needs, in every language", () => {
+    const keys = [
+      "settings.title", "settings.account", "settings.domain", "settings.domain.hint",
+      "settings.stored", "settings.stored.value", "settings.stored.hint",
+      "settings.language", "settings.language.hint",
+      "settings.sessions", "settings.sessions.hint", "settings.sessions.this",
+      "settings.sessions.other", "settings.sessions.end", "settings.sessions.endthis",
+      "settings.soon", "settings.soon.username", "settings.soon.institution",
+      "settings.soon.contributions",
+    ];
+    for (const locale of LOCALES) {
+      const t = createTranslator(bundle, locale);
+      for (const k of keys) expect(t(k), `${locale}:${k}`).not.toBe(k);
+    }
+  });
+
+  it("says the domain is evidence, never proof of enrolment (FR-A10)", () => {
+    // The panel is the one screen that shows the domain on its own, so it is
+    // the one most likely to be read as a credential.
+    for (const locale of LOCALES) {
+      const t = createTranslator(bundle, locale);
+      expect(t("settings.domain.hint").length).toBeGreaterThan(10);
+      expect(t("settings.domain.hint")).not.toBe("settings.domain.hint");
+    }
+  });
+
+  it("what is not built is listed as not built, not mocked up", () => {
+    // FR-D28's rule, applied one screen further: a disabled input that looks
+    // like a setting is a promise the product has not made.
+    const t = createTranslator(bundle, DEFAULT_LOCALE);
+    expect(t("settings.soon")).not.toBe("settings.soon");
+    for (const k of ["settings.soon.username", "settings.soon.institution"]) {
+      expect(t(k)).not.toBe(k);
+    }
+  });
+});

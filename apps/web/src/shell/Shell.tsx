@@ -11,20 +11,42 @@
 import { useT } from "@studens/i18n";
 import { Account } from "../Account.js";
 import { LanguageSwitcher } from "../LanguageSwitcher.js";
+import { Settings } from "../Settings.js";
 import { activeModuleFor, liveModules } from "./registry.js";
 import { APP_PREFIX, currentRoute, linkProps, moduleIdFrom, navigate, usePath } from "../router.js";
+
+/**
+ * The shell's own screen, reachable at /app/moi.
+ *
+ * A reserved segment: no module may claim it. There is one today and the
+ * registry is where a collision would be caught, since a module declaring this
+ * id would simply never mount.
+ */
+const SETTINGS = "moi";
 
 function Home() {
   const t = useT();
   return (
     <>
-      <p className="lede">{t("app.home.lede")}</p>
+      <header className="page-intro">
+        <h2>{t("app.home.title")}</h2>
+        <p className="lede">{t("app.home.lede")}</p>
+      </header>
+
+      {/*
+        Cards rather than a list of buttons. A module is a place you go and
+        spend time in, and a single-line row reads like a menu item. What each
+        one is for comes from the module (FR-B16), as everywhere else.
+      */}
       <ul className="modules">
         {liveModules.map((m) => (
           <li key={m.id}>
             <button type="button" onClick={() => navigate(`${APP_PREFIX}/${m.id}`)}>
               <span className="name">{m.name}</span>
               <span className="summary">{m.summary}</span>
+              <span className="go" aria-hidden="true">
+                {t("app.open")}
+              </span>
             </button>
           </li>
         ))}
@@ -42,12 +64,16 @@ export function Shell() {
   const active = activeModuleFor(path);
   const Module = active?.component;
 
+  // The shell's own screens sit alongside the modules and are not modules:
+  // they are about the member, not about anything a module owns.
+  const settings = routeId === SETTINGS;
+
   // Everything below /app/<id> belongs to the module. Sliced here, never read.
   const inside = active ? route.slice(`${APP_PREFIX}/${active.id}`.length) || "/" : "/";
 
   return (
-    <main>
-      <header>
+    <main className="app">
+      <header className="app-bar">
         {/*
           The brand goes to the public site, not to the app home. Before this,
           the app was one directional: once inside there was no way back out to
@@ -60,18 +86,26 @@ export function Shell() {
           <button type="button" onClick={() => navigate(APP_PREFIX)}>
             {t("app.modules")}
           </button>
-          {active && (
+          {(active || settings) && (
             <>
               <span aria-hidden="true">/</span>
-              <span className="here">{active.name}</span>
+              <span className="here">{active ? active.name : t("settings.title")}</span>
             </>
           )}
         </nav>
-        <LanguageSwitcher route={route} />
-        <Account />
+        <div className="app-bar-right">
+          <LanguageSwitcher route={route} />
+          <a className="settings-link" {...linkProps(`${APP_PREFIX}/${SETTINGS}`)}>
+            {t("settings.title")}
+          </a>
+          <Account />
+        </div>
       </header>
 
-      {routeId && !active ? (
+      <div className="app-body">
+      {settings ? (
+        <Settings />
+      ) : routeId && !active ? (
         <p className="error">
           {t("app.unknown", { id: routeId })}{" "}
           <button type="button" className="linkish" onClick={() => navigate(APP_PREFIX)}>
@@ -86,6 +120,7 @@ export function Shell() {
       ) : (
         <Home />
       )}
+      </div>
 
       {/*
         Studens borrows the visual register of the institutions it serves, and a
