@@ -8,7 +8,7 @@
  * ever does, the boundary in FR-B16 has been lost.
  */
 import { Account } from "./Account.js";
-import { liveModules } from "./registry.js";
+import { activeModuleFor, liveModules } from "./registry.js";
 import { APP_PREFIX, moduleIdFrom, navigate, usePath } from "../router.js";
 
 function Home() {
@@ -36,8 +36,9 @@ function Home() {
 }
 
 export function Shell() {
-  const routeId = moduleIdFrom(usePath());
-  const active = liveModules.find((m) => m.id === routeId) ?? null;
+  const path = usePath();
+  const routeId = moduleIdFrom(path);
+  const active = activeModuleFor(path);
   const Module = active?.component;
 
   return (

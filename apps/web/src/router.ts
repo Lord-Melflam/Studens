@@ -46,14 +46,29 @@ export function currentLocale(path: string = currentPath()): Locale {
   return splitLocale(path).locale ?? DEFAULT_LOCALE;
 }
 
+/**
+ * Both of these take EITHER form: `/fr/app/ryc` or `/app/ryc`.
+ *
+ * They strip the language themselves rather than trusting the caller to have
+ * done it. That is not defensive style, it is a bug that shipped: when the
+ * locale prefix was introduced, `Shell` kept passing the raw
+ * `window.location.pathname`, so `isAppPath("/fr/app/ryc")` was false, the
+ * module id came back null, and clicking a module changed the URL while the
+ * screen stayed on the home list. Nothing caught it, because every test called
+ * these with paths that had already been stripped.
+ *
+ * Stripping is idempotent, so a caller that already stripped loses nothing.
+ */
 export function isAppPath(path: string = currentPath()): boolean {
-  return path === APP_PREFIX || path.startsWith(`${APP_PREFIX}/`);
+  const route = currentRoute(path);
+  return route === APP_PREFIX || route.startsWith(`${APP_PREFIX}/`);
 }
 
 /** The module id inside /app, or null for the app's own home screen. */
 export function moduleIdFrom(path: string = currentPath()): string | null {
-  if (!isAppPath(path)) return null;
-  const rest = path.slice(APP_PREFIX.length).replace(/^\//, "");
+  const route = currentRoute(path);
+  if (!isAppPath(route)) return null;
+  const rest = route.slice(APP_PREFIX.length).replace(/^\//, "");
   return rest.split("/")[0] || null;
 }
 

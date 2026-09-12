@@ -152,6 +152,37 @@ This is the same shape as the isolation script that could not confirm which role
 it was running as. That one proved nothing while claiming to prove fourteen
 things; this one proved nothing while claiming to prove twenty-three.
 
+### A prefix added everywhere, except where it was read
+
+The locale went into the URL path, `/fr/app/ryc`. `main.tsx` strips it and
+matches on the rest, which is right. `Shell` did not: it kept passing
+`window.location.pathname` straight to `moduleIdFrom`, which tested
+`startsWith("/app")`. With a language in front, that is false. So clicking a
+module changed the URL and left the screen on the module list.
+
+**A dead button is not an error.** Nothing threw, nothing logged, CI was green,
+and the page returned 200 because the SPA shell loads whatever the path. It was
+found by François clicking it.
+
+The tests did not catch it because every one of them called `isAppPath` and
+`moduleIdFrom` with paths that had **already been stripped**, which is the form
+the router produces internally and not the form a browser hands you. The test
+data was drawn from the wrong side of the transformation.
+
+**Fixed structurally rather than at the call site.** Both functions now strip
+the language themselves, so no caller can pass the wrong form. Stripping twice
+is a no-op, so the callers that were already correct lose nothing. Verified by
+restoring the bug and watching the new test fail.
+
+**Also extracted the Shell's one-line decision** into `activeModuleFor(path)`,
+because a decision inside a component is a decision nothing can test. That is
+the same move as `flow.ts` for the review path.
+
+**Generalised.** When a value gains a prefix, a suffix or a wrapper, the risk is
+not the places that were changed: it is the places that read the old shape and
+still typecheck. Both forms are strings. The type system had nothing to say, and
+neither did any test written from the internal form.
+
 ### A narrow fix applied globally
 
 Course page labels carry `<br />` inside them, and cheerio joins text across a
