@@ -1196,8 +1196,8 @@ These block agreement. None may be silently assumed.
 | ~~OPEN-4~~ | ~~Session lifetime and inactivity timeout?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-5~~ | ~~Which identity provider?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-6~~ | ~~How to rate limit contributions without linking them?~~ **RESOLVED 2026-09-09: Option A, fixed window.** | closed |
-| OPEN-7 | Is the 24 hour moderation target sustainable? | FR-D, staffing |
-| OPEN-8 | How are Moderators appointed? | FR-E3 |
+| OPEN-7 | Is the 24 hour moderation target sustainable? **Proposal ready 2026-09-12: no, and publish no fixed delay.** `design/moderation.md` 1. | FR-D, staffing |
+| OPEN-8 | How are Moderators appointed? **Proposal ready 2026-09-12: by an Administrator, one at a time, recorded in the audit log, with content powers only.** `design/moderation.md` 2. | FR-E3 |
 | ~~OPEN-9~~ | ~~Expected load, acceptable downtime, recovery expectations?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-10~~ | ~~Does the GDPR apply, and what is the lawful basis?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-11~~ | ~~Is the first module written fresh, or does it salvage from the prototype?~~ **RESOLVED 2026-09-10.** | closed |
@@ -1213,7 +1213,7 @@ These block agreement. None may be silently assumed.
 | ~~OPEN-21~~ | ~~Is anonymous or attributed status publicly visible on a contribution?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-22~~ | ~~Can an attributed contribution be edited, deleted, or made anonymous later?~~ **RESOLVED 2026-09-10.** | closed |
 | OPEN-23 | Does contribution text leave the platform to a third party inference service? | FR-E4, CON-1, OPEN-10, OPEN-17 |
-| OPEN-24 | Threshold for automatic removal versus holding for a human? | FR-E5, FR-E6 |
+| OPEN-24 | Threshold for automatic removal versus holding for a human? **Proposal ready 2026-09-12: nothing is ever removed automatically. Holding is automatic and reversible; removal is always a human act.** `design/moderation.md` 3. | FR-E5, FR-E6 |
 | ~~OPEN-25~~ | ~~Is per target uniqueness required (one review per course per person)?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-28~~ | ~~Product name and repository name?~~ **RESOLVED 2026-09-09: Studens.** | closed, BOIP check still outstanding |
 | ~~OPEN-29~~ | ~~Hosting target.~~ **RESOLVED 2026-09-10.** | closed |
@@ -1224,14 +1224,14 @@ These block agreement. None may be silently assumed.
 | ~~OPEN-32~~ | ~~Is a course reviewable as a code, or as a code plus academic year?~~ **RESOLVED 2026-09-10.** | closed |
 | ~~OPEN-33~~ | ~~Where does the course catalogue come from, and who maintains it?~~ **RESOLVED 2026-09-10.** | closed |
 | OPEN-34 | When MPA arrives, who owns enrolment: a platform service or MPA itself? Do not decide before there is a second consumer. | FR-B11, 1.0 |
-| OPEN-35 | Open registration means one person can hold many accounts, so the quota (FR-C4) and per course uniqueness (FR-D9) bound accounts, not people. Is that accepted as a speed bump, or is some cost imposed on account creation? | FR-A6, FR-C4, FR-D9 |
+| OPEN-35 | Open registration means one person can hold many accounts, so the quota (FR-C4) and per course uniqueness (FR-D9) bound accounts, not people. Is that accepted as a speed bump, or is some cost imposed on account creation? **Proposal ready 2026-09-12: accept it and say so, plus per-target burst detection, which is the only control that survives FR-C2.** `design/account-integrity.md`. | FR-A6, FR-C4, FR-D9 |
 | OPEN-36 | Do attributed contributions show a **full name** or a **username**? A real name is stronger accountability, more identifying under the GDPR, and makes the complement problem sharper. | FR-C15, OPEN-10, 3.3 |
 | ~~OPEN-37~~ | ~~Does the FR-D8 minimum review length apply on the anonymous path?~~ **RESOLVED 2026-09-10: same minimum on both paths, lowered to about 80 characters.** | closed |
 | ~~OPEN-38~~ | ~~How are courses reconciled across years when a code or title changes?~~ **RESOLVED 2026-09-10** by splitting courses from offerings. | closed |
 | ~~OPEN-39~~ | ~~Where does the cross-tier transaction live, given a role per module?~~ **RESOLVED 2026-09-10:** the platform owns it, enforced by grants. | closed |
 | OPEN-40 | Is the worker deployed with the web process or separately? Same codebase either way. Separate lets it restart without touching the web path, which matters given the Oracle reclamation risk. | 5.2, `design/architecture-style.md` |
 | OPEN-41 | Backup cadence and retention, relative to the quota window. These two numbers set the bound on the FR-C3 cross-snapshot correlation, so they are a privacy parameter and not just an operational one. | FR-C3, FR-C12, NFR-O1 |
-| OPEN-45 | The catalogue contains courses **taught at other institutions**, reached through UCLouvain programmes. Verified 2026-09-10: the `ENANO` courses carry only a reference institution (Université de Namur), a foreign course code, and the UCLouvain faculty in charge. A review of one is a review of a course at Namur. How is that presented, and which tenant owns it (FR-C19 derives an anonymous contribution's tenant from the target)? Arrives before the multi-institution vision, inside a single-tenant v1. | FR-C19, FR-D3, 1.5 item 1, OPEN-14 |
+| OPEN-45 | The catalogue contains courses **taught at other institutions**, reached through UCLouvain programmes. Verified 2026-09-10: the `ENANO` courses carry only a reference institution (Université de Namur), a foreign course code, and the UCLouvain faculty in charge. A review of one is a review of a course at Namur. How is that presented, and which tenant owns it (FR-C19 derives an anonymous contribution's tenant from the target)? Arrives before the multi-institution vision, inside a single-tenant v1. **Proposal ready 2026-09-12: parse the stated institution instead of inferring it, keep the courses, refuse contributions on them for now.** The current `external` heuristic has a measured 6% false positive rate. `design/catalogue-ingestion.md` 8.3. | FR-C19, FR-D3, 1.5 item 1, OPEN-14 |
 | OPEN-42 | Permission to import the existing EPL reviews document. It has no licence and was shared inside a faculty drive, so republishing is a new purpose. The document itself names "un administrateur Drive EPL" as the contact, so there is an identifiable group to ask. **Blocks any import** (FR-D18). | FR-D17, FR-D18 |
 | ~~OPEN-43~~ | ~~Are FR-D5 to FR-D7 the right dimensions?~~ **RESOLVED 2026-09-10:** three reframed, three moved to the scraper. | closed |
 | ~~OPEN-44~~ | ~~Offer an optional passed-or-failed field?~~ **RESOLVED 2026-09-10: yes, optional, aggregate only.** | closed |
