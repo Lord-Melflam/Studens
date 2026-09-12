@@ -32,8 +32,9 @@ npm install
 npm run gates              # typecheck, lint, 186 tests, schema validation. No database needed
 ```
 
-`docs/CONTRIBUTING.md` has the database setup, which needs no password and no secret, and
-the ingestion and dev server commands.
+`docs/COMMANDS.md` is the command reference: setup, running it, the database, the
+catalogue, and what to do when something breaks. `docs/CONTRIBUTING.md` explains why the
+rules are what they are.
 
 ## The name
 
@@ -75,6 +76,7 @@ Specifications live in `docs/`, and they are the authoritative description of th
 
 | Document | Contents |
 |---|---|
+| `docs/COMMANDS.md` | Every command, grouped by task: running it, the database, the catalogue, git, troubleshooting |
 | `docs/TIMELINE.md` | **Start here.** Where the project is, what runs today, what is deliberately absent, and the log of how each decision was reached |
 | `docs/requirements.md` | Platform requirements. The working document. Requirement IDs are permanent and referenced from tests and commits |
 | `docs/CONTRIBUTING.md` | How to run it, and why code review is a security control here rather than a quality practice |

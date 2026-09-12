@@ -4,6 +4,11 @@ New here? Read `TIMELINE.md` first for where the project stands, and
 `LESSONS.md` for the failures that produced the rules you are about to work
 under. Both are short, and the second will save you repeating something.
 
+**`COMMANDS.md` is the command reference.** This file explains why the rules
+exist; that one is what to type, including the things that are not `npm` scripts:
+`psql` one-liners, `gh`, worktrees, and a table of what to do when something
+breaks.
+
 Studens is MIT licensed, inbound equals outbound, so no contributor agreement is
 needed. Outside contributors are welcome as contributors: open a pull request.
 
