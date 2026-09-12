@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Status | **Proposed** 2026-09-12 |
-| Proposes | OPEN-35 |
+| Status | **Accepted** 2026-09-13 by François |
+| Resolves | OPEN-35. Implemented as FR-C24 and FR-C25. |
 | Implements | constrained by FR-A6, FR-C2, FR-C4, FR-C12, FR-C13, FR-C17, FR-D9 |
 | Prompted by | François, 2026-09-12 |
 

@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Status | **Proposed** 2026-09-12. Three questions, one system, so one note. |
-| Proposes | OPEN-7 (is 24 hours sustainable), OPEN-8 (how Moderators are appointed), OPEN-24 (auto-removal threshold) |
+| Status | **Accepted** 2026-09-13 by François. Three questions, one system, so one note. |
+| Resolves | OPEN-7, OPEN-8, OPEN-24. Implemented as FR-E8 to FR-E14. |
 | Implements | FR-E1 to FR-E7, constrained by FR-C9, FR-C10, FR-C16, FR-B12 |
 | Prompted by | François, 2026-09-12: prepare the moderation trio |
 

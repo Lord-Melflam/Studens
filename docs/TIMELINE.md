@@ -15,9 +15,9 @@ gone wrong and what each failure changed.
 | | |
 |---|---|
 | Stage | **Working software.** Catalogue end to end, and reviews submitted and read on both paths |
-| Commits | 35 |
-| Requirements | **129**: 111 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7, FR-F 15, FR-G 6) and 18 non-functional. Counted, not carried forward |
-| Open questions | **13** open, 32 resolved |
+| Commits | 39 |
+| Requirements | **140**: 122 functional and 18 non-functional. Counted, not carried forward |
+| Open questions | **8** open, 37 resolved |
 | Tests | **267**, plus 15 database isolation assertions |
 | Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
@@ -76,7 +76,7 @@ empty ratings panel would claim the platform does something it cannot.
 | Oracle Cloud Always Free, one EU VM | `requirements.md` 5.2 |
 | Microsoft and Google OAuth only, no stored passwords | `requirements.md` 3.1 |
 
-### The 13 open questions
+### The 8 open questions
 
 Grouped by who can answer them, because that is what decides when they close.
 
@@ -822,6 +822,55 @@ is complaining. **Multiple accounts are accepted and disclosed**, with
 per-target burst detection, which is the only integrity control that survives
 FR-C2: a burst of contributions to one course is a fact about the course, not a
 link between a member and what they wrote.
+
+---
+
+### Phase 24: five questions closed, one against the recommendation
+
+François ruled on all five prepared in phase 23. Four as recommended, one not,
+and the one that went the other way is the interesting entry.
+
+**Moderation** (FR-E8 to FR-E14). Nothing is ever removed automatically:
+a report threshold is a brigading tool and what it removes is the argued
+negative contribution this platform exists to protect. Holding is automatic,
+reversible and narrow, on dull signals only, never sentiment. Report counts are
+evidence about the reporters as much as the content, shown to a human and never
+acted on alone. No response time is published until one has been measured.
+Moderators are appointed one at a time by an administrator, recorded, with
+content powers only and no path to authorship.
+
+Two of those requirements come from the regulation rather than from us. **FR-E8,
+a notice and action mechanism, is legally required and does not exist**, which
+makes it the first piece of moderation work. **FR-E9 publishes the statement of
+reasons in the place the contribution occupied**, because DSA Article 17 wants
+the affected user informed and on the anonymous path there is nobody to inform.
+It stays `[OPEN]` pending the same qualified reader as 5.1: a non-lawyer arguing
+that a public reason satisfies a duty to inform a recipient is exactly the kind
+of reasoning that needs someone who knows.
+
+**Accounts** (FR-C24, FR-C25). Multiple accounts are accepted and disclosed
+rather than fought. The one control that survives FR-C2 is detection on the
+**target**: a burst of contributions to one course is a fact about the course,
+not a link between a member and what they wrote.
+
+**External courses** (FR-D30, FR-D31), and the one that went against the
+recommendation. The mechanics were accepted: the page states the owning
+institution and the foreign course code, and the old heuristic guessed from
+missing fields and was wrong for 4 of the 66 it flagged. The policy was not: I
+proposed keeping those 62 courses read-only until their institution's catalogue
+was ingested, and François chose to make them contributable now, with the tenant
+being the owning institution.
+
+That is FR-C19 applied rather than excepted, and the argument for it is one I
+under-weighted: 1.5 lists tenancy among the few things cheap now and expensive
+later, so exercising it against 62 courses and no live users costs less than
+exercising it later against two institutions and traffic. The costs are recorded
+rather than argued away: v1's UCLouvain scope now needs reading carefully, the
+course record behind such a contribution is thin so FR-D19's promise holds
+weakly there, and the official link points at UCLouvain's stub because we hold
+Namur's course code and not their URL grammar.
+
+Eight open questions remain, from thirteen.
 
 ---
 

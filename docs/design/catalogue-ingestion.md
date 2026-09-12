@@ -441,9 +441,11 @@ in the path. Link destinations are dropped and the link text kept: four `<a>`
 tags in 1,390 fields do not justify carrying an outbound redirect we do not
 control.
 
-## 8.3 Proposed resolution of OPEN-45, and a heuristic that is wrong
+## 8.3 OPEN-45 resolved, and a heuristic that was wrong
 
-Prepared 2026-09-12, for François's decision. Status: **Proposed**.
+**Decided 2026-09-13 by François**, and not as recommended. The mechanics below
+were accepted in full; the policy was not, and the difference is recorded in the
+section that follows rather than quietly edited away.
 
 ### The page says it; we were guessing
 
@@ -480,30 +482,46 @@ code **at that institution**. The ENANO pages also lack the `Enseignants`
 template marker entirely, so they are a different template rather than a sparse
 instance of the same one.
 
-### Proposed
+### Decided
 
-1. **Parse the two fields instead of inferring.** `external` becomes "the page
+1. **Parse the two fields instead of inferring.** Accepted. `external` becomes "the page
    names a reference institution", which is a fact the page states, not an
    inference from absence. The four false positives disappear by construction.
 2. **Keep them in the catalogue.** They are genuinely reachable from a UCLouvain
    programme and a student choosing one needs to see it. Dropping them would
    hide part of their own programme.
-3. **Show them, link out, and refuse contributions on them for now.** With the
-   reason stated: the institution is not supported yet.
-4. **Do not stamp them with UCLouvain's tenant.** FR-C19 derives an anonymous
-   contribution's tenant from the target, never the author. A Namur course
-   belongs to Namur, and forcing UCLouvain on it because the reader arrived
-   through an EPL programme is deriving tenancy from the author by the back
-   door. Refusing the contribution avoids having to answer a question the
-   tenancy model cannot answer yet.
+3. **They are contributable**, which is where the decision differs from the
+   recommendation. I proposed showing them read-only until the owning
+   institution's catalogue was ingested.
+4. **The tenant is the owning institution**, seeded for the purpose. That is
+   FR-C19 applied rather than excepted: a Namur course belongs to Namur.
+   Stamping UCLouvain on it because the reader arrived through an EPL programme
+   would derive tenancy from the author's route, which is the thing FR-C19
+   forbids, and that option was rejected by everyone.
 
-### Costs, stated
+**Why the recommendation lost, recorded because it should be.** Section 1.5 of
+the requirements lists tenancy among the few decisions that are cheap now and
+expensive later. Exercising it while there are 62 courses and no live users is
+cheaper than exercising it when there are two institutions and traffic. Deferring
+would have meant building the same thing later against a live database.
 
-A student who really did take ENANO2401 cannot share what they know, and that is
-62 courses' worth of silence. Accepted because the alternative is writing rows
-whose tenant is wrong, and an anonymous row cannot be corrected afterwards
-(FR-C9). This is the same trade as everywhere else in FR-C: a permanent record
-demands getting it right before writing, not after.
+### Costs of the decision taken, stated
+
+**v1 was scoped to UCLouvain** (OPEN-14) and this makes the tenant model live
+earlier than that implies. Not a contradiction, since the members are still
+UCLouvain students, but the scope sentence now needs reading carefully.
+
+**The course record behind such a contribution is thin.** UCLouvain publishes
+only the reference: no assessment, no teachers, no themes. So FR-D19's promise,
+that the catalogue answers everything a reviewer is not asked, holds much more
+weakly on these 62 than on the other 484, and the page should say so rather than
+look merely empty.
+
+**The official link points at the wrong place.** Every course page links to the
+record that governs it, and for these that is Namur's, whose URL grammar we do
+not know: we hold the foreign course code and nothing else. Until that is
+solved, the link goes to UCLouvain's stub, which is the reference and not the
+record. That is a smaller problem than it sounds and a real one to fix.
 
 `lbnen2003` and `lbnen2011` also show that "taught elsewhere" and "owned
 elsewhere" are different things. Under the proposal they are UCLouvain courses
