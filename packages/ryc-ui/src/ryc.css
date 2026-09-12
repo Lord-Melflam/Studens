@@ -456,3 +456,12 @@ button.ghost {
   background: var(--bg);
   border-top: 1px solid var(--line);
 }
+
+/* A course page is prose: its measure is narrower than the frame the shell
+   provides, and choosing that is the module's business rather than the
+   shell's. The shell tried to set this and FR-B16's gate refused, correctly. */
+.course { max-width: 44rem; }
+.review-form,
+.fork,
+.confirm,
+.sent { max-width: 44rem; }
