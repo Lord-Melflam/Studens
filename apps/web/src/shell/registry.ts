@@ -14,6 +14,7 @@
  */
 import { rycModule, type ModuleRegistration, type ModulePresentation } from "@studens/ryc-ui";
 import type { Bundle, Translate } from "@studens/i18n";
+import { moduleIdFrom } from "../router.js";
 
 /**
  * Announced, not built.
@@ -75,6 +76,21 @@ export interface PresentedModule {
   name: string;
   summary: string;
   presentation: ModulePresentation;
+}
+
+/**
+ * Which module a path mounts, or null for the app's own home screen.
+ *
+ * Pulled out of `Shell` so it can be tested. It is one expression, and one
+ * expression is exactly where the locale-prefix bug lived: the Shell handed it
+ * `window.location.pathname`, which carries the language, and it silently
+ * resolved to nothing. A dead button is not a crash, so nothing reported it.
+ *
+ * Takes either form of path: `/fr/app/ryc` or `/app/ryc`.
+ */
+export function activeModuleFor(path: string): ModuleRegistration | null {
+  const id = moduleIdFrom(path);
+  return id === null ? null : (liveModules.find((m) => m.id === id) ?? null);
 }
 
 export function presentModules(t: Translate): PresentedModule[] {
