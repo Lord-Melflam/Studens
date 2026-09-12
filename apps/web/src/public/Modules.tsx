@@ -3,18 +3,18 @@
  *
  * Every word about a module comes from the module. This file arranges them.
  */
-import { modules } from "../shell/registry.js";
+import { useT } from "@studens/i18n";
+import { presentModules } from "../shell/registry.js";
 import { linkProps } from "../router.js";
 
 export function Modules() {
+  const t = useT();
+  const modules = presentModules(t);
   return (
     <>
       <section className="page-head">
-        <h1>Ce que ça fait</h1>
-        <p className="lede">
-          Studens est fait de modules. Chacun résout un problème précis, et
-          n&apos;apparaît ici que lorsqu&apos;il fonctionne.
-        </p>
+        <h1>{t("modules.title")}</h1>
+        <p className="lede">{t("modules.lede")}</p>
       </section>
 
       {modules.map((m) => (
@@ -22,7 +22,7 @@ export function Modules() {
           <div className="mc-head">
             <h2>{m.name}</h2>
             <span className="badge">
-              {m.presentation.status === "live" ? "disponible" : "à venir"}
+              {t(m.presentation.status === "live" ? "inside.available" : "inside.planned")}
             </span>
           </div>
           <p className="band-lede">{m.summary}</p>
@@ -80,7 +80,7 @@ export function Modules() {
 
       <section className="band final">
         <a className="cta big" {...linkProps("/connexion")}>
-          Créer un compte
+          {t("nav.register")}
         </a>
       </section>
     </>

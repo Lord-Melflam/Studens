@@ -15,12 +15,22 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PublicZone, isAppPath, moduleIdFrom, APP_PREFIX } from "@studens/web";
+import { PublicZone, isAppPath, moduleIdFrom, APP_PREFIX, bundle } from "@studens/web";
 import { rycModule } from "@studens/ryc-ui";
 import { modules } from "@studens/web";
+import { DEFAULT_LOCALE, I18nProvider, createTranslator, LOCALES, missingKeys } from "@studens/i18n";
 
-const render = (path: string): string =>
-  renderToStaticMarkup(createElement(PublicZone, { path }));
+/** The module's presentation in a given language, which is how the page gets it. */
+const presentationIn = (locale = DEFAULT_LOCALE) =>
+  rycModule.presentation(createTranslator(bundle, locale));
+
+const render = (path: string, locale = DEFAULT_LOCALE): string =>
+  renderToStaticMarkup(
+    createElement(
+      I18nProvider,
+      { locale, bundle, children: createElement(PublicZone, { path }) },
+    ),
+  );
 
 /**
  * What a reader sees, rather than what React emitted.
@@ -41,14 +51,14 @@ const text = (html: string): string =>
 describe("the public pages say what the modules say", () => {
   it("the landing page carries the module's own problem statement", () => {
     const body = text(render("/"));
-    expect(body).toContain(rycModule.presentation.problem!.title);
+    expect(body).toContain(presentationIn().problem!.title);
     // Not a paraphrase: the module's sentence, verbatim.
-    expect(body).toContain(rycModule.presentation.problem!.body[0]!.slice(0, 60));
+    expect(body).toContain(presentationIn().problem!.body[0]!.slice(0, 60));
   });
 
   it("and its steps, in order", () => {
     const body = text(render("/"));
-    const positions = rycModule.presentation.steps!.map((s) => body.indexOf(s.title));
+    const positions = presentationIn().steps!.map((s) => body.indexOf(s.title));
     expect(positions.every((p) => p > -1), "every step should appear").toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
   });
@@ -56,19 +66,19 @@ describe("the public pages say what the modules say", () => {
   it("names the module and its status rather than claiming it is ready", () => {
     const body = text(render("/"));
     expect(body).toContain(rycModule.name);
-    expect(body).toContain(rycModule.presentation.statusNote);
+    expect(body).toContain(presentationIn().statusNote);
     expect(body).toContain(rycModule.presentation.status === "live" ? "disponible" : "à venir");
   });
 
   it("/modules renders the full module detail", () => {
     const body = text(render("/modules"));
-    expect(body).toContain(rycModule.presentation.problem!.title);
-    expect(body).toContain(rycModule.presentation.steps![0]!.body.slice(0, 40));
+    expect(body).toContain(presentationIn().problem!.title);
+    expect(body).toContain(presentationIn().steps![0]!.body.slice(0, 40));
     // Detail belongs here rather than on the landing page: it is one module's,
     // and the landing page is the platform's.
-    expect(body).toContain(rycModule.presentation.sources!.title);
-    for (const item of rycModule.presentation.sources!.items) expect(body).toContain(item);
-    for (const h of rycModule.presentation.highlights!) expect(body).toContain(h.title);
+    expect(body).toContain(presentationIn().sources!.title);
+    for (const item of presentationIn().sources!.items) expect(body).toContain(item);
+    for (const h of presentationIn().highlights!) expect(body).toContain(h.title);
   });
 });
 
@@ -100,7 +110,7 @@ describe("the landing page shows the product, not only words about it", () => {
   });
 
   it("ends on the module's own first action, not a generic one", () => {
-    expect(text(render("/"))).toContain(rycModule.presentation.firstAction!.title);
+    expect(text(render("/"))).toContain(presentationIn().firstAction!.title);
   });
 
   it("says there is nothing to accept, because there is no analytics cookie", () => {
@@ -113,24 +123,29 @@ describe("the landing page shows the product, not only words about it", () => {
 describe("the platform speaks for itself, and modules are what is inside it", () => {
   it("lists every module, planned ones included, with its status", () => {
     const body = text(render("/"));
+    const t = createTranslator(bundle, DEFAULT_LOCALE);
     for (const m of modules) {
       expect(body, `${m.id} should be listed`).toContain(m.name);
-      expect(body).toContain(m.presentation.statusNote);
+      expect(body).toContain(m.presentation(t).statusNote);
     }
     expect(body).toContain("à venir");
     expect(body).toContain("disponible");
   });
 
   it("invents nothing for a module that is not built", () => {
-    const planned = modules.filter((m) => m.presentation.status === "planned");
+    const planned = modules.filter(
+      (m) => m.presentation(createTranslator(bundle, DEFAULT_LOCALE)).status === "planned",
+    );
     expect(planned.length, "this test needs a planned module to mean anything").toBeGreaterThan(0);
+    const t = createTranslator(bundle, DEFAULT_LOCALE);
     for (const m of planned) {
       // A problem statement and a feature list for something unbuilt is how a
       // roadmap turns into a promise. The type makes it optional; this makes
       // sure nobody fills it in to balance the page visually.
-      expect(m.presentation.problem, `${m.id} must carry no problem statement`).toBeUndefined();
-      expect(m.presentation.steps).toBeUndefined();
-      expect(m.presentation.showcase).toBeUndefined();
+      const pres = m.presentation(t);
+      expect(pres.problem, `${m.id} must carry no problem statement`).toBeUndefined();
+      expect(pres.steps).toBeUndefined();
+      expect(pres.showcase).toBeUndefined();
       expect(m.component, `${m.id} must not be mountable`).toBeUndefined();
     }
   });
@@ -153,7 +168,8 @@ describe("FR-F3: signing in and creating an account are one act", () => {
       expect(text(html)).toContain(label);
     }
     const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
-    expect(hrefs).toContain("/connexion");
+    // Every internal link carries the language, so the target is prefixed.
+    expect(hrefs).toContain(`/${DEFAULT_LOCALE}/connexion`);
     // No separate registration route exists to drift from the sign-in one.
     expect(hrefs.filter((h) => h?.includes("inscription"))).toEqual([]);
   });
@@ -192,7 +208,7 @@ describe("a public page is a page, not an application screen", () => {
   });
 
   it("an unknown public path shows the landing page, not a dead end", () => {
-    expect(text(render("/quelque-chose"))).toContain(rycModule.presentation.problem.title);
+    expect(text(render("/quelque-chose"))).toContain(presentationIn().problem!.title);
   });
 });
 
@@ -210,5 +226,62 @@ describe("the zone boundary", () => {
     expect(moduleIdFrom(`${APP_PREFIX}/ryc/anything/deeper`)).toBe("ryc");
     expect(moduleIdFrom(APP_PREFIX)).toBeNull();
     expect(moduleIdFrom("/modules")).toBeNull();
+  });
+});
+
+describe("FR-G: three languages, and the locale is in the path", () => {
+  it("every key exists in every language", () => {
+    // A key missing from Dutch falls back to French, which is right for the
+    // reader and wrong for everyone else: nobody notices a page that quietly
+    // reverts. This is the only thing that notices.
+    expect(missingKeys(bundle)).toEqual([]);
+  });
+
+  it("no string is left empty, which would render as a blank rather than a bug", () => {
+    for (const locale of LOCALES) {
+      for (const [key, value] of Object.entries(bundle[locale])) {
+        expect(value.trim(), `${locale}:${key} is empty`).not.toBe("");
+      }
+    }
+  });
+
+  it("renders the same page in each language, and differently", () => {
+    const rendered = LOCALES.map((l) => text(render("/", l)));
+    for (const [i, locale] of LOCALES.entries()) {
+      expect(rendered[i], `${locale} should not show raw keys`).not.toMatch(/\bhero\.title\b/);
+    }
+    // Three languages, three different pages. If two matched, one was falling
+    // back to the other and the switcher would be decoration.
+    expect(new Set(rendered).size).toBe(LOCALES.length);
+  });
+
+  it("the module's own copy is translated too, not only the shell's", () => {
+    const nl = text(render("/", "nl"));
+    expect(nl).toContain(presentationIn("nl").problem!.title);
+    expect(nl).not.toContain(presentationIn("fr").problem!.title);
+  });
+
+  it("the switcher links to the same page in the other languages", () => {
+    const html = render("/a-propos", "nl");
+    const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+    for (const l of LOCALES) expect(hrefs).toContain(`/${l}/a-propos`);
+  });
+
+  it("language names are in their own language, never translated", () => {
+    // A Dutch speaker looks for "Nederlands", not for "Néerlandais".
+    for (const locale of LOCALES) {
+      const body = text(render("/", locale));
+      expect(body).toContain("Nederlands");
+      expect(body).toContain("Français");
+      expect(body).toContain("English");
+    }
+  });
+
+  it("says that institutional content stays in its own language", () => {
+    // A Dutch-speaking reader landing on a French course description should
+    // know that is the institution's doing, not a gap in the product.
+    for (const locale of LOCALES) expect(text(render("/", locale))).toContain(
+      createTranslator(bundle, locale)("lang.note"),
+    );
   });
 });

@@ -19,6 +19,7 @@
  * imports it.
  */
 import { useEffect, useState } from "react";
+import { DEFAULT_LOCALE, localePath, splitLocale, type Locale } from "@studens/i18n";
 
 /** Everything below this prefix needs a session. Everything else is public. */
 export const APP_PREFIX = "/app";
@@ -29,6 +30,20 @@ export function currentPath(): string {
   if (typeof window === "undefined") return "/";
   const p = window.location.pathname.replace(/\/+$/, "");
   return p === "" ? "/" : p;
+}
+
+/**
+ * The path with its language taken off: `/nl/a-propos` becomes `/a-propos`.
+ *
+ * Everything downstream matches on this, so no component has to know that a
+ * prefix exists. Adding a fourth language changes no route.
+ */
+export function currentRoute(path: string = currentPath()): string {
+  return splitLocale(path).rest;
+}
+
+export function currentLocale(path: string = currentPath()): Locale {
+  return splitLocale(path).locale ?? DEFAULT_LOCALE;
 }
 
 export function isAppPath(path: string = currentPath()): boolean {
@@ -42,7 +57,9 @@ export function moduleIdFrom(path: string = currentPath()): string | null {
   return rest.split("/")[0] || null;
 }
 
-export function navigate(path: string): void {
+/** Navigate within the current language. Takes an unprefixed route. */
+export function navigate(route: string, locale: Locale = currentLocale()): void {
+  const path = localePath(route, locale);
   if (path === currentPath()) return;
   window.history.pushState({}, "", path);
   window.dispatchEvent(new PopStateEvent("popstate"));
@@ -67,17 +84,21 @@ export function usePath(): string {
  * click with no modifier, which is the one where a full page load would be
  * wasteful.
  */
-export function linkProps(to: string): {
+export function linkProps(
+  to: string,
+  locale?: Locale,
+): {
   href: string;
   onClick: (e: React.MouseEvent) => void;
 } {
+  const target = localePath(to, locale ?? currentLocale());
   return {
-    href: to,
+    href: target,
     onClick: (e: React.MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
-      navigate(to);
+      navigate(to, locale);
     },
   };
 }

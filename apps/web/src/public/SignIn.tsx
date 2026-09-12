@@ -7,6 +7,7 @@
  * appear at all, rather than appearing and failing, and the page says so.
  */
 import { useEffect, useState } from "react";
+import { useT } from "@studens/i18n";
 import { linkProps } from "../router.js";
 
 interface Provider {
@@ -15,6 +16,7 @@ interface Provider {
 }
 
 export function SignIn() {
+  const t = useT();
   const [providers, setProviders] = useState<Provider[] | null>(null);
   const [dev, setDev] = useState(false);
 
@@ -36,40 +38,33 @@ export function SignIn() {
 
   return (
     <section className="signin">
-      <h1>Entrer</h1>
-      <p className="lede">
-        Pas de mot de passe à créer ni à retenir. Vous utilisez un compte que
-        vous avez déjà, et nous n&apos;en voyons jamais le mot de passe.
-      </p>
+      <h1>{t("signin.title")}</h1>
+      <p className="lede">{t("signin.lede")}</p>
 
       <div className="signin-buttons">
         {providers?.map((p) => (
           // A real link: the browser has to leave for the provider, which an
           // in-page request cannot do.
           <a key={p.id} className="provider" href={`/api/auth/${p.id}/start`}>
-            Continuer avec {p.label}
+            {t("signin.with", { provider: p.label })}
           </a>
         ))}
 
         {providers?.length === 0 && !dev && (
-          <p className="notice">
-            La connexion n&apos;est pas encore ouverte sur cette installation.
-          </p>
+          <p className="notice">{t("signin.none")}</p>
         )}
 
         {dev && (
           <button type="button" className="provider dev" onClick={() => void devSignIn()}>
-            Continuer en mode développement
+            {t("signin.dev")}
             <span className="dev-tag">dev</span>
           </button>
         )}
       </div>
 
       <p className="signin-fine">
-        En continuant, vous créez un compte si vous n&apos;en avez pas encore.
-        Nous conservons le domaine de votre adresse, jamais l&apos;adresse
-        elle-même, et pas votre nom.{" "}
-        <a {...linkProps("/confidentialite")}>Ce que ça implique</a>.
+        {t("signin.fine")}{" "}
+        <a {...linkProps("/confidentialite")}>{t("signin.fine.link")}</a>.
       </p>
     </section>
   );

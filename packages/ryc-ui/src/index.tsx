@@ -7,8 +7,10 @@
  *
  * Nothing about courses or reviews leaves this package.
  */
+import type { Bundle, Translate } from "@studens/i18n";
 import { Ryc } from "./Ryc.js";
 import { Showcase } from "./Showcase.js";
+import { rycStrings } from "./strings.js";
 import "./ryc.css";
 
 export interface ModuleRegistration {
@@ -25,6 +27,8 @@ export interface ModuleRegistration {
    * it here is the alternative to a roadmap page that drifts.
    */
   component?: () => JSX.Element;
+  /** The module's own translations, merged into the bundle by the shell. */
+  strings: Bundle;
   /**
    * How the module presents itself to someone who has no account.
    *
@@ -36,7 +40,12 @@ export interface ModuleRegistration {
    * So the module says it, and apps/web renders whatever it is handed without
    * understanding any of it. The same reason the registry exists at all.
    */
-  presentation: ModulePresentation;
+  /**
+   * Built from the translator rather than stored as text, so a module's public
+   * copy is translated by the same mechanism as everything else. The shell
+   * calls it with the active locale's translator.
+   */
+  presentation: (t: Translate) => ModulePresentation;
 }
 
 export interface ModulePresentation {
@@ -85,64 +94,32 @@ export interface ModulePresentation {
 export const rycModule: ModuleRegistration = {
   id: "ryc",
   name: "Rate Your Courses",
-  summary:
-    "Ce que valent vraiment les cours, d'après les étudiants qui les ont suivis.",
+  summary: "Ce que valent vraiment les cours, d'après les étudiants qui les ont suivis.",
   component: Ryc,
-  presentation: {
+  strings: rycStrings,
+  presentation: (t) => ({
     status: "live",
-    statusNote:
-      "Utilisable aujourd'hui, avec les 546 cours accessibles depuis les programmes de l'EPL.",
+    statusNote: t("ryc.status.note"),
     problem: {
-      title: "Choisir un cours à l'aveugle",
-      body: [
-        "Au moment du PAE, vous choisissez des cours à option sur la base d'une fiche officielle. Elle dit ce que le cours contient. Elle ne dit pas ce qu'il demande vraiment, comment il est donné, ni à quoi ressemble l'examen.",
-        "Le reste se passe sur Discord, en septembre, et se perd en trois semaines. Chaque année, la même question est reposée aux mêmes personnes, et la réponse disparaît à nouveau.",
-        "Studens garde ces réponses au même endroit, datées, avec la charge de travail réelle et l'année où le cours a été suivi.",
-      ],
+      title: t("ryc.problem.title"),
+      body: [t("ryc.problem.1"), t("ryc.problem.2"), t("ryc.problem.3")],
     },
-    steps: [
-      {
-        title: "Cherchez ou parcourez",
-        body: "Par code, par mot du titre, ou en parcourant un programme entier. Le catalogue vient directement de l'université: ECTS, quadrimestre, langue, heures encadrées et mode d'évaluation officiel.",
-      },
-      {
-        title: "Lisez ce que disent celles et ceux qui l'ont suivi",
-        body: "Une note de recommandation, la charge de travail rapportée à ses crédits, la difficulté, et surtout du texte: ce qui aide, ce qui manque, et ce qu'il faut savoir avant de s'inscrire.",
-      },
-      {
-        title: "Donnez le vôtre, sous votre nom ou anonymement",
-        body: "Le choix se fait sur un écran à lui seul, après avoir écrit. L'anonymat est définitif et sans lien avec votre compte: c'est une garantie de structure, pas une promesse.",
-      },
-    ],
-    highlights: [
-      {
-        title: "Rien ne vous est demandé que l’université publie déjà",
-        body: "ECTS, quadrimestre, langue, heures encadrées, mode d’évaluation avec ses pondérations : tout ça est repris automatiquement. Vous n’écrivez que ce que la fiche officielle ne peut pas dire.",
-      },
-      {
-        title: "Des chiffres qui viennent avec leur dénominateur",
-        body: "Une moyenne de 4,1 sur 23 avis ne veut pas dire la même chose que sur 2. Le nombre est toujours affiché à côté, et un taux de réussite n’apparaît qu’au-delà de cinq réponses.",
-      },
-      {
-        title: "Une année sur chaque avis",
-        body: "Un cours change de titulaire, de barème, de projet. Savoir qu’un avis date de 2019 est aussi important que ce qu’il dit.",
-      },
-      {
-        title: "Vous restez maître de ce que vous signez",
-        body: "Le choix entre votre nom et l’anonymat se fait après avoir écrit, sur un écran à lui seul, avec les chiffres qui vous concernent sous les yeux.",
-      },
-    ],
+    steps: [1, 2, 3].map((n) => ({
+      title: t(`ryc.step.${n}.title`),
+      body: t(`ryc.step.${n}.body`),
+    })),
+    highlights: [1, 2, 3, 4].map((n) => ({
+      title: t(`ryc.highlight.${n}.title`),
+      body: t(`ryc.highlight.${n}.body`),
+    })),
     sources: {
-      title: "Le catalogue officiel, directement",
-      body: "Les fiches ne sont pas recopiées à la main : elles sont reprises du site de l’université et rafraîchies. Un lien vers la fiche officielle est affiché sur chaque cours, parce que c’est elle qui fait foi.",
-      items: ["UCLouvain", "546 cours", "43 programmes", "année académique en cours"],
+      title: t("ryc.sources.title"),
+      body: t("ryc.sources.body"),
+      items: [1, 2, 3, 4].map((n) => t(`ryc.sources.${n}`)),
     },
-    firstAction: {
-      title: "Vous cherchez un cours",
-      body: "Et vous lisez. Écrire le vôtre peut attendre le jour où vous aurez quelque chose à dire.",
-    },
+    firstAction: { title: t("ryc.first.title"), body: t("ryc.first.body") },
     showcase: Showcase,
-  },
+  }),
 };
 
 export { Ryc };
@@ -170,3 +147,4 @@ export { Blocks, ProseField, type Block, type Span } from "./Prose.js";
  */
 export { PathChoice, AnonymousConfirm } from "./PathChoice.js";
 export { Steps, type StepName } from "./Steps.js";
+export { rycStrings } from "./strings.js";

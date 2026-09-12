@@ -24,6 +24,7 @@
  * exactly the failure this project keeps recording elsewhere: presenting
  * something as real because it reads better.
  */
+import { useT } from "@studens/i18n";
 import { Blocks, type Block } from "./Prose.js";
 
 /** Verbatim from ref.CourseOffering for lepl1503, trimmed to what fits. */
@@ -87,6 +88,7 @@ const ASSESSMENT: Block[] = [
 ];
 
 export function Showcase() {
+  const t = useT();
   return (
     <figure className="showcase">
       <div className="showcase-bar" aria-hidden="true">
@@ -110,17 +112,14 @@ export function Showcase() {
         </div>
 
         <div className="showcase-split">
-          <span className="example-tag">exemple</span>
-          <p>
-            Personne n&apos;a encore publié d&apos;avis. Ci-dessous, à quoi
-            ressemblera cette partie.
-          </p>
+          <span className="example-tag">{t("ryc.mock.example")}</span>
+          <p>{t("ryc.mock.explain")}</p>
         </div>
 
         <article className="review review-named">
           <header>
             <span className="chip-named">marie.d</span>
-            <span className="review-year">suivi en 2024-2025</span>
+            <span className="review-year">{t("ryc.mock.year", { years: "2024-2025" })}</span>
             <span className="review-scores">recommandé 5/5 · charge 4/5 · difficulté 4/5</span>
           </header>
           <p className="review-body">
@@ -132,7 +131,7 @@ export function Showcase() {
         <article className="review review-anonymous">
           <header>
             <span className="chip-anon">Anonyme</span>
-            <span className="review-year">suivi en 2023-2024</span>
+            <span className="review-year">{t("ryc.mock.year", { years: "2023-2024" })}</span>
           </header>
           <p className="review-body">
             Beaucoup de travail non encadré en dehors des séances, et le barème
@@ -142,10 +141,7 @@ export function Showcase() {
         </article>
       </div>
 
-      <figcaption className="showcase-caption">
-        La fiche du cours est réelle, reprise du catalogue UCLouvain. Les deux
-        avis sont fictifs : il n&apos;y en a pas encore.
-      </figcaption>
+      <figcaption className="showcase-caption">{t("ryc.mock.caption")}</figcaption>
     </figure>
   );
 }

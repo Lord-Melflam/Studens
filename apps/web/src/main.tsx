@@ -1,20 +1,40 @@
 /**
- * The entry point, and the only place that decides which zone is showing.
+ * The entry point, and the only place that decides zone and language.
  *
- * Two zones today: everything under /app needs a session, everything else is
- * public (FR-F1). The first-run sequence is the third and is not built yet.
+ * THE LANGUAGE IS IN THE PATH. A visitor arriving at `/` with no prefix is
+ * sent to the one their browser asks for, and from then on the URL says which
+ * language it is, so the link can be shared and will look the same to whoever
+ * opens it. See docs/design/internationalisation.md.
  */
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { I18nProvider, localePath, preferredLocale, splitLocale } from "@studens/i18n";
 import { Shell } from "./shell/Shell.js";
 import { PublicZone } from "./public/index.js";
-import { isAppPath, usePath } from "./router.js";
+import { bundle } from "./bundle.js";
+import { currentRoute, isAppPath, usePath } from "./router.js";
 import "./shell.css";
 import "./public/public.css";
 
 function Studens() {
   const path = usePath();
-  return isAppPath(path) ? <Shell /> : <PublicZone path={path} />;
+  const { locale } = splitLocale(path);
+  const route = currentRoute(path);
+
+  // No prefix: choose one and replace the entry in history, so Back does not
+  // bounce the visitor straight out again.
+  if (locale === null) {
+    const chosen = preferredLocale(navigator.languages ?? [navigator.language]);
+    window.history.replaceState({}, "", localePath(route, chosen) + window.location.search);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    return null;
+  }
+
+  return (
+    <I18nProvider locale={locale} bundle={bundle}>
+      {isAppPath(route) ? <Shell /> : <PublicZone path={route} />}
+    </I18nProvider>
+  );
 }
 
 const root = document.getElementById("root");

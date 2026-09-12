@@ -67,14 +67,31 @@ describe("the shell knows nothing about any module's domain", () => {
     }
   });
 
-  it("imports the module only through its registration (FR-B18)", () => {
+  it("imports a MODULE only through its registration (FR-B18)", () => {
     const registry = readFileSync(join(root, "apps/web/src/shell/registry.ts"), "utf8");
-    // The registry is the ONLY file allowed to import a module package.
-    const imports = sources
+
+    // Which workspace packages are modules is read from their manifests, not
+    // guessed from their names. An earlier version of this test forbade every
+    // `@studens/` import outside the registry, which was too broad: it also
+    // caught shared platform-tier infrastructure, which every file may use and
+    // which is nobody's domain. FR-B18 is about modules.
+    const featurePackages = readdirSync(join(root, "packages"))
+      .map((dir) => join(root, "packages", dir, "package.json"))
+      .filter((f) => existsSync(f))
+      .map((f) => JSON.parse(readFileSync(f, "utf8")))
+      .filter((j) => j.studens?.tier === "feature")
+      .map((j) => j.name as string);
+
+    expect(featurePackages.length, "no feature packages found: the check would be vacuous")
+      .toBeGreaterThan(0);
+
+    const offenders = sources
       .filter((s) => !s.file.endsWith("shell/registry.ts"))
-      .filter((s) => /from ["']@studens\//.test(s.text));
+      .filter((s) => featurePackages.some((name) => s.text.includes(`from "${name}"`)))
+      .map((s) => s.file);
+
     expect(
-      imports.map((s) => s.file),
+      offenders,
       "only the registry may import a module package: that is what makes adding a module " +
         "a one-line change (FR-B4, FR-B18)",
     ).toEqual([]);

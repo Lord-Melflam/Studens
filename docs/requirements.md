@@ -973,6 +973,25 @@ default, and it consumes moderator time the team may not have (OPEN-7).
 **[OPEN-8]** How is a Moderator appointed, and by whom? Unanswered, this becomes a
 privilege escalation path.
 
+### 3.7 Languages (FR-G)
+
+Added 2026-09-12. Full reasoning in `design/internationalisation.md`.
+
+| ID | Priority | Requirement |
+|---|---|---|
+| FR-G1 | MUST | The interface exists in **French, Dutch and English**. The name was chosen because it reads natively in all three (README), and Belgian higher education is legislated separately by the Flemish and French Communities, so a platform meant for both cannot be monolingual. French is the source language. |
+| FR-G2 | MUST | The active language is **in the URL path** (`/nl/a-propos`), not in a cookie alone. A cookie cannot be shared: the same link would show different things to different people, and a crawler would see one language. A visitor with no prefix is redirected to what their browser asks for. |
+| FR-G3 | MUST | **Each package owns its own strings.** A shared `locales/` directory is a file every module must edit (FR-B4) and would put a module's vocabulary inside the shell (FR-B16). A module's public presentation is built from the translator rather than stored as text. |
+| FR-G4 | MUST | **A missing translation is detectable.** It falls back to French for the reader, warns in development, and fails a test: `missingKeys()` must be empty, no string may be empty, and the same page rendered in the three languages must differ. Nobody notices a page that quietly reverts. **[DERIVED]** 2026-09-12, from the pattern in `LESSONS.md` section 9. |
+| FR-G5 | MUST | **Content published by an institution is never translated.** Course titles, descriptions and assessment methods stay in the language the institution publishes them in; translating them would invent an official-looking text nobody approved. The interface states this rather than letting a reader conclude the product is half-finished. |
+| FR-G6 | MUST | Language names are shown **in their own language** and are never translated. A Dutch speaker looks for "Nederlands", not for "Néerlandais". |
+
+**[OPEN]** The Dutch and English were written by the same hand as the French and
+have not been checked by a native speaker. For English the risk is small. For
+Dutch it is not: this product asks students to trust it with something they are
+nervous about saying, and clumsy Dutch reads as "not for you". To be closed
+before any Flemish institution is launched into.
+
 ## 4. Non-functional requirements
 
 ### 4.1 MEA (NFR-M)

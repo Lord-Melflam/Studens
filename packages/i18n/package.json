@@ -1,19 +1,16 @@
 {
-  "name": "@studens/ryc-ui",
+  "name": "@studens/i18n",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "studens": {
-    "tier": "feature"
+    "tier": "platform"
   },
-  "main": "./src/index.tsx",
+  "main": "./src/index.ts",
   "peerDependencies": {
     "react": "^18"
   },
   "devDependencies": {
     "@types/react": "18.3.12"
-  },
-  "dependencies": {
-    "@studens/i18n": "*"
   }
 }

@@ -18,7 +18,7 @@ gone wrong and what each failure changed.
 | Commits | 28 |
 | Requirements | **108**: 90 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7) and 18 non-functional. Counted, not carried forward |
 | Open questions | **13** open, 32 resolved |
-| Tests | **260**, plus 15 database isolation assertions |
+| Tests | **267**, plus 15 database isolation assertions |
 | Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
@@ -666,6 +666,61 @@ module's text passed, because the test reads the same source the page renders.
 The property is about the wiring, so the wiring is what has to be broken.
 
 241 tests to 252, then 258 after the rework below.
+
+---
+
+### Phase 22: three languages
+
+Studens was named because it reads natively in French, Dutch and English, and
+the product was French only. That is a claim the product did not honour, and it
+is structural rather than cosmetic: Belgian higher education is legislated
+separately by the Flemish and the French Communities, so a platform meant for
+both cannot be monolingual. Every screen written in one language is a screen to
+revisit, so the cost grew with every pull request. It came before the first-run
+sequence for that reason.
+
+**The locale is in the path**, `/nl/a-propos`. A cookie cannot be shared: the
+same link would show different things to different people, and a crawler would
+see one language. Cost: every route carries a prefix, contained in one function
+that `linkProps` calls, so no component knows the prefix exists.
+
+**No library.** i18next and its relatives sell extraction tooling and a plural
+engine, and the platform already ships the plural engine as `Intl.PluralRules`,
+which knows that French treats zero as singular and English does not. What
+remains is eighty lines. The same call as react-router and the OIDC client.
+
+**Each package owns its strings**, the shell's separate from RYC's. A shared
+`locales/` directory is a file every module must edit (FR-B4) and would put
+RYC's vocabulary inside the shell, which FR-B16 has already refused three times.
+So a module's public presentation is now built from the translator rather than
+stored as text.
+
+**A missing key is loud**, because nobody notices a page that quietly reverts to
+French. Development warns and names the key; a test asserts `missingKeys()` is
+empty, that no string is blank, and that the landing page rendered in the three
+languages produces three different pages, since if two matched, one was falling
+back and the switcher was decoration.
+
+**What is deliberately not translated**: anything an institution publishes. A
+Dutch-speaking student at UCLouvain reads French course descriptions because
+that is what UCLouvain publishes, and inventing an official-looking translation
+on a page whose claim is that the official record is one link away would be
+worse than leaving it. The interface says so rather than letting a reader
+conclude the product is half-finished.
+
+**The FR-B18 gate was refined rather than weakened.** It forbade every
+`@studens/` import outside the registry, which also caught shared platform-tier
+infrastructure that is nobody's domain. It now reads each package's declared
+tier from its manifest and forbids only **feature**-tier imports, which is what
+FR-B18 actually says. Verified by importing a module into `main.tsx` and
+watching it fail.
+
+Still French only: the app zone and RYC's own screens. The mechanism is there
+and the strings are not. And the Dutch has not been read by a native speaker,
+which is recorded as open and must close before any Flemish institution is
+launched into: clumsy Dutch reads as "not for you".
+
+260 tests to 267.
 
 ---
 

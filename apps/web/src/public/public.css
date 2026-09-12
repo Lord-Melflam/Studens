@@ -45,6 +45,16 @@ a.ghost { color: var(--ink); background: transparent; border: 1px solid var(--li
 a.ghost:hover { border-color: var(--accent); }
 a.cta { color: #fff; background: var(--accent); border: 1px solid var(--accent); }
 a.cta:hover { background: #16407c; }
+
+/* A call to action that closes a section needs air above it. Inline by
+   default, these sat flush against the paragraph or list they followed. */
+.band > a.cta,
+.band > a.ghost {
+  display: inline-block;
+  margin-top: 2.2rem;
+}
+.band.final > a.cta,
+.band.final > a.ghost { margin-top: 1.5rem; }
 .big { font-size: 0.98rem !important; padding: 0.7rem 1.5rem !important; }
 
 /* --- main --------------------------------------------------------------- */
@@ -355,3 +365,21 @@ a.cta:hover { background: #16407c; }
   .site-actions { margin-left: auto; }
   .site-main > section { padding: 2.5rem 1.2rem; }
 }
+
+/* --- language switcher ---------------------------------------------------
+   Three short codes, quiet until hovered. The full name is what a reader
+   scans for, so it is in the title and in the wide layout, but three words in
+   the header would crowd the two buttons that matter more. */
+.lang { display: flex; align-items: center; gap: 0.15rem; margin-right: 0.4rem; }
+.lang a {
+  padding: 0.25rem 0.4rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: 4px;
+}
+.lang a:hover { color: var(--ink); background: var(--accent-soft); }
+.lang a.on { color: var(--accent); background: var(--accent-soft); }
+.lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
