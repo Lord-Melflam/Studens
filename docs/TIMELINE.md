@@ -10,13 +10,13 @@ gone wrong and what each failure changed.
 
 ---
 
-## State, as of 2026-09-11
+## State, as of 2026-09-12
 
 | | |
 |---|---|
 | Stage | **Working software.** Catalogue end to end, and reviews submitted and read on both paths |
-| Commits | 28 |
-| Requirements | **108**: 90 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7) and 18 non-functional. Counted, not carried forward |
+| Commits | 31 |
+| Requirements | **123**: 105 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7, FR-F 15) and 18 non-functional. Counted, not carried forward |
 | Open questions | **13** open, 32 resolved |
 | Tests | **241**, plus 15 database isolation assertions |
 | Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
@@ -572,6 +572,57 @@ Appendix A, a start to finish walkthrough of registering both applications,
 checked against the vendor documentation rather than recalled.
 
 202 tests to 241.
+### Phase 20: the product had no shape, only a spine
+
+François, on the current screens: "Too basic. You're really too basic there."
+He was right, and the gap was structural rather than cosmetic. A visitor with no
+account saw nothing at all. A member landed on a list of two buttons. There was
+no public face, no path from stranger to member, and no moment where the product
+asked who someone is and what they want from it.
+
+`design/information-architecture.md` and FR-F1 to FR-F15 are the answer, written
+before any screen, which is the same order the project used in phase 1.
+
+**Three zones in one deployable**: a public site needing no account, sign-in and
+a first-run sequence, then the app. A separate static marketing site was
+rejected, and what that costs is written down rather than discovered.
+
+**A first run, one question per screen**, resumable, with only the username
+required. The alternative, one long form, asks a person to absorb every question
+before answering any, and the first thing this product asks anyone is a question
+about anonymity.
+
+**Four collisions with existing decisions, surfaced before building.** Each one
+would have been expensive to find in code:
+
+1. Every profile field enlarges the attribute set behind 3.3. I recommended
+   deferring programme and year of study to MPA, the module that will need them.
+   Overruled, deliberately, and FR-F8 records the decision with its cost and the
+   two mitigations that make it safe: nothing is required, and **no profile field
+   renders on any contribution, attributed or anonymous**. That second one
+   extends FR-C16 to the named path, because a public "3rd year, SINF" beside a
+   named review sharpens the complement attack against every anonymous review of
+   the same course, and a named reviewer cannot consent on behalf of the silent.
+2. The institution picker was asked for with logos. `frontend-design.tex` 2.3
+   had already recorded that the marks are trademarked whatever their copyright
+   status. Name, city and colours instead, which still feeds the
+   per-institution theme.
+3. A declared institution is weaker evidence than the email domain, and FR-A10
+   already forbids presenting that as proof of enrolment.
+4. Choosing an institution must not set a tenant, because FR-C19 derives an
+   anonymous contribution's tenant from the target and not the author.
+
+**The institution list was looked up, not recalled**: eleven universities across
+the three communities, with Saint-Louis Brussels folded into UCLouvain since
+2023. Hautes écoles and hogescholen need the official registries and come later.
+
+**And a way to test it**, because an onboarding completed once is an onboarding
+nobody can re-test: replayable from the profile by anyone, the development
+sign-in starts with no progress, and every step is its own route.
+
+Written in a git worktree, so the dev servers running on the authentication
+branch were not disturbed. First real use of the thing `CONTRIBUTING.md`
+describes.
 
 ---
 
