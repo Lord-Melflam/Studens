@@ -15,7 +15,7 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PublicZone, isAppPath, moduleIdFrom, APP_PREFIX, bundle } from "@studens/web";
+import { PublicZone, isAppPath, moduleIdFrom, activeModuleFor, APP_PREFIX, bundle } from "@studens/web";
 import { rycModule } from "@studens/ryc-ui";
 import { modules } from "@studens/web";
 import { DEFAULT_LOCALE, I18nProvider, createTranslator, LOCALES, missingKeys } from "@studens/i18n";
@@ -226,6 +226,53 @@ describe("the zone boundary", () => {
     expect(moduleIdFrom(`${APP_PREFIX}/ryc/anything/deeper`)).toBe("ryc");
     expect(moduleIdFrom(APP_PREFIX)).toBeNull();
     expect(moduleIdFrom("/modules")).toBeNull();
+  });
+
+  /**
+   * Regression, 2026-09-12. The Shell passes `window.location.pathname`, which
+   * carries the language, and these were matching on `/app` only. So
+   * `/fr/app/ryc` produced no module id: the URL changed and the screen stayed
+   * on the home list, which reads as a dead button.
+   *
+   * Nothing caught it because every existing case here used a path that had
+   * already been stripped, which is the form the router produces internally and
+   * NOT the form a browser hands you.
+   */
+  it("works on a path that still carries its language", () => {
+    for (const locale of LOCALES) {
+      expect(isAppPath(`/${locale}/app`), `/${locale}/app`).toBe(true);
+      expect(isAppPath(`/${locale}/app/ryc`)).toBe(true);
+      expect(moduleIdFrom(`/${locale}/app/ryc`), `/${locale}/app/ryc`).toBe("ryc");
+      expect(moduleIdFrom(`/${locale}/app/ryc/course/lepl1503`)).toBe("ryc");
+      expect(moduleIdFrom(`/${locale}/app`)).toBeNull();
+
+      // And a public path with a language is still public.
+      expect(isAppPath(`/${locale}`)).toBe(false);
+      expect(isAppPath(`/${locale}/modules`)).toBe(false);
+      expect(moduleIdFrom(`/${locale}/modules`)).toBeNull();
+    }
+  });
+
+  it("resolves the module the Shell will actually mount", () => {
+    // The end of the chain the bug broke: path to id to registered module. The
+    // id check above would still pass if the registry lookup were wrong, and
+    // the visible symptom was the same either way, so both halves are checked.
+    for (const locale of LOCALES) {
+      expect(activeModuleFor(`/${locale}/app/ryc`)?.id).toBe("ryc");
+      expect(activeModuleFor(`/${locale}/app`)).toBeNull();
+      expect(activeModuleFor(`/${locale}/modules`)).toBeNull();
+    }
+    expect(activeModuleFor("/app/ryc")?.id).toBe("ryc");
+    // An id in the URL that is not a live module mounts nothing rather than
+    // throwing: a planned module has no component, and a typo is a typo.
+    expect(activeModuleFor("/fr/app/mpa")).toBeNull();
+    expect(activeModuleFor("/fr/app/nonsense")).toBeNull();
+  });
+
+  it("still works on a path that has already been stripped", () => {
+    // Stripping twice must be harmless: main.tsx strips before calling.
+    expect(isAppPath("/app/ryc")).toBe(true);
+    expect(moduleIdFrom("/app/ryc")).toBe("ryc");
   });
 });
 
