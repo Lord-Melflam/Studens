@@ -1,0 +1,140 @@
+/**
+ * The account control, used in BOTH headers.
+ *
+ * It used to live only in the app shell, which produced the thing François hit
+ * the first time he signed in with a real Google account: the callback landed
+ * him on the public home page, the public header knew nothing about sessions,
+ * so it still offered "Se connecter" and "Créer un compte" and gave no way in.
+ * He had signed in successfully and the product said nothing.
+ *
+ * A public page must never REQUIRE a session (FR-F2). Reflecting one is a
+ * different thing, and not doing so is how a product loses somebody it has just
+ * persuaded to join.
+ *
+ * FR-B16: this file may not mention anything a module owns. It says who is
+ * signed in and offers a way in or out, and knows nothing about courses.
+ */
+import { useCallback, useEffect, useState } from "react";
+import { useT } from "@studens/i18n";
+import { linkProps } from "./router.js";
+
+interface SessionState {
+  signedIn: boolean;
+  emailDomain?: string;
+  devSignInAvailable: boolean;
+}
+
+interface Provider {
+  id: string;
+  label: string;
+}
+
+export function Account({ variant = "app" }: { variant?: "app" | "public" }) {
+  const t = useT();
+  const [state, setState] = useState<SessionState | null>(null);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(() => {
+    fetch("/api/session")
+      .then((r) => (r.ok ? (r.json() as Promise<SessionState>) : null))
+      .then(setState)
+      .catch(() => setState(null));
+    // Which providers this deployment can offer. Empty until the credentials
+    // exist, and the buttons simply do not appear rather than failing on press.
+    fetch("/api/auth/providers")
+      .then((r) => (r.ok ? (r.json() as Promise<{ providers: Provider[] }>) : null))
+      .then((d) => setProviders(d?.providers ?? []))
+      .catch(() => setProviders([]));
+  }, []);
+
+  useEffect(load, [load]);
+
+  async function signIn() {
+    setBusy(true);
+    try {
+      await fetch("/api/session/dev", { method: "POST" });
+      load();
+      // The catalogue is public, but what a signed-in member sees is not
+      // (FR-D13), so the page is reloaded rather than patched in place.
+      window.location.reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function signOut() {
+    setBusy(true);
+    try {
+      await fetch("/api/session", { method: "DELETE" });
+      window.location.reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // While the session is still being fetched, the public header renders its
+  // signed-out state rather than nothing. Signed out is the common case, it is
+  // what a crawler sees (it runs no fetch), and rendering nothing first makes
+  // the navigation jump once the answer arrives.
+  if (!state && variant === "app") return null;
+
+  if (state?.signedIn) {
+    return (
+      <div className="account">
+        {/* On the public site, the useful thing for someone already signed in
+            is the way in, not their own domain. */}
+        {variant === "public" && (
+          <a className="cta" {...linkProps("/app")}>
+            {t("nav.enter")}
+          </a>
+        )}
+        {/* FR-A10: evidence of holding an address at a domain. Never described
+            as proof of enrolment, here or anywhere. */}
+        <span className="domain" title={t("nav.domain.hint")}>
+          {state.emailDomain}
+        </span>
+        <button type="button" onClick={() => void signOut()} disabled={busy}>
+          {t("nav.signout")}
+        </button>
+      </div>
+    );
+  }
+
+  // Signed out on the PUBLIC site: two labels, one destination (FR-F3). The
+  // provider buttons live on /connexion, so the header stays a header.
+  if (variant === "public") {
+    return (
+      <div className="account">
+        <a className="ghost" {...linkProps("/connexion")}>
+          {t("nav.signin")}
+        </a>
+        <a className="cta" {...linkProps("/connexion")}>
+          {t("nav.register")}
+        </a>
+      </div>
+    );
+  }
+
+  // Signed out inside the app: offer the providers directly, since somebody
+  // here has already decided to come in.
+  return (
+    <div className="account">
+      {providers.map((p) => (
+        // A link, not a fetch: the browser must follow the redirect to the
+        // provider itself, and an XHR cannot.
+        <a key={p.id} className="signin" href={`/api/auth/${p.id}/start`}>
+          {t("signin.with", { provider: p.label })}
+        </a>
+      ))}
+      {state?.devSignInAvailable && (
+        <button type="button" onClick={() => void signIn()} disabled={busy}>
+          {t("nav.signin")} <span className="dev">dev</span>
+        </button>
+      )}
+      {providers.length === 0 && !state?.devSignInAvailable && (
+        <span className="domain">{t("signin.none")}</span>
+      )}
+    </div>
+  );
+}

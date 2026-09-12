@@ -157,3 +157,26 @@ header { margin-bottom: 1.75rem; }
   border-radius: 999px;
 }
 .account .signin:hover { border-color: var(--accent); }
+
+/* The app footer carries links out, not just a disclaimer. Before this the app
+   was one directional: once inside, there was no route back to what Studens is,
+   who runs it, or what anonymity does not protect. */
+.app-footer {
+  margin-top: 3rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+.app-footer nav { display: flex; gap: 1.2rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.app-footer nav a { color: var(--muted); text-decoration: none; }
+.app-footer nav a:hover { color: var(--ink); }
+.app-footer .disclaimer { margin: 0; color: var(--muted); }
+
+/* The brand is a link now, not a button, because it leaves the app. */
+a.brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+  text-decoration: none;
+}

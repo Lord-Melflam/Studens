@@ -28,6 +28,14 @@ export const shellStrings: Bundle = {
     "nav.signin": "Se connecter",
     "nav.register": "Créer un compte",
     "nav.source": "Code source",
+    "nav.enter": "Ouvrir l'application",
+    "nav.signout": "se déconnecter",
+    "nav.domain.hint": "adresse vérifiée chez ce domaine",
+    "app.home.lede": "Studens rassemble des outils pour les étudiants. Choisissez un module.",
+    "app.modules": "modules",
+    "app.home.more": "D'autres modules suivront. Rien n'est affiché ici tant qu'il n'existe pas.",
+    "app.unknown": "Module inconnu : « {id} ».",
+    "app.back": "retour aux modules",
     "nav.language": "Langue",
 
     "foot.tagline":
@@ -117,6 +125,14 @@ export const shellStrings: Bundle = {
     "nav.signin": "Aanmelden",
     "nav.register": "Account aanmaken",
     "nav.source": "Broncode",
+    "nav.enter": "Open de app",
+    "nav.signout": "afmelden",
+    "nav.domain.hint": "adres geverifieerd bij dit domein",
+    "app.home.lede": "Studens bundelt hulpmiddelen voor studenten. Kies een module.",
+    "app.modules": "modules",
+    "app.home.more": "Er volgen er meer. Hier staat niets zolang het niet bestaat.",
+    "app.unknown": "Onbekende module: \u00ab {id} \u00bb.",
+    "app.back": "terug naar de modules",
     "nav.language": "Taal",
 
     "foot.tagline":
@@ -206,6 +222,14 @@ export const shellStrings: Bundle = {
     "nav.signin": "Sign in",
     "nav.register": "Create an account",
     "nav.source": "Source code",
+    "nav.enter": "Open the app",
+    "nav.signout": "sign out",
+    "nav.domain.hint": "address verified at this domain",
+    "app.home.lede": "Studens brings together tools for students. Choose a module.",
+    "app.modules": "modules",
+    "app.home.more": "More will follow. Nothing appears here until it exists.",
+    "app.unknown": "Unknown module: \u201c{id}\u201d.",
+    "app.back": "back to the modules",
     "nav.language": "Language",
 
     "foot.tagline":

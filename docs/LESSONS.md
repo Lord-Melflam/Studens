@@ -152,6 +152,72 @@ This is the same shape as the isolation script that could not confirm which role
 it was running as. That one proved nothing while claiming to prove fourteen
 things; this one proved nothing while claiming to prove twenty-three.
 
+### A screen with no address is a screen nothing can reach
+
+RYC held its entire position in component state: which tab, which course, and
+whether the review form was open. It looked like navigation and was not. The
+consequences were all the same bug:
+
+- the browser Back button left the app instead of stepping back a screen;
+- a course page could not be sent to anyone, because it had no URL;
+- a refresh lost your place and dropped you at the module root;
+- and the review form, five screens deep, vanished if you touched reload.
+
+The app zone had the mirror image: the brand went to the app home, so once
+inside there was **no route out** to what Studens is, who runs it, or what
+anonymity does not protect. François reported that half; the other half turned
+up while looking for its cause, which is the usual way round.
+
+**What made it invisible.** None of it is an error. Every page returns 200,
+because a single page application serves the same document whatever the path,
+and every unit test passed because each component was correct about its own
+state. Nothing in the system had an opinion about whether a screen was
+reachable.
+
+**The fix, and the interface it needed.** A module now owns the path below
+`/app/<id>`: the shell slices its own prefix off and hands the rest over
+without parsing it, so RYC gets real routes while the shell still does not know
+what a course is (FR-B16). Parsing lives in one exported function, so the map
+from URL to screen is a thing tests can hold.
+
+**Generalised.** State that decides what is on screen belongs in the URL. If it
+does not have an address, it cannot be linked, bookmarked, refreshed, reached
+with Back, or sent to somebody who is stuck, and none of those failures will
+ever show up as an error.
+
+### Sign-in worked, and the product said nothing
+
+The first real Google sign-in succeeded on the first try: the member was
+created, the session was issued, the cookie was set. François saw the public
+home page, still offering "Se connecter" and "Créer un compte", and reasonably
+concluded it had failed.
+
+Two gaps, one symptom, and neither was in the part that was hard.
+
+**The callback redirected to `/`.** That is the marketing page. Nothing carried
+a member who had just joined into the thing they joined.
+
+**The public header was session blind.** The account control lived only in the
+app shell, because the public zone was built before authentication existed and
+nobody went back. So the header could offer to sign you in and could never say
+you already were.
+
+**What makes this the expensive kind of bug.** Every automated check passed.
+The OIDC tests passed, the route tests passed, the public zone tests passed, CI
+was green, and the flow was verified end to end at the level of HTTP: 302 to
+Google, code exchanged, member row written. All of that was true, and the
+product was still unusable, because **no test and no gate asks "and then what
+does the person see".**
+
+**Generalised.** A feature is not finished when its mechanism works. It is
+finished when the path through it ends somewhere the person wanted to be. The
+seams between two correct pieces are where this hides, and they are exactly the
+places no unit test looks: the callback belongs to the API, the header belongs
+to the web app, and each was right about its own half.
+
+The cheapest guard is not another unit test. It is walking the path once, as a
+person, which is what found it.
+
 ### A prefix added everywhere, except where it was read
 
 The locale went into the URL path, `/fr/app/ryc`. `main.tsx` strips it and

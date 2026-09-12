@@ -1,22 +1,24 @@
 /**
- * The shell.
+ * The shell: the app zone.
  *
- * FR-B17: a Member arrives HERE, not inside a module. Landing directly in RYC
- * was a development convenience and is not the product.
+ * FR-B17: a Member arrives HERE, not inside a module.
  *
  * This file knows nothing about courses, reviews, ECTS or programmes. If it
- * ever does, the boundary in FR-B16 has been lost.
+ * ever does, the boundary in FR-B16 has been lost. It slices its own prefix off
+ * the path and hands the rest to the module without parsing it, so a module can
+ * own its URLs while the shell stays ignorant of what they mean.
  */
-import { Account } from "./Account.js";
+import { useT } from "@studens/i18n";
+import { Account } from "../Account.js";
+import { LanguageSwitcher } from "../LanguageSwitcher.js";
 import { activeModuleFor, liveModules } from "./registry.js";
-import { APP_PREFIX, moduleIdFrom, navigate, usePath } from "../router.js";
+import { APP_PREFIX, currentRoute, linkProps, moduleIdFrom, navigate, usePath } from "../router.js";
 
 function Home() {
+  const t = useT();
   return (
     <>
-      <p className="lede">
-        Studens rassemble des outils pour les étudiants. Choisissez un module.
-      </p>
+      <p className="lede">{t("app.home.lede")}</p>
       <ul className="modules">
         {liveModules.map((m) => (
           <li key={m.id}>
@@ -27,47 +29,60 @@ function Home() {
           </li>
         ))}
       </ul>
-      <p className="footnote">
-        D&apos;autres modules suivront. Rien n&apos;est affiché ici tant qu&apos;il
-        n&apos;existe pas.
-      </p>
+      <p className="footnote">{t("app.home.more")}</p>
     </>
   );
 }
 
 export function Shell() {
+  const t = useT();
   const path = usePath();
+  const route = currentRoute(path);
   const routeId = moduleIdFrom(path);
   const active = activeModuleFor(path);
   const Module = active?.component;
 
+  // Everything below /app/<id> belongs to the module. Sliced here, never read.
+  const inside = active ? route.slice(`${APP_PREFIX}/${active.id}`.length) || "/" : "/";
+
   return (
     <main>
       <header>
-        <button type="button" className="brand" onClick={() => navigate(APP_PREFIX)}>
+        {/*
+          The brand goes to the public site, not to the app home. Before this,
+          the app was one directional: once inside there was no way back out to
+          what Studens is, who runs it, or what anonymity does not protect.
+        */}
+        <a className="brand" {...linkProps("/")}>
           Studens
-        </button>
-        {active && (
-          <nav className="crumbs">
-            <button type="button" onClick={() => navigate(APP_PREFIX)}>
-              modules
-            </button>
-            <span aria-hidden="true">/</span>
-            <span className="here">{active.name}</span>
-          </nav>
-        )}
+        </a>
+        <nav className="crumbs">
+          <button type="button" onClick={() => navigate(APP_PREFIX)}>
+            {t("app.modules")}
+          </button>
+          {active && (
+            <>
+              <span aria-hidden="true">/</span>
+              <span className="here">{active.name}</span>
+            </>
+          )}
+        </nav>
+        <LanguageSwitcher route={route} />
         <Account />
       </header>
 
       {routeId && !active ? (
         <p className="error">
-          Module inconnu: « {routeId} ».{" "}
+          {t("app.unknown", { id: routeId })}{" "}
           <button type="button" className="linkish" onClick={() => navigate(APP_PREFIX)}>
-            retour aux modules
+            {t("app.back")}
           </button>
         </p>
       ) : Module ? (
-        <Module />
+        <Module
+          path={inside}
+          navigate={(to) => navigate(`${APP_PREFIX}/${active!.id}${to === "/" ? "" : to}`)}
+        />
       ) : (
         <Home />
       )}
@@ -84,9 +99,13 @@ export function Shell() {
         FR-B16 gate rejected: that is RYC's domain, and it would be wrong the
         day MPA ships. The gate improved the copy.
       */}
-      <footer className="disclaimer">
-        Studens est un projet indépendant. Il n&apos;est affilié à aucune
-        université ni haute école.
+      <footer className="app-footer">
+        <nav>
+          <a {...linkProps("/")}>{t("nav.home")}</a>
+          <a {...linkProps("/confidentialite")}>{t("nav.privacy")}</a>
+          <a {...linkProps("/a-propos")}>{t("nav.about")}</a>
+        </nav>
+        <p className="disclaimer">{t("foot.tagline")}</p>
       </footer>
     </main>
   );

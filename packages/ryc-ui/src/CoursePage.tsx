@@ -21,13 +21,25 @@ function Field({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-export function CoursePage({ course, onBack }: { course: CourseDetail; onBack: () => void }) {
+export function CoursePage({
+  course,
+  writing,
+  onBack,
+  onWrite,
+  onCloseWriting,
+}: {
+  course: CourseDetail;
+  /** From the URL, not from state, so Back leaves the form and a link reopens it. */
+  writing: boolean;
+  onBack: () => void;
+  onWrite: () => void;
+  onCloseWriting: () => void;
+}) {
   const [reviews, setReviews] = useState<{
     aggregate: Aggregate;
     reviews: PublishedReview[];
     sessionRequired: boolean;
   } | null>(null);
-  const [writing, setWriting] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(() => {
@@ -51,11 +63,7 @@ export function CoursePage({ course, onBack }: { course: CourseDetail; onBack: (
         <h2>
           <span className="code">{course.code.toUpperCase()}</span> {course.title}
         </h2>
-        <SubmitFlow
-          courseCode={course.code}
-          onClose={() => setWriting(false)}
-          onSubmitted={load}
-        />
+        <SubmitFlow courseCode={course.code} onClose={onCloseWriting} onSubmitted={load} />
       </article>
     );
   }
@@ -132,7 +140,7 @@ export function CoursePage({ course, onBack }: { course: CourseDetail; onBack: (
           aggregate={reviews.aggregate}
           reviews={reviews.reviews}
           sessionRequired={reviews.sessionRequired}
-          onWrite={() => setWriting(true)}
+          onWrite={onWrite}
         />
       )}
     </article>
