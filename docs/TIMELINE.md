@@ -18,7 +18,7 @@ gone wrong and what each failure changed.
 | Commits | 28 |
 | Requirements | **108**: 90 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7) and 18 non-functional. Counted, not carried forward |
 | Open questions | **13** open, 32 resolved |
-| Tests | **258**, plus 15 database isolation assertions |
+| Tests | **260**, plus 15 database isolation assertions |
 | Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
@@ -626,6 +626,34 @@ One thing procyo.be has that Studens structurally cannot fake: a fr/nl/en
 switcher. The name was chosen precisely because it reads natively in all three,
 and the product is French-only with no internationalisation. Not papered over
 with a switcher that does nothing; raised as a gap instead.
+
+**Then two corrections from François, both structural.**
+
+*"Studens is more than that. You're deeply referring to RYC."* Correct, and it
+was an over-correction from FR-B16: to keep the shell from knowing what a course
+is, the module had been handed the platform's own voice, so the hero, the
+problem and the whole spine were RYC's. The landing page read as a course review
+site with a platform bolted underneath, which is backwards. Studens is the thing
+that accumulates; a module is what it accumulates into. The day MPA ships, that
+page would have needed rewriting rather than extending.
+
+Now the platform makes the platform's claim, the modules are what is inside it,
+and the first module gets a section in its own words labelled as the first
+module rather than as the product. `MPA` is listed as announced, with a name, a
+line and a status and deliberately nothing else: writing a problem statement for
+something unbuilt is how a roadmap turns into a promise, and `CLAUDE.md` is
+explicit that it has no shape yet. A test asserts a planned module carries no
+problem statement, no steps, no mock and no component.
+
+*"If you have to illustrate to pics, at least put real data."* The mock said
+LEPL1503 was 6 credits with a subtitle it does not have, and showed "4.1 sur 23
+avis" for a course with no reviews at all. Both invented. The course record is
+now read out of the loaded catalogue: 5 credits, Q2, French, and the real
+assessment text with its weightings and its second-session rule, verbatim. The
+reviews stay illustrative because nobody has written one yet, and that is now
+stated **on the mock** rather than assumed: a product asking people to trust a
+privacy guarantee cannot illustrate itself with numbers that look measured and
+are not. Tested.
 
 **A gate for the opposite direction.** The architecture test enforces the
 negative, that no domain word appears in the shell. A page could satisfy that by

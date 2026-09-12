@@ -422,3 +422,37 @@ button.ghost {
 .showcase-body .field { padding: 0.8rem 0; }
 .showcase-body .review { padding: 0.9rem 0; }
 .showcase-body .review-body { font-size: 0.9rem; line-height: 1.55; }
+
+/* The line between what is real and what is illustrated, on the mock itself
+   and not in a footnote. The product asks people to trust a privacy guarantee;
+   it cannot advertise itself with numbers that look measured and are not. */
+.showcase-split {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--line);
+}
+.showcase-split p { margin: 0; font-size: 0.8rem; color: var(--muted); }
+.example-tag {
+  flex: none;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--warn);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: 3px;
+}
+.showcase-caption {
+  margin: 0;
+  padding: 0.7rem 1.5rem 0.9rem;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--muted);
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}

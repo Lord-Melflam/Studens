@@ -18,7 +18,13 @@ export interface ModuleRegistration {
   name: string;
   /** One line, shown on the shell's home screen. */
   summary: string;
-  component: () => JSX.Element;
+  /**
+   * Absent for a module that is announced but not built. The shell mounts and
+   * navigates to live modules only; the public zone lists both, because "what
+   * is coming" is something a stranger is entitled to see, and because naming
+   * it here is the alternative to a roadmap page that drifts.
+   */
+  component?: () => JSX.Element;
   /**
    * How the module presents itself to someone who has no account.
    *
@@ -42,24 +48,30 @@ export interface ModulePresentation {
   status: "live" | "planned";
   /** What "live" or "planned" means for this module, in one line. */
   statusNote: string;
+  /**
+   * Everything below is present for a LIVE module and absent for a planned
+   * one. A planned module gets a name, a line and a status, and nothing more:
+   * writing a problem statement and a feature list for something unbuilt is
+   * how a roadmap becomes a promise.
+   */
   /** The problem it exists to solve, in the words of someone who has it. */
-  problem: { title: string; body: string[] };
+  problem?: { title: string; body: string[] };
   /** What it actually does, as steps rather than features. */
-  steps: Array<{ title: string; body: string }>;
+  steps?: Array<{ title: string; body: string }>;
   /**
    * Concrete promises, titled by what the reader gets rather than by what the
    * software has. "Nothing is asked that the catalogue already knows" rather
    * than "catalogue integration".
    */
-  highlights: Array<{ title: string; body: string }>;
+  highlights?: Array<{ title: string; body: string }>;
   /** Where the module's own data comes from, named in plain words. */
-  sources: { title: string; body: string; items: string[] };
+  sources?: { title: string; body: string; items: string[] };
   /**
    * The last step of "getting started", which is the only one that is not the
    * platform's. Signing in and choosing a name are the same whatever module
    * you came for; what you do next is not.
    */
-  firstAction: { title: string; body: string };
+  firstAction?: { title: string; body: string };
   /**
    * A static mock of the module's own screen, owned by the module.
    *
@@ -67,7 +79,7 @@ export interface ModulePresentation {
    * components, so it cannot drift into showing something the product does not
    * do.
    */
-  showcase: () => JSX.Element;
+  showcase?: () => JSX.Element;
 }
 
 export const rycModule: ModuleRegistration = {

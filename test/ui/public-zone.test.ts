@@ -17,6 +17,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PublicZone, isAppPath, moduleIdFrom, APP_PREFIX } from "@studens/web";
 import { rycModule } from "@studens/ryc-ui";
+import { modules } from "@studens/web";
 
 const render = (path: string): string =>
   renderToStaticMarkup(createElement(PublicZone, { path }));
@@ -40,14 +41,14 @@ const text = (html: string): string =>
 describe("the public pages say what the modules say", () => {
   it("the landing page carries the module's own problem statement", () => {
     const body = text(render("/"));
-    expect(body).toContain(rycModule.presentation.problem.title);
+    expect(body).toContain(rycModule.presentation.problem!.title);
     // Not a paraphrase: the module's sentence, verbatim.
-    expect(body).toContain(rycModule.presentation.problem.body[0]!.slice(0, 60));
+    expect(body).toContain(rycModule.presentation.problem!.body[0]!.slice(0, 60));
   });
 
   it("and its steps, in order", () => {
     const body = text(render("/"));
-    const positions = rycModule.presentation.steps.map((s) => body.indexOf(s.title));
+    const positions = rycModule.presentation.steps!.map((s) => body.indexOf(s.title));
     expect(positions.every((p) => p > -1), "every step should appear").toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
   });
@@ -59,10 +60,15 @@ describe("the public pages say what the modules say", () => {
     expect(body).toContain(rycModule.presentation.status === "live" ? "disponible" : "à venir");
   });
 
-  it("/modules renders the same module detail", () => {
+  it("/modules renders the full module detail", () => {
     const body = text(render("/modules"));
-    expect(body).toContain(rycModule.presentation.problem.title);
-    expect(body).toContain(rycModule.presentation.steps[0]!.body.slice(0, 40));
+    expect(body).toContain(rycModule.presentation.problem!.title);
+    expect(body).toContain(rycModule.presentation.steps![0]!.body.slice(0, 40));
+    // Detail belongs here rather than on the landing page: it is one module's,
+    // and the landing page is the platform's.
+    expect(body).toContain(rycModule.presentation.sources!.title);
+    for (const item of rycModule.presentation.sources!.items) expect(body).toContain(item);
+    for (const h of rycModule.presentation.highlights!) expect(body).toContain(h.title);
   });
 });
 
@@ -84,29 +90,59 @@ describe("the landing page shows the product, not only words about it", () => {
     expect(anon.slice(0, anon.indexOf("</article>"))).not.toMatch(/recommandé \d\/5/);
   });
 
-  it("names where the data comes from, in the module's words", () => {
+  it("declares on the mock what is real and what is illustrated", () => {
+    // The reviews in it are invented, because nobody has written one yet. A
+    // product asking people to trust a privacy guarantee cannot illustrate
+    // itself with numbers that look measured and are not.
     const body = text(render("/"));
-    expect(body).toContain(rycModule.presentation.sources.title);
-    for (const item of rycModule.presentation.sources.items) {
-      expect(body).toContain(item);
-    }
-  });
-
-  it("carries the module's benefit headings", () => {
-    const body = text(render("/"));
-    for (const h of rycModule.presentation.highlights) {
-      expect(body).toContain(h.title);
-    }
+    expect(body).toMatch(/exemple/i);
+    expect(body).toMatch(/fictif/i);
   });
 
   it("ends on the module's own first action, not a generic one", () => {
-    expect(text(render("/"))).toContain(rycModule.presentation.firstAction.title);
+    expect(text(render("/"))).toContain(rycModule.presentation.firstAction!.title);
   });
 
   it("says there is nothing to accept, because there is no analytics cookie", () => {
     // A claim worth a test: it stops being true the moment someone adds a
     // tracker, and the page would then be lying rather than merely stale.
     expect(text(render("/"))).toMatch(/aucun cookie|rien à accepter/i);
+  });
+});
+
+describe("the platform speaks for itself, and modules are what is inside it", () => {
+  it("lists every module, planned ones included, with its status", () => {
+    const body = text(render("/"));
+    for (const m of modules) {
+      expect(body, `${m.id} should be listed`).toContain(m.name);
+      expect(body).toContain(m.presentation.statusNote);
+    }
+    expect(body).toContain("à venir");
+    expect(body).toContain("disponible");
+  });
+
+  it("invents nothing for a module that is not built", () => {
+    const planned = modules.filter((m) => m.presentation.status === "planned");
+    expect(planned.length, "this test needs a planned module to mean anything").toBeGreaterThan(0);
+    for (const m of planned) {
+      // A problem statement and a feature list for something unbuilt is how a
+      // roadmap turns into a promise. The type makes it optional; this makes
+      // sure nobody fills it in to balance the page visually.
+      expect(m.presentation.problem, `${m.id} must carry no problem statement`).toBeUndefined();
+      expect(m.presentation.steps).toBeUndefined();
+      expect(m.presentation.showcase).toBeUndefined();
+      expect(m.component, `${m.id} must not be mountable`).toBeUndefined();
+    }
+  });
+
+  it("states the platform's own promises, not one module's", () => {
+    const body = text(render("/"));
+    // These hold across every module and are the shell's to make. If they ever
+    // come from a module's presentation, the landing page has become that
+    // module's page again.
+    expect(body).toMatch(/ind[ée]pendant/i);
+    expect(body).toMatch(/aucun cookie|rien qui vous piste/i);
+    expect(body).toMatch(/anonym/i);
   });
 });
 

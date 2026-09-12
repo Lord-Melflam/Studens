@@ -9,3 +9,4 @@ export { PublicZone } from "./public/index.js";
 export { Landing } from "./public/Landing.js";
 export { PublicLayout } from "./public/PublicLayout.js";
 export { currentPath, isAppPath, moduleIdFrom, linkProps, APP_PREFIX } from "./router.js";
+export { modules, liveModules } from "./shell/registry.js";

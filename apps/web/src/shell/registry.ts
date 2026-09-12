@@ -14,6 +14,35 @@
  */
 import { rycModule, type ModuleRegistration, type ModulePresentation } from "@studens/ryc-ui";
 
-export const modules: ModuleRegistration[] = [rycModule];
+/**
+ * Announced, not built.
+ *
+ * It has a name, a line and a status, and deliberately nothing else. Writing a
+ * problem statement or a feature list for something unbuilt is how a roadmap
+ * turns into a promise, and `CLAUDE.md` is explicit that this one has no shape
+ * yet and must not be given one in passing.
+ *
+ * It lives here rather than in a package because there is no package: the
+ * registry is where the shell learns a module exists, and "exists" includes
+ * "is coming".
+ */
+const plannedMpa: ModuleRegistration = {
+  id: "mpa",
+  name: "My Planning Advisor",
+  summary: "De l'aide pour organiser son année et son travail.",
+  presentation: {
+    status: "planned",
+    statusNote:
+      "Pas encore commencé. Annoncé ici parce que c'est le prochain besoin observé, pas parce qu'une date existe.",
+  },
+};
+
+/** Everything the platform offers or has announced, in order of readiness. */
+export const modules: ModuleRegistration[] = [rycModule, plannedMpa];
+
+/** What the shell can actually mount and navigate to. */
+export const liveModules = modules.filter(
+  (m): m is ModuleRegistration & { component: () => JSX.Element } => m.component !== undefined,
+);
 
 export type { ModuleRegistration, ModulePresentation };

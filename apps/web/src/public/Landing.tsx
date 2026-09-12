@@ -1,20 +1,23 @@
 /**
  * The first page a stranger sees.
  *
- * The order follows the questions someone actually asks, in the order they ask
- * them: what is this, what problem does it solve, how does it work, what does
- * it look like, what exists today, where does the information come from, can I
- * trust it with what I write, and how do I start.
+ * STUDENS SPEAKS FIRST. An earlier draft let the module supply the hero, the
+ * problem and the whole spine, and the result read as a course review site with
+ * a platform bolted underneath. That is backwards: Studens is the thing that
+ * accumulates, and a module is what it accumulates into. The day MPA ships, a
+ * landing page built on RYC's pitch would have to be rewritten rather than
+ * extended.
  *
- * Every concrete claim comes from a module's own `presentation`, including the
- * mock. This file knows there are modules and nothing more (FR-B16).
+ * So the platform makes the platform's claim, and modules appear as what is
+ * inside it. The one that is built gets a section of its own, in its own words,
+ * clearly labelled as the first module rather than as the product.
  */
 import { modules } from "../shell/registry.js";
 import { linkProps } from "../router.js";
 
 export function Landing() {
   const live = modules.filter((m) => m.presentation.status === "live");
-  const first = live[0] ?? modules[0];
+  const first = live[0];
   const p = first?.presentation;
   const Mock = p?.showcase;
 
@@ -24,28 +27,26 @@ export function Landing() {
         <div className="hero-text">
           <p className="kicker">Pour les étudiants de l&apos;enseignement supérieur</p>
           <h1>
-            Moins de temps à deviner.
+            Ce que les étudiants savent,
             <br />
-            Plus de temps à choisir.
+            gardé quelque part.
           </h1>
           <p className="lede">
-            Studens rassemble ce que les étudiants savent déjà et se répètent
-            chaque année. Au même endroit, daté, et qui ne disparaît pas en
-            septembre.
+            Chaque année, les mêmes questions sont posées aux mêmes personnes, et
+            les réponses disparaissent en trois semaines. Studens est
+            l&apos;endroit où elles s&apos;accumulent au lieu de se perdre.
           </p>
-          {/* The concrete promise is the module's to make, not the shell's. */}
-          {first && <p className="hero-module">{first.summary}</p>}
           <div className="hero-actions">
             <a className="cta big" {...linkProps("/connexion")}>
               Créer un compte
             </a>
             <a className="ghost big" {...linkProps("/modules")}>
-              Voir ce que ça fait
+              Voir ce qu&apos;il y a dedans
             </a>
           </div>
           <p className="hero-fine">
-            Gratuit. Connexion avec votre compte Microsoft ou Google, aucun mot
-            de passe à retenir, rien à installer.
+            Gratuit, sans publicité. Connexion avec votre compte Microsoft ou
+            Google, aucun mot de passe à retenir, rien à installer.
           </p>
         </div>
         {Mock && (
@@ -55,70 +56,36 @@ export function Landing() {
         )}
       </section>
 
-      {p && (
-        <section className="band alt">
-          <h2>{p.problem.title}</h2>
-          <div className="prose-cols">
-            {p.problem.body.map((para, i) => (
-              <p key={i}>{para}</p>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {p && (
-        <section className="band">
-          <p className="eyebrow">Comment ça marche</p>
-          <h2>Trois étapes, et vous n&apos;écrivez qu&apos;à la troisième</h2>
-          <ol className="steps-grid">
-            {p.steps.map((s, i) => (
-              <li key={s.title}>
-                <span className="step-n">{i + 1}</span>
-                <h3>{s.title}</h3>
-                <p>{s.body}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-
-      {p && (
-        <section className="band alt">
-          <p className="eyebrow">Ce que ça vous apporte</p>
-          <h2>Les détails qui changent une décision</h2>
-          <ul className="highlights">
-            {p.highlights.map((h) => (
-              <li key={h.title}>
-                <h3>{h.title}</h3>
-                <p>{h.body}</p>
-              </li>
-            ))}
-          </ul>
-          <a className="cta" {...linkProps("/connexion")}>
-            Créer un compte
-          </a>
-        </section>
-      )}
-
-      {p && (
-        <section className="band sources">
-          <p className="eyebrow">D&apos;où viennent les informations</p>
-          <h2>{p.sources.title}</h2>
-          <p className="band-lede">{p.sources.body}</p>
-          <ul className="chips">
-            {p.sources.items.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       <section className="band alt">
-        <p className="eyebrow">Ce qui existe</p>
-        <h2>Rien n&apos;est annoncé comme prêt tant que ça ne l&apos;est pas</h2>
+        <p className="eyebrow">Pourquoi</p>
+        <h2>Le savoir pratique des étudiants n&apos;est écrit nulle part</h2>
+        <div className="prose-cols">
+          <p>
+            Comment s&apos;organiser, à quoi s&apos;attendre, ce qui vaut le coup
+            et ce qui n&apos;en vaut pas la peine : tout ça existe déjà, chez
+            celles et ceux qui sont passés par là avant vous.
+          </p>
+          <p>
+            Mais ça vit dans des conversations, des serveurs Discord et des
+            groupes qui changent chaque année. Personne ne l&apos;écrit, parce
+            qu&apos;il n&apos;y a pas d&apos;endroit où l&apos;écrire, et donc
+            chaque promotion recommence de zéro.
+          </p>
+          <p>
+            Studens est fait pour que ça s&apos;accumule : daté, consultable, et
+            toujours là l&apos;année suivante. Un outil à la fois, ajouté quand
+            le besoin est constaté et pas avant.
+          </p>
+        </div>
+      </section>
+
+      <section className="band">
+        <p className="eyebrow">Ce qu&apos;il y a dedans</p>
+        <h2>Des modules, pas une application fourre-tout</h2>
         <p className="band-lede">
-          Une petite chose qui fonctionne vraiment vaut mieux qu&apos;une grande
-          qui ne fonctionne pas. Ce qui manque est écrit ici plutôt que promis.
+          Chaque module règle un problème précis et s&apos;utilise seul. Rien
+          n&apos;est annoncé comme prêt tant que ça ne l&apos;est pas : ce qui
+          manque est écrit ici plutôt que promis.
         </p>
         <ul className="module-cards">
           {modules.map((m) => (
@@ -131,9 +98,11 @@ export function Landing() {
               </div>
               <p className="mc-summary">{m.summary}</p>
               <p className="mc-note">{m.presentation.statusNote}</p>
-              <a className="mc-more" {...linkProps("/modules")}>
-                En savoir plus
-              </a>
+              {m.presentation.status === "live" && (
+                <a className="mc-more" {...linkProps("/modules")}>
+                  En savoir plus
+                </a>
+              )}
             </li>
           ))}
         </ul>
@@ -144,44 +113,76 @@ export function Landing() {
         </p>
       </section>
 
-      {/*
-        FR-C12 requires the LIMITS to be stated, not only the promise. The
-        summary here links to the page that states them rather than claiming
-        more than the design can deliver.
-      */}
+      {/* The first module, in its own words. Not the product. */}
+      {p?.problem && (
+        <section className="band alt">
+          <p className="eyebrow">Le premier module · {first?.name}</p>
+          <h2>{p.problem.title}</h2>
+          <div className="prose-cols">
+            {p.problem.body.map((para, i) => (
+              <p key={i}>{para}</p>
+            ))}
+          </div>
+          {p.steps && (
+            <ol className="steps-grid">
+              {p.steps.map((s, i) => (
+                <li key={s.title}>
+                  <span className="step-n">{i + 1}</span>
+                  <h3>{s.title}</h3>
+                  <p>{s.body}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+          <a className="cta" {...linkProps("/modules")}>
+            Voir {first?.name} en détail
+          </a>
+        </section>
+      )}
+
       <section className="band">
-        <p className="eyebrow">Dire les choses sans les payer</p>
-        <h2>L&apos;anonymat est une garantie de structure, pas une promesse</h2>
-        <div className="two-up">
-          <div>
+        <p className="eyebrow">Ce qui vaut pour tout Studens</p>
+        <h2>Quatre choses qui ne changeront pas d&apos;un module à l&apos;autre</h2>
+        <ul className="highlights">
+          <li>
+            <h3>Vous choisissez ce que vous signez</h3>
             <p>
-              Vous choisissez, à chaque publication, entre votre nom et
-              l&apos;anonymat. Ce que vous publiez anonymement n&apos;est relié à
-              votre compte nulle part : la table n&apos;a pas de champ pour ça.
+              À chaque publication, votre nom ou l&apos;anonymat. Ce qui est
+              publié anonymement n&apos;est relié à votre compte nulle part : la
+              table n&apos;a pas de champ pour ça. C&apos;est une garantie de
+              structure, pas une promesse.
             </p>
+          </li>
+          <li>
+            <h3>Indépendant de toute institution</h3>
             <p>
-              C&apos;est aussi définitif. Personne ne peut le modifier ni le
-              retirer, nous compris, parce que personne ne peut savoir lequel est
-              le vôtre.
+              Studens n&apos;est mandaté par aucune université ni haute école, ne
+              parle au nom d&apos;aucune, et n&apos;a de comptes à rendre à
+              aucune.
             </p>
+          </li>
+          <li>
+            <h3>Gratuit, et rien qui vous suive</h3>
             <p>
-              <strong>Et aucun cookie d&apos;analyse.</strong> Il n&apos;y a rien
-              à accepter en arrivant ici, parce qu&apos;il n&apos;y a rien qui
-              vous suit.
+              Pas de publicité, pas de revente de données, pas
+              d&apos;abonnement. Aucun cookie d&apos;analyse non plus : il
+              n&apos;y a rien à accepter en arrivant ici, parce qu&apos;il
+              n&apos;y a rien qui vous piste.
             </p>
-          </div>
-          <div className="callout">
-            <h3>Ce que ça ne protège pas</h3>
+          </li>
+          <li>
+            <h3>Vérifiable</h3>
             <p>
-              Aucune garantie n&apos;est absolue. Ce que vous écrivez peut vous
-              désigner, et nous préférons l&apos;écrire ici plutôt que dans des
-              conditions que personne ne lit.
+              Le code est public, et la spécification aussi, avec le
+              raisonnement derrière chaque décision. Une promesse qu&apos;on ne
+              peut pas vérifier ne vaut que la confiance accordée à celui qui la
+              fait.
             </p>
-            <a className="ghost" {...linkProps("/confidentialite")}>
-              Lire les limites
-            </a>
-          </div>
-        </div>
+          </li>
+        </ul>
+        <a className="ghost" {...linkProps("/confidentialite")}>
+          Ce que l&apos;anonymat ne protège pas
+        </a>
       </section>
 
       <section className="band alt">
@@ -206,7 +207,7 @@ export function Landing() {
               envoie, et du reste de votre profil, rien n&apos;est obligatoire.
             </p>
           </li>
-          {p && (
+          {p?.firstAction && (
             <li>
               <span className="pr-n">03</span>
               <h3>{p.firstAction.title}</h3>

@@ -8,7 +8,7 @@
  * ever does, the boundary in FR-B16 has been lost.
  */
 import { Account } from "./Account.js";
-import { modules } from "./registry.js";
+import { liveModules } from "./registry.js";
 import { APP_PREFIX, moduleIdFrom, navigate, usePath } from "../router.js";
 
 function Home() {
@@ -18,7 +18,7 @@ function Home() {
         Studens rassemble des outils pour les étudiants. Choisissez un module.
       </p>
       <ul className="modules">
-        {modules.map((m) => (
+        {liveModules.map((m) => (
           <li key={m.id}>
             <button type="button" onClick={() => navigate(`${APP_PREFIX}/${m.id}`)}>
               <span className="name">{m.name}</span>
@@ -37,7 +37,7 @@ function Home() {
 
 export function Shell() {
   const routeId = moduleIdFrom(usePath());
-  const active = modules.find((m) => m.id === routeId) ?? null;
+  const active = liveModules.find((m) => m.id === routeId) ?? null;
   const Module = active?.component;
 
   return (

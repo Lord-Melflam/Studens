@@ -1,36 +1,95 @@
 /**
  * What RYC looks like, for someone who has no account.
  *
- * A static mock, owned by the module. The public zone places it and cannot
- * read it: FR-B16 forbids `apps/web` from knowing what a course or a review
- * is, and a screenshot of RYC drawn in the shell would break that as surely as
- * prose would.
+ * Owned by the module: FR-B16 stops `apps/web` knowing what a course page
+ * looks like, and a mock drawn in the shell would break that as surely as
+ * prose would. Built from the real components and the real CSS, so it cannot
+ * drift into showing a screen the product does not have.
  *
- * Honest by construction: it is built from the same components and the same
- * CSS as the real screen, so it cannot drift into showing something the
- * product does not do. In particular the anonymous review below carries no
- * numbers and no author, because that is what the server actually returns
- * (FR-D15, FR-C16). A marketing mock that showed them would be advertising a
- * different product.
+ * WHAT IS REAL AND WHAT IS NOT, because the first version of this file got it
+ * wrong and invented both.
+ *
+ *   REAL, read out of the loaded catalogue on 2026-09-12: the code, the title
+ *   "Projet 3", 5 credits, Q2, French, the contact hours, and the assessment
+ *   text with its weightings and its second-session rule, verbatim.
+ *
+ *   NOT REAL: the reviews and the averages. Nobody has written a review yet,
+ *   so there is nothing real to show, and the alternative to an example is an
+ *   empty screen that teaches a visitor nothing.
+ *
+ * The difference is stated ON the mock rather than in this comment. A product
+ * that asks people to trust an anonymity guarantee cannot illustrate itself
+ * with numbers that look measured and are not. An earlier draft showed
+ * "4.1 sur 23 avis" beside a course whose credits were also invented, which is
+ * exactly the failure this project keeps recording elsewhere: presenting
+ * something as real because it reads better.
  */
-import { Blocks } from "./Prose.js";
+import { Blocks, type Block } from "./Prose.js";
 
-const ASSESSMENT = [
-  { kind: "p" as const, lines: [[{ t: "L’évaluation se fait sur base de deux côtes :" }]] },
+/** Verbatim from ref.CourseOffering for lepl1503, trimmed to what fits. */
+const ASSESSMENT: Block[] = [
   {
-    kind: "list" as const,
+    kind: "p",
+    lines: [[{ t: "Dans le cadre de ce cours, les étudiant·es sont évalué·es par :" }]],
+  },
+  {
+    kind: "list",
     ordered: false,
     items: [
-      [{ kind: "p" as const, lines: [[{ t: "Examen écrit : 12 points" }]] }],
-      [{ kind: "p" as const, lines: [[{ t: "Travail journalier : 8 points" }]] }],
+      [
+        {
+          kind: "p",
+          lines: [
+            [
+              {
+                t: "Examen écrit en session sur la maitrise de la programmation en langage C (35%)",
+              },
+            ],
+          ],
+        },
+      ],
+      [
+        {
+          kind: "p",
+          lines: [
+            [
+              {
+                t: "Evaluation du travail de groupe sur base du projet rendu et de sa documentation (55%).",
+              },
+            ],
+          ],
+        },
+      ],
+      [
+        {
+          kind: "p",
+          lines: [[{ t: "Participation aux séances de travail de groupe (5%)" }]],
+        },
+      ],
+      [
+        {
+          kind: "p",
+          lines: [[{ t: "Peer-review de projets d'autres groupes d'étudiants (5%)" }]],
+        },
+      ],
+    ],
+  },
+  {
+    kind: "p",
+    lines: [
+      [
+        {
+          t: "En seconde session, seul l'examen peut être refait. Les résultats du travail de groupe et des peer-reviews ne peuvent pas être modifiés.",
+        },
+      ],
     ],
   },
 ];
 
 export function Showcase() {
   return (
-    <div className="showcase" aria-hidden="true">
-      <div className="showcase-bar">
+    <figure className="showcase">
+      <div className="showcase-bar" aria-hidden="true">
         <span className="sb-dot" />
         <span className="sb-dot" />
         <span className="sb-dot" />
@@ -39,34 +98,23 @@ export function Showcase() {
 
       <div className="showcase-body">
         <h3>
-          <span className="code">LEPL1503</span> Projet 3 : systèmes informatiques
+          <span className="code">LEPL1503</span> Projet 3
         </h3>
-        <p className="ribbon">6 ECTS · Q2 · Français · 2025-2026</p>
-
-        <div className="stats">
-          <div className="stat">
-            <span className="stat-value">4.1</span>
-            <span className="stat-label">recommandé</span>
-            <span className="stat-scale">sur 5</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">4.6</span>
-            <span className="stat-label">charge / ECTS</span>
-            <span className="stat-scale">sur 5</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">3.8</span>
-            <span className="stat-label">difficulté</span>
-            <span className="stat-scale">sur 5</span>
-          </div>
-        </div>
-        <p className="denominator">Sur 23 avis : 14 nommés, 9 anonymes.</p>
+        <p className="ribbon">5 ECTS · Q2 · Français · 30.0 h + 30.0 h</p>
 
         <div className="field">
           <dt>Évaluation</dt>
           <dd className="prose">
             <Blocks blocks={ASSESSMENT} />
           </dd>
+        </div>
+
+        <div className="showcase-split">
+          <span className="example-tag">exemple</span>
+          <p>
+            Personne n&apos;a encore publié d&apos;avis. Ci-dessous, à quoi
+            ressemblera cette partie.
+          </p>
         </div>
 
         <article className="review review-named">
@@ -76,8 +124,8 @@ export function Showcase() {
             <span className="review-scores">recommandé 5/5 · charge 4/5 · difficulté 4/5</span>
           </header>
           <p className="review-body">
-            Le projet est long mais c’est le cours où j’ai le plus appris. Commencez
-            l’architecture la première semaine, pas la troisième.
+            Le projet est long mais c&apos;est là que j&apos;ai le plus appris.
+            Commencez l&apos;architecture la première semaine, pas la troisième.
           </p>
         </article>
 
@@ -87,11 +135,17 @@ export function Showcase() {
             <span className="review-year">suivi en 2023-2024</span>
           </header>
           <p className="review-body">
-            Beaucoup de travail non encadré en dehors des séances. Le barème n’a pas été
-            annoncé avant la remise, et ça change tout.
+            Beaucoup de travail non encadré en dehors des séances, et le barème
+            du travail de groupe mérite d&apos;être lu en entier avant de
+            s&apos;inscrire.
           </p>
         </article>
       </div>
-    </div>
+
+      <figcaption className="showcase-caption">
+        La fiche du cours est réelle, reprise du catalogue UCLouvain. Les deux
+        avis sont fictifs : il n&apos;y en a pas encore.
+      </figcaption>
+    </figure>
   );
 }

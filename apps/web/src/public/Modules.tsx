@@ -28,22 +28,53 @@ export function Modules() {
           <p className="band-lede">{m.summary}</p>
           <p className="mc-note">{m.presentation.statusNote}</p>
 
-          <h3>{m.presentation.problem.title}</h3>
-          <div className="prose-cols">
-            {m.presentation.problem.body.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
+          {/* A planned module has a name, a line and a status, and nothing
+              else. There is nothing honest to render here for one. */}
+          {m.presentation.problem && (
+            <>
+              <h3>{m.presentation.problem.title}</h3>
+              <div className="prose-cols">
+                {m.presentation.problem.body.map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
+              </div>
+            </>
+          )}
 
-          <ol className="steps-grid">
-            {m.presentation.steps.map((s, i) => (
-              <li key={s.title}>
-                <span className="step-n">{i + 1}</span>
-                <h4>{s.title}</h4>
-                <p>{s.body}</p>
-              </li>
-            ))}
-          </ol>
+          {m.presentation.steps && (
+            <ol className="steps-grid">
+              {m.presentation.steps.map((s, i) => (
+                <li key={s.title}>
+                  <span className="step-n">{i + 1}</span>
+                  <h4>{s.title}</h4>
+                  <p>{s.body}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+
+          {m.presentation.sources && (
+            <div className="sources-inline">
+              <h4>{m.presentation.sources.title}</h4>
+              <p>{m.presentation.sources.body}</p>
+              <ul className="chips">
+                {m.presentation.sources.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {m.presentation.highlights && (
+            <ul className="highlights">
+              {m.presentation.highlights.map((h) => (
+                <li key={h.title}>
+                  <h4>{h.title}</h4>
+                  <p>{h.body}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       ))}
 
