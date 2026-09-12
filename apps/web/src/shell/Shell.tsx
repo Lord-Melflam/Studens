@@ -7,7 +7,7 @@
  * This file knows nothing about courses, reviews, ECTS or programmes. If it
  * ever does, the boundary in FR-B16 has been lost.
  */
-import { Account } from "./Account.js";
+import { Account } from "../Account.js";
 import { activeModuleFor, liveModules } from "./registry.js";
 import { APP_PREFIX, moduleIdFrom, navigate, usePath } from "../router.js";
 

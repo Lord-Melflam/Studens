@@ -28,6 +28,9 @@ export const shellStrings: Bundle = {
     "nav.signin": "Se connecter",
     "nav.register": "Créer un compte",
     "nav.source": "Code source",
+    "nav.enter": "Ouvrir l'application",
+    "nav.signout": "se déconnecter",
+    "nav.domain.hint": "adresse vérifiée chez ce domaine",
     "nav.language": "Langue",
 
     "foot.tagline":
@@ -117,6 +120,9 @@ export const shellStrings: Bundle = {
     "nav.signin": "Aanmelden",
     "nav.register": "Account aanmaken",
     "nav.source": "Broncode",
+    "nav.enter": "Open de app",
+    "nav.signout": "afmelden",
+    "nav.domain.hint": "adres geverifieerd bij dit domein",
     "nav.language": "Taal",
 
     "foot.tagline":
@@ -206,6 +212,9 @@ export const shellStrings: Bundle = {
     "nav.signin": "Sign in",
     "nav.register": "Create an account",
     "nav.source": "Source code",
+    "nav.enter": "Open the app",
+    "nav.signout": "sign out",
+    "nav.domain.hint": "address verified at this domain",
     "nav.language": "Language",
 
     "foot.tagline":

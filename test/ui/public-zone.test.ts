@@ -332,3 +332,40 @@ describe("FR-G: three languages, and the locale is in the path", () => {
     );
   });
 });
+
+describe("a member who has signed in is not left on the doorstep", () => {
+  /**
+   * Regression, 2026-09-13. The OAuth callback redirected to "/", the public
+   * home page, and the public header knew nothing about sessions: it always
+   * offered "Se connecter" and "Créer un compte" and nothing else. So the
+   * first real Google sign-in worked perfectly, created the member, issued the
+   * session, and the product said nothing had happened.
+   *
+   * Two separate gaps with one symptom, so both are pinned.
+   */
+  it("the public header carries the account control, not fixed sign-in links", () => {
+    const html = render("/");
+    // The control decides what to show from the session. A header that hard
+    // codes the signed-out links cannot ever say "you are in".
+    expect(html).toContain('class="account"');
+  });
+
+  it("offers a way into the app from the public site", () => {
+    // Signed out it is the two labels; the control only shows the entry link
+    // once the session says so, which a static render cannot reach. What this
+    // pins is that the string exists in all three languages, so the control
+    // has something to render rather than a key.
+    for (const locale of LOCALES) {
+      const t = createTranslator(bundle, locale);
+      expect(t("nav.enter")).not.toBe("nav.enter");
+      expect(t("nav.signout")).not.toBe("nav.signout");
+    }
+  });
+
+  it("still shows both signed-out labels while the session is unknown", () => {
+    // Server rendering runs no fetch, so this is also what a crawler sees.
+    const body = text(render("/"));
+    expect(body).toContain("Se connecter");
+    expect(body).toContain("Créer un compte");
+  });
+});

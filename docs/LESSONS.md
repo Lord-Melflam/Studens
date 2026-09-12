@@ -152,6 +152,39 @@ This is the same shape as the isolation script that could not confirm which role
 it was running as. That one proved nothing while claiming to prove fourteen
 things; this one proved nothing while claiming to prove twenty-three.
 
+### Sign-in worked, and the product said nothing
+
+The first real Google sign-in succeeded on the first try: the member was
+created, the session was issued, the cookie was set. François saw the public
+home page, still offering "Se connecter" and "Créer un compte", and reasonably
+concluded it had failed.
+
+Two gaps, one symptom, and neither was in the part that was hard.
+
+**The callback redirected to `/`.** That is the marketing page. Nothing carried
+a member who had just joined into the thing they joined.
+
+**The public header was session blind.** The account control lived only in the
+app shell, because the public zone was built before authentication existed and
+nobody went back. So the header could offer to sign you in and could never say
+you already were.
+
+**What makes this the expensive kind of bug.** Every automated check passed.
+The OIDC tests passed, the route tests passed, the public zone tests passed, CI
+was green, and the flow was verified end to end at the level of HTTP: 302 to
+Google, code exchanged, member row written. All of that was true, and the
+product was still unusable, because **no test and no gate asks "and then what
+does the person see".**
+
+**Generalised.** A feature is not finished when its mechanism works. It is
+finished when the path through it ends somewhere the person wanted to be. The
+seams between two correct pieces are where this hides, and they are exactly the
+places no unit test looks: the callback belongs to the API, the header belongs
+to the web app, and each was right about its own half.
+
+The cheapest guard is not another unit test. It is walking the path once, as a
+person, which is what found it.
+
 ### A prefix added everywhere, except where it was read
 
 The locale went into the URL path, `/fr/app/ryc`. `main.tsx` strips it and

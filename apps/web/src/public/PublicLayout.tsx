@@ -11,6 +11,7 @@
  */
 import { LOCALES, LOCALE_NAMES, localePath, useLocale, useT } from "@studens/i18n";
 import { linkProps } from "../router.js";
+import { Account } from "../Account.js";
 
 const NAV = [
   { to: "/", key: "nav.home" },
@@ -83,12 +84,13 @@ export function PublicLayout({ path, children }: { path: string; children: React
             back look for different words, which is the only reason both exist.
           */}
           <LanguageSwitcher route={path} />
-          <a className="ghost" {...linkProps("/connexion")}>
-            {t("nav.signin")}
-          </a>
-          <a className="cta" {...linkProps("/connexion")}>
-            {t("nav.register")}
-          </a>
+          {/*
+            Session aware. Signed out it offers the two labels FR-F3 explains;
+            signed in it offers the way into the app and the way out. A header
+            that ignores the session tells someone who has just joined that
+            nothing happened.
+          */}
+          <Account variant="public" />
         </div>
       </header>
 

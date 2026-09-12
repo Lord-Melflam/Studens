@@ -78,7 +78,7 @@ export function authRoutes(prisma: PrismaClient): Router {
         codeVerifier: auth.codeVerifier,
       });
       res.redirect(302, auth.url);
-    })().catch(() => res.redirect(302, appUrl("/#/?auth=failed")));
+    })().catch(() => res.redirect(302, appUrl("/?auth=failed")));
   });
 
   router.get("/auth/callback/:provider", (req, res) => {
@@ -134,11 +134,15 @@ export function authRoutes(prisma: PrismaClient): Router {
 
       const { token } = await createSession(member.id, { client: prisma });
       setSessionCookie(res, token);
-      res.redirect(302, appUrl("/"));
+      // Into the APP, not the public home page. Landing a member who has just
+      // signed in back on the marketing site is how sign-in reads as a no-op.
+      // No language prefix: the browser's own preference decides, and the
+      // client redirects /app to /<locale>/app on arrival.
+      res.redirect(302, appUrl("/app"));
     })().catch(() => {
       // FR-A4. One destination, one message, whatever went wrong. The reason
       // stays on this side of the redirect.
-      res.redirect(302, appUrl("/#/?auth=failed"));
+      res.redirect(302, appUrl("/?auth=failed"));
     });
   });
 
