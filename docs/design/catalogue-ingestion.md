@@ -441,6 +441,82 @@ in the path. Link destinations are dropped and the link text kept: four `<a>`
 tags in 1,390 fields do not justify carrying an outbound redirect we do not
 control.
 
+## 8.3 Proposed resolution of OPEN-45, and a heuristic that is wrong
+
+Prepared 2026-09-12, for François's decision. Status: **Proposed**.
+
+### The page says it; we were guessing
+
+`external` is currently inferred:
+
+```ts
+external: o.teachers.length === 0 && o.assessment === null
+```
+
+That is the shape the catalogue note warns about elsewhere, in reverse: it
+cannot tell "absent because another institution owns it" from "absent because
+this page is sparse". **Measured across the 546 loaded offerings on 2026-09-12:
+66 are flagged external, and 4 of them are not.**
+
+| Code | Why it is flagged | What it actually is |
+|---|---|---|
+| `linfo1222` | no teachers, no assessment row | A UCLouvain course. It has themes, prerequisites, contact hours and a faculty. Its page simply carries no assessment row |
+| `lsinc1241` | same | A UCLouvain course, with themes and content |
+| `lbnen2003`, `lbnen2011` | same | UCLouvain courses taught **at the Mol nuclear research centre**, which is a third category again |
+
+A 6% false positive rate would not matter if nothing depended on the flag. It
+matters the moment behaviour hangs off it, which is what OPEN-45 is about.
+
+The pages carry the answer explicitly. From `cours-2025-enano2401`:
+
+```
+Institution de référence            > Université de Namur
+Code de l'UE dans l'institution     > NANOM306
+Faculté ou entité en charge (UCLouvain) > EPL
+```
+
+Two labelled fields we do not parse: the owning institution, and the course's
+code **at that institution**. The ENANO pages also lack the `Enseignants`
+template marker entirely, so they are a different template rather than a sparse
+instance of the same one.
+
+### Proposed
+
+1. **Parse the two fields instead of inferring.** `external` becomes "the page
+   names a reference institution", which is a fact the page states, not an
+   inference from absence. The four false positives disappear by construction.
+2. **Keep them in the catalogue.** They are genuinely reachable from a UCLouvain
+   programme and a student choosing one needs to see it. Dropping them would
+   hide part of their own programme.
+3. **Show them, link out, and refuse contributions on them for now.** With the
+   reason stated: the institution is not supported yet.
+4. **Do not stamp them with UCLouvain's tenant.** FR-C19 derives an anonymous
+   contribution's tenant from the target, never the author. A Namur course
+   belongs to Namur, and forcing UCLouvain on it because the reader arrived
+   through an EPL programme is deriving tenancy from the author by the back
+   door. Refusing the contribution avoids having to answer a question the
+   tenancy model cannot answer yet.
+
+### Costs, stated
+
+A student who really did take ENANO2401 cannot share what they know, and that is
+62 courses' worth of silence. Accepted because the alternative is writing rows
+whose tenant is wrong, and an anonymous row cannot be corrected afterwards
+(FR-C9). This is the same trade as everywhere else in FR-C: a permanent record
+demands getting it right before writing, not after.
+
+`lbnen2003` and `lbnen2011` also show that "taught elsewhere" and "owned
+elsewhere" are different things. Under the proposal they are UCLouvain courses
+and fully reviewable, which is right: UCLouvain owns them, the teaching happens
+at Mol.
+
+### What would change it
+
+The second institution's catalogue being ingested. Then those 62 courses flip
+from read-only to reviewable, with the correct tenant, and nothing else in the
+design changes. That is the test of whether this resolution is the right shape:
+it should cost one migration and no rethinking.
+
 ## 9. Open questions raised here
 
 - **[OPEN-38]** How are courses reconciled **across years** when the code or title changes?

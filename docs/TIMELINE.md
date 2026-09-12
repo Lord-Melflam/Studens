@@ -775,6 +775,56 @@ launched into: clumsy Dutch reads as "not for you".
 
 ---
 
+### Phase 23: five open questions, prepared not decided
+
+François asked for OPEN-35, OPEN-45 and the moderation trio to be worked up
+while he rested. All five are **proposals**, with options, a recommendation and
+what it costs. None is marked resolved: that is his call.
+
+Two of them changed shape while being prepared, which is the argument for
+preparing them rather than answering from the armchair.
+
+**The Digital Services Act applies, and nothing in the product implements it.**
+Checked against the regulation text rather than recalled. Article 16, a notice
+and action mechanism, binds every hosting provider regardless of size, and there
+is no report button anywhere. Article 6 conditions the liability shield on
+acting once you have actual knowledge, which makes the size of the moderation
+queue a legal exposure and not only an operational one. Article 19 exempts a
+micro enterprise from the expensive half: internal complaints, trusted flaggers,
+most transparency reporting.
+
+**Article 17 collides with FR-C9 head on.** It requires telling the affected
+user what was decided and why. On the anonymous path there is nobody to tell,
+and that is FR-C9 working rather than an implementation gap. Proposed: publish
+the statement of reasons **in the place the contribution occupied**, which is
+the only channel that exists, is much harder to abuse quietly than a silent
+deletion, and is the only redress an anonymous author can have, since they can
+contest a public reason where they could never prove authorship to contest a
+private one. Flagged for the same qualified reader who must confirm 5.1.
+
+**The `external` flag is a heuristic, and it is wrong 6% of the time.** It
+infers "another institution owns this" from having no teachers and no
+assessment, which is also what a sparse page looks like. Measured: 66 flagged of
+546, and **4 are UCLouvain courses**, including LINFO1222, which has themes,
+prerequisites, contact hours and a faculty. Meanwhile the pages state the answer
+outright, in two labelled fields nobody parses: `Institution de référence >
+Université de Namur` and `Code de l'UE dans l'institution de référence >
+NANOM306`. The proposal is to read what the page says instead of guessing from
+what it lacks, which is the same lesson as several already in `LESSONS.md`.
+
+The other recommendations in brief. **Nothing is ever removed automatically**: a
+report threshold is a brigading tool, and the content it would remove is exactly
+the argued negative review this platform exists to protect. **Moderators are
+appointed one at a time by an administrator**, recorded, with content powers
+only and no path to authorship. **No response time is published** until one has
+been measured, because a missed promise is worse than none at the moment someone
+is complaining. **Multiple accounts are accepted and disclosed**, with
+per-target burst detection, which is the only integrity control that survives
+FR-C2: a burst of contributions to one course is a fact about the course, not a
+link between a member and what they wrote.
+
+---
+
 ## Next
 
 1. **Authentication** (FR-A). It is now the only thing between the review path
