@@ -28,6 +28,8 @@ export default defineConfig({
       // reimplementing its routing. Resolved to source like the rest, so the
       // test exercises what is written and not what was last built.
       "@studens/api": fileURLToPath(new URL("./apps/api/src/index.ts", import.meta.url)),
+      // The web app, for the public zone tests. Not main.tsx: that mounts.
+      "@studens/web": fileURLToPath(new URL("./apps/web/src/index.ts", import.meta.url)),
       // The frontend module's entry point is .tsx, hence the explicit path.
       "@studens/ryc-ui": fileURLToPath(
         new URL("./packages/ryc-ui/src/index.tsx", import.meta.url),

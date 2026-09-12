@@ -15,10 +15,10 @@ gone wrong and what each failure changed.
 | | |
 |---|---|
 | Stage | **Working software.** Catalogue end to end, and reviews submitted and read on both paths |
-| Commits | 31 |
-| Requirements | **123**: 105 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7, FR-F 15) and 18 non-functional. Counted, not carried forward |
+| Commits | 35 |
+| Requirements | **129**: 111 functional (FR-A 10, FR-B 20, FR-C 23, FR-D 30, FR-E 7, FR-F 15, FR-G 6) and 18 non-functional. Counted, not carried forward |
 | Open questions | **13** open, 32 resolved |
-| Tests | **241**, plus 15 database isolation assertions |
+| Tests | **267**, plus 15 database isolation assertions |
 | Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
 
@@ -623,6 +623,155 @@ sign-in starts with no progress, and every step is its own route.
 Written in a git worktree, so the dev servers running on the authentication
 branch were not disturbed. First real use of the thing `CONTRIBUTING.md`
 describes.
+
+---
+
+### Phase 21: the public zone
+
+The first of the three zones from phase 20. A stranger now meets a site rather
+than a sign-in wall: what Studens is, the problem it exists for, how it works,
+what is and is not built, what anonymity protects and what it does not, and who
+is behind it.
+
+**Paths, not hashes.** The old router put the module id after a `#`, which was
+fine while everything sat behind a session: nobody shares a link to an
+authenticated screen. A public page is the opposite, and `studens.be/#/a-propos`
+is a link that looks like a mistake. Cost, written down rather than discovered:
+the server must answer unknown paths with `index.html` or a refresh on
+`/a-propos` is a 404. Vite does it in development; production does not have it
+yet.
+
+**The boundary gate shaped the copy, three times.** FR-B16 forbids RYC's
+vocabulary anywhere in `apps/web`, and a landing page explaining RYC needs
+exactly that vocabulary. Rather than weaken the rule, the module now presents
+itself: `ModuleRegistration.presentation` carries the problem statement, the
+steps and the status, and the public pages lay out words they do not
+understand. The same reason the registry exists, one zone further out. When MPA
+ships, a landing page written in RYC's words would have been wrong rather than
+merely coupled.
+
+It also caught `changer d'avis`, the French idiom, because `avis` is RYC's word
+for a review. Reworded rather than exempted. And it caught a privacy page that
+explained the complement problem in terms of courses; it now speaks the
+platform's own vocabulary, which is what FR-C already uses and what will still
+be true for the second module.
+
+**Reworked once François supplied procyo.be's structure**, which no automated
+client can read: Vercel's bot protection refuses every one of them, so it
+arrived pasted by hand.
+
+What transferred: a realistic product mock in the hero rather than a paragraph
+about the product, benefit-titled cards instead of abstract statements, a
+"where the data comes from" section, and a numbered getting-started. What did
+not: Procyo sells to brokers, so "Book a demo" is on every screen; the
+equivalent here is a free account. And Procyo needs a cookie consent banner.
+Studens does not, because it runs no analytics, and **saying that is worth more
+than a banner**, so the page says it and a test asserts it stays true.
+
+The mock is the module's own, built from the real components and the real CSS,
+so it cannot drift into advertising a screen the product does not have. A test
+asserts the anonymous contribution in it shows no author and no numbers,
+because that is what the server actually returns.
+
+One thing procyo.be has that Studens structurally cannot fake: a fr/nl/en
+switcher. The name was chosen precisely because it reads natively in all three,
+and the product is French-only with no internationalisation. Not papered over
+with a switcher that does nothing; raised as a gap instead.
+
+**Then two corrections from François, both structural.**
+
+*"Studens is more than that. You're deeply referring to RYC."* Correct, and it
+was an over-correction from FR-B16: to keep the shell from knowing what a course
+is, the module had been handed the platform's own voice, so the hero, the
+problem and the whole spine were RYC's. The landing page read as a course review
+site with a platform bolted underneath, which is backwards. Studens is the thing
+that accumulates; a module is what it accumulates into. The day MPA ships, that
+page would have needed rewriting rather than extending.
+
+Now the platform makes the platform's claim, the modules are what is inside it,
+and the first module gets a section in its own words labelled as the first
+module rather than as the product. `MPA` is listed as announced, with a name, a
+line and a status and deliberately nothing else: writing a problem statement for
+something unbuilt is how a roadmap turns into a promise, and `CLAUDE.md` is
+explicit that it has no shape yet. A test asserts a planned module carries no
+problem statement, no steps, no mock and no component.
+
+*"If you have to illustrate to pics, at least put real data."* The mock said
+LEPL1503 was 6 credits with a subtitle it does not have, and showed "4.1 sur 23
+avis" for a course with no reviews at all. Both invented. The course record is
+now read out of the loaded catalogue: 5 credits, Q2, French, and the real
+assessment text with its weightings and its second-session rule, verbatim. The
+reviews stay illustrative because nobody has written one yet, and that is now
+stated **on the mock** rather than assumed: a product asking people to trust a
+privacy guarantee cannot illustrate itself with numbers that look measured and
+are not. Tested.
+
+**A gate for the opposite direction.** The architecture test enforces the
+negative, that no domain word appears in the shell. A page could satisfy that by
+saying nothing at all. `test/ui/public-zone.test.ts` enforces the positive: the
+module's own sentences must actually reach the page. Verified by hardcoding the
+copy into the landing page and watching it fail.
+
+The first mutation of that test was worthless and worth recording: changing the
+module's text passed, because the test reads the same source the page renders.
+The property is about the wiring, so the wiring is what has to be broken.
+
+241 tests to 252, then 258 after the rework below.
+
+---
+
+### Phase 22: three languages
+
+Studens was named because it reads natively in French, Dutch and English, and
+the product was French only. That is a claim the product did not honour, and it
+is structural rather than cosmetic: Belgian higher education is legislated
+separately by the Flemish and the French Communities, so a platform meant for
+both cannot be monolingual. Every screen written in one language is a screen to
+revisit, so the cost grew with every pull request. It came before the first-run
+sequence for that reason.
+
+**The locale is in the path**, `/nl/a-propos`. A cookie cannot be shared: the
+same link would show different things to different people, and a crawler would
+see one language. Cost: every route carries a prefix, contained in one function
+that `linkProps` calls, so no component knows the prefix exists.
+
+**No library.** i18next and its relatives sell extraction tooling and a plural
+engine, and the platform already ships the plural engine as `Intl.PluralRules`,
+which knows that French treats zero as singular and English does not. What
+remains is eighty lines. The same call as react-router and the OIDC client.
+
+**Each package owns its strings**, the shell's separate from RYC's. A shared
+`locales/` directory is a file every module must edit (FR-B4) and would put
+RYC's vocabulary inside the shell, which FR-B16 has already refused three times.
+So a module's public presentation is now built from the translator rather than
+stored as text.
+
+**A missing key is loud**, because nobody notices a page that quietly reverts to
+French. Development warns and names the key; a test asserts `missingKeys()` is
+empty, that no string is blank, and that the landing page rendered in the three
+languages produces three different pages, since if two matched, one was falling
+back and the switcher was decoration.
+
+**What is deliberately not translated**: anything an institution publishes. A
+Dutch-speaking student at UCLouvain reads French course descriptions because
+that is what UCLouvain publishes, and inventing an official-looking translation
+on a page whose claim is that the official record is one link away would be
+worse than leaving it. The interface says so rather than letting a reader
+conclude the product is half-finished.
+
+**The FR-B18 gate was refined rather than weakened.** It forbade every
+`@studens/` import outside the registry, which also caught shared platform-tier
+infrastructure that is nobody's domain. It now reads each package's declared
+tier from its manifest and forbids only **feature**-tier imports, which is what
+FR-B18 actually says. Verified by importing a module into `main.tsx` and
+watching it fail.
+
+Still French only: the app zone and RYC's own screens. The mechanism is there
+and the strings are not. And the Dutch has not been read by a native speaker,
+which is recorded as open and must close before any Flemish institution is
+launched into: clumsy Dutch reads as "not for you".
+
+260 tests to 267.
 
 ---
 
