@@ -54,6 +54,23 @@ npm run dev:web               # terminal 2, http://localhost:5173
 
 Then open **<http://localhost:5173>**.
 
+**Never `sudo` anything in this repository.** `sudo` is right for starting
+PostgreSQL, which is a system service, and wrong for everything else here. It
+breaks two things at once:
+
+- **It uses a different Node.** `sudo` resets `PATH` to `secure_path`, so it
+  picks `/usr/bin/node`, which on this machine is **v12.22.9**, not the v22 you
+  installed with nvm. Node 12 does not understand `??`, and that token is inside
+  TypeScript's own compiled code, so the build dies with
+  `SyntaxError: Unexpected token '?'` pointing at a file you never wrote.
+- **It changes who the database thinks you are.** The local connection uses peer
+  authentication over the unix socket, so PostgreSQL trusts the operating system
+  user. Under `sudo` that user is `root`, which is not a role with access to
+  `studens`, so even a successful build would fail to connect.
+
+Nothing in this project needs root. Port 3001 is above 1024, and the database
+grants your own user everything it needs.
+
 | URL | What it is |
 |---|---|
 | `http://localhost:5173/` | redirects to your browser's language |
@@ -346,3 +363,6 @@ bash scripts/fetch-logos.sh
 | `sign-in providers: none configured` | `.env` missing a name, or only half a pair | Check both `_CLIENT_ID` and `_CLIENT_SECRET` |
 | A refresh on `/fr/a-propos` 404s in production | The server does not fall back to `index.html` | Only affects a real deployment; the dev server handles it |
 | Your terminal died running `pkill` | The pattern matched the shell running it | Kill by port instead |
+| `SyntaxError: Unexpected token '?'` from inside `node_modules/typescript` | You ran it with `sudo`, which used `/usr/bin/node` v12 instead of your nvm v22 | Drop the `sudo`. Only `service postgresql start` needs it |
+| `EACCES ... '/root/.npm/_logs'` | Same cause: npm running as root | Drop the `sudo` |
+| Connects to PostgreSQL as the wrong user, or is refused | `sudo` makes the socket's peer user `root` | Drop the `sudo`. Peer authentication trusts your own user, which is the point |
