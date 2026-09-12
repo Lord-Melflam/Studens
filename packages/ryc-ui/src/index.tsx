@@ -26,7 +26,7 @@ export interface ModuleRegistration {
    * is coming" is something a stranger is entitled to see, and because naming
    * it here is the alternative to a roadmap page that drifts.
    */
-  component?: () => JSX.Element;
+  component?: (props: ModuleProps) => JSX.Element;
   /** The module's own translations, merged into the bundle by the shell. */
   strings: Bundle;
   /**
@@ -46,6 +46,25 @@ export interface ModuleRegistration {
    * calls it with the active locale's translator.
    */
   presentation: (t: Translate) => ModulePresentation;
+}
+
+/**
+ * What the shell hands a module so the module can own its own URLs.
+ *
+ * Everything below `/app/<id>` belongs to the module. The shell slices its own
+ * prefix off and passes the rest; it never parses it, so it still does not
+ * know what a course is (FR-B16).
+ *
+ * This exists because RYC held its whole position in component state: the
+ * browser Back button left the app instead of going back a screen, a course
+ * could not be linked to anyone, and a refresh lost your place. Navigation that
+ * does not touch the URL is not navigation, it is a wizard.
+ */
+export interface ModuleProps {
+  /** The path inside the module. "/" at its root, "/c/lepl1503" deeper. */
+  path: string;
+  /** Go somewhere inside this module. Takes a module-relative path. */
+  navigate: (to: string) => void;
 }
 
 export interface ModulePresentation {
@@ -122,7 +141,7 @@ export const rycModule: ModuleRegistration = {
   }),
 };
 
-export { Ryc };
+export { Ryc, parseView, type RycView } from "./Ryc.js";
 export type { CourseDetail, CourseSummary } from "./api.js";
 
 /**

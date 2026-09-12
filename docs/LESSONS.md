@@ -152,6 +152,39 @@ This is the same shape as the isolation script that could not confirm which role
 it was running as. That one proved nothing while claiming to prove fourteen
 things; this one proved nothing while claiming to prove twenty-three.
 
+### A screen with no address is a screen nothing can reach
+
+RYC held its entire position in component state: which tab, which course, and
+whether the review form was open. It looked like navigation and was not. The
+consequences were all the same bug:
+
+- the browser Back button left the app instead of stepping back a screen;
+- a course page could not be sent to anyone, because it had no URL;
+- a refresh lost your place and dropped you at the module root;
+- and the review form, five screens deep, vanished if you touched reload.
+
+The app zone had the mirror image: the brand went to the app home, so once
+inside there was **no route out** to what Studens is, who runs it, or what
+anonymity does not protect. François reported that half; the other half turned
+up while looking for its cause, which is the usual way round.
+
+**What made it invisible.** None of it is an error. Every page returns 200,
+because a single page application serves the same document whatever the path,
+and every unit test passed because each component was correct about its own
+state. Nothing in the system had an opinion about whether a screen was
+reachable.
+
+**The fix, and the interface it needed.** A module now owns the path below
+`/app/<id>`: the shell slices its own prefix off and hands the rest over
+without parsing it, so RYC gets real routes while the shell still does not know
+what a course is (FR-B16). Parsing lives in one exported function, so the map
+from URL to screen is a thing tests can hold.
+
+**Generalised.** State that decides what is on screen belongs in the URL. If it
+does not have an address, it cannot be linked, bookmarked, refreshed, reached
+with Back, or sent to somebody who is stuck, and none of those failures will
+ever show up as an error.
+
 ### Sign-in worked, and the product said nothing
 
 The first real Google sign-in succeeded on the first try: the member was
