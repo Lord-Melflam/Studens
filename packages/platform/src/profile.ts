@@ -11,6 +11,7 @@
  * platform.Member at all.
  */
 import { PrismaClient } from "@prisma/client";
+import { TEXT_LIMITS, checkFreeText } from "./text.js";
 
 /**
  * What a username may be.
@@ -110,8 +111,15 @@ export async function writeProfile(
   if (patch.username !== undefined) {
     data["username"] = patch.username === null ? null : checkUsername(patch.username);
   }
-  for (const key of ["locale", "institutionCode", "studies", "interests"] as const) {
+  for (const key of ["locale", "institutionCode"] as const) {
     if (patch[key] !== undefined) data[key] = patch[key];
+  }
+  // The free text fields go through the rules, here rather than only in the
+  // route, so nothing reaches the column unchecked whatever calls this.
+  for (const key of ["studies", "interests"] as const) {
+    if (patch[key] === undefined) continue;
+    const value = patch[key];
+    data[key] = value === null ? null : checkFreeText(value, TEXT_LIMITS[key]);
   }
   if (patch.yearOfStudy !== undefined) data["yearOfStudy"] = patch.yearOfStudy;
   if (patch.onboardingStep !== undefined) data["onboardingStep"] = patch.onboardingStep;

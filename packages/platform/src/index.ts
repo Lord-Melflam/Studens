@@ -110,3 +110,6 @@ export {
   confirmEmailChange,
   requestEmailChange,
 } from "./email.js";
+
+/** What a person may type into a free text field (FR-F6, FR-F7). */
+export { TEXT_LIMITS, TextInvalid, checkFreeText, countGraphemes } from "./text.js";

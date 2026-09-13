@@ -168,3 +168,15 @@
   letter-spacing: 0.06em;
   color: var(--muted);
 }
+
+/* A field that is wrong says so where it is wrong, not at the bottom of the
+   form and not after the button is pressed. */
+.text-input.bad { border-color: var(--danger); }
+.text-input.bad:focus { outline-color: var(--danger); }
+.field-note {
+  min-height: 1.15rem;
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.field-note.bad { color: var(--danger); }

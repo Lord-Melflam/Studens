@@ -12,7 +12,15 @@
  */
 import { Router, json } from "express";
 import { PrismaClient } from "@prisma/client";
-import { UsernameInvalid, readProfile, writeProfile, type ProfilePatch } from "@studens/platform";
+import {
+  TEXT_LIMITS,
+  TextInvalid,
+  checkFreeText,
+  UsernameInvalid,
+  readProfile,
+  writeProfile,
+  type ProfilePatch,
+} from "@studens/platform";
 import { listInstitutions } from "@studens/ref";
 import { identifyIfAny } from "../identity.js";
 
@@ -48,10 +56,11 @@ function patchFrom(body: unknown): ProfilePatch {
     if (key in b) {
       const v = b[key];
       if (v !== null && typeof v !== "string") throw new BadRequest(key);
-      // Free text, so it is bounded here. The column is unbounded TEXT and the
-      // body limit is 4kb, but neither is a statement about what this means.
-      if (typeof v === "string" && v.length > 120) throw new BadRequest(key);
-      patch[key] = v === null ? null : (v as string).trim() || null;
+      // Length and content are decided by `checkFreeText` in the platform, not
+      // here, so the browser, this route and the write path cannot disagree
+      // about what is acceptable. It throws TextInvalid with a reason, which
+      // the handler turns into something the screen can actually say.
+      patch[key] = v as string | null;
     }
   }
   if ("yearOfStudy" in b) {
@@ -73,6 +82,29 @@ function patchFrom(body: unknown): ProfilePatch {
     patch.onboardedAt = b["onboardedAt"];
   }
   return patch;
+}
+
+/**
+ * Which field the rules refused.
+ *
+ * `checkFreeText` reports what is wrong, not where: it is given one string at a
+ * time and has no idea what it is called. Rather than thread a name through it,
+ * the patch is re-checked here to find the offender, which is two string tests
+ * on a request that is already failing.
+ */
+function textFieldOf(patch: ProfilePatch, err: TextInvalid): string {
+  for (const key of ["studies", "interests"] as const) {
+    const value = patch[key];
+    if (typeof value !== "string") continue;
+    try {
+      checkFreeText(value, TEXT_LIMITS[key]);
+    } catch {
+      return key;
+    }
+  }
+  // Should not happen: something threw and nothing re-throws. Naming the reason
+  // is still better than naming nothing.
+  return err.reason;
 }
 
 class BadRequest extends Error {
@@ -189,6 +221,17 @@ export function profileRoutes(prisma: PrismaClient): Router {
       } catch (err) {
         if (err instanceof UsernameInvalid) {
           res.status(409).json({ error: "username", reason: err.reason });
+          return;
+        }
+        if (err instanceof TextInvalid) {
+          // The field AND the reason. "invalid" on its own is what left
+          // somebody staring at a button that would not move.
+          res.status(400).json({
+            error: "text",
+            field: textFieldOf(patch, err),
+            reason: err.reason,
+            max: err.max,
+          });
           return;
         }
         throw err;

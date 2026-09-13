@@ -183,6 +183,14 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.other": "L'enregistrement a échoué. Réessayez.",
     "firstrun.err.save":
       "L'enregistrement a échoué et rien n'a été perdu. Réessayez ; si cela recommence, rechargez la page.",
+    "text.count": "{used} caractères sur {max}",
+    "text.err.long": "Trop long : {used} caractères, {max} au maximum.",
+    "text.err.control":
+      "Ce champ tient sur une ligne et ne peut pas contenir de retour à la ligne ni de caractère de contrôle.",
+    "text.err.bidi":
+      "Ce texte contient un caractère qui change le sens de lecture. Il n'est pas accepté, car il permet d'afficher autre chose que ce qui est écrit.",
+    "text.err.invisible":
+      "Ce texte contient un caractère invisible, souvent collé depuis une page web. Retirez-le : il ne se voit pas mais il compte.",
 
     "firstrun.3.title": "Dans quelle langue ?",
     "firstrun.3.lede": "Vous pouvez en changer à tout moment.",
@@ -507,6 +515,14 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.other": "Opslaan is mislukt. Probeer opnieuw.",
     "firstrun.err.save":
       "Opslaan is mislukt en er is niets verloren. Probeer opnieuw; gebeurt het weer, herlaad dan de pagina.",
+    "text.count": "{used} tekens van {max}",
+    "text.err.long": "Te lang: {used} tekens, hoogstens {max}.",
+    "text.err.control":
+      "Dit veld past op één lijn en kan geen regeleinde of stuurteken bevatten.",
+    "text.err.bidi":
+      "Deze tekst bevat een teken dat de leesrichting omkeert. Dat wordt niet aanvaard, want het laat iets anders zien dan er staat.",
+    "text.err.invisible":
+      "Deze tekst bevat een onzichtbaar teken, vaak meegeplakt van een webpagina. Verwijder het: het is niet te zien maar het telt mee.",
 
     "firstrun.3.title": "In welke taal?",
     "firstrun.3.lede": "U kunt dit op elk moment wijzigen.",
@@ -831,6 +847,14 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.other": "Saving failed. Try again.",
     "firstrun.err.save":
       "Saving failed and nothing was lost. Try again; if it happens again, reload the page.",
+    "text.count": "{used} characters of {max}",
+    "text.err.long": "Too long: {used} characters, {max} at most.",
+    "text.err.control":
+      "This field is one line and cannot hold a line break or a control character.",
+    "text.err.bidi":
+      "This text contains a character that reverses the reading direction. It is not accepted, because it can display something other than what is written.",
+    "text.err.invisible":
+      "This text contains an invisible character, often pasted in from a web page. Remove it: it cannot be seen but it counts.",
 
     "firstrun.3.title": "Which language?",
     "firstrun.3.lede": "You can change it at any time.",
