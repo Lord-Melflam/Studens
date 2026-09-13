@@ -165,15 +165,34 @@ describe("the authorization request", () => {
 });
 
 describe("a good sign-in", () => {
-  it("returns the subject and the email DOMAIN, never the address", async () => {
+  /**
+   * FR-A11, 2026-09-13. This used to assert that the address did NOT come back:
+   * the local part was read and thrown away, on a reading of FR-A9 that was
+   * mine rather than François's. The provider sends it on every sign-in, so
+   * discarding it bought no privacy and cost every feature that has to reach a
+   * person.
+   *
+   * What matters now is that the two cannot disagree. A domain derived from one
+   * claim and an address read from another would let the trust signal describe
+   * an address the member does not hold, which is why one function returns both.
+   */
+  it("returns the subject, the address, and a domain taken from that address", async () => {
     nextClaims = { sub: "subject-123", email: "Marie.Dupont@student.UCLouvain.be", email_verified: true };
     const who = await signIn();
 
     expect(who.subject).toBe("subject-123");
+    expect(who.email).toBe("marie.dupont@student.uclouvain.be");
     expect(who.emailDomain).toBe("student.uclouvain.be");
-    // FR-A9 wants the domain as a trust signal. The local part is personal data
-    // with no use in this product, so it must not come back at all.
-    expect(JSON.stringify(who).toLowerCase()).not.toContain("marie");
+    // Lowercased, so the same person signing in twice is one member and not two.
+    expect(who.email).toBe(who.email.toLowerCase());
+    expect(who.email.endsWith(`@${who.emailDomain}`)).toBe(true);
+  });
+
+  it("still refuses a sign-in with no usable address at all", async () => {
+    // The domain is the trust signal (FR-A9) and the address is how anybody is
+    // reached (FR-A11). Neither exists without a claim to read.
+    nextClaims = { sub: "s", email_verified: true };
+    await expect(signIn()).rejects.toThrow();
   });
 
   it("sends the code, the verifier and the client secret to the token endpoint", async () => {

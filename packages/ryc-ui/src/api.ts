@@ -54,7 +54,7 @@ export interface ProgrammeSummary {
 /** FR-D15 and FR-C16: the nulls below are the server's answer, not a client choice. */
 export interface PublishedReview {
   id: string;
-  path: "named" | "anonymous" | "imported";
+  path: "named" | "anonymous" | "imported" | "detached";
   academicYear: number;
   body: string;
   advice: string | null;
@@ -70,6 +70,8 @@ export interface Aggregate {
   count: number;
   named: number;
   anonymous: number;
+  /** FR-A15: signed, but its author has since deleted their account. */
+  detached: number;
   recommendation: number | null;
   workloadVsEcts: number | null;
   difficulty: number | null;

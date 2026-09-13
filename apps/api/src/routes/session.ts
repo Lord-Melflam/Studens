@@ -72,6 +72,11 @@ export function sessionRoutes(prisma: PrismaClient): Router {
           provider: "dev",
           providerSubject: "local",
           emailDomain: "student.uclouvain.be",
+          // FR-A11, as in identity.ts: the development path stores an address
+          // because the real one does.
+          providerEmail: "developpeur.local@student.uclouvain.be",
+          contactEmail: "developpeur.local@student.uclouvain.be",
+          contactVerifiedAt: new Date(),
           tenantId: tenant.id,
         },
       });

@@ -45,6 +45,7 @@ export {
   issuerMatches,
   challengeFor,
   emailDomainFrom,
+  emailFrom,
   clearOidcCaches,
   OidcError,
   type ProviderConfig,
@@ -75,3 +76,36 @@ export {
   type Profile,
   type ProfilePatch,
 } from "./profile.js";
+
+/** FR-A15: leaving, and taking your data with you. */
+export {
+  deleteAccount,
+  exportAccount,
+  type AccountExport,
+  type DeletionReport,
+  type MemberErasure,
+} from "./account.js";
+
+/** FR-H: what a member agreed to be sent, and the queue that sends it. */
+export {
+  OPTIONAL_KINDS,
+  TRANSACTIONAL,
+  enqueueMail,
+  isSendableKind,
+  notifyMember,
+  readPreferences,
+  setPreference,
+  wants,
+  type OptionalKind,
+  type Preference,
+  type QueuedMail,
+} from "./notifications.js";
+
+/** FR-A12 and FR-A13: the address a member is reached at. */
+export {
+  CONFIRM_MAX_AGE_SECONDS,
+  EmailInvalid,
+  checkEmail,
+  confirmEmailChange,
+  requestEmailChange,
+} from "./email.js";

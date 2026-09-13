@@ -131,6 +131,37 @@ model NotificationPreference {
   @@schema("platform")
 }
 
+/// FR-H5: mail is queued here and sent by the worker, never inside a request.
+///
+/// A provider that is slow or down must not make a submission fail, and a
+/// moderation decision must not be lost because mail bounced. The row is the
+/// unit of retry, and it holds the ADDRESS it was queued for rather than a
+/// member id, so a member deleted between queueing and sending does not drag a
+/// dangling reference along, and a confirmation of deletion can still arrive.
+///
+/// No member id also means this table cannot be used to join a person to a
+/// contribution: a module never queues mail itself (FR-H4), and FR-H3 forbids
+/// any message that would reveal the author of an anonymous contribution.
+model MailOutbox {
+  id        String    @id @default(uuid())
+  /// The recipient, captured at queue time.
+  toAddress String
+  /// Which message this is, so the worker picks the template and the language.
+  kind      String
+  locale    String    @default("fr")
+  /// Template variables. Never the body: the wording lives in code and is
+  /// translated at send time, so a queued message is not frozen in whatever
+  /// the copy said the day it was queued.
+  payload   Json
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+  attempts  Int       @default(0)
+  lastError String?
+
+  @@index([sentAt, createdAt])
+  @@schema("platform")
+}
+
 model MemberQuota {
   /// FR-C4 and design/anonymous-rate-limiting.md: a FIXED WINDOW counter.
   /// Deliberately two columns and NO per-submission timestamp. A precise
@@ -348,7 +379,21 @@ model ReviewAttributed {
   /// Ordinary personal data (FR-C7). Editable by its author (FR-C14).
   /// memberId is a plain id, not a relation: see the note at the top.
   id             String   @id @default(uuid())
-  memberId       String
+  /// NULL means DETACHED: the author deleted their account (FR-A15, OPEN-46
+  /// resolved 2026-09-13). The text stays, the name goes.
+  ///
+  /// THIS IS NOT A SECOND ANONYMOUS PATH, and the difference is load bearing.
+  /// A detached review renders as "deleted account", never as "Anonyme", and it
+  /// is counted with neither the named nor the anonymous set. If it were
+  /// counted as anonymous it would inflate the number FR-C21 shows a
+  /// contributor before they choose, so the figure people use to judge their
+  /// own exposure would be wrong, and 3.3's complement arithmetic with it.
+  ///
+  /// Postgres treats NULLs as distinct in a unique index, so many detached rows
+  /// coexist under the constraint below. That is the behaviour wanted: the
+  /// one-per-course rule binds a member, and there is no longer a member.
+  memberId       String?
+  detachedAt     DateTime?
   courseId       String
   /// FR-D4: the year the reviewer TOOK the course, chosen by them. Often years
   /// before submission, because alumni review. FR-D16: kept even when no

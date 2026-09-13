@@ -42,6 +42,10 @@ function Summary({ a }: { a: Aggregate }) {
           named: a.named,
           anonymous: a.anonymous,
         })}
+        {/* Counted apart from both, never folded into the anonymous figure:
+            that number is what a contributor uses to judge their own exposure
+            (FR-C21), so inflating it would make the judgement wrong. */}
+        {a.detached > 0 && <> {t("ryc.reviews.detached", { count: a.detached })}</>}
         {/* FR-D23: a band above a floor, never a percentage, never per review. */}
         {a.passBand && <> {t("ryc.reviews.pass", { band: a.passBand })}</>}
       </p>
@@ -56,6 +60,13 @@ function Review({ r }: { r: PublishedReview }) {
       <header>
         {r.path === "named" && <span className="chip-named">{r.author}</span>}
         {r.path === "anonymous" && <span className="chip-anon">{t("ryc.anonymous")}</span>}
+        {/*
+          FR-A15 and OPEN-46: published under a name, whose account is gone.
+          Its own label, never "Anonyme": the text was signed and people may
+          remember who wrote it, so calling it anonymous would claim a
+          protection it does not have.
+        */}
+        {r.path === "detached" && <span className="chip-detached">{t("ryc.detached")}</span>}
         {r.path === "imported" && (
           <span className="chip-anon">{t("ryc.imported", { source: r.source ?? "?" })}</span>
         )}

@@ -111,6 +111,11 @@ export function profileRoutes(prisma: PrismaClient): Router {
         res.status(401).json({ error: "sign in required" });
         return;
       }
+      // FR-A12: both addresses, so the panel can show which one it may edit.
+      const addresses = await prisma.member.findUnique({
+        where: { id: who.memberId },
+        select: { providerEmail: true, contactEmail: true, contactVerifiedAt: true },
+      });
       res.json({
         username: profile.username,
         locale: profile.locale,
@@ -123,6 +128,9 @@ export function profileRoutes(prisma: PrismaClient): Router {
         // FR-A9 again, so the first run can show what it knows without a second
         // call. Evidence of an address, never proof of enrolment.
         emailDomain: who.emailDomain,
+        providerEmail: addresses?.providerEmail ?? null,
+        contactEmail: addresses?.contactEmail ?? null,
+        contactVerified: addresses?.contactVerifiedAt !== null,
       });
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });

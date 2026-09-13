@@ -66,7 +66,14 @@ export function Privacy() {
           <li>{t("privacy.keep.subject")}</li>
           <Fact id="privacy.keep.domain" />
           <li>{t("privacy.keep.chosen")}</li>
+          {/* OPEN-36 did not move when FR-A11 did: the address is kept now, the
+              provider's display name is still not, and there is no column it
+              could go in. */}
+          <li>{t("privacy.keep.notname")}</li>
         </ul>
+        {/* FR-A15. A page that lists what is held and does not say how to get
+            it back or get rid of it is only half the disclosure. */}
+        <p className="band-fine">{t("privacy.keep.rights")}</p>
         <p className="band-fine">{t("privacy.keep.fine")}</p>
       </section>
 

@@ -29,6 +29,7 @@ import {
   type UsernameProblem,
 } from "./firstrun/profile.js";
 import { FIRST_RUN } from "./firstrun/FirstRun.js";
+import { EmailPanel, LeavingPanel, NotificationsPanel } from "./account/Panels.js";
 
 interface LiveSession {
   id: string;
@@ -277,6 +278,17 @@ export function Settings() {
         )}
       </section>
 
+      {/* FR-A12, FR-A13. */}
+      <EmailPanel
+        contactEmail={profile?.contactEmail ?? null}
+        verified={profile?.contactVerified ?? false}
+        providerEmail={profile?.providerEmail ?? null}
+        onChanged={load}
+      />
+
+      {/* FR-H1, FR-H2. */}
+      <NotificationsPanel />
+
       {/*
         Named, not mocked up. Everything above is real; this is not built, and a
         disabled control that looks like a setting is a promise the product has
@@ -288,6 +300,12 @@ export function Settings() {
           <li>{t("settings.soon.contributions")}</li>
         </ul>
       </section>
+
+      {/*
+        FR-A15, and last on the page on purpose. Leaving is not a setting, and
+        a destructive control sitting between two ordinary ones gets pressed.
+      */}
+      <LeavingPanel username={profile?.username ?? null} />
     </div>
   );
 }

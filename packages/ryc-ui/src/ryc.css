@@ -585,3 +585,19 @@ button.ghost {
   .results .facts { grid-column: 1; }
   .results .badge { grid-column: 2; grid-row: 1; }
 }
+
+/* A review whose author deleted their account (FR-A15, OPEN-46).
+   Its own colour, borrowed from neither path: --named and --anon carry the
+   meaning of a CHOICE somebody made, and this is not one of them. Grey is the
+   honest answer, and the design-tokens gate keeps the two real ones out of the
+   themeable palette so this can never be made to look like either. */
+.chip-detached {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: #eef0f2;
+  border-radius: 999px;
+}
+.review-detached { border-left: 3px solid var(--line); }

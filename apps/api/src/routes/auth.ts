@@ -35,17 +35,11 @@ import {
 } from "@studens/platform";
 import { setSessionCookie } from "../cookies.js";
 import { clearAuthState, readAuthState, setAuthState } from "../authstate.js";
+import { appUrl, publicOrigin } from "../origins.js";
 
 /** Where the provider sends the browser back. Must match the registration exactly. */
 function redirectUri(providerId: string): string {
-  const base = process.env["STUDENS_PUBLIC_ORIGIN"] ?? "http://localhost:3001";
-  return `${base.replace(/\/$/, "")}/api/auth/callback/${providerId}`;
-}
-
-/** Where the person lands afterwards, success or failure. */
-function appUrl(path: string): string {
-  const base = process.env["STUDENS_APP_ORIGIN"] ?? "http://localhost:5173";
-  return `${base.replace(/\/$/, "")}${path}`;
+  return `${publicOrigin()}/api/auth/callback/${providerId}`;
 }
 
 export function authRoutes(prisma: PrismaClient): Router {
@@ -122,12 +116,24 @@ export function authRoutes(prisma: PrismaClient): Router {
           provider_providerSubject: { provider: provider.id, providerSubject: who.subject },
         },
         // The domain can change between sign-ins, for instance a student who
-        // graduates. It is a current trust signal, not a historical record.
-        update: { emailDomain: who.emailDomain },
+        // graduates. It is a current trust signal, not a historical record, so
+        // it and the address it comes from are refreshed every time.
+        //
+        // `contactEmail` is NOT touched on update (FR-A12): it is the member's
+        // to set, and silently resetting it to the provider's on every sign-in
+        // would undo a change they made on purpose.
+        update: { emailDomain: who.emailDomain, providerEmail: who.email },
         create: {
           provider: provider.id,
           providerSubject: who.subject,
           emailDomain: who.emailDomain,
+          providerEmail: who.email,
+          // A new member is reachable from the first second, at the address the
+          // provider just verified. Already confirmed, because the provider
+          // asserted it and FR-A13's confirmation exists for addresses WE were
+          // told rather than ones we were shown proof of.
+          contactEmail: who.email,
+          contactVerifiedAt: new Date(),
           tenantId: tenant.id,
         },
       });
