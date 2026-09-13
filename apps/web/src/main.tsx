@@ -14,6 +14,7 @@ import { PublicZone } from "./public/index.js";
 import { bundle } from "./bundle.js";
 import { APP_PREFIX, currentRoute, isAppPath, navigate, usePath } from "./router.js";
 import { SessionProvider, useSession } from "./session.js";
+import { ErrorBoundary } from "./ErrorBoundary.js";
 import { FIRST_RUN, FirstRun, isFirstRunPath } from "./firstrun/FirstRun.js";
 import "./shell.css";
 import "./public/public.css";
@@ -141,6 +142,11 @@ const root = document.getElementById("root");
 if (!root) throw new Error("no #root element");
 createRoot(root).render(
   <StrictMode>
-    <Studens />
+    {/* Outside everything, so it survives a failure in the translator, the
+        session, the router or any module. A blank page is not an error
+        message. */}
+    <ErrorBoundary>
+      <Studens />
+    </ErrorBoundary>
   </StrictMode>,
 );

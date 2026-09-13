@@ -14,8 +14,20 @@ export { bundle } from "./bundle.js";
 export {
   FIRST_RUN,
   STEPS,
+  FirstRun,
   firstRunPath,
   hasExplicitStep,
   isFirstRunPath,
   stepFrom,
 } from "./firstrun/FirstRun.js";
+
+/**
+ * The screens behind a session, so they can be drawn in a test.
+ *
+ * Exported after 2026-09-13, when the app shipped broken twice on the
+ * signed-in path while every test rendered either the public zone or a
+ * component with no session. See test/ui/signed-in.test.ts.
+ */
+export { Shell } from "./shell/Shell.js";
+export { Settings } from "./Settings.js";
+export { SessionProvider, useSession, type SessionState } from "./session.js";

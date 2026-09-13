@@ -32,8 +32,22 @@ interface SessionValue {
 
 const Ctx = createContext<SessionValue>({ session: null, reload: () => {} });
 
-export function SessionProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<SessionState | null>(null);
+export function SessionProvider({
+  children,
+  initial = null,
+}: {
+  children: ReactNode;
+  /**
+   * A starting answer, so the signed-in tree can be rendered without a browser.
+   *
+   * The application never passes it: it starts at null and the fetch below
+   * fills it in. It exists because every screen behind a session was
+   * unreachable from a test, and the two worst bugs of 2026-09-13 were both on
+   * exactly that path, found by François and not by 350 tests.
+   */
+  initial?: SessionState | null;
+}) {
+  const [session, setSession] = useState<SessionState | null>(initial);
 
   const reload = useCallback(() => {
     fetch("/api/session")
