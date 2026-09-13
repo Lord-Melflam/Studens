@@ -60,6 +60,13 @@ CREATE UNIQUE INDEX "Institution_code_key" ON "ref"."Institution"("code");
 -- need the official registries, so they come as a later seed.
 INSERT INTO "ref"."Institution" ("id", "code", "name", "city", "colour", "community", "available")
 VALUES
+  -- UCLouvain is in this list even though the UPDATE below fills it in. On a
+  -- database that has already been loaded it is an existing row and the
+  -- conflict clause skips it; on a FRESH one there is no row to update, and
+  -- without this line a new deployment would come up with no selectable
+  -- institution at all. CI found that, because CI is the only database here
+  -- that is ever empty.
+  (gen_random_uuid(), 'uclouvain',  'UCLouvain',                      'Louvain-la-Neuve', NULL, 'fr', false),
   (gen_random_uuid(), 'ulb',        'Université libre de Bruxelles',  'Bruxelles',  NULL, 'fr', false),
   (gen_random_uuid(), 'uliege',     'Université de Liège',            'Liège',      NULL, 'fr', false),
   (gen_random_uuid(), 'umons',      'Université de Mons',             'Mons',       NULL, 'fr', false),
