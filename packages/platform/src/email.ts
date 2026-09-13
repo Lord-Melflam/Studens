@@ -18,12 +18,36 @@
  * keeps a pending change out of the database entirely, so an abandoned one
  * expires by arithmetic rather than by a cleanup job nobody wrote.
  */
+import { createHash } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { enqueueMail } from "./notifications.js";
 import { BadSignedValue, readSignedValue, signValue } from "./signed.js";
 
-/** One hour. Long enough to find the mail, short enough that a leaked link rots. */
-export const CONFIRM_MAX_AGE_SECONDS = 60 * 60;
+/**
+ * Twenty-four hours.
+ *
+ * It was one hour, on the reasoning that a leaked link should rot quickly. That
+ * reasoning was about the wrong risk. A leaked link rots either way, and one
+ * hour does not meaningfully shrink the window an attacker who already has the
+ * message needs; what it does shrink is the window a legitimate person has, and
+ * the realistic case is somebody reading their mail the next morning and
+ * finding it dead. Verified in practice on 2026-09-13, when every queued
+ * confirmation had expired before it could be used.
+ *
+ * WHAT IT COSTS: a link sitting in a compromised or shared mailbox is usable
+ * for a day rather than an hour. That is bounded by what the link can actually
+ * do, which is set the CONTACT address (FR-A12): it cannot sign anybody in,
+ * cannot change the identity address, and the previous address is told the
+ * moment the change is requested (FR-A13), which is the control that makes the
+ * attack visible rather than the expiry.
+ *
+ * WHAT WOULD CHANGE IT: giving this token any authority beyond the contact
+ * address. The day it can do more, an hour is right again.
+ *
+ * The templates state this duration in three languages, so it is not a number
+ * that can be changed here alone.
+ */
+export const CONFIRM_MAX_AGE_SECONDS = 24 * 60 * 60;
 
 export class EmailInvalid extends Error {
   constructor(readonly reason: "shape" | "long" | "same") {
@@ -50,6 +74,32 @@ export function checkEmail(raw: string): string {
 interface ChangeToken {
   memberId: string;
   email: string;
+  /**
+   * A fingerprint of the contact state the token was issued against.
+   *
+   * THIS IS WHAT MAKES THE LINK SINGLE-USE, with no stored state. Applying the
+   * change moves `contactVerifiedAt`, so the fingerprint no longer matches and
+   * a replay is refused. Two competing requests resolve the same way: whichever
+   * is opened first invalidates the other, which is the safe outcome either way.
+   *
+   * It exists because the token was replayable for its whole lifetime, and
+   * stretching that lifetime from one hour to twenty-four made the difference
+   * material. Demonstrated on 2026-09-13 by replaying a two-hour-old link three
+   * times against a live account.
+   *
+   * HASHED, never the address itself. The payload is base64 and readable by
+   * anyone who sees the URL, so carrying the previous address in it would
+   * disclose it to exactly the person a leaked link is a problem with.
+   */
+  prev: string;
+}
+
+/** What the contact state is right now, as an opaque short digest. */
+function fingerprint(email: string | null, verifiedAt: Date | null): string {
+  return createHash("sha256")
+    .update(`${email ?? ""}|${verifiedAt?.toISOString() ?? ""}`)
+    .digest("base64url")
+    .slice(0, 16);
 }
 
 /**
@@ -76,7 +126,15 @@ export async function requestEmailChange(
     throw new EmailInvalid("same");
   }
 
-  const token = signValue(opts.key, { memberId, email } satisfies ChangeToken, opts.now);
+  const token = signValue(
+    opts.key,
+    {
+      memberId,
+      email,
+      prev: fingerprint(member.contactEmail, member.contactVerifiedAt),
+    } satisfies ChangeToken,
+    opts.now,
+  );
   const locale = member.locale ?? "fr";
 
   await enqueueMail(prisma, {
@@ -124,9 +182,17 @@ export async function confirmEmailChange(
   // The member may have been deleted between the request and the click.
   const member = await prisma.member.findUnique({
     where: { id: claim.memberId },
-    select: { id: true },
+    select: { id: true, contactEmail: true, contactVerifiedAt: true },
   });
   if (!member) throw new BadSignedValue("unreadable");
+
+  // Single use, without storing anything: the contact state has moved if this
+  // link has already been opened, or if a later request has been opened
+  // instead. Same error as every other failure, so a holder learns nothing
+  // about which it was (FR-A4's rule).
+  if (fingerprint(member.contactEmail, member.contactVerifiedAt) !== claim.prev) {
+    throw new BadSignedValue("unreadable");
+  }
 
   await prisma.member.update({
     where: { id: claim.memberId },

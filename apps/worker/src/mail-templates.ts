@@ -11,6 +11,11 @@
  * messages is that they are short and say one thing. It also means there is no
  * tracking pixel, because there is nowhere to put one.
  *
+ * THE LIFETIME IS STATED IN THREE PLACES AND MUST AGREE. These three templates
+ * say how long the confirmation link lasts, and `CONFIRM_MAX_AGE_SECONDS`
+ * decides it. A test pins them together, because a message promising 24 hours
+ * for a link that dies in one is worse than a message that says nothing.
+ *
  * FR-H3 CONSTRAINS WHAT MAY BE WRITTEN HERE. No message may reveal the author
  * of an anonymous contribution, to anybody, including its author. There is
  * deliberately no template that names a contribution, and adding one would need
@@ -42,7 +47,7 @@ const TEMPLATES: Record<string, Record<string, Template>> = {
       subject: "Confirmez votre adresse",
       body: (v) =>
         "Vous avez demandé à être contacté à cette adresse.\n\n" +
-        "Confirmez-la en ouvrant ce lien, valable une heure :\n" +
+        "Confirmez-la en ouvrant ce lien, valable 24 heures :\n" +
         `${String(v["url"])}\n\n` +
         "Si vous n'avez rien demandé, ignorez ce message : rien ne change tant " +
         "que le lien n'est pas ouvert.",
@@ -51,7 +56,7 @@ const TEMPLATES: Record<string, Record<string, Template>> = {
       subject: "Bevestig uw adres",
       body: (v) =>
         "U hebt gevraagd om op dit adres gecontacteerd te worden.\n\n" +
-        "Bevestig het via deze link, één uur geldig:\n" +
+        "Bevestig het via deze link, 24 uur geldig:\n" +
         `${String(v["url"])}\n\n` +
         "Hebt u niets gevraagd, negeer dit bericht: er verandert niets zolang " +
         "de link niet geopend is.",
@@ -60,7 +65,7 @@ const TEMPLATES: Record<string, Record<string, Template>> = {
       subject: "Confirm your address",
       body: (v) =>
         "You asked to be contacted at this address.\n\n" +
-        "Confirm it by opening this link, valid for one hour:\n" +
+        "Confirm it by opening this link, valid for 24 hours:\n" +
         `${String(v["url"])}\n\n` +
         "If you asked for nothing, ignore this message: nothing changes until " +
         "the link is opened.",

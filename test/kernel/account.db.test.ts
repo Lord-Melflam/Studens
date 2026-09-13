@@ -10,6 +10,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import {
+  CONFIRM_MAX_AGE_SECONDS,
   EmailInvalid,
   OPTIONAL_KINDS,
   checkEmail,
@@ -306,6 +307,23 @@ describe("changing the contact address (FR-A12, FR-A13)", () => {
     expect(warned?.toAddress).toBe("mover@example.invalid");
   });
 
+  /**
+   * The other half of the same boundary: just inside the window still works.
+   * A test that only checks the far side passes just as happily if the
+   * lifetime is accidentally set to zero.
+   */
+  dbit("accepts a token issued just inside the window", async () => {
+    const id = await freshMember("justintime");
+    const almost = new Date(Date.now() - (CONFIRM_MAX_AGE_SECONDS - 120) * 1000);
+    const { token } = await requestEmailChange(prisma, id, "intime@example.invalid", {
+      key: KEY,
+      baseUrl: "http://localhost:3001",
+      now: almost,
+    });
+    const done = await confirmEmailChange(prisma, token, { key: KEY });
+    expect(done.email).toBe("intime@example.invalid");
+  });
+
   dbit("applies the change when the token comes back", async () => {
     const id = await freshMember("confirmer");
     const { token } = await requestEmailChange(prisma, id, "elsewhere@example.invalid", {
@@ -333,7 +351,11 @@ describe("changing the contact address (FR-A12, FR-A13)", () => {
 
   dbit("refuses an expired token", async () => {
     const id = await freshMember("late");
-    const longAgo = new Date(Date.now() - 1000 * 60 * 60 * 3);
+    // Derived from the constant rather than written as a number. It was three
+    // hours, which stopped being expired the moment the lifetime went from one
+    // hour to twenty-four, and the test would have gone green while proving
+    // the opposite of its name.
+    const longAgo = new Date(Date.now() - (CONFIRM_MAX_AGE_SECONDS + 60) * 1000);
     const { token } = await requestEmailChange(prisma, id, "stale@example.invalid", {
       key: KEY,
       baseUrl: "http://localhost:3001",
@@ -445,5 +467,98 @@ describe("what the interface may claim about mail", () => {
     expect(queued.kind).toBe("email.confirm");
     expect(queued.sentAt).toBeNull();
     expect(queued.attempts).toBe(0);
+  });
+});
+
+/**
+ * A confirmation link works once.
+ *
+ * FOUND BY USING IT, 2026-09-13. Verifying the lifetime change, I replayed a
+ * two-hour-old link three times against a live account and it applied every
+ * time, overwriting an address the member had since set. The token was
+ * replayable for its whole lifetime, which barely mattered at one hour and
+ * matters at twenty-four. FR-A13 said "single-use" and the implementation was
+ * not; I had quietly dropped the word from the requirement while rewriting it,
+ * which is the worse half of the mistake.
+ *
+ * Single use with NO stored state: the token carries a fingerprint of the
+ * contact state it was issued against, and applying the change moves that
+ * state. Nothing to write, nothing to clean up, nothing to expire twice.
+ */
+describe("a confirmation link is single-use (FR-A13)", () => {
+  dbit("the same link a second time does nothing", async () => {
+    const id = await freshMember("once");
+    const { token } = await requestEmailChange(prisma, id, "first@example.invalid", {
+      key: KEY,
+      baseUrl: "http://localhost:3001",
+    });
+
+    await confirmEmailChange(prisma, token, { key: KEY });
+    expect((await prisma.member.findUniqueOrThrow({ where: { id } })).contactEmail).toBe(
+      "first@example.invalid",
+    );
+
+    await expect(confirmEmailChange(prisma, token, { key: KEY })).rejects.toThrow();
+  });
+
+  /**
+   * The replay that actually happened: the member moves on, and an old link
+   * must not be able to drag them back to a previous address.
+   */
+  dbit("an old link cannot undo a later change", async () => {
+    const id = await freshMember("moved");
+    const { token: old } = await requestEmailChange(prisma, id, "old@example.invalid", {
+      key: KEY,
+      baseUrl: "http://localhost:3001",
+    });
+    await confirmEmailChange(prisma, old, { key: KEY });
+
+    const { token: recent } = await requestEmailChange(prisma, id, "new@example.invalid", {
+      key: KEY,
+      baseUrl: "http://localhost:3001",
+    });
+    await confirmEmailChange(prisma, recent, { key: KEY });
+
+    await expect(confirmEmailChange(prisma, old, { key: KEY })).rejects.toThrow();
+    expect((await prisma.member.findUniqueOrThrow({ where: { id } })).contactEmail).toBe(
+      "new@example.invalid",
+    );
+  });
+
+  /**
+   * Two requests outstanding at once: whichever is opened first wins and
+   * invalidates the other. Either order is safe; what must not happen is both
+   * applying, because then the last link seen decides and the member cannot
+   * tell which address they ended up with.
+   */
+  dbit("of two outstanding links, only the first opened applies", async () => {
+    const id = await freshMember("racing");
+    const a = await requestEmailChange(prisma, id, "a@example.invalid", {
+      key: KEY,
+      baseUrl: "http://localhost:3001",
+    });
+    const b = await requestEmailChange(prisma, id, "b@example.invalid", {
+      key: KEY,
+      baseUrl: "http://localhost:3001",
+    });
+
+    await confirmEmailChange(prisma, b.token, { key: KEY });
+    await expect(confirmEmailChange(prisma, a.token, { key: KEY })).rejects.toThrow();
+    expect((await prisma.member.findUniqueOrThrow({ where: { id } })).contactEmail).toBe(
+      "b@example.invalid",
+    );
+  });
+
+  /** The previous address must not be readable from the link itself. */
+  dbit("carries no address but the new one", async () => {
+    const id = await freshMember("private", "secret.old@example.invalid");
+    const { token } = await requestEmailChange(prisma, id, "shown@example.invalid", {
+      key: KEY,
+      baseUrl: "http://localhost:3001",
+    });
+    const payload = Buffer.from(token.split(".")[0]!, "base64url").toString("utf8");
+    expect(payload).toContain("shown@example.invalid");
+    // The payload is base64 and readable by anybody who sees the URL.
+    expect(payload).not.toContain("secret.old@example.invalid");
   });
 });
