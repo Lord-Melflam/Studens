@@ -4,14 +4,15 @@ A modular web platform for students in higher education. People log in securely,
 **modules**: self-contained tools covering the things that make student life better.
 
 **Status: working software, one module, nothing deployed.** The specification came first
-and still leads: 142 requirements, each with the reasoning that produced it, and 8
+and still leads: 154 requirements, each with the reasoning that produced it, and 8
 questions still open rather than guessed.
 
 ## What runs today
 
 Three zones in one deployable: a **public site** that needs no account, **signing in** with
 Google followed by a five screen **first run**, and the **app** itself, where modules are
-mounted. Three languages throughout, with the language in the URL.
+mounted. Three languages throughout, with the language in the URL, and a gate that fails
+the build if a sentence is hardcoded in a component.
 
 **RYC**, Rate Your Courses, is the first module. Against the real UCLouvain catalogue: 546
 courses reached through 43 Ecole polytechnique de Louvain programmes, scraped rather than
@@ -32,10 +33,21 @@ hand-listed, with the faculty and programme structure discovered at runtime.
   returns the text and the date and nothing else: no author attribute, and no per-review
   numbers, because those go only into the aggregate.
 
-**Signing in** uses Google or Microsoft and no passwords of our own. What is kept is the
-provider's subject identifier, the **domain** of the email address and never the address
-itself, and whatever the member chose during the first run. The provider's display name is
-not kept, and there is no column it could go in.
+**Signing in** uses Google or Microsoft and no passwords of our own, so there is nothing to
+reset and no password breach surface. What is kept is the provider's subject identifier,
+the email address, and whatever the member chose during the first run. The provider's
+display name is not kept, and there is no column it could go in.
+
+**The account is one somebody can leave.** Two addresses, the provider's for identity and a
+contact one they choose, changed only through a single-use link sent to the new address
+while the old one is told. Notification preferences per kind, off until chosen, carrying
+the date the choice was made. An export of everything held, as a file. And deletion, which
+removes the account and detaches what was signed: the text stays, the name goes. Anonymous
+contributions are untouched and untouchable, because nothing joins them to anybody.
+
+**Nothing is emailed yet.** Messages are queued correctly and the worker prints them;
+setting five `STUDENS_SMTP_*` variables turns that into delivery. The account screen says
+so rather than claiming a message is on its way.
 
 Not built, and deliberately not faked: **moderation** (the queue has a schema and no
 consumer, and the notice and action mechanism the DSA requires does not exist yet),
@@ -44,7 +56,7 @@ Nothing on screen offers any of it.
 
 ```bash
 npm install
-npm run gates              # typecheck, lint, 347 tests, schema validation. No database needed
+npm run gates              # typecheck, lint, 469 tests, schema validation. No database needed
 ```
 
 `docs/COMMANDS.md` is the command reference: setup, running it, the database, the

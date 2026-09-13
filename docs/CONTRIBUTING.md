@@ -249,6 +249,47 @@ theme is planned and must never be able to make the two paths look alike.
 take it. The rules are shared deliberately (FR-C6): a lower bar on the anonymous
 path would itself be a signal.
 
+## The honesty gates
+
+Added on 2026-09-13, after four bugs in a row reached François and none of them
+reached a test. Every one was a case of the product **saying** something that
+was not true, rather than doing something wrong, and nothing was looking at what
+it said.
+
+`test/architecture/translated.test.ts` scans every `.tsx` for prose sitting in
+the markup or in a `placeholder`, `title`, `aria-label` or `alt`. i18n shipped
+in phase 22 and was reported as done; `missingKeys()` only checks the three
+catalogues agree with each other, which says nothing about 125 sentences that
+never became keys. One file is exempt and says why in its own header.
+
+`test/ui/signed-in.test.ts` draws the module list, a module, the account panel
+and all five first-run steps, for a member with the setup unfinished and for one
+with it done. Before it, every UI test rendered the public zone or a component
+with no session at all: `/api/session` answers "nobody" without a cookie, so the
+whole product behind sign-in was never drawn. **Both of that day's worst bugs
+sat there.** `SessionProvider` takes an optional starting answer purely so those
+trees can be rendered; the application never passes it.
+
+`test/ui/path-honesty.test.ts` now runs every assertion in all three languages.
+A promise that is honest in French and wrong in Dutch is exactly as damaging:
+the person reading the Dutch is the one making the permanent choice.
+
+`test/auth/mail-templates.test.ts` pins the confirmation link's stated lifetime
+to the constant that enforces it, in three languages, and asserts no template
+names a contribution (FR-H3) and that the warning to a previous address carries
+no link.
+
+`test/kernel/text.test.ts` runs the server's input rules and the browser's
+mirror of them over one corpus of 25 cases and fails if they ever disagree. A
+client check that has drifted is worse than none: it tells somebody their input
+is fine and the save fails anyway. The corpus is written in escapes throughout,
+because an invisible character in a test file is invisible to the reviewer too,
+and two cases had silently decayed to plain `"ab"`.
+
+**The pattern worth carrying.** A test that checks behaviour will not catch a
+screen that lies about it. When something claims a thing happened, has happened,
+or will happen, that claim is what needs the test.
+
 ## Writing style in this repository
 
 No em dashes and no double dashes in prose. Plain words, short sentences. Every

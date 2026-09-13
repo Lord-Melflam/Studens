@@ -14,13 +14,14 @@ gone wrong and what each failure changed.
 
 | | |
 |---|---|
-| Stage | **Working software.** Catalogue end to end, sign-in with Google, a first run, and reviews submitted and read on both paths |
-| Commits | 41 |
-| Requirements | **142**: 124 functional and 18 non-functional. Counted, not carried forward |
-| Open questions | **8** open, 37 resolved |
-| Tests | **347**, plus 15 database isolation assertions |
-| Code | 9,968 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 3,788 of tests, 978 of SQL and Prisma, 937 of CSS. Re-measured 2026-09-13 over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts`; the earlier "~4,900" counted a narrower set and is not comparable |
+| Stage | **Working software.** Catalogue end to end, sign-in with Google, a first run, an account somebody can leave, and reviews submitted and read on both paths |
+| Commits | 47 |
+| Requirements | **154**: 136 functional and 18 non-functional. Counted, not carried forward |
+| Open questions | **8** open, 38 resolved |
+| Tests | **469**, plus 19 database isolation assertions |
+| Code | 14,274 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 5,620 of tests. Measured over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts` |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, and 11 institutions, in PostgreSQL |
+| Not sent | **No mail leaves this installation.** Messages are queued and printed; five `STUDENS_SMTP_*` variables turn that into delivery |
 
 ### What runs today
 
@@ -995,6 +996,89 @@ path is translated now, because adding filter labels in three languages to a
 screen hardcoded in one produces something worse than either. The course page
 and the review flow are still French, and that is the next piece of RYC work.
 
+### Phase 27: the account, and four bugs found by using it
+
+The platform could not reach anybody. FR-A9 was read as "keep the domain, throw
+the address away", and that reading was mine rather than François's: the
+provider sends the address on every sign-in, so discarding it bought no privacy
+and cost every feature that needs to contact a person.
+
+**The wider point, which is the one to keep.** FR-C's guarantees are about
+CONTRIBUTIONS, which are a module's concern. They were allowed to govern
+decisions about the ACCOUNT, which is the platform's, and that is how Studens
+ended up unable to email anybody because of a rule written for RYC. FR-H is
+written at the platform's level and says so. The one place FR-C legitimately
+constrains it is FR-H3: no message may reveal the author of an anonymous
+contribution, to anybody, including its author. That constrains the CONTENTS of
+a message, never whether the platform may hold an address.
+
+Built: two addresses, identity and contact, only one editable; a confirmed
+change with the old address warned; per-kind notification preferences carrying
+the date consent was given; export as a file; deletion behind typing your own
+username. Mail is queued and drained by the worker over plain SMTP with
+STARTTLS, spoken directly rather than through a dependency.
+
+**OPEN-46 answered: detach.** When somebody deletes their account the text of
+what they signed stays and the name goes. Detached is a FOURTH state and not a
+second anonymous one, and the distinction is the whole reason it is safe: a
+detached review keeps the numbers it was published with, is labelled as a
+deleted account, and is counted with neither the named nor the anonymous set.
+Folding it into the anonymous count would inflate the figure FR-C21 puts in
+front of the next contributor, so the number somebody uses to judge their own
+exposure, and 3.3's arithmetic with it, would be wrong.
+
+Then four bugs, every one of them found by François using the product, and none
+of them findable by the tests that existed.
+
+**"A message has gone to you", when none could.** The confirmation was queued
+correctly and no relay was configured, so it could never leave. He waited for a
+link that was not coming. The queueing was right; the sentence was not. A
+product that says something happened when it did not is worse than one that says
+it cannot: the first makes a person doubt their own inbox, the second tells them
+what to fix. `mailRelayConfigured` now lives in the platform rather than in the
+worker, so the process that promises and the process that delivers cannot
+disagree.
+
+**A confirmation link that worked forever.** Stretching the lifetime from one
+hour to twenty-four was right; verifying it was how the real problem surfaced. A
+two-hour-old link replayed three times against a live account and applied every
+time, overwriting an address the member had since set. FR-A13 said "single-use"
+and the implementation was not, and the word had been dropped from the
+requirement while rewriting it, which is the worse half. It is single-use now
+with no stored state: the token carries a fingerprint of the contact state it
+was issued against, and applying the change moves that state.
+
+**The first run would not finish.** UCLouvain selected, Finish pressed, nothing.
+The save was correct; the account was written, onboarded, institution set. The
+routing decided whether to divert from the session fetched ON MOUNT, which still
+said the first run had never been opened, so finishing navigated to the app and
+was sent straight back, and the wizard resumed at the saved step. Pressing Finish
+looked exactly like pressing nothing. The session is refreshed before the
+navigation now, and waited for. The second half of why it was invisible: the
+error line lived on step two only, so a refused save anywhere else produced
+nothing at all to read.
+
+**Free text accepted anything.** Control characters stored raw, bidirectional
+overrides that reorder what is displayed without changing what is stored,
+zero-width characters, newlines in a one-line field, and a limit of 120 that
+refused 61 emoji because JavaScript counts UTF-16 units and a person counts
+characters. Nothing on screen said any of it. The rules live in the platform,
+reject rather than strip, count in graphemes, and are mirrored in the browser so
+a mistake is visible while it is made; a test runs both over one corpus and
+fails if they drift.
+
+Two of those rules were wrong on the first attempt and my own tests caught them:
+compound emoji were refused, contradicting reasoning written two lines above,
+and the checks ran after whitespace was collapsed, which let the byte order mark
+through because JavaScript counts U+FEFF as whitespace. That is silent stripping
+arriving through the back door, in the module whose header says it never strips.
+
+**What the pattern of this phase says.** Four bugs, four reports, zero caught by
+469 tests. Every one sat on the signed-in path or in a claim made on screen, and
+the tests that existed checked behaviour rather than what the product told
+somebody about it. `test/ui/signed-in.test.ts` and the honesty gates from phase
+26 are the beginning of an answer; the rest is that a product has to be used.
+
 ---
 
 ## Next
@@ -1008,11 +1092,15 @@ and the review flow are still French, and that is the next piece of RYC work.
    today. The queue has a schema and no consumer.
 4. **Editing an attributed review** (FR-C14) and "Mes avis" (FR-D12), both of
    which the fork already promises on screen.
-5. **Deployment.** Nothing deploys. The API does not serve the single-page
+5. **A mail relay.** Nothing is delivered until the five `STUDENS_SMTP_*`
+   variables are set: messages queue correctly and the worker prints them. The
+   zero-budget start is a Gmail app password; the exit is a relay on the real
+   domain. François's to supply, and it blocks nothing else.
+6. **Deployment.** Nothing deploys. The API does not serve the single-page
    application, so path routing would 404 in production on any refresh.
-6. **The rest of RYC in three languages.** The course page, the review form and
+7. **The rest of RYC in three languages.** The course page, the review form and
    the fork are still hardcoded French. Phase 26 did the browse and search path.
-7. **A programme is not in the URL.** `Browse` holds the chosen programme in
+8. **A programme is not in the URL.** `Browse` holds the chosen programme in
    component state, so it cannot be linked or refreshed, which is the same bug
    phase 20 fixed for courses. The filters sit on top of that and inherit it.
-8. ~~Branch protection~~ done 2026-09-11, see phase 17.
+9. ~~Branch protection~~ done 2026-09-11, see phase 17.
