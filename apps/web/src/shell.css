@@ -380,3 +380,20 @@ main.app {
 .panel .saved { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--named); }
 .panel .rows { margin-top: 1.1rem; }
 .panel > button.linkish { margin-top: 1rem; padding: 0; }
+
+/* The standing reminder that the first run is unfinished. A line, not a modal:
+   it is about the member's own account, not an obstacle in front of the app. */
+.setup-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.86rem;
+  color: var(--ink);
+  background: var(--warn-soft);
+  border-bottom: 1px solid var(--line);
+}
+.setup-prompt a { color: var(--accent); font-weight: 600; }

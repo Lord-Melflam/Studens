@@ -19,6 +19,8 @@ export interface SessionState {
   /** FR-F6. Null until the first run has been completed. */
   username?: string | null;
   onboarded?: boolean;
+  /** 0 means the first run has never been opened. See Zone in main.tsx. */
+  onboardingStep?: number;
   devSignInAvailable: boolean;
 }
 

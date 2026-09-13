@@ -179,3 +179,84 @@ describe("declaring an institution grants nothing (FR-F13)", () => {
     expect(source).not.toMatch(/\.\.\.\s*req\.body/);
   });
 });
+
+/**
+ * The first run must not become a room with no door.
+ *
+ * SHIPPED AND REPORTED, 2026-09-13. The redirect diverted every /app route
+ * whenever `onboarded` was false. The wizard's only visible way out went to the
+ * public home, and the public home's way in went to /app, which diverted again.
+ * There was no path into the product that did not pass through finishing the
+ * setup, and nothing on screen said why: clicking a module simply put you
+ * somewhere else. François hit it as "ryc is gone ... when I click on ryc, it
+ * stops", which is exactly what it looks like from outside.
+ *
+ * These read the source rather than a rendered screen because the property is
+ * about which states can reach which, and there are four files involved.
+ */
+describe("the first run can be left (FR-F4, and FR-F6's reasoning)", () => {
+  const main = read("apps/web/src/main.tsx");
+  const wizard = read("apps/web/src/firstrun/FirstRun.tsx");
+  const shell = read("apps/web/src/shell/Shell.tsx");
+
+  /**
+   * Only somebody who has NEVER OPENED it is sent there. Diverting on
+   * `onboarded === false` alone is the trap: that stays false for as long as
+   * the setup is unfinished, which is for as long as somebody keeps declining
+   * to do it, which is forever.
+   */
+  it("diverts only a member who has never opened it", () => {
+    expect(main).toContain("onboardingStep === 0");
+    const divert = /const\s+divert\s*=[^;]+;/.exec(main)?.[0] ?? "";
+    expect(divert, "the divert condition must be narrowed by neverOpened").toContain("neverOpened");
+  });
+
+  it("lets somebody out of it, into the app and not out of the product", () => {
+    // The escape used to be `linkProps("/")`, which is the public home, and
+    // the public home leads back to /app.
+    expect(wizard).toMatch(/function later\(\)/);
+    expect(wizard).toContain("onboardingStep: 1");
+    expect(
+      wizard.includes('linkProps("/")'),
+      "the way out of the first run must not be the public home: that is the loop",
+    ).toBe(false);
+  });
+
+  /**
+   * The other half of letting somebody skip it. Once the app stops forcing the
+   * setup, the setup has to stay visible, or a member who declined once has no
+   * username and no way back to choosing one.
+   */
+  it("keeps the unfinished setup visible inside the app", () => {
+    expect(shell).toContain("SetupPrompt");
+    expect(shell).toContain("app.setup.prompt");
+    for (const locale of LOCALES) {
+      const t = createTranslator(bundle, locale);
+      for (const k of ["app.setup.prompt", "app.setup.go"]) {
+        expect(t(k), `${locale}:${k}`).not.toBe(k);
+      }
+    }
+  });
+
+  /**
+   * Finishing returns you where you were going. Clicking a module, being sent
+   * to a setup you did not ask for, and then being dropped at the app's front
+   * door loses what you were doing, which is a smaller version of the same
+   * problem.
+   */
+  it("remembers the destination and only ever restores an app path", () => {
+    expect(main).toContain("rememberDestination");
+    expect(main).toContain("takeDestination");
+    const take = /function takeDestination[\s\S]*?\n}/.exec(main)?.[0] ?? "";
+    expect(take, "a stored value must be checked before it is navigated to").toContain(
+      "isAppPath(saved)",
+    );
+    // Storage throws in a private window rather than returning nothing.
+    expect(take).toContain("catch");
+  });
+
+  it("still sends a signed-out visitor away from the wizard", () => {
+    expect(main).toContain("strayed");
+    expect(main).toContain('navigate("/connexion")');
+  });
+});

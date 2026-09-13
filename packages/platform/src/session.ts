@@ -47,6 +47,14 @@ export interface SessionIdentity {
    */
   username: string | null;
   onboarded: boolean;
+  /**
+   * How far into the first run they have got, 0 meaning "has never opened it".
+   *
+   * The zero matters on its own: it is the only state in which a member is sent
+   * to the first run rather than merely reminded of it. Anyone who has opened
+   * it once, even to press "later", gets into the app and is prompted there.
+   */
+  onboardingStep: number;
 }
 
 export class NoSession extends Error {
@@ -124,7 +132,13 @@ export async function verifySession(
         lastSeenAt: true,
         revokedAt: true,
         member: {
-          select: { emailDomain: true, role: true, username: true, onboardedAt: true },
+          select: {
+            emailDomain: true,
+            role: true,
+            username: true,
+            onboardedAt: true,
+            onboardingStep: true,
+          },
         },
       },
     });
@@ -151,6 +165,7 @@ export async function verifySession(
       role: row.member.role,
       username: row.member.username,
       onboarded: row.member.onboardedAt !== null,
+      onboardingStep: row.member.onboardingStep,
     };
   } finally {
     if (!opts.client) await prisma.$disconnect();

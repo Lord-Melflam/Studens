@@ -40,6 +40,9 @@ export function sessionRoutes(prisma: PrismaClient): Router {
         // then replace it, which reads as a bug.
         username: who.username,
         onboarded: who.onboarded,
+        // Zero means the first run has never been opened, which is the only
+        // state that sends somebody there instead of prompting them in place.
+        onboardingStep: who.onboardingStep,
         devSignInAvailable: devIdentityEnabled(),
       });
     })().catch(() => res.status(500).json({ error: "unavailable" }));

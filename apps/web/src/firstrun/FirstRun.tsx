@@ -22,7 +22,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { LOCALES, LOCALE_NAMES, localePath, useLocale, useT, type Locale } from "@studens/i18n";
-import { currentRoute, linkProps, navigate } from "../router.js";
+import { currentRoute, navigate } from "../router.js";
 import {
   PatchFailed,
   fetchInstitutions,
@@ -126,6 +126,30 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
 
   const back = () => navigate(firstRunPath(step - 1));
 
+  /**
+   * Leave the setup and go into the app anyway.
+   *
+   * It records that the first run has been OPENED, which is what stops the app
+   * sending them straight back here. Before this, "later" went to the public
+   * home and the public home's way in bounced them to this screen again, so
+   * there was no way into the product except by finishing. The progress is kept
+   * either way, so coming back resumes where they stopped (FR-F5).
+   */
+  async function later() {
+    setSaving(true);
+    try {
+      if (profile && profile.onboardingStep === 0) {
+        await patchProfile({ onboardingStep: 1 });
+      }
+    } catch {
+      // Going into the app matters more than recording the step. The worst
+      // case is being offered the setup once more, not being stuck outside.
+    } finally {
+      setSaving(false);
+      onDone();
+    }
+  }
+
   if (!profile) {
     return (
       <main className="firstrun">
@@ -141,13 +165,14 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
       <header className="firstrun-top">
         <span className="brand">Studens</span>
         {/*
-          Signing out is the only way out, and it is deliberately present.
-          Someone who has just arrived and changed their mind must not have to
-          finish a setup to leave.
+          A real way out, into the app rather than out of the product. Someone
+          who has just arrived and would rather look around first must be able
+          to, and FR-F6's whole argument is that a setup you cannot escape is
+          one people answer dishonestly to get past.
         */}
-        <a className="quiet" {...linkProps("/")}>
+        <button type="button" className="quiet" disabled={saving} onClick={() => void later()}>
           {t("firstrun.later")}
-        </a>
+        </button>
       </header>
 
       <div className="firstrun-progress" aria-hidden="true">

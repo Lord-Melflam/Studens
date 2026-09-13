@@ -52,38 +52,89 @@ function Studens() {
 /**
  * Three zones, and the one rule that connects them.
  *
- * A member who has signed in but not finished the first run is sent to it when
- * they try to enter the app, and only then. The public site never redirects
- * (FR-F2): a public page must not require a session, so it must not require a
- * finished setup either. Someone can sign in, read the privacy page, close the
- * tab, and come back tomorrow.
+ * A member who has NEVER OPENED the first run is sent to it the first time they
+ * enter the app (FR-F4). Anyone who has opened it once, even only to press
+ * "later", goes straight into the app and is prompted there instead.
+ *
+ * THE FIRST VERSION DIVERTED ON `onboarded === false` AND WAS A TRAP. Every
+ * /app route bounced to the wizard, the only visible way out of the wizard went
+ * to the public home, and the public home's way in went to /app, which bounced
+ * again. There was no route into the product that did not pass through
+ * finishing the setup, and nothing on screen said so: clicking a module simply
+ * put you somewhere else. That contradicts the reasoning FR-F6 is built on, in
+ * its own words, that a first run which cannot be escaped is a first run people
+ * lie to.
+ *
+ * The public site never redirects at all (FR-F2): a public page must not
+ * require a session, so it must not require a finished setup either.
  */
 function Zone({ route }: { route: string }) {
   const { session } = useSession();
 
-  // Both conditions test the session EXPLICITLY, never for falsiness: `null`
-  // means the answer has not arrived, and treating that as "not signed in"
-  // would bounce people out of the app for the half second before it does.
-  const unfinished = isAppPath(route) && session?.signedIn === true && session.onboarded === false;
+  // Tested EXPLICITLY, never for falsiness: `null` means the answer has not
+  // arrived, and treating that as "not signed in" would bounce people out of
+  // the app for the half second before it does.
+  const neverOpened =
+    session?.signedIn === true && session.onboarded === false && session.onboardingStep === 0;
+  const divert = isAppPath(route) && neverOpened;
   const strayed = isFirstRunPath(route) && session !== null && !session.signedIn;
 
   useEffect(() => {
-    if (unfinished) navigate(FIRST_RUN);
-    else if (strayed) navigate("/connexion");
-  }, [unfinished, strayed]);
+    if (divert) {
+      // Remember what they asked for, so finishing lands them there rather
+      // than at the app's front door. Without this, clicking a module and
+      // completing the setup drops you somewhere you did not ask to be.
+      rememberDestination(route);
+      navigate(FIRST_RUN);
+    } else if (strayed) {
+      navigate("/connexion");
+    }
+  }, [divert, strayed, route]);
 
   if (isFirstRunPath(route)) {
     // Signed out and standing in the wizard: there is nothing to set up.
     if (strayed) return null;
-    return <FirstRun route={route} onDone={() => navigate(APP_PREFIX)} />;
+    return <FirstRun route={route} onDone={() => navigate(takeDestination())} />;
   }
 
   if (isAppPath(route)) {
-    if (unfinished) return null;
+    if (divert) return null;
     return <Shell />;
   }
 
   return <PublicZone path={route} />;
+}
+
+/**
+ * Where to go once the first run is done.
+ *
+ * `sessionStorage` because the wizard is resumable and a reload must not lose
+ * it, and because it is per tab: two tabs setting up at once should not fight.
+ * Every access is guarded, since a private window or blocked site data makes
+ * these throw rather than return nothing, and the fallback is simply the app's
+ * front door.
+ */
+const DESTINATION = "studens.after-first-run";
+
+function rememberDestination(route: string): void {
+  try {
+    sessionStorage.setItem(DESTINATION, route);
+  } catch {
+    // A convenience, never a requirement.
+  }
+}
+
+function takeDestination(): string {
+  try {
+    const saved = sessionStorage.getItem(DESTINATION);
+    sessionStorage.removeItem(DESTINATION);
+    // Only ever an app path, so a stale or tampered value cannot send somebody
+    // to another site or out of the zone they just set themselves up for.
+    if (saved && isAppPath(saved)) return saved;
+  } catch {
+    // Fall through to the default.
+  }
+  return APP_PREFIX;
 }
 
 const root = document.getElementById("root");
