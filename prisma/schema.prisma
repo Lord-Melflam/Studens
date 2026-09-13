@@ -51,6 +51,26 @@ model Member {
   /// FR-A9: taken from the verified provider token, never from user input.
   /// FR-A10: evidence of holding an address at a domain, never proof of enrolment.
   emailDomain     String
+  /// FR-A12. TWO ADDRESSES, ON PURPOSE.
+  ///
+  /// `providerEmail` is identity: it comes from the verified token, it is how
+  /// the same person is recognised on the next sign-in, and nothing in the
+  /// product may edit it. `contactEmail` is where the member asks to be
+  /// reached, defaults to the provider's, and is theirs to change or clear.
+  ///
+  /// One editable column would let somebody edit the field their identity is
+  /// matched on: at best they lock themselves out, at worst they take over
+  /// somebody else's account. The trust signal in FR-A9 is derived from
+  /// `providerEmail` alone, so a self-declared address can never raise it.
+  ///
+  /// FR-A11 reversed the earlier domain-only reading. The provider sends the
+  /// address on every sign-in; refusing to keep it bought no privacy and cost
+  /// the product every feature that has to reach a person.
+  providerEmail   String?
+  contactEmail    String?
+  /// FR-A13: null until the address has been confirmed by a link sent to it.
+  /// Nothing optional is sent to an unconfirmed address.
+  contactVerifiedAt DateTime?
   /// OPEN-36: the provider sends a display name and we do NOT keep it. There
   /// is no column for it, so the decision is structural rather than a habit.
   /// What a Member is known by is the username below, which they choose.
@@ -78,11 +98,36 @@ model Member {
   yearOfStudy     Int?
   interests       String?
 
+  /// FR-H1 and FR-H2: one row per KIND, never a single "notifications" switch.
+  /// A single switch is how somebody turns off the one thing they wanted in
+  /// order to escape the rest. Transactional mail is not represented here at
+  /// all, because it is not a preference: suppressing a confirmation that an
+  /// account is being changed would hide the change from its owner.
+  notifications NotificationPreference[]
+
   quota    MemberQuota?
   sessions Session[]
 
   @@unique([provider, providerSubject])
   @@index([tenantId])
+  @@schema("platform")
+}
+
+/// FR-H1, FR-H2. What a Member agreed to be sent, one row per kind.
+///
+/// The consent record IS the row: `kind`, whether it is on, and when that was
+/// last decided. Article 7(1) asks a controller to demonstrate consent, which a
+/// boolean column with no date cannot do.
+model NotificationPreference {
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  /// An identifier owned by whoever sends that kind, so a module can add one
+  /// without the platform learning what it means (FR-H4).
+  kind      String
+  enabled   Boolean  @default(false)
+  decidedAt DateTime @default(now())
+
+  @@id([memberId, kind])
   @@schema("platform")
 }
 
