@@ -16,6 +16,61 @@ export function reviewRoutes(prisma: PrismaClient): Router {
   router.use(json({ limit: "32kb" }));
 
   /**
+   * How many published reviews each course has, for the whole catalogue.
+   *
+   * This is what makes a "has reviews" filter possible, and at launch it is the
+   * most useful filter there is: 10 courses of 547 have anything to read, so
+   * without it browsing is mostly opening empty pages.
+   *
+   * It returns a TOTAL per course and not the named/anonymous split. The split
+   * is public per course (FR-C21 puts it in front of a contributor before they
+   * choose), but it is needed at one screen and publishing it in bulk widens
+   * the surface for nothing: a per-course pair across the whole catalogue is a
+   * far better starting point for the complement reasoning in 3.3 than the same
+   * pair fetched one course at a time.
+   *
+   * Only published reviews are counted, so a held or removed one leaves no
+   * trace here (FR-E).
+   *
+   * NOT under /courses. The catalogue router is mounted first and owns
+   * /courses/:code, so /courses/review-counts was read as a course whose code
+   * is "review-counts" and answered 404.
+   */
+  router.get("/reviews/counts", (_req, res) => {
+    void (async () => {
+      const [named, anon] = await Promise.all([
+        prisma.reviewAttributed.groupBy({
+          by: ["courseId"],
+          where: { status: "published" },
+          _count: { _all: true },
+        }),
+        prisma.reviewAnonymous.groupBy({
+          by: ["courseId"],
+          where: { status: "published" },
+          _count: { _all: true },
+        }),
+      ]);
+
+      const totals = new Map<string, number>();
+      for (const row of [...named, ...anon]) {
+        totals.set(row.courseId, (totals.get(row.courseId) ?? 0) + row._count._all);
+      }
+      if (totals.size === 0) {
+        res.json({ counts: {} });
+        return;
+      }
+
+      const courses = await prisma.course.findMany({
+        where: { id: { in: [...totals.keys()] } },
+        select: { id: true, code: true },
+      });
+      const counts: Record<string, number> = {};
+      for (const c of courses) counts[c.code] = totals.get(c.id) ?? 0;
+      res.json({ counts });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
    * FR-C21: the counts a contributor needs BEFORE choosing a path.
    *
    * Both numbers are already public on the course page, so this discloses

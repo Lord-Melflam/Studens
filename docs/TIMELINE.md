@@ -15,10 +15,10 @@ gone wrong and what each failure changed.
 | | |
 |---|---|
 | Stage | **Working software.** Catalogue end to end, sign-in with Google, a first run, and reviews submitted and read on both paths |
-| Commits | 40 |
-| Requirements | **140**: 122 functional and 18 non-functional. Counted, not carried forward |
+| Commits | 41 |
+| Requirements | **142**: 124 functional and 18 non-functional. Counted, not carried forward |
 | Open questions | **8** open, 37 resolved |
-| Tests | **311**, plus 15 database isolation assertions |
+| Tests | **347**, plus 15 database isolation assertions |
 | Code | 9,968 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 3,788 of tests, 978 of SQL and Prisma, 937 of CSS. Re-measured 2026-09-13 over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts`; the earlier "~4,900" counted a narrower set and is not comparable |
 | Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, and 11 institutions, in PostgreSQL |
 
@@ -933,6 +933,68 @@ harder half of that rule: a test that fails if something which has shipped is
 still listed as missing. The first half was already there. Only the first half
 ever gets written.
 
+### Phase 26: filters, and one thing deliberately not built
+
+546 courses and 43 programmes, both presented as a scroll. Browsing existed
+because 1.1 is a discovery problem and search only helps somebody who already
+knows the code, but a list of 46 courses with no way to say "Q2, five credits,
+and something written about it" is not discovery either.
+
+Both lists filter now. Programmes on kind, site and text; courses on term,
+credits, teaching language, the entity in charge, text, and whether anything has
+been written about them. FR-D33.
+
+**Two rules make a facet trustworthy, and both are in the tests rather than in a
+comment.** The options offered are the values actually present, never a written
+list: the same reason the faculty and programme structure is discovered at
+runtime. And each facet's count is computed with its own dimension ignored and
+every other one applied, so a count is what selecting it would leave. Counting
+against the unfiltered list is the easy version and it produces a chip saying 23
+beside a list that empties when pressed.
+
+**The kind of a programme is parsed from its title**, because UCLouvain does not
+publish it as a field: "Master [120] : ingénieur civil en informatique
+(Louvain-la-Neuve)" carries the kind, the credits and the site. That is a parse,
+so it lives with the rest of the parsing and is checked against all 43 real
+titles, with the code suffixes (`1ba`, `2m`, `2fc`, `fil`, `mino`) used as an
+independent cross-check rather than as the source. A title matching nothing
+returns null and shows as "autre": the same rule as the offering parser, where
+"absent because the era lacks it" must stay distinguishable from "absent because
+the parse broke".
+
+**FR-D34 records what was not built: no filter, sort or search on a lecturer's
+name.** Section 5.1 is that this product's GDPR exposure is the lecturers, and a
+control that gathers everything written about one person in a single press is a
+different feature with a different legal footing. There is a test asserting that
+a text filter does not match a lecturer, so reversing the decision has to be
+deliberate.
+
+Three things were found while building it, and all three were on screen already.
+
+**`owningFaculty` was stored and displayed with the arrow the source page draws
+it with**, so the course page read "Faculté en charge: > BTCI". Stripped at the
+parse, not at the screen: the arrow is punctuation belonging to the surrounding
+page, and a filter would otherwise have grouped on it.
+
+**The plural strings were written in ICU syntax**, `{n, plural, one {# avis}
+other {# avis}}`, which this project's translator does not implement: it uses
+`key.one` and `key.other` with a `count` variable and `Intl.PluralRules`. It
+typechecked, it passed every test, and it would have printed the markup on the
+screen. There is now a test that pins the convention.
+
+**One assertion in the authentication tests counted the whole Session table**
+while every other count in the same file was scoped to its own provider. Two
+unrelated new test files shifted vitest's parallel scheduling and it began
+failing about a third of the time. The assertion was never wrong about the
+behaviour, only about what it was allowed to observe. Verified as a latent bug
+rather than a new one by running the suite six times on the previous commit.
+
+The in-app RYC screens were French only: the i18n work in phase 22 reached the
+public showcase and stopped at the module's own screens. The browse and search
+path is translated now, because adding filter labels in three languages to a
+screen hardcoded in one produces something worse than either. The course page
+and the review flow are still French, and that is the next piece of RYC work.
+
 ---
 
 ## Next
@@ -948,4 +1010,9 @@ ever gets written.
    which the fork already promises on screen.
 5. **Deployment.** Nothing deploys. The API does not serve the single-page
    application, so path routing would 404 in production on any refresh.
-6. ~~Branch protection~~ done 2026-09-11, see phase 17.
+6. **The rest of RYC in three languages.** The course page, the review form and
+   the fork are still hardcoded French. Phase 26 did the browse and search path.
+7. **A programme is not in the URL.** `Browse` holds the chosen programme in
+   component state, so it cannot be linked or refreshed, which is the same bug
+   phase 20 fixed for courses. The filters sit on top of that and inherit it.
+8. ~~Branch protection~~ done 2026-09-11, see phase 17.

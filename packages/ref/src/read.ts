@@ -21,6 +21,8 @@ import type { ParsedOffering, Snapshot } from "./index.js";
 import type { Block } from "./ingestion/parse/rich.js";
 import { load } from "./ingestion/snapshot.js";
 import { courseUrl } from "./ingestion/urls.js";
+import { mainLanguage } from "./ingestion/parse/offering.js";
+import { programmeShape, type ProgrammeKind } from "./ingestion/parse/programme.js";
 
 /**
  * A Json column back into a block tree.
@@ -52,6 +54,24 @@ export interface CourseSummary {
   teachers: string[];
   /** True when the course is taught at another institution (OPEN-45). */
   external: boolean;
+  /**
+   * The teaching language alone, without the accommodation note.
+   *
+   * `language` on the detail keeps the whole string, because "Anglais >
+   * Facilités pour suivre le cours en français" is exactly what a hesitant
+   * student needs to read. This is the part a filter can group on.
+   */
+  mainLanguage: string | null;
+  /**
+   * The entity that teaches it, without the arrow the source page draws.
+   *
+   * Not the same as the faculty a course is REACHED through: EPL students take
+   * LSM, AGRO and ILV courses through options, so this is many to one while
+   * `reachedVia` is many to many. Naming it `owningEntity` rather than
+   * `owningFaculty` on the summary is deliberate: most of these values are
+   * schools and institutes, not faculties.
+   */
+  owningEntity: string | null;
 }
 
 export interface CourseDetail extends CourseSummary {
@@ -88,6 +108,40 @@ function summarise(o: ParsedOffering): CourseSummary {
     // hosted elsewhere: verified on the ENANO courses, which carry only a
     // reference institution. See OPEN-45.
     external: o.teachers.length === 0 && o.assessment === null,
+    mainLanguage: mainLanguage(o.language),
+    owningEntity: o.owningFaculty,
+  };
+}
+
+/**
+ * The same summary, from a database row.
+ *
+ * One function because there were three copies of this object literal, in
+ * search, in coursesOfProgramme and inside get. Adding a field to two of the
+ * three is the kind of thing that produces a filter which works when you
+ * browse and is empty when you search.
+ */
+function summariseRow(row: {
+  course: { code: string };
+  title: string;
+  year: number;
+  ects: unknown;
+  quarter: string | null;
+  language: string | null;
+  owningFaculty: string | null;
+  assessment: unknown;
+  teachers: Array<{ teacherName: string }>;
+}): CourseSummary {
+  return {
+    code: row.course.code,
+    title: row.title,
+    year: row.year,
+    ects: Number(row.ects),
+    quarter: row.quarter,
+    teachers: row.teachers.map((t) => t.teacherName),
+    external: row.teachers.length === 0 && row.assessment === null,
+    mainLanguage: mainLanguage(row.language),
+    owningEntity: row.owningFaculty,
   };
 }
 
@@ -102,6 +156,19 @@ export interface ProgrammeSummary {
   title: string;
   faculty: string;
   courses: number;
+  /**
+   * What kind of programme it is, parsed from the title (FR-D24).
+   *
+   * Derived on read rather than stored, because the title is already stored and
+   * a column would need a migration plus a backfill to hold something the title
+   * already says. Null when the title matches nothing known, which the
+   * interface groups as "autre" rather than guessing.
+   */
+  kind: ProgrammeKind | null;
+  /** 120 or 60 for a master that states it, null otherwise. */
+  credits: number | null;
+  /** Louvain-la-Neuve, Charleroi, and so on. From the trailing parenthesis. */
+  site: string | null;
 }
 
 /** What a consumer may ask the catalogue. Storage does not appear in it. */
@@ -175,6 +242,7 @@ export class SnapshotCatalogue implements Catalogue {
             .filter((r) => r.programme === p.code && known.has(r.code))
             .map((r) => r.code),
         ).size,
+        ...programmeShape(p.title),
       }))
       .filter((p) => p.courses > 0)
       .sort((a, b) => a.title.localeCompare(b.title));
@@ -269,15 +337,7 @@ export class DatabaseCatalogue implements Catalogue {
     }));
     scored.sort((a, b) => a.code - b.code || a.row.course.code.localeCompare(b.row.course.code));
 
-    return scored.map(({ row }) => ({
-      code: row.course.code,
-      title: row.title,
-      year: row.year,
-      ects: Number(row.ects),
-      quarter: row.quarter,
-      teachers: row.teachers.map((t) => t.teacherName),
-      external: row.teachers.length === 0 && row.assessment === null,
-    }));
+    return scored.map(({ row }) => summariseRow(row));
   }
 
   async get(code: string): Promise<CourseDetail | null> {
@@ -287,13 +347,7 @@ export class DatabaseCatalogue implements Catalogue {
     });
     if (!row) return null;
     return {
-      code: row.course.code,
-      title: row.title,
-      year: row.year,
-      ects: Number(row.ects),
-      quarter: row.quarter,
-      teachers: row.teachers.map((t) => t.teacherName),
-      external: row.teachers.length === 0 && row.assessment === null,
+      ...summariseRow(row),
       officialUrl: courseUrl(row.year, row.course.code),
       language: row.language,
       contactHours: row.contactHours,
@@ -328,6 +382,7 @@ export class DatabaseCatalogue implements Catalogue {
         title: p.title,
         faculty: p.faculty.code,
         courses: p._count.offerings,
+        ...programmeShape(p.title),
       }));
   }
 
@@ -341,15 +396,7 @@ export class DatabaseCatalogue implements Catalogue {
       include: { offering: { include: { course: true, teachers: true } } },
     });
     return rows
-      .map(({ offering }) => ({
-        code: offering.course.code,
-        title: offering.title,
-        year: offering.year,
-        ects: Number(offering.ects),
-        quarter: offering.quarter,
-        teachers: offering.teachers.map((t) => t.teacherName),
-        external: offering.teachers.length === 0 && offering.assessment === null,
-      }))
+      .map(({ offering }) => summariseRow(offering))
       .sort((a, b) => a.code.localeCompare(b.code));
   }
 }

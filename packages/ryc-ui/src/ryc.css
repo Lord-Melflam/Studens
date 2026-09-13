@@ -52,7 +52,9 @@
 .results li + li { margin-top: 0.4rem; }
 .results button {
   display: grid;
-  grid-template-columns: 7rem 1fr;
+  /* A third column for the review badge. `auto` so it takes only what it needs
+     and collapses to nothing on the rows that have none. */
+  grid-template-columns: 7rem 1fr auto;
   gap: 0.15rem 0.9rem;
   width: 100%;
   padding: 0.7rem 0.85rem;
@@ -68,6 +70,24 @@
 .results .code { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent); }
 .results .title { font-weight: 500; }
 .results .facts { grid-column: 2; font-size: 0.83rem; color: var(--muted); }
+
+/* A count, never a rating. See the note in CourseList.tsx: with 10 courses of
+   547 reviewed, a score here would rank coverage and be read as quality, and
+   the anonymous path has no per-review numbers to average anyway (FR-D15).
+   Deliberately uses the chrome accent and NOT --named or --anon: those two
+   carry the meaning of a path and must never label something spanning both. */
+.results .badge {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  white-space: nowrap;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
+}
 
 .back {
   font: inherit;
@@ -465,3 +485,103 @@ button.ghost {
 .fork,
 .confirm,
 .sent { max-width: 44rem; }
+
+
+/* --- Filters ------------------------------------------------------------
+   Chips rather than dropdowns: the options are few and the counts are the
+   useful part, which a dropdown hides behind a click. Every count is what
+   selecting it would leave, computed against the other filters, so a chip
+   never promises results it cannot deliver. */
+
+.filters {
+  margin: 1.25rem 0 0;
+  padding: 0.9rem 1rem 0.75rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.filters-groups { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.filter-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+}
+.filter-text input {
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+  font-weight: 400;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.filter-text input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.filter-group { margin: 0; padding: 0; border: 0; }
+.filter-group legend {
+  padding: 0;
+  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  font: inherit;
+  font-size: 0.84rem;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.chip:hover { border-color: var(--accent); }
+.chip .n {
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.chip.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+.chip.on .n { color: rgba(255, 255, 255, 0.75); }
+
+.filters-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0.8rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.83rem;
+  color: var(--muted);
+}
+.filters-summary .linkish {
+  margin-left: auto;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 30rem) {
+  /* The code column is wider than most phones can spare beside a title. */
+  .results button { grid-template-columns: 1fr auto; }
+  .results .facts { grid-column: 1; }
+  .results .badge { grid-column: 2; grid-row: 1; }
+}

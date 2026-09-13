@@ -142,7 +142,29 @@ export const rycModule: ModuleRegistration = {
 };
 
 export { Ryc, parseView, type RycView } from "./Ryc.js";
-export type { CourseDetail, CourseSummary } from "./api.js";
+export type { CourseDetail, CourseSummary, ProgrammeSummary } from "./api.js";
+
+/**
+ * Filtering, exported because it is pure and therefore checked directly.
+ * The properties that matter are about the facet counts agreeing with the
+ * list, which is far easier to hold here than through a rendered screen.
+ */
+export {
+  NO_COURSE_FILTER,
+  NO_PROGRAMME_FILTER,
+  applyCourseFilter,
+  applyProgrammeFilter,
+  courseFacets,
+  courseFilterIsEmpty,
+  programmeFacets,
+  programmeFilterIsEmpty,
+  toggle,
+  type CourseFacets,
+  type CourseFilter,
+  type Facet,
+  type ProgrammeFacets,
+  type ProgrammeFilter,
+} from "./filters.js";
 
 /**
  * The review path's state machine, exported because it is checked from
@@ -167,3 +189,7 @@ export { Blocks, ProseField, type Block, type Span } from "./Prose.js";
 export { PathChoice, AnonymousConfirm } from "./PathChoice.js";
 export { Steps, type StepName } from "./Steps.js";
 export { rycStrings } from "./strings.js";
+
+/** The filter bar over a list of courses. Exported so it can be rendered in a test. */
+export { CourseFilters } from "./CourseFilters.js";
+export { CourseList } from "./CourseList.js";

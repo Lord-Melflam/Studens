@@ -4,7 +4,7 @@ A modular web platform for students in higher education. People log in securely,
 **modules**: self-contained tools covering the things that make student life better.
 
 **Status: working software, one module, nothing deployed.** The specification came first
-and still leads: 140 requirements, each with the reasoning that produced it, and 8
+and still leads: 142 requirements, each with the reasoning that produced it, and 8
 questions still open rather than guessed.
 
 ## What runs today
@@ -17,7 +17,12 @@ mounted. Three languages throughout, with the language in the URL.
 courses reached through 43 Ecole polytechnique de Louvain programmes, scraped rather than
 hand-listed, with the faculty and programme structure discovered at runtime.
 
-- **Browse** a programme, or **search** a course by code or title.
+- **Browse** a programme, or **search** a course by code or title. Both lists
+  filter: programmes by kind, site and text; courses by term, credits, teaching
+  language, the entity in charge, and whether anybody has written about them.
+  Every filter offers only values that are actually present, and every count is
+  what choosing it would leave. There is deliberately **no filter on a
+  lecturer's name** (FR-D34).
 - A **course page**: ECTS, quarter, language, lecturers, official contact hours, the
   evaluation method with its weightings, themes and content, and a link to the official
   page. Everything the catalogue publishes is scraped, so a reviewer is never asked for it.
@@ -39,7 +44,7 @@ Nothing on screen offers any of it.
 
 ```bash
 npm install
-npm run gates              # typecheck, lint, 311 tests, schema validation. No database needed
+npm run gates              # typecheck, lint, 347 tests, schema validation. No database needed
 ```
 
 `docs/COMMANDS.md` is the command reference: setup, running it, the database, the
