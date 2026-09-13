@@ -17,6 +17,7 @@ import {
   deleteAccount,
   enqueueMail,
   exportAccount,
+  mailRelayConfigured,
   notifyMember,
   readPreferences,
   requestEmailChange,
@@ -374,5 +375,75 @@ describe("what an address may look like", () => {
   it("accepts the odd-looking ones that are nonetheless valid", () => {
     expect(checkEmail("p+tag@sub.domain.example")).toBe("p+tag@sub.domain.example");
     expect(checkEmail("o'brien@example.ie")).toBe("o'brien@example.ie");
+  });
+});
+
+/**
+ * The screen may not promise a message this installation cannot send.
+ *
+ * REPORTED BY FRANÇOIS, 2026-09-13. He changed his contact address, the screen
+ * said "A message has gone to <his address>", and no message had gone anywhere:
+ * the row was queued correctly and no relay was configured, so it could never
+ * leave. He waited for a link that was not coming.
+ *
+ * The queueing was right. The sentence was not. A product that says something
+ * happened when it did not is worse than one that says it cannot: the first
+ * makes somebody doubt their own inbox, the second tells them what to fix.
+ */
+describe("what the interface may claim about mail", () => {
+  const HOST = "STUDENS_SMTP_HOST";
+  const FROM = "STUDENS_MAIL_FROM";
+
+  function withEnv(vars: Record<string, string | undefined>, run: () => void) {
+    const before = { [HOST]: process.env[HOST], [FROM]: process.env[FROM] };
+    try {
+      for (const [k, v] of Object.entries(vars)) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+      run();
+    } finally {
+      for (const [k, v] of Object.entries(before)) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+    }
+  }
+
+  it("reports that nothing can be delivered when no relay is set", () => {
+    withEnv({ [HOST]: undefined, [FROM]: undefined }, () => {
+      expect(mailRelayConfigured()).toBe(false);
+    });
+  });
+
+  it("needs BOTH a host and a sender, since neither alone can deliver", () => {
+    withEnv({ [HOST]: "smtp.example.invalid", [FROM]: undefined }, () => {
+      expect(mailRelayConfigured()).toBe(false);
+    });
+    withEnv({ [HOST]: undefined, [FROM]: "studens@example.invalid" }, () => {
+      expect(mailRelayConfigured()).toBe(false);
+    });
+    withEnv({ [HOST]: "smtp.example.invalid", [FROM]: "studens@example.invalid" }, () => {
+      expect(mailRelayConfigured()).toBe(true);
+    });
+  });
+
+  /**
+   * The queue is still written either way. A message that cannot go out today
+   * goes out the day a relay is configured, so the request is not lost: it is
+   * the CLAIM that changes, not the behaviour.
+   */
+  dbit("queues the message even when it cannot be sent", async () => {
+    const id = await freshMember("waiting");
+    await requestEmailChange(prisma, id, "somewhere@example.invalid", {
+      key: KEY,
+      baseUrl: "http://localhost:3001",
+    });
+    const queued = await prisma.mailOutbox.findFirstOrThrow({
+      where: { toAddress: "somewhere@example.invalid" },
+    });
+    expect(queued.kind).toBe("email.confirm");
+    expect(queued.sentAt).toBeNull();
+    expect(queued.attempts).toBe(0);
   });
 });

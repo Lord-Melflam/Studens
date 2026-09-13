@@ -23,6 +23,7 @@
 import { createConnection, type Socket } from "node:net";
 import { connect as tlsConnect, type TLSSocket } from "node:tls";
 import { PrismaClient } from "@prisma/client";
+import { mailRelayConfigured } from "@studens/platform";
 import { loadDotEnv } from "./env.js";
 import { renderMail } from "./mail-templates.js";
 
@@ -40,9 +41,12 @@ interface Relay {
 }
 
 function relay(): Relay | null {
-  const host = process.env["STUDENS_SMTP_HOST"];
-  const from = process.env["STUDENS_MAIL_FROM"];
-  if (!host || !from) return null;
+  // `mailRelayConfigured` asks the same question for the API, which has to
+  // know whether a queued message can ever leave before it tells somebody one
+  // is on its way. One function, so the promise and the delivery agree.
+  if (!mailRelayConfigured()) return null;
+  const host = process.env["STUDENS_SMTP_HOST"]!;
+  const from = process.env["STUDENS_MAIL_FROM"]!;
   return {
     host,
     port: Number(process.env["STUDENS_SMTP_PORT"] ?? 587),

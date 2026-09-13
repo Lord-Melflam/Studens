@@ -25,6 +25,7 @@ import {
   confirmEmailChange,
   deleteAccount,
   exportAccount,
+  mailRelayConfigured,
   readPreferences,
   requestEmailChange,
   setPreference,
@@ -66,6 +67,9 @@ export function accountRoutes(prisma: PrismaClient): Router {
       const preferences = await readPreferences(prisma, who.memberId);
       res.json({
         kinds: OPTIONAL_KINDS,
+        // So the panel can say that nothing can be delivered yet, rather than
+        // letting somebody switch a notification on and wait for it.
+        deliverable: mailRelayConfigured(),
         preferences: preferences.map((p) => ({
           kind: p.kind,
           enabled: p.enabled,
@@ -126,7 +130,12 @@ export function accountRoutes(prisma: PrismaClient): Router {
       }
       // 202: the change has been accepted for processing and has not happened.
       // Saying "saved" here would be a lie for as long as the link is unclicked.
-      res.status(202).json({ pending: true });
+      //
+      // `deliverable` is the second half of the same honesty. With no relay
+      // configured the message is queued and can never leave, and a screen that
+      // says "a message has gone to you" would have somebody waiting for
+      // something that is not coming.
+      res.status(202).json({ pending: true, deliverable: mailRelayConfigured() });
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
 

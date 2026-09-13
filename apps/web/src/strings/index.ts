@@ -299,6 +299,12 @@ export const shellStrings: Bundle = {
     "account.email.provider": "Adresse de connexion",
     "account.email.provider.hint":
       "Celle de votre fournisseur. Elle sert à vous reconnaître et n'est pas modifiable ici.",
+    "account.email.provider.absent":
+      "Votre compte a été créé avant que nous gardions les adresses. Elle apparaîtra à votre prochaine connexion.",
+    "account.email.undeliverable":
+      "Demande enregistrée pour {email}, mais cette installation ne peut encore envoyer aucun message : aucun relais e-mail n'est configuré. Rien ne partira tant que ce n'est pas fait.",
+    "account.notifications.undeliverable":
+      "Aucun message ne peut encore être envoyé : cette installation n'a pas de relais e-mail configuré. Vos choix sont enregistrés et s'appliqueront dès que ce sera le cas.",
 
     "account.notifications": "Ce que nous pouvons vous envoyer",
     "account.notifications.hint":
@@ -615,6 +621,12 @@ export const shellStrings: Bundle = {
     "account.email.provider": "Aanmeldadres",
     "account.email.provider.hint":
       "Dat van uw aanbieder. Het dient om u te herkennen en is hier niet aan te passen.",
+    "account.email.provider.absent":
+      "Uw account bestond al voor wij adressen bijhielden. Het verschijnt bij uw volgende aanmelding.",
+    "account.email.undeliverable":
+      "Aanvraag genoteerd voor {email}, maar deze installatie kan nog geen enkel bericht versturen: er is geen mailrelais ingesteld. Er vertrekt niets zolang dat niet gebeurd is.",
+    "account.notifications.undeliverable":
+      "Er kan nog geen enkel bericht verstuurd worden: deze installatie heeft geen mailrelais ingesteld. Uw keuzes zijn bewaard en gelden zodra dat wel het geval is.",
 
     "account.notifications": "Wat wij u mogen sturen",
     "account.notifications.hint":
@@ -930,6 +942,12 @@ export const shellStrings: Bundle = {
     "account.email.provider": "Sign-in address",
     "account.email.provider.hint":
       "Your provider's. It is how you are recognised, and it cannot be changed here.",
+    "account.email.provider.absent":
+      "Your account was created before we kept addresses. It will appear at your next sign-in.",
+    "account.email.undeliverable":
+      "Request recorded for {email}, but this installation cannot send any message yet: no mail relay is configured. Nothing will leave until one is.",
+    "account.notifications.undeliverable":
+      "No message can be sent yet: this installation has no mail relay configured. Your choices are saved and will apply as soon as one is.",
 
     "account.notifications": "What we may send you",
     "account.notifications.hint":

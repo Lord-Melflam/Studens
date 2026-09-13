@@ -98,6 +98,22 @@ export async function wants(
   return row?.enabled ?? false;
 }
 
+/**
+ * Whether this installation can actually deliver anything.
+ *
+ * Lives here rather than in the worker that sends, because the API has to know
+ * too. Without it the account screen says "a message has gone to you" while the
+ * row sits in the outbox forever, which is a false statement on a screen about
+ * somebody's own account: they wait, nothing arrives, and they conclude the
+ * product is broken rather than unconfigured.
+ *
+ * The same two variables the sender reads. One function, so the answer cannot
+ * differ between the process that promises and the process that delivers.
+ */
+export function mailRelayConfigured(): boolean {
+  return Boolean(process.env["STUDENS_SMTP_HOST"] && process.env["STUDENS_MAIL_FROM"]);
+}
+
 export interface QueuedMail {
   to: string;
   kind: string;

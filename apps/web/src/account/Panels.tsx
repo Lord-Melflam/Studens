@@ -44,17 +44,17 @@ export function EmailPanel({
   const [value, setValue] = useState(contactEmail ?? "");
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<EmailProblem | null>(null);
-  const [pending, setPending] = useState(false);
+  const [pending, setPending] = useState<null | { deliverable: boolean }>(null);
 
   useEffect(() => setValue(contactEmail ?? ""), [contactEmail]);
 
   async function submit() {
     setBusy(true);
     setProblem(null);
-    setPending(false);
+    setPending(null);
     try {
-      await requestEmailChange(value);
-      setPending(true);
+      const { deliverable } = await requestEmailChange(value);
+      setPending({ deliverable });
       onChanged();
     } catch (err) {
       setProblem(err instanceof EmailRejected ? err.reason : "other");
@@ -81,7 +81,7 @@ export function EmailPanel({
           onChange={(e) => {
             setValue(e.target.value);
             setProblem(null);
-            setPending(false);
+            setPending(null);
           }}
         />
         <button
@@ -94,12 +94,24 @@ export function EmailPanel({
         </button>
       </div>
 
-      {/* Not "saved". Nothing has changed until the link is opened, and saying
-          otherwise would be wrong for as long as it sits unread. */}
-      {pending && <p className="saved">{t("account.email.pending", { email: value.trim() })}</p>}
+      {/*
+        Not "saved". Nothing has changed until the link is opened, and saying
+        otherwise would be wrong for as long as it sits unread.
+
+        And not "a message has gone to you" when nothing can go anywhere. With
+        no relay configured the row is queued and cannot leave, so the screen
+        says that instead of leaving somebody waiting for a link that is not
+        coming. Reported by François on 2026-09-13, who waited for one.
+      */}
+      {pending?.deliverable && (
+        <p className="saved">{t("account.email.pending", { email: value.trim() })}</p>
+      )}
+      {pending && !pending.deliverable && (
+        <p className="error">{t("account.email.undeliverable", { email: value.trim() })}</p>
+      )}
       {problem && <p className="error">{t(`account.email.err.${problem}`)}</p>}
 
-      {contactEmail && !verified && !pending && (
+      {contactEmail && !verified && pending === null && (
         <p className="error">{t("account.email.unverified")}</p>
       )}
 
@@ -111,6 +123,13 @@ export function EmailPanel({
             {/* FR-A12: identity, not preference. Editable would mean somebody
                 could edit the field their own sign-in is matched on. */}
             <span className="hint">{t("account.email.provider.hint")}</span>
+            {/*
+              An account created before FR-A11 has none: the address was
+              genuinely never stored, so there is nothing to backfill, and it
+              arrives on the next sign-in. Saying so beats a bare "Not given",
+              which reads as a fault.
+            */}
+            {!providerEmail && <span className="hint">{t("account.email.provider.absent")}</span>}
           </dd>
         </div>
       </dl>
@@ -122,10 +141,14 @@ export function EmailPanel({
 export function NotificationsPanel() {
   const t = useT();
   const [prefs, setPrefs] = useState<NotificationPreference[] | null>(null);
+  const [deliverable, setDeliverable] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    void fetchNotifications().then(setPrefs);
+    void fetchNotifications().then((r) => {
+      setPrefs(r.preferences);
+      setDeliverable(r.deliverable);
+    });
   }, []);
   useEffect(load, [load]);
 
@@ -170,6 +193,9 @@ export function NotificationsPanel() {
           ))}
         </ul>
       )}
+
+      {/* Said before anybody switches something on and waits for it. */}
+      {!deliverable && <p className="error">{t("account.notifications.undeliverable")}</p>}
 
       {/* FR-H2: the mail that is not a preference, named so its absence from
           this list is not read as an oversight. */}

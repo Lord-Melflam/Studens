@@ -13,6 +13,16 @@ export interface NotificationPreference {
   decidedAt: string;
 }
 
+/**
+ * Whether this installation can actually deliver mail.
+ *
+ * Carried through every one of these calls, because a screen that promises a
+ * message which cannot leave the outbox is worse than one that says nothing.
+ */
+export interface Deliverability {
+  deliverable: boolean;
+}
+
 export interface DeletionReport {
   memberId: string;
   modules: Record<string, number>;
@@ -28,11 +38,13 @@ export class EmailRejected extends Error {
   }
 }
 
-export async function fetchNotifications(): Promise<NotificationPreference[]> {
+export async function fetchNotifications(): Promise<{
+  preferences: NotificationPreference[];
+  deliverable: boolean;
+}> {
   const r = await fetch("/api/notifications");
-  if (!r.ok) return [];
-  const body = (await r.json()) as { preferences: NotificationPreference[] };
-  return body.preferences;
+  if (!r.ok) return { preferences: [], deliverable: false };
+  return (await r.json()) as { preferences: NotificationPreference[]; deliverable: boolean };
 }
 
 export async function setNotification(kind: string, enabled: boolean): Promise<void> {
@@ -51,13 +63,16 @@ export async function setNotification(kind: string, enabled: boolean): Promise<v
  * changed: that happens when the link in the message is opened. The screen says
  * so rather than showing a saved state that is not yet true.
  */
-export async function requestEmailChange(email: string): Promise<void> {
+export async function requestEmailChange(email: string): Promise<Deliverability> {
   const r = await fetch("/api/account/email", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ email }),
   });
-  if (r.status === 202) return;
+  if (r.status === 202) {
+    const ok = (await r.json()) as Deliverability;
+    return { deliverable: ok.deliverable };
+  }
   const body = (await r.json().catch(() => ({}))) as { error?: string; reason?: EmailProblem };
   throw new EmailRejected(body.error === "email" ? (body.reason ?? "other") : "other");
 }

@@ -92,6 +92,7 @@ export {
   TRANSACTIONAL,
   enqueueMail,
   isSendableKind,
+  mailRelayConfigured,
   notifyMember,
   readPreferences,
   setPreference,
