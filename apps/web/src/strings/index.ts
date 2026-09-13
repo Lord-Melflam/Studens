@@ -55,9 +55,20 @@ export const shellStrings: Bundle = {
     "settings.sessions.since": "depuis le {when}",
     "settings.sessions.end": "Déconnecter",
     "settings.sessions.endthis": "Me déconnecter ici",
+    "app.setup.prompt": "Votre configuration n'est pas terminée : vous n'avez pas encore de pseudonyme.",
+    "app.setup.go": "Reprendre",
+    "settings.profile": "Profil",
+    "settings.username": "Pseudonyme",
+    "settings.username.hint": "La seule information de votre profil que les autres voient.",
+    "settings.save": "Enregistrer",
+    "settings.saved": "Enregistré.",
+    "settings.unset": "Non renseigné",
+    "settings.institution": "Établissement",
+    "settings.institution.hint": "Déclaré par vous. N'ouvre aucun accès et ne prouve rien.",
+    "settings.studies": "Études",
+    "settings.studies.hint": "N'apparaît jamais à côté de ce que vous publiez.",
+    "settings.redo": "Refaire la configuration",
     "settings.soon": "Pas encore disponible",
-    "settings.soon.username": "Choisir un pseudonyme, qui apparaîtra sur ce que vous publiez sous votre nom.",
-    "settings.soon.institution": "Indiquer votre établissement.",
     "settings.soon.contributions": "Retrouver et modifier vos contributions signées.",
     "nav.language": "Langue",
 
@@ -138,6 +149,135 @@ export const shellStrings: Bundle = {
 
     "lang.note":
       "L'interface existe en trois langues. Les informations reprises des institutions restent dans la langue où elles sont publiées.",
+
+    "firstrun.step": "Étape {n} sur {total}",
+    "firstrun.later": "Plus tard",
+    "firstrun.start": "Commencer",
+    "firstrun.back": "Retour",
+    "firstrun.next": "Suivant",
+    "firstrun.skip": "Passer",
+    "firstrun.finish": "Terminer",
+
+    "firstrun.1.title": "Bienvenue sur Studens",
+    "firstrun.1.lede":
+      "Quatre écrans, une minute. Vous pouvez vous arrêter quand vous voulez et reprendre où vous en étiez.",
+    "firstrun.1.point.name": "Un pseudonyme. C'est la seule chose demandée.",
+    "firstrun.1.point.rest": "Le reste est facultatif et sert à vous proposer ce qui vous concerne.",
+    "firstrun.1.point.later": "Tout est modifiable ensuite dans votre compte.",
+    "firstrun.1.known": "Nous savons déjà que vous avez une adresse chez {domain}. Rien d'autre.",
+
+    "firstrun.2.title": "Choisissez un pseudonyme",
+    "firstrun.2.lede":
+      "C'est le nom sous lequel vous apparaissez quand vous publiez quelque chose en votre nom.",
+    "firstrun.2.label": "Pseudonyme",
+    "firstrun.2.placeholder": "par exemple : lou.martin",
+    "firstrun.2.rule":
+      "De 3 à 24 caractères : lettres minuscules, chiffres, et point, tiret ou tiret bas entre deux.",
+    "firstrun.2.public":
+      "C'est la seule information de cette configuration qui soit visible par les autres.",
+    "firstrun.2.err.short": "Trop court : 3 caractères au minimum.",
+    "firstrun.2.err.long": "Trop long : 24 caractères au maximum.",
+    "firstrun.2.err.shape": "Caractères non autorisés, ou un séparateur au début ou à la fin.",
+    "firstrun.2.err.reserved": "Ce nom est réservé.",
+    "firstrun.2.err.taken": "Ce pseudonyme est déjà pris.",
+    "firstrun.2.err.other": "L'enregistrement a échoué. Réessayez.",
+
+    "firstrun.3.title": "Dans quelle langue ?",
+    "firstrun.3.lede": "Vous pouvez en changer à tout moment.",
+    "firstrun.3.note":
+      "Cela change l'interface. Les informations reprises des institutions restent dans la langue où elles sont publiées.",
+
+    "firstrun.4.title": "Vos études",
+    "firstrun.4.lede":
+      "Facultatif, et utile seulement pour vous montrer ce qui vous concerne d'abord. Passez cet écran si vous préférez.",
+    "firstrun.4.studies": "Ce que vous étudiez",
+    "firstrun.4.studies.placeholder": "par exemple : bachelier ingénieur civil",
+    "firstrun.4.year": "Année",
+    "firstrun.4.year.none": "Je préfère ne pas le dire",
+    "firstrun.4.year.n": "Année {n}",
+    "firstrun.4.interests": "Centres d'intérêt",
+    "firstrun.4.interests.placeholder": "par exemple : sécurité, données, langues",
+    "firstrun.4.never":
+      "Rien de cet écran n'apparaît à côté de ce que vous publiez, ni signé, ni anonyme.",
+
+    "firstrun.5.title": "Votre établissement",
+    "firstrun.5.lede":
+      "Seule l'UCLouvain peut être choisie : Studens n'est pas encore ouvert ailleurs. Les autres sont listées parce qu'elles viendront.",
+    "firstrun.5.soon": "pas encore ouvert",
+    "firstrun.5.declared":
+      "C'est une simple déclaration. Elle n'ouvre aucun accès et ne prouve rien.",
+
+    "privacy.title": "Ce que l'anonymat protège, et ce qu'il ne protège pas",
+    "privacy.lede":
+      "Cette page dit les limites. Elle existe parce qu'une garantie dont on ne donne que la moitié n'en est pas une.",
+    "privacy.built.title": "Ce qui est vrai par construction",
+    "privacy.built.lede":
+      "Ces points ne dépendent pas de notre bonne volonté. Ils dépendent de la façon dont la base de données est faite, ce qui est vérifiable dans le code.",
+    "privacy.built.noid.claim": "Une publication anonyme ne porte aucun identifiant de son auteur.",
+    "privacy.built.noid.body":
+      "Pas de colonne vide, pas de référence chiffrée : la table n'a pas de champ pour ça.",
+    "privacy.built.final.claim": "Elle est définitive.",
+    "privacy.built.final.body":
+      "Ni modification, ni suppression par son auteur, jamais. C'est la conséquence du point précédent, pas une règle que nous avons choisie.",
+    "privacy.built.unfindable.claim": "Nous ne pouvons pas la retrouver pour vous.",
+    "privacy.built.unfindable.body":
+      "Même avec un accès complet à la base, il n'y a rien à joindre.",
+    "privacy.built.nothing.claim": "Aucune information sur vous n'apparaît dessus.",
+    "privacy.built.nothing.body":
+      "Ni établissement, ni domaine d'adresse, ni quoi que ce soit venant de votre profil.",
+    "privacy.limits.title": "Ce que ça ne protège pas",
+    "privacy.limits.words.claim": "Ce que vous écrivez peut vous désigner.",
+    "privacy.limits.words.body":
+      "Une tournure, un détail que seules trois personnes connaissent, une situation particulière : aucun système ne peut retirer ça d'un texte que vous avez écrit vous-même.",
+    "privacy.limits.complement.claim": "Publier sous son nom réduit l'anonymat des autres.",
+    "privacy.limits.complement.body":
+      "Si presque tout le monde signe, celles et ceux qui ne signent pas forment un groupe petit et facile à deviner. C'est pourquoi les chiffres vous sont montrés avant que vous choisissiez : vous êtes la seule personne à savoir combien d'autres auraient pu écrire la même chose.",
+    "privacy.limits.counting.claim": "Nous comptons combien vous publiez.",
+    "privacy.limits.counting.body":
+      "Une limite par période existe pour éviter les abus. Elle compte des publications, jamais lesquelles.",
+    "privacy.limits.moderation.claim": "Un modérateur peut retirer un contenu",
+    "privacy.limits.moderation.body":
+      "sans savoir qui l'a écrit. C'est nécessaire : un texte peut être diffamatoire ou nommer quelqu'un qui n'a pas demandé à l'être.",
+    "privacy.limits.open.claim": "Créer un compte est ouvert à tous.",
+    "privacy.limits.open.body":
+      "Rien ne vérifie que vous êtes inscrit quelque part. Les limites portent donc sur des comptes, pas sur des personnes, et nous ne les présentons pas comme plus que ça.",
+    "privacy.keep.title": "Ce que nous gardons sur vous",
+    "privacy.keep.lede":
+      "Le strict nécessaire, et rien qui serve à vous identifier auprès de quelqu'un d'autre.",
+    "privacy.keep.subject":
+      "L'identifiant que votre fournisseur (Microsoft ou Google) nous donne, qui ne dit rien de vous par lui-même.",
+    "privacy.keep.domain.claim": "Le domaine de votre adresse,",
+    "privacy.keep.domain.body":
+      "par exemple uclouvain.be, jamais l'adresse elle-même. Nous ne gardons pas non plus le nom que votre fournisseur nous envoie.",
+    "privacy.keep.chosen": "Le pseudonyme que vous choisissez, et vos préférences.",
+    "privacy.keep.fine":
+      "Le domaine est une indication, pas une preuve d'inscription, et n'est jamais présenté comme telle.",
+    "privacy.spec.lede":
+      "Le raisonnement complet, y compris l'arithmétique, est public dans le dépôt.",
+    "privacy.spec.cta": "Lire la spécification",
+    "privacy.about": "À propos de ce projet",
+
+    "about.title": "À propos",
+    "about.lede": "Un projet indépendant, construit par des étudiants, pour des étudiants.",
+    "about.not.title": "Ce que Studens n'est pas",
+    "about.not.university.claim": "Ce n'est pas un projet d'université.",
+    "about.not.university.body":
+      "Studens n'est affilié à aucune université ni haute école, n'est mandaté par aucune, et ne parle au nom d'aucune.",
+    "about.not.official.claim": "Ce n'est pas une source officielle.",
+    "about.not.official.body":
+      "Les informations reprises des sites institutionnels le sont à titre indicatif. En cas de doute, la fiche officielle fait foi, et un lien vers elle est affiché à chaque fois.",
+    "about.not.commercial.claim": "Ce n'est pas un produit commercial.",
+    "about.not.commercial.body": "Pas de publicité, pas de revente de données, pas d'abonnement.",
+    "about.open.title": "Ouvert, et vérifiable",
+    "about.open.1":
+      "Le code est public sous licence MIT. La spécification aussi, avec le raisonnement derrière chaque décision : ce qui a été rejeté, ce que ça coûte, et ce qui ferait reconsidérer le choix.",
+    "about.open.2":
+      "Cela vaut en particulier pour les garanties de vie privée. Une promesse qu'on ne peut pas vérifier ne vaut que la confiance qu'on accorde à celui qui la fait.",
+    "about.contribute.title": "Contribuer",
+    "about.contribute.body":
+      "Les contributions extérieures sont les bienvenues. Tout le code est relu avant d'être intégré.",
+    "about.contribute.cta": "Voir le dépôt",
+    "about.privacy.cta": "Comment vos données sont traitées",
   },
 
   nl: {
@@ -175,9 +315,20 @@ export const shellStrings: Bundle = {
     "settings.sessions.since": "sinds {when}",
     "settings.sessions.end": "Afmelden",
     "settings.sessions.endthis": "Mij hier afmelden",
+    "app.setup.prompt": "Uw installatie is niet afgerond: u hebt nog geen gebruikersnaam.",
+    "app.setup.go": "Hervatten",
+    "settings.profile": "Profiel",
+    "settings.username": "Gebruikersnaam",
+    "settings.username.hint": "Het enige gegeven uit uw profiel dat anderen te zien krijgen.",
+    "settings.save": "Opslaan",
+    "settings.saved": "Opgeslagen.",
+    "settings.unset": "Niet ingevuld",
+    "settings.institution": "Instelling",
+    "settings.institution.hint": "Door uzelf opgegeven. Opent geen toegang en bewijst niets.",
+    "settings.studies": "Studie",
+    "settings.studies.hint": "Verschijnt nooit naast wat u publiceert.",
+    "settings.redo": "De installatie opnieuw doorlopen",
     "settings.soon": "Nog niet beschikbaar",
-    "settings.soon.username": "Een schuilnaam kiezen, die verschijnt bij wat je onder je eigen naam publiceert.",
-    "settings.soon.institution": "Je instelling opgeven.",
     "settings.soon.contributions": "Je ondertekende bijdragen terugvinden en aanpassen.",
     "nav.language": "Taal",
 
@@ -258,6 +409,136 @@ export const shellStrings: Bundle = {
 
     "lang.note":
       "De interface bestaat in drie talen. Informatie die van de instellingen komt blijft in de taal waarin ze gepubliceerd is.",
+
+    "firstrun.step": "Stap {n} van {total}",
+    "firstrun.later": "Later",
+    "firstrun.start": "Beginnen",
+    "firstrun.back": "Terug",
+    "firstrun.next": "Volgende",
+    "firstrun.skip": "Overslaan",
+    "firstrun.finish": "Afronden",
+
+    "firstrun.1.title": "Welkom bij Studens",
+    "firstrun.1.lede":
+      "Vier schermen, één minuut. U kunt altijd stoppen en later verdergaan waar u gebleven was.",
+    "firstrun.1.point.name": "Een gebruikersnaam. Dat is het enige dat we vragen.",
+    "firstrun.1.point.rest": "De rest is optioneel en helpt ons te tonen wat u aangaat.",
+    "firstrun.1.point.later": "Alles is achteraf aanpasbaar in uw account.",
+    "firstrun.1.known": "We weten alleen dat u een adres hebt bij {domain}. Niets anders.",
+
+    "firstrun.2.title": "Kies een gebruikersnaam",
+    "firstrun.2.lede":
+      "Dit is de naam waaronder u verschijnt wanneer u iets onder uw eigen naam publiceert.",
+    "firstrun.2.label": "Gebruikersnaam",
+    "firstrun.2.placeholder": "bijvoorbeeld: lou.martin",
+    "firstrun.2.rule":
+      "3 tot 24 tekens: kleine letters, cijfers, en een punt, koppelteken of liggend streepje ertussen.",
+    "firstrun.2.public":
+      "Dit is het enige gegeven uit deze installatie dat anderen te zien krijgen.",
+    "firstrun.2.err.short": "Te kort: minstens 3 tekens.",
+    "firstrun.2.err.long": "Te lang: hoogstens 24 tekens.",
+    "firstrun.2.err.shape":
+      "Niet-toegelaten tekens, of een scheidingsteken aan het begin of het einde.",
+    "firstrun.2.err.reserved": "Deze naam is voorbehouden.",
+    "firstrun.2.err.taken": "Deze gebruikersnaam is al bezet.",
+    "firstrun.2.err.other": "Opslaan is mislukt. Probeer opnieuw.",
+
+    "firstrun.3.title": "In welke taal?",
+    "firstrun.3.lede": "U kunt dit op elk moment wijzigen.",
+    "firstrun.3.note":
+      "Dit verandert de interface. Informatie van de instellingen blijft in de taal waarin ze gepubliceerd is.",
+
+    "firstrun.4.title": "Uw studie",
+    "firstrun.4.lede":
+      "Optioneel, en alleen nuttig om u eerst te tonen wat u aangaat. Sla dit scherm gerust over.",
+    "firstrun.4.studies": "Wat u studeert",
+    "firstrun.4.studies.placeholder": "bijvoorbeeld: bachelor burgerlijk ingenieur",
+    "firstrun.4.year": "Jaar",
+    "firstrun.4.year.none": "Dat zeg ik liever niet",
+    "firstrun.4.year.n": "Jaar {n}",
+    "firstrun.4.interests": "Interesses",
+    "firstrun.4.interests.placeholder": "bijvoorbeeld: beveiliging, data, talen",
+    "firstrun.4.never":
+      "Niets van dit scherm verschijnt naast wat u publiceert, ondertekend noch anoniem.",
+
+    "firstrun.5.title": "Uw instelling",
+    "firstrun.5.lede":
+      "Alleen de UCLouvain kan gekozen worden: Studens is elders nog niet open. De andere staan erbij omdat ze komen.",
+    "firstrun.5.soon": "nog niet open",
+    "firstrun.5.declared":
+      "Dit is enkel een verklaring. Ze opent geen toegang en bewijst niets.",
+
+    "privacy.title": "Wat anonimiteit beschermt, en wat niet",
+    "privacy.lede":
+      "Deze pagina benoemt de grenzen. Ze bestaat omdat een garantie waarvan je maar de helft vertelt geen garantie is.",
+    "privacy.built.title": "Wat door de opbouw zelf waar is",
+    "privacy.built.lede":
+      "Deze punten hangen niet af van onze goede wil. Ze hangen af van hoe de databank is gebouwd, en dat is na te gaan in de code.",
+    "privacy.built.noid.claim": "Een anonieme bijdrage draagt geen enkele verwijzing naar haar auteur.",
+    "privacy.built.noid.body":
+      "Geen leeg veld, geen versleutelde verwijzing: de tabel heeft er geen kolom voor.",
+    "privacy.built.final.claim": "Ze is definitief.",
+    "privacy.built.final.body":
+      "Nooit aan te passen of te verwijderen door de auteur. Dat volgt uit het vorige punt, het is geen regel die wij gekozen hebben.",
+    "privacy.built.unfindable.claim": "Wij kunnen ze niet voor u terugvinden.",
+    "privacy.built.unfindable.body":
+      "Zelfs met volledige toegang tot de databank valt er niets te koppelen.",
+    "privacy.built.nothing.claim": "Er staat geen enkel gegeven over u bij.",
+    "privacy.built.nothing.body":
+      "Geen instelling, geen e-maildomein, niets uit uw profiel.",
+    "privacy.limits.title": "Wat het niet beschermt",
+    "privacy.limits.words.claim": "Wat u schrijft kan u verraden.",
+    "privacy.limits.words.body":
+      "Een formulering, een detail dat maar drie mensen kennen, een bijzondere situatie: geen enkel systeem haalt dat uit een tekst die u zelf geschreven hebt.",
+    "privacy.limits.complement.claim": "Onder eigen naam publiceren verkleint de anonimiteit van anderen.",
+    "privacy.limits.complement.body":
+      "Als bijna iedereen tekent, vormen wie niet tekent een kleine en makkelijk te raden groep. Daarom krijgt u de aantallen te zien vóór u kiest: u bent de enige die weet hoeveel anderen hetzelfde hadden kunnen schrijven.",
+    "privacy.limits.counting.claim": "Wij tellen hoeveel u publiceert.",
+    "privacy.limits.counting.body":
+      "Er geldt een limiet per periode tegen misbruik. Ze telt bijdragen, nooit welke.",
+    "privacy.limits.moderation.claim": "Een moderator kan inhoud verwijderen",
+    "privacy.limits.moderation.body":
+      "zonder te weten wie ze schreef. Dat moet kunnen: een tekst kan lasterlijk zijn of iemand noemen die daar niet om gevraagd heeft.",
+    "privacy.limits.open.claim": "Iedereen kan een account maken.",
+    "privacy.limits.open.body":
+      "Niets controleert of u ergens ingeschreven bent. De limieten gelden dus voor accounts, niet voor personen, en wij doen niet alsof ze meer zijn.",
+    "privacy.keep.title": "Wat wij over u bijhouden",
+    "privacy.keep.lede":
+      "Het strikt noodzakelijke, en niets waarmee iemand anders u kan identificeren.",
+    "privacy.keep.subject":
+      "De identificatie die uw aanbieder (Microsoft of Google) ons geeft, en die op zichzelf niets over u zegt.",
+    "privacy.keep.domain.claim": "Het domein van uw adres,",
+    "privacy.keep.domain.body":
+      "bijvoorbeeld uclouvain.be, nooit het adres zelf. Wij bewaren evenmin de naam die uw aanbieder ons doorgeeft.",
+    "privacy.keep.chosen": "De gebruikersnaam die u kiest, en uw voorkeuren.",
+    "privacy.keep.fine":
+      "Het domein is een aanwijzing, geen bewijs van inschrijving, en wordt ook nooit zo gepresenteerd.",
+    "privacy.spec.lede":
+      "De volledige redenering, het rekenwerk inbegrepen, staat publiek in de repository.",
+    "privacy.spec.cta": "De specificatie lezen",
+    "privacy.about": "Over dit project",
+
+    "about.title": "Over ons",
+    "about.lede": "Een onafhankelijk project, gebouwd door studenten, voor studenten.",
+    "about.not.title": "Wat Studens niet is",
+    "about.not.university.claim": "Het is geen project van een universiteit.",
+    "about.not.university.body":
+      "Studens is aan geen enkele universiteit of hogeschool verbonden, heeft van geen enkele een opdracht, en spreekt voor geen enkele.",
+    "about.not.official.claim": "Het is geen officiële bron.",
+    "about.not.official.body":
+      "Informatie overgenomen van instellingswebsites is louter indicatief. Bij twijfel geldt de officiële fiche, en er staat telkens een link naartoe.",
+    "about.not.commercial.claim": "Het is geen commercieel product.",
+    "about.not.commercial.body": "Geen reclame, geen doorverkoop van gegevens, geen abonnement.",
+    "about.open.title": "Open, en na te gaan",
+    "about.open.1":
+      "De code is publiek onder de MIT-licentie. De specificatie ook, met de redenering achter elke beslissing: wat verworpen is, wat het kost, en wat de keuze zou doen herzien.",
+    "about.open.2":
+      "Dat geldt in het bijzonder voor de privacygaranties. Een belofte die niet na te gaan is, is niet meer waard dan het vertrouwen in wie ze doet.",
+    "about.contribute.title": "Meewerken",
+    "about.contribute.body":
+      "Bijdragen van buitenaf zijn welkom. Alle code wordt nagelezen voor ze wordt opgenomen.",
+    "about.contribute.cta": "Naar de repository",
+    "about.privacy.cta": "Hoe uw gegevens behandeld worden",
   },
 
   en: {
@@ -295,9 +576,20 @@ export const shellStrings: Bundle = {
     "settings.sessions.since": "since {when}",
     "settings.sessions.end": "Sign out",
     "settings.sessions.endthis": "Sign me out here",
+    "app.setup.prompt": "Your setup is not finished: you have no username yet.",
+    "app.setup.go": "Resume",
+    "settings.profile": "Profile",
+    "settings.username": "Username",
+    "settings.username.hint": "The only thing in your profile that other people can see.",
+    "settings.save": "Save",
+    "settings.saved": "Saved.",
+    "settings.unset": "Not given",
+    "settings.institution": "Institution",
+    "settings.institution.hint": "Declared by you. It opens no access and proves nothing.",
+    "settings.studies": "Studies",
+    "settings.studies.hint": "Never appears beside what you publish.",
+    "settings.redo": "Go through the setup again",
     "settings.soon": "Not available yet",
-    "settings.soon.username": "Choose a pseudonym, which appears on what you publish under your own name.",
-    "settings.soon.institution": "Name your institution.",
     "settings.soon.contributions": "Find and edit the contributions you signed.",
     "nav.language": "Language",
 
@@ -378,5 +670,134 @@ export const shellStrings: Bundle = {
 
     "lang.note":
       "The interface exists in three languages. Information taken from the institutions stays in the language it is published in.",
+
+    "firstrun.step": "Step {n} of {total}",
+    "firstrun.later": "Later",
+    "firstrun.start": "Start",
+    "firstrun.back": "Back",
+    "firstrun.next": "Next",
+    "firstrun.skip": "Skip",
+    "firstrun.finish": "Finish",
+
+    "firstrun.1.title": "Welcome to Studens",
+    "firstrun.1.lede":
+      "Four screens, one minute. You can stop whenever you like and pick up where you left off.",
+    "firstrun.1.point.name": "A username. That is the only thing we ask for.",
+    "firstrun.1.point.rest": "The rest is optional, and helps us show you what concerns you.",
+    "firstrun.1.point.later": "Everything can be changed afterwards in your account.",
+    "firstrun.1.known":
+      "All we already know is that you hold an address at {domain}. Nothing else.",
+
+    "firstrun.2.title": "Choose a username",
+    "firstrun.2.lede":
+      "This is the name you appear under when you publish something in your own name.",
+    "firstrun.2.label": "Username",
+    "firstrun.2.placeholder": "for example: lou.martin",
+    "firstrun.2.rule":
+      "3 to 24 characters: lowercase letters, digits, and a dot, hyphen or underscore between two of them.",
+    "firstrun.2.public": "It is the only thing from this setup that other people can see.",
+    "firstrun.2.err.short": "Too short: 3 characters at least.",
+    "firstrun.2.err.long": "Too long: 24 characters at most.",
+    "firstrun.2.err.shape":
+      "Characters that are not allowed, or a separator at the start or the end.",
+    "firstrun.2.err.reserved": "That name is reserved.",
+    "firstrun.2.err.taken": "That username is already taken.",
+    "firstrun.2.err.other": "Saving failed. Try again.",
+
+    "firstrun.3.title": "Which language?",
+    "firstrun.3.lede": "You can change it at any time.",
+    "firstrun.3.note":
+      "This changes the interface. Information taken from the institutions stays in the language it is published in.",
+
+    "firstrun.4.title": "Your studies",
+    "firstrun.4.lede":
+      "Optional, and useful only to show you what concerns you first. Skip this screen if you would rather.",
+    "firstrun.4.studies": "What you study",
+    "firstrun.4.studies.placeholder": "for example: bachelor of civil engineering",
+    "firstrun.4.year": "Year",
+    "firstrun.4.year.none": "I would rather not say",
+    "firstrun.4.year.n": "Year {n}",
+    "firstrun.4.interests": "Interests",
+    "firstrun.4.interests.placeholder": "for example: security, data, languages",
+    "firstrun.4.never":
+      "Nothing on this screen appears beside what you publish, signed or anonymous.",
+
+    "firstrun.5.title": "Your institution",
+    "firstrun.5.lede":
+      "Only UCLouvain can be chosen: Studens is not open anywhere else yet. The others are listed because they are coming.",
+    "firstrun.5.soon": "not open yet",
+    "firstrun.5.declared": "This is a statement, nothing more. It opens no access and proves nothing.",
+
+    "privacy.title": "What anonymity protects, and what it does not",
+    "privacy.lede":
+      "This page states the limits. It exists because a guarantee you only tell half of is not a guarantee.",
+    "privacy.built.title": "What is true by construction",
+    "privacy.built.lede":
+      "These points do not depend on our good intentions. They depend on how the database is built, which can be checked in the code.",
+    "privacy.built.noid.claim": "An anonymous contribution carries no identifier of its author.",
+    "privacy.built.noid.body":
+      "No empty column, no encrypted reference: the table has no field for it.",
+    "privacy.built.final.claim": "It is permanent.",
+    "privacy.built.final.body":
+      "Never editable or deletable by its author. That follows from the point above; it is not a rule we chose.",
+    "privacy.built.unfindable.claim": "We cannot find it again for you.",
+    "privacy.built.unfindable.body":
+      "Even with full access to the database, there is nothing to join on.",
+    "privacy.built.nothing.claim": "Nothing about you appears on it.",
+    "privacy.built.nothing.body":
+      "No institution, no email domain, nothing from your profile.",
+    "privacy.limits.title": "What it does not protect",
+    "privacy.limits.words.claim": "What you write can identify you.",
+    "privacy.limits.words.body":
+      "A turn of phrase, a detail only three people know, a particular situation: no system can take that out of a text you wrote yourself.",
+    "privacy.limits.complement.claim": "Publishing under your own name reduces everyone else's anonymity.",
+    "privacy.limits.complement.body":
+      "If almost everyone signs, those who do not form a small group that is easy to guess. That is why the counts are shown to you before you choose: you are the only person who knows how many others could have written the same thing.",
+    "privacy.limits.counting.claim": "We count how much you publish.",
+    "privacy.limits.counting.body":
+      "There is a limit per period, against abuse. It counts contributions, never which ones.",
+    "privacy.limits.moderation.claim": "A moderator can remove content",
+    "privacy.limits.moderation.body":
+      "without knowing who wrote it. That has to be possible: a text may be defamatory, or name somebody who did not ask to be named.",
+    "privacy.limits.open.claim": "Anyone can create an account.",
+    "privacy.limits.open.body":
+      "Nothing verifies that you are enrolled anywhere. So the limits bound accounts, not people, and we do not present them as more than that.",
+    "privacy.keep.title": "What we keep about you",
+    "privacy.keep.lede":
+      "The strict minimum, and nothing that would identify you to anybody else.",
+    "privacy.keep.subject":
+      "The identifier your provider (Microsoft or Google) gives us, which says nothing about you on its own.",
+    "privacy.keep.domain.claim": "The domain of your address,",
+    "privacy.keep.domain.body":
+      "uclouvain.be for instance, never the address itself. We do not keep the name your provider sends us either.",
+    "privacy.keep.chosen": "The username you choose, and your preferences.",
+    "privacy.keep.fine":
+      "The domain is an indication, not proof of enrolment, and is never presented as such.",
+    "privacy.spec.lede":
+      "The full reasoning, arithmetic included, is public in the repository.",
+    "privacy.spec.cta": "Read the specification",
+    "privacy.about": "About this project",
+
+    "about.title": "About",
+    "about.lede": "An independent project, built by students, for students.",
+    "about.not.title": "What Studens is not",
+    "about.not.university.claim": "It is not a university project.",
+    "about.not.university.body":
+      "Studens is affiliated with no university or haute école, is mandated by none, and speaks for none.",
+    "about.not.official.claim": "It is not an official source.",
+    "about.not.official.body":
+      "Information taken from institutional sites is indicative. In case of doubt the official page prevails, and a link to it is shown every time.",
+    "about.not.commercial.claim": "It is not a commercial product.",
+    "about.not.commercial.body": "No advertising, no selling of data, no subscription.",
+    "about.open.title": "Open, and checkable",
+    "about.open.1":
+      "The code is public under the MIT licence. So is the specification, with the reasoning behind every decision: what was rejected, what it costs, and what would change the answer.",
+    "about.open.2":
+      "That matters most for the privacy guarantees. A promise you cannot check is worth only the trust you place in whoever made it.",
+    "about.contribute.title": "Contributing",
+    "about.contribute.body":
+      "Outside contributions are welcome. All code is read by someone before it is merged.",
+    "about.contribute.cta": "See the repository",
+    "about.privacy.cta": "How your data is handled",
   },
 };

@@ -1,5 +1,5 @@
 /**
- * FR-C12 in plain French, on a page anyone can read without an account.
+ * FR-C12, on a page anyone can read without an account.
  *
  * FR-C12 is the requirement that the limits of the anonymity guarantee are
  * DISCLOSED rather than glossed. Section 3.3 of the requirements works out the
@@ -8,125 +8,79 @@
  *
  * It is deliberately not written as legal terms. Terms are read by nobody, and
  * a guarantee nobody understands is not a guarantee.
+ *
+ * IN THREE LANGUAGES, like everything else. It was French only until
+ * 2026-09-13, which was worse here than anywhere: this is the page that carries
+ * the promise, and a Dutch speaker reading a French promise has been told
+ * nothing. Every sentence with bold in it is two keys, a heading and a body,
+ * because the translator interpolates values and not markup.
  */
+import { useT } from "@studens/i18n";
 import { linkProps } from "../router.js";
 
+/** A claim and its explanation. The bold half is the claim. */
+function Fact({ id }: { id: string }) {
+  const t = useT();
+  return (
+    <li>
+      <strong>{t(`${id}.claim`)}</strong> {t(`${id}.body`)}
+    </li>
+  );
+}
+
 export function Privacy() {
+  const t = useT();
   return (
     <>
       <section className="page-head">
-        <h1>Ce que l&apos;anonymat protège, et ce qu&apos;il ne protège pas</h1>
-        <p className="lede">
-          Cette page dit les limites. Elle existe parce qu&apos;une garantie
-          dont on ne donne que la moitié n&apos;en est pas une.
-        </p>
+        <h1>{t("privacy.title")}</h1>
+        <p className="lede">{t("privacy.lede")}</p>
       </section>
 
       <section className="band">
-        <h2>Ce qui est vrai par construction</h2>
-        <p className="band-lede">
-          Ces points ne dépendent pas de notre bonne volonté. Ils dépendent de
-          la façon dont la base de données est faite, ce qui est vérifiable dans
-          le code.
-        </p>
+        <h2>{t("privacy.built.title")}</h2>
+        <p className="band-lede">{t("privacy.built.lede")}</p>
         <ul className="facts">
-          <li>
-            <strong>Une publication anonyme ne porte aucun identifiant de son
-            auteur.</strong> Pas de colonne vide, pas de référence chiffrée: la
-            table n&apos;a pas de champ pour ça.
-          </li>
-          <li>
-            <strong>Elle est définitive.</strong> Ni modification, ni
-            suppression par son auteur, jamais. C&apos;est la conséquence du
-            point précédent, pas une règle que nous avons choisie.
-          </li>
-          <li>
-            <strong>Nous ne pouvons pas la retrouver pour vous.</strong> Même
-            avec un accès complet à la base, il n&apos;y a rien à joindre.
-          </li>
-          <li>
-            <strong>Aucune information sur vous n&apos;apparaît dessus.</strong>
-            Ni établissement, ni domaine d&apos;adresse, ni quoi que ce soit
-            venant de votre profil.
-          </li>
+          <Fact id="privacy.built.noid" />
+          <Fact id="privacy.built.final" />
+          <Fact id="privacy.built.unfindable" />
+          <Fact id="privacy.built.nothing" />
         </ul>
       </section>
 
       <section className="band alt">
-        <h2>Ce que ça ne protège pas</h2>
+        <h2>{t("privacy.limits.title")}</h2>
         <ul className="facts warn">
-          <li>
-            <strong>Ce que vous écrivez peut vous désigner.</strong> Une
-            tournure, un détail que seules trois personnes connaissent, une
-            situation particulière: aucun système ne peut retirer ça d&apos;un
-            texte que vous avez écrit vous-même.
-          </li>
-          <li>
-            <strong>Publier sous son nom réduit l&apos;anonymat des autres.</strong>
-            Si presque tout le monde signe, celles et ceux qui ne signent pas
-            forment un groupe petit et facile à deviner. C&apos;est pourquoi les
-            chiffres vous sont montrés avant que vous choisissiez: vous êtes la
-            seule personne à savoir combien d&apos;autres auraient pu écrire la
-            même chose.
-          </li>
-          <li>
-            <strong>Nous comptons combien vous publiez.</strong> Une limite par
-            période existe pour éviter les abus. Elle compte des publications,
-            jamais lesquelles.
-          </li>
-          <li>
-            <strong>Un modérateur peut retirer un contenu</strong> sans savoir
-            qui l&apos;a écrit. C&apos;est nécessaire: un texte peut être
-            diffamatoire ou nommer quelqu&apos;un qui n&apos;a pas demandé à
-            l&apos;être.
-          </li>
-          <li>
-            <strong>Créer un compte est ouvert à tous.</strong> Rien ne vérifie
-            que vous êtes inscrit quelque part. Les limites portent donc sur des
-            comptes, pas sur des personnes, et nous ne les présentons pas comme
-            plus que ça.
-          </li>
+          <Fact id="privacy.limits.words" />
+          <Fact id="privacy.limits.complement" />
+          <Fact id="privacy.limits.counting" />
+          <Fact id="privacy.limits.moderation" />
+          <Fact id="privacy.limits.open" />
         </ul>
       </section>
 
       <section className="band">
-        <h2>Ce que nous gardons sur vous</h2>
-        <p className="band-lede">
-          Le strict nécessaire, et rien qui serve à vous identifier auprès de
-          quelqu&apos;un d&apos;autre.
-        </p>
+        <h2>{t("privacy.keep.title")}</h2>
+        <p className="band-lede">{t("privacy.keep.lede")}</p>
         <ul className="facts">
-          <li>
-            L&apos;identifiant que votre fournisseur (Microsoft ou Google) nous
-            donne, qui ne dit rien de vous par lui-même.
-          </li>
-          <li>
-            <strong>Le domaine</strong> de votre adresse, par exemple
-            <code> uclouvain.be</code>, jamais l&apos;adresse elle-même. Nous ne
-            gardons pas non plus le nom que votre fournisseur nous envoie.
-          </li>
-          <li>Le pseudonyme que vous choisissez, et vos préférences.</li>
+          <li>{t("privacy.keep.subject")}</li>
+          <Fact id="privacy.keep.domain" />
+          <li>{t("privacy.keep.chosen")}</li>
         </ul>
-        <p className="band-fine">
-          Le domaine est une indication, pas une preuve d&apos;inscription, et
-          n&apos;est jamais présenté comme telle.
-        </p>
+        <p className="band-fine">{t("privacy.keep.fine")}</p>
       </section>
 
       <section className="band final">
-        <p className="band-lede">
-          Le raisonnement complet, y compris l&apos;arithmétique, est public
-          dans le dépôt.
-        </p>
+        <p className="band-lede">{t("privacy.spec.lede")}</p>
         <a
           className="ghost big"
           href="https://github.com/Lord-Melflam/Studens/blob/main/docs/requirements.md"
           rel="noopener noreferrer"
         >
-          Lire la spécification
+          {t("privacy.spec.cta")}
         </a>
         <p className="band-fine">
-          <a {...linkProps("/a-propos")}>À propos de ce projet</a>
+          <a {...linkProps("/a-propos")}>{t("privacy.about")}</a>
         </p>
       </section>
     </>

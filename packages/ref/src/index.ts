@@ -40,3 +40,9 @@ export {
   type FacultySummary,
   type ProgrammeSummary,
 } from "./read.js";
+export { listInstitutions, type InstitutionSummary } from "./institutions.js";
+export {
+  programmeShape,
+  type ProgrammeKind,
+  type ProgrammeShape,
+} from "./ingestion/parse/programme.js";

@@ -237,11 +237,49 @@ export function parseOffering(
     ),
     themes: richField($, fields, ["themes abordes"], url, "themes"),
     content: richField($, fields, ["contenu"], url, "content"),
-    owningFaculty: field(
-      fields,
-      ["faculte ou entite en charge", "faculte en charge", "entite en charge"],
-      url,
-      "owningFaculty",
+    owningFaculty: entity(
+      field(
+        fields,
+        ["faculte ou entite en charge", "faculte en charge", "entite en charge"],
+        url,
+        "owningFaculty",
+      ),
     ),
   };
+}
+
+/**
+ * The entity in charge, without the arrow the page draws it with.
+ *
+ * UCLouvain renders this field as a breadcrumb, so the scraped value is
+ * "> EPL" rather than "EPL". It was stored and displayed with the arrow, which
+ * showed up on the course page as "Faculté en charge: > BTCI". Stripped at the
+ * parse rather than at the screen, because it is not a display concern: the
+ * arrow is punctuation from the surrounding page, not part of the value, and a
+ * filter grouping by entity would otherwise group on it.
+ */
+function entity(raw: string | null): string | null {
+  if (raw === null) return null;
+  const cleaned = raw.replace(/^\s*>\s*/, "").trim();
+  return cleaned === "" ? null : cleaned;
+}
+
+/**
+ * The language a course is actually taught in.
+ *
+ * UCLouvain states the teaching language and any accommodation in one field,
+ * separated by an angle bracket:
+ *
+ *   "Anglais > Facilités pour suivre le cours en français"
+ *   "Français > English-friendly"
+ *
+ * The whole string belongs on the course page, because the accommodation is
+ * exactly what a hesitant student needs to read. A filter needs the first part
+ * alone: without this, "Anglais" and "Anglais > Facilités..." are two different
+ * languages and the filter offers eight options for five languages.
+ */
+export function mainLanguage(language: string | null): string | null {
+  if (language === null) return null;
+  const main = language.split(">")[0]!.trim();
+  return main === "" ? null : main;
 }

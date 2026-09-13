@@ -14,15 +14,10 @@
  * FR-B16: this file may not mention anything a module owns. It says who is
  * signed in and offers a way in or out, and knows nothing about courses.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useT } from "@studens/i18n";
 import { linkProps } from "./router.js";
-
-interface SessionState {
-  signedIn: boolean;
-  emailDomain?: string;
-  devSignInAvailable: boolean;
-}
+import { useSession } from "./session.js";
 
 interface Provider {
   id: string;
@@ -31,15 +26,11 @@ interface Provider {
 
 export function Account({ variant = "app" }: { variant?: "app" | "public" }) {
   const t = useT();
-  const [state, setState] = useState<SessionState | null>(null);
+  const { session: state, reload } = useSession();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(() => {
-    fetch("/api/session")
-      .then((r) => (r.ok ? (r.json() as Promise<SessionState>) : null))
-      .then(setState)
-      .catch(() => setState(null));
+  useEffect(() => {
     // Which providers this deployment can offer. Empty until the credentials
     // exist, and the buttons simply do not appear rather than failing on press.
     fetch("/api/auth/providers")
@@ -48,13 +39,11 @@ export function Account({ variant = "app" }: { variant?: "app" | "public" }) {
       .catch(() => setProviders([]));
   }, []);
 
-  useEffect(load, [load]);
-
   async function signIn() {
     setBusy(true);
     try {
       await fetch("/api/session/dev", { method: "POST" });
-      load();
+      reload();
       // The catalogue is public, but what a signed-in member sees is not
       // (FR-D13), so the page is reloaded rather than patched in place.
       window.location.reload();
@@ -89,10 +78,16 @@ export function Account({ variant = "app" }: { variant?: "app" | "public" }) {
             {t("nav.enter")}
           </a>
         )}
-        {/* FR-A10: evidence of holding an address at a domain. Never described
-            as proof of enrolment, here or anywhere. */}
+        {/*
+          The username once there is one, and the domain until then. Not both:
+          the header is not a profile, and a member who has chosen a name has
+          told us what they want to be called.
+
+          FR-A10: the domain is evidence of holding an address there, and is
+          never described as proof of enrolment, here or anywhere.
+        */}
         <span className="domain" title={t("nav.domain.hint")}>
-          {state.emailDomain}
+          {state.username ?? state.emailDomain}
         </span>
         <button type="button" onClick={() => void signOut()} disabled={busy}>
           {t("nav.signout")}

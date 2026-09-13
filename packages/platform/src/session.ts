@@ -37,6 +37,24 @@ export interface SessionIdentity {
   /** FR-A9. From the verified provider token, never from user input. */
   emailDomain: string;
   role: string;
+  /**
+   * The name the member chose (FR-F6), null until the first run is done.
+   *
+   * Carried here because every request already loads the Member row to check
+   * the session, so asking again would be a second query for a field the first
+   * one could have returned. It is also what decides whether a request gets
+   * sent to the first run at all, and that decision is needed on every route.
+   */
+  username: string | null;
+  onboarded: boolean;
+  /**
+   * How far into the first run they have got, 0 meaning "has never opened it".
+   *
+   * The zero matters on its own: it is the only state in which a member is sent
+   * to the first run rather than merely reminded of it. Anyone who has opened
+   * it once, even to press "later", gets into the app and is prompted there.
+   */
+  onboardingStep: number;
 }
 
 export class NoSession extends Error {
@@ -113,7 +131,15 @@ export async function verifySession(
         issuedAt: true,
         lastSeenAt: true,
         revokedAt: true,
-        member: { select: { emailDomain: true, role: true } },
+        member: {
+          select: {
+            emailDomain: true,
+            role: true,
+            username: true,
+            onboardedAt: true,
+            onboardingStep: true,
+          },
+        },
       },
     });
     if (!row) throw new NoSession("unknown");
@@ -137,6 +163,9 @@ export async function verifySession(
       memberId: row.memberId,
       emailDomain: row.member.emailDomain,
       role: row.member.role,
+      username: row.member.username,
+      onboarded: row.member.onboardedAt !== null,
+      onboardingStep: row.member.onboardingStep,
     };
   } finally {
     if (!opts.client) await prisma.$disconnect();

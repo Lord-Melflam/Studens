@@ -15,6 +15,7 @@ import { PrismaClient } from "@prisma/client";
 import { catalogueRoutes } from "./routes/catalogue.js";
 import { reviewRoutes } from "./routes/reviews.js";
 import { sessionRoutes } from "./routes/session.js";
+import { profileRoutes } from "./routes/profile.js";
 import { authRoutes } from "./routes/auth.js";
 import { configuredProviders } from "@studens/platform";
 import { devIdentityEnabled } from "./identity.js";
@@ -42,6 +43,7 @@ export async function createApp(source: AppSource = {}) {
     const prisma = new PrismaClient();
     app.use("/api", authRoutes(prisma));
     app.use("/api", sessionRoutes(prisma));
+    app.use("/api", profileRoutes(prisma));
     app.use("/api", reviewRoutes(prisma));
   }
 
@@ -85,8 +87,9 @@ if (isEntry) {
           // Loud on purpose. This is the one thing standing between the review
           // path and being usable, and it must not be forgotten quietly.
           console.warn(
-            "\n  !!  DEVELOPMENT IDENTITY IS ON. Every request is the same member.\n" +
-              "      There is no authentication: FR-A is not built.\n" +
+            "\n  !!  DEVELOPMENT IDENTITY IS ON. Anyone can sign in as one fixed\n" +
+              "      member, with no provider and no password. It issues a real\n" +
+              "      session, so everything downstream is production's code path.\n" +
               "      Never run this way anywhere but a laptop.\n",
           );
         }

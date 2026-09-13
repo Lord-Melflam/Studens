@@ -54,7 +54,6 @@ async function devMember(prisma: PrismaClient): Promise<string> {
       provider: "dev",
       providerSubject: "local",
       emailDomain: "student.uclouvain.be",
-      displayName: "Développeur local",
       tenantId: tenant.id,
     },
   });

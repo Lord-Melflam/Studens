@@ -10,17 +10,17 @@ gone wrong and what each failure changed.
 
 ---
 
-## State, as of 2026-09-12
+## State, as of 2026-09-13
 
 | | |
 |---|---|
-| Stage | **Working software.** Catalogue end to end, and reviews submitted and read on both paths |
-| Commits | 39 |
-| Requirements | **140**: 122 functional and 18 non-functional. Counted, not carried forward |
+| Stage | **Working software.** Catalogue end to end, sign-in with Google, a first run, and reviews submitted and read on both paths |
+| Commits | 41 |
+| Requirements | **142**: 124 functional and 18 non-functional. Counted, not carried forward |
 | Open questions | **8** open, 37 resolved |
-| Tests | **267**, plus 15 database isolation assertions |
-| Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
-| Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
+| Tests | **347**, plus 15 database isolation assertions |
+| Code | 9,968 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 3,788 of tests, 978 of SQL and Prisma, 937 of CSS. Re-measured 2026-09-13 over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts`; the earlier "~4,900" counted a narrower set and is not comparable |
+| Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, and 11 institutions, in PostgreSQL |
 
 ### What runs today
 
@@ -35,12 +35,15 @@ npm run dev:web                        # terminal 2, then localhost:5173
 ```
 
 `dev:api` sets `STUDENS_DEV_IDENTITY=1`, because submission needs a member
-(FR-C4) and FR-A is not built, so without it the review form refuses to open and
-looks like a bug. The fence is unchanged: the code still requires the variable
-to be set explicitly, still refuses when `NODE_ENV=production`, and still prints
-a warning naming FR-A at every start. Production does not run this script. The
-cost is that a signed-out session is no longer the default locally, hence
-`dev:api:anon`. Both scripts go away when FR-A ships.
+(FR-C4) and signing in for real needs provider credentials a contributor will not
+have. It signs in one fixed member and issues a real session, so everything
+downstream runs production's code path. The fence is unchanged: the code requires
+the variable to be set explicitly, refuses when `NODE_ENV=production`, and prints
+a warning at every start. Production does not run this script. The cost is that a
+signed-out session is no longer the default locally, hence `dev:api:anon`.
+
+That member starts with no username and no first-run progress (FR-F14), so what
+a developer lands on is the first-run sequence, not somebody's finished account.
 
 You land on the **shell**, choose a module, and inside RYC you can browse a
 programme or search a course code and open its page: ECTS, quarter, language,
@@ -872,16 +875,144 @@ Namur's course code and not their URL grammar.
 
 Eight open questions remain, from thirteen.
 
+### Phase 25: the first run
+
+Signing in worked and landed people nowhere. There was a Member row with a
+provider subject, an email domain and a tenant, and nothing a person had chosen:
+no name, no institution, no way to be anything other than "membre" beside their
+own review. FR-F4 to FR-F14 had been written on 2026-09-12 and none of it
+existed.
+
+Five screens at `/bienvenue/1` to `/5`: what this is, a username, a language,
+studies, an institution. One question per screen, and only the username required
+(FR-F6). The step is in the URL **and** on the Member row, so a refresh resumes
+and so does a different device tomorrow (FR-F5). The whole sequence is a third
+zone, next to the public site and the app: no module navigation and no crumbs,
+because a wizard you can wander out of is one people leave halfway.
+
+**Four things were decided while building it, and three of them were caught by a
+gate rather than by me.**
+
+**`displayName` was dropped rather than filled in.** OPEN-36 had already decided
+the provider's display name is not kept. It was a column nothing wrote except
+the development identity, and leaving it there made the decision a habit
+somebody could quietly reverse. Removing it makes it structural. That is the
+same argument as the anonymous table having no member column at all.
+
+**Notification preferences were removed from FR-F8.** The column was written,
+and then it became clear it could never work: FR-A9 stores the email *domain*
+and never the address, so the platform cannot send mail to anybody. An unused
+field is one thing; a preference for something that cannot happen is a promise.
+Restoring it means first deciding to store addresses, which is a separate
+decision with its own weight. The amendment is recorded against FR-F8 and needs
+François's confirmation, because the original was his call.
+
+**`programme` became `studies`, because FR-B6's frontend gate refused it.** The
+first run asked for a "programme" and `test/architecture/frontend-shell.test.ts`
+failed on five lines: that word belongs to the catalogue. The gate was right for
+a second reason it does not know about, which is the better one: the field is
+free text, it is matched against no catalogue row, and naming it after one
+implies it is. Renaming fixed a real misdirection, not just a lint.
+
+**The username reaches a review through a function, not a query.** `studens_ryc`
+holds no grant on `platform.Member` and must not: a module that can query the
+member table can enumerate members. So `reviewsFor` takes a `NameResolver`, the
+API composes the two, and neither side gains the other's access. The module
+still cannot look anybody up; it can only ask about ids already in its own
+table, which are attributed reviews by definition.
+
+Two older claims on screen were false and are now not. The submission form said
+"la connexion n'est pas encore en place (FR-A)", which stopped being true when
+FR-A shipped in phase 19, and the API start-up banner said "there is no
+authentication". Both were written when they were true and nothing made them
+change with the code.
+
+The account panel gained the username, the institution and the studies it used
+to list under "not yet available", and `test/ui/navigation.test.ts` gained the
+harder half of that rule: a test that fails if something which has shipped is
+still listed as missing. The first half was already there. Only the first half
+ever gets written.
+
+### Phase 26: filters, and one thing deliberately not built
+
+546 courses and 43 programmes, both presented as a scroll. Browsing existed
+because 1.1 is a discovery problem and search only helps somebody who already
+knows the code, but a list of 46 courses with no way to say "Q2, five credits,
+and something written about it" is not discovery either.
+
+Both lists filter now. Programmes on kind, site and text; courses on term,
+credits, teaching language, the entity in charge, text, and whether anything has
+been written about them. FR-D33.
+
+**Two rules make a facet trustworthy, and both are in the tests rather than in a
+comment.** The options offered are the values actually present, never a written
+list: the same reason the faculty and programme structure is discovered at
+runtime. And each facet's count is computed with its own dimension ignored and
+every other one applied, so a count is what selecting it would leave. Counting
+against the unfiltered list is the easy version and it produces a chip saying 23
+beside a list that empties when pressed.
+
+**The kind of a programme is parsed from its title**, because UCLouvain does not
+publish it as a field: "Master [120] : ingénieur civil en informatique
+(Louvain-la-Neuve)" carries the kind, the credits and the site. That is a parse,
+so it lives with the rest of the parsing and is checked against all 43 real
+titles, with the code suffixes (`1ba`, `2m`, `2fc`, `fil`, `mino`) used as an
+independent cross-check rather than as the source. A title matching nothing
+returns null and shows as "autre": the same rule as the offering parser, where
+"absent because the era lacks it" must stay distinguishable from "absent because
+the parse broke".
+
+**FR-D34 records what was not built: no filter, sort or search on a lecturer's
+name.** Section 5.1 is that this product's GDPR exposure is the lecturers, and a
+control that gathers everything written about one person in a single press is a
+different feature with a different legal footing. There is a test asserting that
+a text filter does not match a lecturer, so reversing the decision has to be
+deliberate.
+
+Three things were found while building it, and all three were on screen already.
+
+**`owningFaculty` was stored and displayed with the arrow the source page draws
+it with**, so the course page read "Faculté en charge: > BTCI". Stripped at the
+parse, not at the screen: the arrow is punctuation belonging to the surrounding
+page, and a filter would otherwise have grouped on it.
+
+**The plural strings were written in ICU syntax**, `{n, plural, one {# avis}
+other {# avis}}`, which this project's translator does not implement: it uses
+`key.one` and `key.other` with a `count` variable and `Intl.PluralRules`. It
+typechecked, it passed every test, and it would have printed the markup on the
+screen. There is now a test that pins the convention.
+
+**One assertion in the authentication tests counted the whole Session table**
+while every other count in the same file was scoped to its own provider. Two
+unrelated new test files shifted vitest's parallel scheduling and it began
+failing about a third of the time. The assertion was never wrong about the
+behaviour, only about what it was allowed to observe. Verified as a latent bug
+rather than a new one by running the suite six times on the previous commit.
+
+The in-app RYC screens were French only: the i18n work in phase 22 reached the
+public showcase and stopped at the module's own screens. The browse and search
+path is translated now, because adding filter labels in three languages to a
+screen hardcoded in one produces something worse than either. The course page
+and the review flow are still French, and that is the next piece of RYC work.
+
 ---
 
 ## Next
 
-1. **Authentication** (FR-A). It is now the only thing between the review path
-   and a real user: submission runs on a development identity that refuses to
-   work in production. Needs OAuth client credentials from Microsoft and Google,
-   which only François can register.
-2. **Moderation** (FR-E). A submitted review publishes directly today. The queue
-   has a schema and no consumer.
-3. **Editing an attributed review** (FR-C14) and "Mes avis" (FR-D12), both of
+1. ~~Authentication~~ done, phases 19 and 25. Google works end to end. Microsoft
+   is registered and untried: UCLouvain's tenant turns an outside account into
+   an `#EXT#` guest, so it needs testing from the `procyo.be` tenant instead.
+2. **FR-E8, the notice and action mechanism.** Legally required, and nothing
+   implements it. First piece of moderation work, ahead of the queue.
+3. **Moderation** (FR-E) beyond that. A submitted review publishes directly
+   today. The queue has a schema and no consumer.
+4. **Editing an attributed review** (FR-C14) and "Mes avis" (FR-D12), both of
    which the fork already promises on screen.
-4. ~~Branch protection~~ done 2026-09-11, see phase 17.
+5. **Deployment.** Nothing deploys. The API does not serve the single-page
+   application, so path routing would 404 in production on any refresh.
+6. **The rest of RYC in three languages.** The course page, the review form and
+   the fork are still hardcoded French. Phase 26 did the browse and search path.
+7. **A programme is not in the URL.** `Browse` holds the chosen programme in
+   component state, so it cannot be linked or refreshed, which is the same bug
+   phase 20 fixed for courses. The filters sit on top of that and inherit it.
+8. ~~Branch protection~~ done 2026-09-11, see phase 17.

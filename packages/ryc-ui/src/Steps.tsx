@@ -7,15 +7,12 @@
  * asymmetry that the whole design rests on is visible before you commit to it
  * rather than only felt afterwards (FR-C23).
  */
+import { useT } from "@studens/i18n";
+
 export type StepName = "form" | "fork" | "confirm";
 
-const LABELS: Record<StepName, string> = {
-  form: "Votre avis",
-  fork: "Nom ou anonyme",
-  confirm: "Confirmation",
-};
-
 export function Steps({ current }: { current: StepName }) {
+  const t = useT();
   // The third step is not a step everyone takes, so it is not shown until it
   // is real. Showing a greyed "Confirmation" from the start would suggest both
   // branches end the same way.
@@ -23,7 +20,7 @@ export function Steps({ current }: { current: StepName }) {
   const index = names.indexOf(current);
 
   return (
-    <ol className="steps" aria-label="Étapes">
+    <ol className="steps" aria-label={t("ryc.steps.label")}>
       {names.map((name, i) => (
         <li
           key={name}
@@ -31,7 +28,7 @@ export function Steps({ current }: { current: StepName }) {
           aria-current={i === index ? "step" : undefined}
         >
           <span className="steps-n">{i + 1}</span>
-          {LABELS[name]}
+          {t(`ryc.steps.${name}`)}
         </li>
       ))}
     </ol>

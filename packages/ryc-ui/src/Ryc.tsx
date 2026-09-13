@@ -15,10 +15,11 @@
  * URL is not navigation.
  */
 import { useEffect, useState } from "react";
+import { useT } from "@studens/i18n";
 import type { ModuleProps } from "./index.js";
 import { api, type CourseDetail, type CourseSummary } from "./api.js";
 import { CoursePage } from "./CoursePage.js";
-import { CourseList } from "./CourseList.js";
+import { CourseFilters } from "./CourseFilters.js";
 import { Browse } from "./Browse.js";
 
 /** What the path inside the module means. Parsed in one place. */
@@ -37,8 +38,18 @@ export function parseView(path: string): RycView {
 }
 
 export function Ryc({ path, navigate }: ModuleProps) {
+  const t = useT();
   const view = parseView(path);
   const [meta, setMeta] = useState<{ year: number; courses: number } | null>(null);
+  /**
+   * How many published reviews each course has, fetched once for the module.
+   *
+   * Held here rather than in each list so the two screens agree and so browsing
+   * between them costs no request. An empty object is a safe answer: every
+   * count reads as zero and the "only with reviews" filter simply does not
+   * appear, which is correct on a fresh installation.
+   */
+  const [reviewCounts, setReviewCounts] = useState<Record<string, number>>({});
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CourseSummary[]>([]);
   const [course, setCourse] = useState<CourseDetail | null>(null);
@@ -46,7 +57,14 @@ export function Ryc({ path, navigate }: ModuleProps) {
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
-    api.catalogue().then(setMeta).catch(() => setError("le catalogue n'est pas chargé"));
+    api.catalogue().then(setMeta).catch(() => setError(t("ryc.err.catalogue")));
+    api
+      .reviewCounts()
+      .then((r) => setReviewCounts(r.counts))
+      .catch(() => setReviewCounts({}));
+    // Once. `t` is deliberately not a dependency: refetching the catalogue
+    // because somebody switched language would be silly, and the only thing it
+    // is used for here is the text of an error nobody has seen yet.
   }, []);
 
   // The course comes from the URL, so arriving by link, by Back, or by a
@@ -63,7 +81,7 @@ export function Ryc({ path, navigate }: ModuleProps) {
     api
       .course(code)
       .then((c) => live && setCourse(c))
-      .catch(() => live && setError(`impossible de charger ${code.toUpperCase()}`));
+      .catch(() => live && setError(t("ryc.err.course", { code: code.toUpperCase() })));
     return () => {
       live = false;
     };
@@ -82,7 +100,7 @@ export function Ryc({ path, navigate }: ModuleProps) {
           setResults(r.results);
           setError(null);
         })
-        .catch(() => setError("la recherche a échoué"))
+        .catch(() => setError(t("ryc.err.search")))
         .finally(() => setSearching(false));
     }, 180);
     return () => clearTimeout(timer);
@@ -90,7 +108,7 @@ export function Ryc({ path, navigate }: ModuleProps) {
 
   if (view.kind === "course") {
     if (error && !course) return <p className="error">{error}</p>;
-    if (!course) return <p className="meta">chargement…</p>;
+    if (!course) return <p className="meta">{t("ryc.loading")}</p>;
     return (
       <CoursePage
         course={course}
@@ -104,10 +122,7 @@ export function Ryc({ path, navigate }: ModuleProps) {
 
   return (
     <>
-      <p className="module-intro">
-        Ce que valent vraiment les cours, d&apos;après les étudiants qui les ont
-        suivis. Parcourez un programme, ou cherchez un cours par son code.
-      </p>
+      <p className="module-intro">{t("ryc.intro")}</p>
 
       <nav className="tabs">
         <button
@@ -115,20 +130,20 @@ export function Ryc({ path, navigate }: ModuleProps) {
           className={view.kind === "browse" ? "on" : ""}
           onClick={() => navigate("/")}
         >
-          Parcourir un programme
+          {t("ryc.tab.browse")}
         </button>
         <button
           type="button"
           className={view.kind === "search" ? "on" : ""}
           onClick={() => navigate("/recherche")}
         >
-          Chercher
+          {t("ryc.tab.search")}
         </button>
       </nav>
 
       {meta && (
         <p className="meta">
-          {meta.courses} cours, année académique {meta.year}-{meta.year + 1}
+          {t("ryc.meta", { n: meta.courses, from: meta.year, to: meta.year + 1 })}
         </p>
       )}
       {error && <p className="error">{error}</p>}
@@ -136,24 +151,31 @@ export function Ryc({ path, navigate }: ModuleProps) {
       {view.kind === "search" ? (
         <>
           <label className="search" htmlFor="q">
-            Code ou mot du titre
+            {t("ryc.search.label")}
             <input
               id="q"
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="LEPL1503, ou « mécanique »"
+              placeholder={t("ryc.search.placeholder")}
               autoComplete="off"
               autoFocus
             />
           </label>
           {query.trim().length >= 2 && !searching && results.length === 0 && (
-            <p className="empty">Aucun cours pour « {query} ».</p>
+            <p className="empty">{t("ryc.search.none", { query })}</p>
           )}
-          <CourseList courses={results} onOpen={(c) => navigate(`/c/${c}`)} />
+          {results.length > 0 && (
+            <CourseFilters
+              courses={results}
+              reviewCounts={reviewCounts}
+              onOpen={(c) => navigate(`/c/${c}`)}
+              emptyLabel={t("ryc.search.none", { query })}
+            />
+          )}
         </>
       ) : (
-        <Browse onOpen={(c) => navigate(`/c/${c}`)} />
+        <Browse onOpen={(c) => navigate(`/c/${c}`)} reviewCounts={reviewCounts} />
       )}
     </>
   );

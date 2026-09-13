@@ -187,11 +187,21 @@ function callback(query: string, cookie?: string): Promise<Response> {
 
 describe("the start of a sign-in", () => {
   dbit("redirects to the provider and writes nothing", async () => {
-    const before = await prisma.session.count();
+    // Scoped to this file's own provider, like every other count here.
+    //
+    // It counted the whole Session table until 2026-09-13, which made it a
+    // test about every other test file: session.db.test.ts creates and deletes
+    // sessions for its own member, vitest runs files in parallel, and the two
+    // overlap. It passed for as long as the scheduling happened to keep them
+    // apart, then started failing about a third of the time when two unrelated
+    // test files were added and the timing shifted. The assertion was never
+    // wrong about the behaviour, only about what it was allowed to observe.
+    const mine = { member: { provider: "fake" } };
+    const before = await prisma.session.count({ where: mine });
     const { cookie } = await start();
     expect(cookie).toContain("studens_auth=");
     // Abandoning here must leave no trace but an expiring cookie.
-    expect(await prisma.session.count()).toBe(before);
+    expect(await prisma.session.count({ where: mine })).toBe(before);
   });
 
   dbit("offers only the providers that are configured", async () => {

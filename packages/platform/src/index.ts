@@ -61,3 +61,17 @@ export {
 
 /** Signed short-lived values, used by the sign-in attempt state. */
 export { signValue, readSignedValue, BadSignedValue } from "./signed.js";
+
+/** A Member's own record and the username rule (FR-F). */
+export {
+  readProfile,
+  writeProfile,
+  usernamesFor,
+  checkUsername,
+  UsernameInvalid,
+  USERNAME_MIN,
+  USERNAME_MAX,
+  USERNAME_RE,
+  type Profile,
+  type ProfilePatch,
+} from "./profile.js";

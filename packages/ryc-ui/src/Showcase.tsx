@@ -102,10 +102,14 @@ export function Showcase() {
         <h3>
           <span className="code">LEPL1503</span> Projet 3
         </h3>
-        <p className="ribbon">5 ECTS · Q2 · Français · 30.0 h + 30.0 h</p>
+        {/* Real values from the real LEPL1503 page; only the labels around
+            them are translated. The scraped assessment below stays French,
+            because information published by an institution stays in the
+            language it was published in. */}
+        <p className="ribbon">{t("ryc.mock.ribbon")}</p>
 
         <div className="field">
-          <dt>Évaluation</dt>
+          <dt>{t("ryc.course.assessment")}</dt>
           <dd className="prose">
             <Blocks blocks={ASSESSMENT} />
           </dd>
@@ -120,24 +124,19 @@ export function Showcase() {
           <header>
             <span className="chip-named">marie.d</span>
             <span className="review-year">{t("ryc.mock.year", { years: "2024-2025" })}</span>
-            <span className="review-scores">recommandé 5/5 · charge 4/5 · difficulté 4/5</span>
+            <span className="review-scores">
+              {t("ryc.review.scores", { recommendation: 5, workload: 4, difficulty: 4 })}
+            </span>
           </header>
-          <p className="review-body">
-            Le projet est long mais c&apos;est là que j&apos;ai le plus appris.
-            Commencez l&apos;architecture la première semaine, pas la troisième.
-          </p>
+          <p className="review-body">{t("ryc.mock.named.body")}</p>
         </article>
 
         <article className="review review-anonymous">
           <header>
-            <span className="chip-anon">Anonyme</span>
+            <span className="chip-anon">{t("ryc.anonymous")}</span>
             <span className="review-year">{t("ryc.mock.year", { years: "2023-2024" })}</span>
           </header>
-          <p className="review-body">
-            Beaucoup de travail non encadré en dehors des séances, et le barème
-            du travail de groupe mérite d&apos;être lu en entier avant de
-            s&apos;inscrire.
-          </p>
+          <p className="review-body">{t("ryc.mock.anon.body")}</p>
         </article>
       </div>
 

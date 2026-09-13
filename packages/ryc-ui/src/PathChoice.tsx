@@ -17,25 +17,25 @@
  * offer them as reasons to choose it. They are named as planned, once, in the
  * one place where the difference between the branches is permanent anyway.
  * test/ui/path-honesty.test.ts holds this.
+ *
+ * IN THREE LANGUAGES since 2026-09-13. This screen more than any other: it is
+ * where somebody accepts that something is permanent, and accepting that in a
+ * language you half read is not consent.
  */
+import { useT, type Translate } from "@studens/i18n";
 import type { ReviewContext, ReviewDraft } from "./api.js";
 import { Steps } from "./Steps.js";
 
 function Counts({ ctx }: { ctx: ReviewContext }) {
-  const named =
-    ctx.named === 0 ? "aucun avis nommé" : `${ctx.named} avis nommé${ctx.named > 1 ? "s" : ""}`;
-  const anon =
-    ctx.anonymous === 0
-      ? "aucun avis anonyme"
-      : `${ctx.anonymous} avis anonyme${ctx.anonymous > 1 ? "s" : ""}`;
+  const t = useT();
+  const named = t("ryc.counts.named", { count: ctx.named });
+  const anon = t("ryc.counts.anon", { count: ctx.anonymous });
   return (
     <p className="counts">
-      Ce cours a <strong>{named}</strong> et <strong>{anon}</strong>.
-      {ctx.anonymous === 0 && " Vous seriez le premier."}
-      <em>
-        Plus il y a d&apos;avis anonymes, moins le vôtre ressort. Vous seul savez
-        combien d&apos;étudiants ont suivi ce cours: nous ne le savons pas.
-      </em>
+      {/* FR-C21: the two numbers, before the choice and not after it. */}
+      {t("ryc.counts.lead")} <strong>{named}</strong> {t("ryc.counts.and")}{" "}
+      <strong>{anon}</strong>.{ctx.anonymous === 0 && ` ${t("ryc.counts.first")}`}
+      <em>{t("ryc.counts.note")}</em>
     </p>
   );
 }
@@ -48,21 +48,26 @@ function Counts({ ctx }: { ctx: ReviewContext }) {
  * cannot currently see is a decision made half blind.
  */
 export function DraftSummary({ draft }: { draft: ReviewDraft | null }) {
+  const t = useT();
   if (!draft) return null;
   return (
     <details className="draft">
       <summary>
-        Relire mon avis
+        {t("ryc.draft.reread")}
         <span className="draft-facts">
-          {draft.academicYear}-{draft.academicYear + 1} · recommandé{" "}
-          {draft.recommendation}/5 · charge {draft.workloadVsEcts}/5 · difficulté{" "}
-          {draft.difficulty}/5 · {draft.body.length} caractères
+          {draft.academicYear}-{draft.academicYear + 1} ·{" "}
+          {t("ryc.draft.facts", {
+            recommendation: draft.recommendation,
+            workload: draft.workloadVsEcts,
+            difficulty: draft.difficulty,
+            chars: draft.body.length,
+          })}
         </span>
       </summary>
       <p className="draft-body">{draft.body}</p>
       {draft.advice && (
         <p className="draft-advice">
-          <strong>Conseil:</strong> {draft.advice}
+          <strong>{t("ryc.draft.advice")}</strong> {draft.advice}
         </p>
       )}
     </details>
@@ -84,46 +89,44 @@ export function PathChoice({
   onBack: () => void;
   busy: boolean;
 }) {
+  const t: Translate = useT();
   return (
     <section className="fork">
       <Steps current="fork" />
       <button type="button" className="back" onClick={onBack} disabled={busy}>
-        revenir au formulaire
+        {t("ryc.fork.back")}
       </button>
-      <h3>Comment voulez-vous publier cet avis ?</h3>
-      <p className="form-lead">
-        Ce choix ne peut pas être changé après l&apos;envoi. Lisez les deux avant
-        de choisir.
-      </p>
+      <h3>{t("ryc.fork.title")}</h3>
+      <p className="form-lead">{t("ryc.fork.lede")}</p>
 
       <DraftSummary draft={draft} />
 
       <div className="fork-cards">
         <article className="card card-named">
-          <span className="chip-named">Sous mon nom</span>
+          <span className="chip-named">{t("ryc.fork.named.chip")}</span>
           <ul>
-            <li>Votre nom apparaît sur la fiche du cours.</li>
-            <li>On peut vous demander des précisions, ou vous contredire.</li>
-            <li>Vous restez rattaché à cet avis, y compris dans un an.</li>
+            <li>{t("ryc.fork.named.1")}</li>
+            <li>{t("ryc.fork.named.2")}</li>
+            <li>{t("ryc.fork.named.3")}</li>
           </ul>
           <button type="button" className="primary named" onClick={onNamed} disabled={busy}>
-            Publier sous mon nom
+            {t("ryc.fork.named.cta")}
           </button>
         </article>
 
         <article className="card card-anon">
-          <span className="chip-anon">Anonyme</span>
-          <p className="card-lead">Définitif</p>
+          <span className="chip-anon">{t("ryc.fork.anon.chip")}</span>
+          <p className="card-lead">{t("ryc.fork.anon.lead")}</p>
           <ul>
-            <li>Aucun nom, aucune faculté, aucun domaine.</li>
+            <li>{t("ryc.fork.anon.1")}</li>
             <li>
-              <strong>Impossible à modifier ou à supprimer.</strong>
+              <strong>{t("ryc.fork.anon.2")}</strong>
             </li>
-            <li>Vous ne pourrez pas prouver qu&apos;il est de vous.</li>
+            <li>{t("ryc.fork.anon.3")}</li>
           </ul>
           <Counts ctx={ctx} />
           <button type="button" className="primary anon" onClick={onAnonymous} disabled={busy}>
-            Continuer en anonyme
+            {t("ryc.fork.anon.cta")}
           </button>
         </article>
       </div>
@@ -133,11 +136,7 @@ export function PathChoice({
         feature that does not exist yet belongs in a footnote, not in the list
         someone reads to make a decision they cannot take back.
       */}
-      <p className="fork-note">
-        La modification d&apos;un avis nommé est prévue et n&apos;est pas encore
-        en place. Elle ne concernera jamais un avis anonyme: personne, nous y
-        compris, ne peut retrouver lequel est le vôtre.
-      </p>
+      <p className="fork-note">{t("ryc.fork.note")}</p>
     </section>
   );
 }
@@ -163,27 +162,24 @@ export function AnonymousConfirm({
   onBack: () => void;
   busy: boolean;
 }) {
+  const t = useT();
   return (
     <section className="confirm">
       <Steps current="confirm" />
       <button type="button" className="back" onClick={onBack} disabled={busy}>
-        revenir au choix
+        {t("ryc.confirm.back")}
       </button>
-      <span className="chip-anon">Anonyme</span>
-      <h3>Dernière étape avant l&apos;envoi</h3>
+      <span className="chip-anon">{t("ryc.fork.anon.chip")}</span>
+      <h3>{t("ryc.confirm.title")}</h3>
 
       <ul className="confirm-points">
         <li>
-          Cet avis sera publié <strong>sans aucun lien avec votre compte</strong>.
+          {t("ryc.confirm.1.before")} <strong>{t("ryc.confirm.1.strong")}</strong>
         </li>
         <li>
-          Vous ne pourrez plus le modifier, le corriger ni le retirer.{" "}
-          <em>Nous non plus, à votre demande: nous ne saurons pas lequel est le vôtre.</em>
+          {t("ryc.confirm.2")} <em>{t("ryc.confirm.2.em")}</em>
         </li>
-        <li>
-          Un modérateur pourra le retirer s&apos;il pose problème, sans savoir qui
-          l&apos;a écrit.
-        </li>
+        <li>{t("ryc.confirm.3")}</li>
       </ul>
 
       {/* Last chance to reread it, on the screen where rereading still matters. */}
@@ -193,7 +189,7 @@ export function AnonymousConfirm({
 
       <div className="actions">
         <button type="button" className="primary anon" onClick={onConfirm} disabled={busy}>
-          {busy ? "envoi…" : "Publier anonymement, définitivement"}
+          {busy ? t("ryc.confirm.sending") : t("ryc.confirm.cta")}
         </button>
         {/*
           A second way out, beside the irreversible button. Someone who has
@@ -202,7 +198,7 @@ export function AnonymousConfirm({
           does not publish anything, it returns to the choice.
         */}
         <button type="button" className="ghost" onClick={onBack} disabled={busy}>
-          Revenir en arrière
+          {t("ryc.confirm.return")}
         </button>
       </div>
     </section>

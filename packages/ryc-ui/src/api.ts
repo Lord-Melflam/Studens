@@ -16,6 +16,10 @@ export interface CourseSummary {
   quarter: string | null;
   teachers: string[];
   external: boolean;
+  /** The teaching language without the accommodation note, for filtering. */
+  mainLanguage: string | null;
+  /** The school or institute that teaches it, not the faculty it is reached through. */
+  owningEntity: string | null;
 }
 
 export interface CourseDetail extends CourseSummary {
@@ -41,6 +45,10 @@ export interface ProgrammeSummary {
   title: string;
   faculty: string;
   courses: number;
+  /** Parsed from the title by the reference module. Null when it matched nothing. */
+  kind: string | null;
+  credits: number | null;
+  site: string | null;
 }
 
 /** FR-D15 and FR-C16: the nulls below are the server's answer, not a client choice. */
@@ -169,6 +177,14 @@ export const api = {
     json<{ aggregate: Aggregate; reviews: PublishedReview[]; sessionRequired: boolean }>(
       `/api/courses/${encodeURIComponent(code)}/reviews`,
     ),
+  /**
+   * How many published reviews each course has, for the whole catalogue.
+   *
+   * One request for the lot rather than one per course: at launch 10 courses of
+   * 547 have anything to read, so the answer is a few hundred bytes and it is
+   * what makes "only courses with reviews" possible at all.
+   */
+  reviewCounts: () => json<{ counts: Record<string, number> }>("/api/reviews/counts"),
   reviewContext: (code: string) =>
     json<ReviewContext>(`/api/courses/${encodeURIComponent(code)}/review-context`),
   submitReview: submit,

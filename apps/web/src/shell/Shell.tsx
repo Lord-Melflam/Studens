@@ -13,6 +13,8 @@ import { Account } from "../Account.js";
 import { LanguageSwitcher } from "../LanguageSwitcher.js";
 import { Settings } from "../Settings.js";
 import { activeModuleFor, liveModules } from "./registry.js";
+import { useSession } from "../session.js";
+import { FIRST_RUN } from "../firstrun/FirstRun.js";
 import { APP_PREFIX, currentRoute, linkProps, moduleIdFrom, navigate, usePath } from "../router.js";
 
 /**
@@ -53,6 +55,28 @@ function Home() {
       </ul>
       <p className="footnote">{t("app.home.more")}</p>
     </>
+  );
+}
+
+/**
+ * A standing reminder that the first run is not finished.
+ *
+ * The counterpart to letting somebody skip it: once the app stops forcing the
+ * setup, the setup has to stay visible or it is simply lost, and a member who
+ * never chose a username publishes under no name at all.
+ *
+ * A line, not a modal. It is a reminder about their own account, not an
+ * obstacle, and it disappears the moment the setup is done.
+ */
+function SetupPrompt() {
+  const t = useT();
+  const { session } = useSession();
+  if (!session?.signedIn || session.onboarded !== false) return null;
+  return (
+    <p className="setup-prompt">
+      <span>{t("app.setup.prompt")}</span>
+      <a {...linkProps(FIRST_RUN)}>{t("app.setup.go")}</a>
+    </p>
   );
 }
 
@@ -101,6 +125,8 @@ export function Shell() {
           <Account />
         </div>
       </header>
+
+      <SetupPrompt />
 
       <div className="app-body">
       {settings ? (

@@ -34,6 +34,15 @@ export function sessionRoutes(prisma: PrismaClient): Router {
         // and is never presented as proof of enrolment.
         emailDomain: who.emailDomain,
         role: who.role,
+        // FR-F5: the shell needs both on the very first paint, because an
+        // un-onboarded member is sent to the first run before anything else
+        // renders. A second round trip here would show the app for a frame and
+        // then replace it, which reads as a bug.
+        username: who.username,
+        onboarded: who.onboarded,
+        // Zero means the first run has never been opened, which is the only
+        // state that sends somebody there instead of prompting them in place.
+        onboardingStep: who.onboardingStep,
         devSignInAvailable: devIdentityEnabled(),
       });
     })().catch(() => res.status(500).json({ error: "unavailable" }));
@@ -63,7 +72,6 @@ export function sessionRoutes(prisma: PrismaClient): Router {
           provider: "dev",
           providerSubject: "local",
           emailDomain: "student.uclouvain.be",
-          displayName: "Développeur local",
           tenantId: tenant.id,
         },
       });

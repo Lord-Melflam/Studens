@@ -58,12 +58,18 @@ The first crawl takes a few minutes and is polite about it. Every page is then c
 under `data/page-cache`, so a re-run costs about nine seconds and no requests at all. Use
 `--max 40` for a smaller slice while working on the parser.
 
-**`dev:api` sets `STUDENS_DEV_IDENTITY=1`.** Submission needs a Member (FR-C4) and FR-A is
-not built, so without it the review form refuses to open and looks broken. The fence is in
-the code, not the script: the variable must be set explicitly, it is refused when
-`NODE_ENV=production` whatever else is set, and the process prints a warning naming FR-A
-at every start. Production does not run this script. `npm run dev:api:anon` runs without
-it, which is how to see what a signed-out visitor sees. Both go away when FR-A ships.
+**`dev:api` sets `STUDENS_DEV_IDENTITY=1`.** Submission needs a Member (FR-C4), and signing
+in with Google or Microsoft needs credentials that a contributor will not have, so without
+it the review form refuses to open and looks broken. It signs in one fixed member and
+issues a **real** session, so every other route runs the same code production runs. The
+fence is in the code, not the script: the variable must be set explicitly, it is refused
+when `NODE_ENV=production` whatever else is set, and the process prints a warning at every
+start. Production does not run this script. `npm run dev:api:anon` runs without it, which
+is how to see what a signed-out visitor sees.
+
+That member starts with **no username and no first-run progress**, on purpose (FR-F14), so
+what a developer lands on is the first-run sequence rather than somebody else's finished
+account. To see it again afterwards, use "Refaire la configuration" in `/app/moi`.
 
 **Work inside the Linux filesystem, not on a Windows mount.** Measured on this
 project: 300 small file writes took 0.03 s on ext4 and 4.0 s on `/mnt/c`, which
