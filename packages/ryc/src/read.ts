@@ -19,7 +19,17 @@
  */
 import { PrismaClient } from "@prisma/client";
 
-export type Path = "named" | "anonymous" | "imported";
+/**
+ * `detached` is a review whose author deleted their account (FR-A15, OPEN-46).
+ *
+ * A FOURTH STATE AND NOT A SECOND ANONYMOUS ONE. It keeps the per-review
+ * numbers it was published with, because it was published with them, and it is
+ * counted with neither the named nor the anonymous set: counting it as
+ * anonymous would inflate the figure FR-C21 puts in front of a contributor
+ * before they choose, so the number they use to judge their own exposure, and
+ * section 3.3's arithmetic with it, would be wrong.
+ */
+export type Path = "named" | "anonymous" | "imported" | "detached";
 
 export interface PublishedReview {
   id: string;
@@ -43,6 +53,8 @@ export interface Aggregate {
   count: number;
   named: number;
   anonymous: number;
+  /** FR-A15: published under a name, whose account has since been deleted. */
+  detached: number;
   recommendation: number | null;
   workloadVsEcts: number | null;
   difficulty: number | null;
@@ -95,17 +107,25 @@ export async function reviewsFor(
   // a query this module could make. A member with no name yet renders as an
   // unnamed member rather than as anonymous, because the two must never look
   // alike (FR-C15).
-  const names = opts.names ? await opts.names(named.map((r) => r.memberId)) : new Map();
+  // Only the rows that still have an author. A detached one has no member to
+  // resolve, and asking for null would be asking the platform a question about
+  // somebody who no longer exists.
+  const stillAttached = named.map((r) => r.memberId).filter((id): id is string => id !== null);
+  const names = opts.names ? await opts.names(stillAttached) : new Map();
 
   const reviews: PublishedReview[] = [
     ...named.map((r) => ({
       id: r.id,
-      path: "named" as const,
+      path: (r.memberId === null ? "detached" : "named") as Path,
       academicYear: r.academicYear,
       body: r.body,
       advice: r.advice,
       date: r.createdAt.toISOString().slice(0, 10),
-      author: names.get(r.memberId) ?? "membre",
+      // A detached review carries no author at all. The interface labels it
+      // as a deleted account, and it must never be labelled "Anonyme": the
+      // text was published under a name people may remember, and calling it
+      // anonymous would claim a protection it does not have.
+      author: r.memberId === null ? null : (names.get(r.memberId) ?? "membre"),
       recommendation: r.recommendation,
       workloadVsEcts: r.workloadVsEcts,
       difficulty: r.difficulty,
@@ -150,8 +170,9 @@ export async function reviewsFor(
     reviews,
     aggregate: {
       count: scored.length,
-      named: named.length,
+      named: named.filter((r) => r.memberId !== null).length,
       anonymous: anon.length,
+      detached: named.filter((r) => r.memberId === null).length,
       recommendation: mean(scored.map((r) => r.recommendation)),
       workloadVsEcts: mean(scored.map((r) => r.workloadVsEcts)),
       difficulty: mean(scored.map((r) => r.difficulty)),

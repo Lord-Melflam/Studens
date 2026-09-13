@@ -158,8 +158,18 @@ export async function beginAuthorization(
 export interface ProviderIdentity {
   /** Stable per application and per person. Becomes `Member.providerSubject`. */
   subject: string;
-  /** FR-A9. The domain only: the local part is never stored. */
+  /** FR-A9. The trust signal, derived from the address below. */
   emailDomain: string;
+  /**
+   * FR-A11: the whole address, from the verified claim.
+   *
+   * It used to be read here and deliberately thrown away, on a reading of FR-A9
+   * that was mine rather than François's. The provider sends it on every
+   * sign-in, so discarding it bought no privacy and cost every feature that has
+   * to reach a person. It becomes `Member.providerEmail` and is never editable
+   * (FR-A12), because it is how the same person is recognised next time.
+   */
+  email: string;
 }
 
 function claimString(payload: JWTPayload, name: string): string | null {
@@ -168,13 +178,16 @@ function claimString(payload: JWTPayload, name: string): string | null {
 }
 
 /**
- * The domain, and only the domain.
+ * The verified address, and the domain taken from it.
  *
- * The full address is read here and deliberately not returned. FR-A9 wants the
- * domain as a trust signal; the local part is personal data with no use in this
- * product, and OPEN-36 already decided that what we do not need we do not keep.
+ * One function for both, because they must not be able to disagree: a domain
+ * derived from one claim and an address read from another would let the trust
+ * signal describe an address the member does not hold.
  */
-export function emailDomainFrom(payload: JWTPayload, provider: ProviderConfig): string {
+export function emailFrom(
+  payload: JWTPayload,
+  provider: ProviderConfig,
+): { email: string; domain: string } {
   if (provider.requireEmailVerified && payload["email_verified"] === false) {
     throw new OidcError("email_unverified", "the provider reports this address as unverified");
   }
@@ -182,13 +195,19 @@ export function emailDomainFrom(payload: JWTPayload, provider: ProviderConfig): 
     const value = claimString(payload, claim);
     const at = value ? value.lastIndexOf("@") : -1;
     if (value && at > 0 && at < value.length - 1) {
-      return value.slice(at + 1).toLowerCase();
+      const email = value.toLowerCase();
+      return { email, domain: email.slice(at + 1) };
     }
   }
   throw new OidcError(
     "no_email",
     `no usable address in ${provider.emailClaims.join(" or ")}; FR-A9 needs a domain`,
   );
+}
+
+/** FR-A9's trust signal on its own, kept for the callers that only want it. */
+export function emailDomainFrom(payload: JWTPayload, provider: ProviderConfig): string {
+  return emailFrom(payload, provider).domain;
 }
 
 export interface CompleteInput {
@@ -260,5 +279,6 @@ export async function completeAuthorization(
   const subject = claimString(payload, "sub");
   if (!subject) throw new OidcError("no_subject", "id token carried no sub");
 
-  return { subject, emailDomain: emailDomainFrom(payload, provider) };
+  const { email, domain } = emailFrom(payload, provider);
+  return { subject, emailDomain: domain, email };
 }

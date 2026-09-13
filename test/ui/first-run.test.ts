@@ -260,3 +260,58 @@ describe("the first run can be left (FR-F4, and FR-F6's reasoning)", () => {
     expect(main).toContain('navigate("/connexion")');
   });
 });
+
+/**
+ * Finishing the first run gets you into the app.
+ *
+ * REPORTED 2026-09-13: "I'm stuck at the 5th page of registering. Selected
+ * uclouvain but can't move further." Nothing was wrong with the save. The
+ * account was written correctly, onboarded, with the institution set. The
+ * Finish button navigated to /app, `Zone` decided whether to divert from the
+ * session it had fetched ON MOUNT, which still said the first run had never
+ * been opened, and sent them straight back. The wizard then resumed at their
+ * saved step 5. Pressing Finish looked like pressing nothing.
+ *
+ * Two properties keep it fixed, and they are separate: the session is refreshed
+ * BEFORE the navigation, and the refresh is waited for.
+ */
+describe("finishing lands in the app, not back in the wizard", () => {
+  const main = read("apps/web/src/main.tsx");
+  const session = read("apps/web/src/session.tsx");
+
+  it("refreshes the session before navigating away from the first run", () => {
+    const onDone = /onDone=\{[\s\S]*?\}\}/.exec(main)?.[0] ?? "";
+    expect(onDone, "the first run's onDone should be findable").not.toBe("");
+    expect(onDone, "navigating on a stale session is what caused the bounce").toContain("reload");
+    expect(onDone).toContain("takeDestination");
+  });
+
+  /**
+   * The promise is the point. A `reload()` that returns void can be called and
+   * not waited for, and the navigation then happens against the old answer,
+   * which is exactly the bug with an extra line of code in front of it.
+   */
+  it("the reload resolves only once the new answer is in state", () => {
+    expect(session).toMatch(/reload:\s*\(\)\s*=>\s*Promise<void>/);
+    expect(session).toMatch(/const reload = useCallback\(async/);
+    const onDone = /onDone=\{[\s\S]*?\}\}/.exec(main)?.[0] ?? "";
+    expect(onDone, "the navigation must be chained onto the reload").toMatch(
+      /reload\(\)\s*\.then|await reload\(\)/,
+    );
+  });
+
+  /**
+   * The other half of what made it invisible: only step two could show an
+   * error, so a refused save on any other screen did nothing at all and left
+   * nothing to read.
+   */
+  it("shows a failure on every step, not only on the username one", () => {
+    const wizard = read("apps/web/src/firstrun/FirstRun.tsx");
+    expect(wizard).toContain("step !== 2");
+    expect(wizard).toContain("firstrun.err.save");
+    for (const locale of LOCALES) {
+      const t = createTranslator(bundle, locale);
+      expect(t("firstrun.err.save"), `${locale}`).not.toBe("firstrun.err.save");
+    }
+  });
+});

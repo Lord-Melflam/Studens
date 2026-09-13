@@ -397,3 +397,22 @@ main.app {
   border-bottom: 1px solid var(--line);
 }
 .setup-prompt a { color: var(--accent); font-weight: 600; }
+
+/* The account panels: notification switches, and the one destructive block. */
+.panel .switches { list-style: none; margin: 0.9rem 0 0; padding: 0; }
+.panel .switches li + li { margin-top: 0.7rem; }
+.panel .switches label { display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer; }
+.panel .switches input { margin-top: 0.25rem; flex: none; }
+.panel .switches strong { display: block; font-size: 0.92rem; font-weight: 600; }
+.panel .switches .hint { display: block; margin-top: 0.1rem; }
+
+/* Last on the page, and visually apart. A destructive control sitting between
+   two ordinary ones gets pressed by somebody who was not aiming at it. */
+.panel.danger { border-color: #e6cdc9; }
+.panel.danger hr { margin: 1.2rem 0; border: 0; border-top: 1px solid var(--line); }
+.panel.danger ul.plain { margin: 0 0 1rem; padding-left: 1.1rem; font-size: 0.9rem; }
+.panel.danger ul.plain li { margin-bottom: 0.35rem; }
+.panel button.ghost.danger { color: var(--danger); border-color: #e6cdc9; }
+.panel button.ghost.danger:hover:not(:disabled) { border-color: var(--danger); }
+.panel.danger > button.ghost { padding: 0.45rem 0.9rem; font: inherit; background: transparent;
+  border: 1px solid var(--line); border-radius: 7px; cursor: pointer; }

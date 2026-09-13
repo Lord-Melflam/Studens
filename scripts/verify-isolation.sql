@@ -61,6 +61,23 @@ SELECT pg_temp.expect_denied('studens_ryc', 'SELECT 1 FROM platform."Session"',
 SELECT pg_temp.expect_denied('studens_ryc', 'SELECT 1 FROM platform."AuditLog"',
   'read the audit log');
 
+-- FR-A11 put an email address in platform.Member, so the boundary above now
+-- guards something considerably more sensitive than a domain. Two new tables
+-- arrived with it, and a GRANT that was never written is exactly the kind of
+-- absence nobody notices, so each one is asserted rather than assumed.
+SELECT pg_temp.expect_denied('studens_ryc', 'SELECT 1 FROM platform."NotificationPreference"',
+  'read who agreed to be sent what');
+-- FR-H4: a module asks the platform to notify a member; it never sees an
+-- address and never queues mail itself.
+SELECT pg_temp.expect_denied('studens_ryc', 'SELECT 1 FROM platform."MailOutbox"',
+  'read the mail queue, which holds addresses');
+SELECT pg_temp.expect_denied('studens_ryc',
+  $q$INSERT INTO platform."MailOutbox" ("id", "toAddress", "kind", "payload")
+     VALUES ('x', 'a@b.invalid', 'digest.weekly', '{}')$q$,
+  'queue mail of its own');
+SELECT pg_temp.expect_denied('studens_ref', 'SELECT 1 FROM platform."MailOutbox"',
+  'read the mail queue from the catalogue module');
+
 -- And the reverse: the platform does not read a feature module's own data.
 SELECT pg_temp.expect_denied('studens_platform', 'SELECT 1 FROM ryc."ReviewAttributed"',
   'read attributed reviews');

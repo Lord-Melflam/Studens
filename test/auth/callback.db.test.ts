@@ -265,7 +265,7 @@ describe("a callback that must be refused", () => {
 });
 
 describe("a sign-in that succeeds", () => {
-  dbit("creates the member, stores only the domain, and issues a session", async () => {
+  dbit("creates the member with both addresses, and issues a session", async () => {
     const { cookie, state } = await start();
     const res = await callback(`code=${Math.random()}&state=${state}`, cookie);
 
@@ -275,9 +275,17 @@ describe("a sign-in that succeeds", () => {
     const member = await prisma.member.findFirstOrThrow({ where: { provider: "fake" } });
     expect(member.providerSubject).toBe("route-subject");
     expect(member.emailDomain).toBe("student.uclouvain.be");
-    // FR-A9 and OPEN-36: the address and the provider's display name are not
-    // ours to keep. Only the domain is.
-    expect(JSON.stringify(member)).not.toContain("someone@");
+
+    // FR-A11: the address IS kept now. FR-A12: two columns, and the contact one
+    // starts as the provider's because the provider just verified it, so a new
+    // member is reachable from the first second without being asked again.
+    expect(member.providerEmail).toBe("someone@student.uclouvain.be");
+    expect(member.contactEmail).toBe("someone@student.uclouvain.be");
+    expect(member.contactVerifiedAt).not.toBeNull();
+
+    // OPEN-36 is unchanged and is the part that did not move: the provider's
+    // display name is still not kept, and there is no column it could go in.
+    expect(Object.keys(member)).not.toContain("displayName");
 
     const cookies = res.headers.getSetCookie().join("\n");
     expect(cookies).toContain("studens_session=");

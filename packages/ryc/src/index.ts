@@ -28,3 +28,6 @@ export {
   type Aggregate,
   type Path,
 } from "./read.js";
+
+/** FR-A15 and OPEN-46: what this module does when a Member leaves. */
+export { RYC_MODULE, detachMemberReviews, exportMemberReviews } from "./account.js";

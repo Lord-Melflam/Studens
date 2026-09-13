@@ -44,8 +44,8 @@ export const shellStrings: Bundle = {
     "settings.domain": "Domaine de votre adresse",
     "settings.domain.hint": "Indication, pas une preuve d'inscription.",
     "settings.stored": "Ce que nous gardons",
-    "settings.stored.value": "L'identifiant de votre fournisseur, le domaine de votre adresse, et vos préférences.",
-    "settings.stored.hint": "Ni votre adresse complète, ni le nom que votre fournisseur nous envoie.",
+    "settings.stored.value": "L'identifiant de votre fournisseur, votre adresse e-mail, et vos préférences.",
+    "settings.stored.hint": "Pas le nom que votre fournisseur nous envoie : il n'y a aucune colonne pour le mettre.",
     "settings.language": "Langue",
     "settings.language.hint": "Change l'interface. Les informations venant des institutions restent dans leur langue.",
     "settings.sessions": "Connexions actives",
@@ -181,6 +181,16 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.reserved": "Ce nom est réservé.",
     "firstrun.2.err.taken": "Ce pseudonyme est déjà pris.",
     "firstrun.2.err.other": "L'enregistrement a échoué. Réessayez.",
+    "firstrun.err.save":
+      "L'enregistrement a échoué et rien n'a été perdu. Réessayez ; si cela recommence, rechargez la page.",
+    "text.count": "{used} caractères sur {max}",
+    "text.err.long": "Trop long : {used} caractères, {max} au maximum.",
+    "text.err.control":
+      "Ce champ tient sur une ligne et ne peut pas contenir de retour à la ligne ni de caractère de contrôle.",
+    "text.err.bidi":
+      "Ce texte contient un caractère qui change le sens de lecture. Il n'est pas accepté, car il permet d'afficher autre chose que ce qui est écrit.",
+    "text.err.invisible":
+      "Ce texte contient un caractère invisible, souvent collé depuis une page web. Retirez-le : il ne se voit pas mais il compte.",
 
     "firstrun.3.title": "Dans quelle langue ?",
     "firstrun.3.lede": "Vous pouvez en changer à tout moment.",
@@ -246,10 +256,14 @@ export const shellStrings: Bundle = {
       "Le strict nécessaire, et rien qui serve à vous identifier auprès de quelqu'un d'autre.",
     "privacy.keep.subject":
       "L'identifiant que votre fournisseur (Microsoft ou Google) nous donne, qui ne dit rien de vous par lui-même.",
-    "privacy.keep.domain.claim": "Le domaine de votre adresse,",
+    "privacy.keep.domain.claim": "Votre adresse e-mail,",
     "privacy.keep.domain.body":
-      "par exemple uclouvain.be, jamais l'adresse elle-même. Nous ne gardons pas non plus le nom que votre fournisseur nous envoie.",
+      "celle de votre compte Microsoft ou Google, et celle où vous nous demandez de vous écrire si elle est différente. Elles servent à vous contacter et à rien d'autre : jamais de publicité, jamais revendues. Le domaine, par exemple uclouvain.be, sert en plus d'indication.",
     "privacy.keep.chosen": "Le pseudonyme que vous choisissez, et vos préférences.",
+    "privacy.keep.notname":
+      "Pas le nom que votre fournisseur nous envoie : il n'y a aucune colonne pour le mettre.",
+    "privacy.keep.rights":
+      "Vous pouvez à tout moment télécharger tout ce que nous gardons, changer votre adresse, ou supprimer votre compte, depuis « Mon compte » et sans rien demander à personne.",
     "privacy.keep.fine":
       "Le domaine est une indication, pas une preuve d'inscription, et n'est jamais présenté comme telle.",
     "privacy.spec.lede":
@@ -278,6 +292,63 @@ export const shellStrings: Bundle = {
       "Les contributions extérieures sont les bienvenues. Tout le code est relu avant d'être intégré.",
     "about.contribute.cta": "Voir le dépôt",
     "about.privacy.cta": "Comment vos données sont traitées",
+
+    "account.email": "Adresse de contact",
+    "account.email.hint":
+      "Où nous vous écrivons. Vous pouvez en mettre une autre que celle de votre compte Microsoft ou Google.",
+    "account.email.contact": "Nous écrire à",
+    "account.email.send": "Changer",
+    "account.email.pending":
+      "Un message est parti vers {email}. L'adresse ne change qu'une fois le lien ouvert.",
+    "account.email.unverified":
+      "Cette adresse n'a pas encore été confirmée. Rien d'optionnel ne lui est envoyé tant qu'elle ne l'est pas.",
+    "account.email.err.shape": "Cette adresse ne ressemble pas à une adresse.",
+    "account.email.err.long": "Cette adresse est trop longue.",
+    "account.email.err.same": "C'est déjà votre adresse de contact.",
+    "account.email.err.other": "La demande a échoué. Réessayez.",
+    "account.email.provider": "Adresse de connexion",
+    "account.email.provider.hint":
+      "Celle de votre fournisseur. Elle sert à vous reconnaître et n'est pas modifiable ici.",
+    "account.email.provider.absent":
+      "Votre compte a été créé avant que nous gardions les adresses. Elle apparaîtra à votre prochaine connexion.",
+    "account.email.undeliverable":
+      "Demande enregistrée pour {email}, mais cette installation ne peut encore envoyer aucun message : aucun relais e-mail n'est configuré. Rien ne partira tant que ce n'est pas fait.",
+    "account.notifications.undeliverable":
+      "Aucun message ne peut encore être envoyé : cette installation n'a pas de relais e-mail configuré. Vos choix sont enregistrés et s'appliqueront dès que ce sera le cas.",
+
+    "account.notifications": "Ce que nous pouvons vous envoyer",
+    "account.notifications.hint":
+      "Tout est désactivé au départ. Chaque type se règle séparément, pour qu'aucun ne serve à en fuir un autre.",
+    "account.notifications.transactional":
+      "Les messages qui confirment une action sur votre compte (changement d'adresse, suppression) partent toujours : les couper reviendrait à vous cacher ce qui arrive à votre compte.",
+    "account.notifications.anonymous":
+      "Aucun message ne parlera jamais d'une publication anonyme, pas même à son auteur : il faudrait savoir laquelle est la vôtre, et personne ne le sait.",
+    "account.kind.moderation.outcome": "Décisions de modération",
+    "account.kind.moderation.outcome.hint":
+      "Quand une publication signée de votre nom est retirée ou rétablie.",
+    "account.kind.reply.attributed": "Réponses à ce que vous signez",
+    "account.kind.reply.attributed.hint": "Quand quelqu'un réagit à une publication sous votre nom.",
+    "account.kind.digest.weekly": "Résumé hebdomadaire",
+    "account.kind.digest.weekly.hint": "Ce qui a bougé sur ce qui vous concerne, une fois par semaine.",
+
+    "account.leaving": "Partir",
+    "account.export": "Télécharger mes données",
+    "account.export.hint":
+      "Un fichier avec tout ce que nous gardons sur vous, colonnes comprises, à garder ou à vérifier.",
+    "account.delete": "Supprimer mon compte",
+    "account.delete.hint": "Définitif. Lisez ce qui suit avant de confirmer.",
+    "account.delete.what.account":
+      "Votre compte, vos préférences et vos connexions sont effacés.",
+    "account.delete.what.named":
+      "Ce que vous avez publié sous votre nom reste en ligne, sans votre nom.",
+    "account.delete.what.anonymous":
+      "Ce que vous avez publié anonymement n'était déjà relié à rien, et le reste.",
+    "account.delete.what.text":
+      "Le texte, lui, ne change pas : s'il vous désigne, il continuera de vous désigner.",
+    "account.delete.type": "Tapez « {word} » pour confirmer",
+    "account.delete.now": "Supprimer définitivement",
+    "account.delete.cancel": "Annuler",
+    "account.delete.failed": "La suppression a échoué. Rien n'a été supprimé.",
   },
 
   nl: {
@@ -304,8 +375,8 @@ export const shellStrings: Bundle = {
     "settings.domain": "Domein van je adres",
     "settings.domain.hint": "Een aanwijzing, geen bewijs van inschrijving.",
     "settings.stored": "Wat we bewaren",
-    "settings.stored.value": "De identificatie van je provider, het domein van je adres, en je voorkeuren.",
-    "settings.stored.hint": "Niet je volledige adres, en niet de naam die je provider doorgeeft.",
+    "settings.stored.value": "De identificatie van uw aanbieder, uw e-mailadres, en uw voorkeuren.",
+    "settings.stored.hint": "Niet de naam die uw aanbieder ons doorgeeft: er is geen kolom om die in te zetten.",
     "settings.language": "Taal",
     "settings.language.hint": "Verandert de interface. Informatie van de instellingen blijft in haar eigen taal.",
     "settings.sessions": "Actieve aanmeldingen",
@@ -442,6 +513,16 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.reserved": "Deze naam is voorbehouden.",
     "firstrun.2.err.taken": "Deze gebruikersnaam is al bezet.",
     "firstrun.2.err.other": "Opslaan is mislukt. Probeer opnieuw.",
+    "firstrun.err.save":
+      "Opslaan is mislukt en er is niets verloren. Probeer opnieuw; gebeurt het weer, herlaad dan de pagina.",
+    "text.count": "{used} tekens van {max}",
+    "text.err.long": "Te lang: {used} tekens, hoogstens {max}.",
+    "text.err.control":
+      "Dit veld past op één lijn en kan geen regeleinde of stuurteken bevatten.",
+    "text.err.bidi":
+      "Deze tekst bevat een teken dat de leesrichting omkeert. Dat wordt niet aanvaard, want het laat iets anders zien dan er staat.",
+    "text.err.invisible":
+      "Deze tekst bevat een onzichtbaar teken, vaak meegeplakt van een webpagina. Verwijder het: het is niet te zien maar het telt mee.",
 
     "firstrun.3.title": "In welke taal?",
     "firstrun.3.lede": "U kunt dit op elk moment wijzigen.",
@@ -507,10 +588,14 @@ export const shellStrings: Bundle = {
       "Het strikt noodzakelijke, en niets waarmee iemand anders u kan identificeren.",
     "privacy.keep.subject":
       "De identificatie die uw aanbieder (Microsoft of Google) ons geeft, en die op zichzelf niets over u zegt.",
-    "privacy.keep.domain.claim": "Het domein van uw adres,",
+    "privacy.keep.domain.claim": "Uw e-mailadres,",
     "privacy.keep.domain.body":
-      "bijvoorbeeld uclouvain.be, nooit het adres zelf. Wij bewaren evenmin de naam die uw aanbieder ons doorgeeft.",
+      "dat van uw Microsoft- of Google-account, en dat waar u ons vraagt u te schrijven als dat verschilt. Ze dienen om u te contacteren en tot niets anders: nooit reclame, nooit doorverkocht. Het domein, bijvoorbeeld uclouvain.be, dient daarnaast als aanwijzing.",
     "privacy.keep.chosen": "De gebruikersnaam die u kiest, en uw voorkeuren.",
+    "privacy.keep.notname":
+      "Niet de naam die uw aanbieder ons doorgeeft: er is geen kolom om die in te zetten.",
+    "privacy.keep.rights":
+      "U kunt op elk moment alles wat wij bijhouden downloaden, uw adres wijzigen of uw account verwijderen, via \u201cMijn account\u201d en zonder het aan iemand te vragen.",
     "privacy.keep.fine":
       "Het domein is een aanwijzing, geen bewijs van inschrijving, en wordt ook nooit zo gepresenteerd.",
     "privacy.spec.lede":
@@ -539,6 +624,63 @@ export const shellStrings: Bundle = {
       "Bijdragen van buitenaf zijn welkom. Alle code wordt nagelezen voor ze wordt opgenomen.",
     "about.contribute.cta": "Naar de repository",
     "about.privacy.cta": "Hoe uw gegevens behandeld worden",
+
+    "account.email": "Contactadres",
+    "account.email.hint":
+      "Waar wij u schrijven. U mag een ander adres opgeven dan dat van uw Microsoft- of Google-account.",
+    "account.email.contact": "Schrijf ons naar",
+    "account.email.send": "Wijzigen",
+    "account.email.pending":
+      "Er is een bericht naar {email} vertrokken. Het adres verandert pas als de link geopend is.",
+    "account.email.unverified":
+      "Dit adres is nog niet bevestigd. Er wordt niets optioneels naartoe gestuurd zolang dat niet gebeurd is.",
+    "account.email.err.shape": "Dit lijkt niet op een adres.",
+    "account.email.err.long": "Dit adres is te lang.",
+    "account.email.err.same": "Dat is al uw contactadres.",
+    "account.email.err.other": "De aanvraag is mislukt. Probeer opnieuw.",
+    "account.email.provider": "Aanmeldadres",
+    "account.email.provider.hint":
+      "Dat van uw aanbieder. Het dient om u te herkennen en is hier niet aan te passen.",
+    "account.email.provider.absent":
+      "Uw account bestond al voor wij adressen bijhielden. Het verschijnt bij uw volgende aanmelding.",
+    "account.email.undeliverable":
+      "Aanvraag genoteerd voor {email}, maar deze installatie kan nog geen enkel bericht versturen: er is geen mailrelais ingesteld. Er vertrekt niets zolang dat niet gebeurd is.",
+    "account.notifications.undeliverable":
+      "Er kan nog geen enkel bericht verstuurd worden: deze installatie heeft geen mailrelais ingesteld. Uw keuzes zijn bewaard en gelden zodra dat wel het geval is.",
+
+    "account.notifications": "Wat wij u mogen sturen",
+    "account.notifications.hint":
+      "Alles staat om te beginnen uit. Elk soort regelt u apart, zodat geen enkel dient om aan een ander te ontsnappen.",
+    "account.notifications.transactional":
+      "Berichten die een actie op uw account bevestigen (adreswijziging, verwijdering) vertrekken altijd: ze afzetten zou verbergen wat er met uw account gebeurt.",
+    "account.notifications.anonymous":
+      "Geen enkel bericht zal ooit over een anonieme bijdrage gaan, ook niet aan de auteur: daarvoor zou men moeten weten welke de uwe is, en niemand weet dat.",
+    "account.kind.moderation.outcome": "Moderatiebeslissingen",
+    "account.kind.moderation.outcome.hint":
+      "Wanneer een bijdrage onder uw naam verwijderd of hersteld wordt.",
+    "account.kind.reply.attributed": "Reacties op wat u ondertekent",
+    "account.kind.reply.attributed.hint":
+      "Wanneer iemand reageert op een bijdrage onder uw naam.",
+    "account.kind.digest.weekly": "Wekelijks overzicht",
+    "account.kind.digest.weekly.hint": "Wat er bewogen is rond wat u aangaat, één keer per week.",
+
+    "account.leaving": "Vertrekken",
+    "account.export": "Mijn gegevens downloaden",
+    "account.export.hint":
+      "Een bestand met alles wat wij over u bijhouden, kolommen inbegrepen, om te bewaren of na te gaan.",
+    "account.delete": "Mijn account verwijderen",
+    "account.delete.hint": "Definitief. Lees eerst wat hieronder staat.",
+    "account.delete.what.account": "Uw account, uw voorkeuren en uw sessies worden gewist.",
+    "account.delete.what.named":
+      "Wat u onder uw naam publiceerde blijft online, zonder uw naam.",
+    "account.delete.what.anonymous":
+      "Wat u anoniem publiceerde stond al los van alles, en blijft dat.",
+    "account.delete.what.text":
+      "De tekst zelf verandert niet: als die u verraadt, blijft die u verraden.",
+    "account.delete.type": "Typ \u201c{word}\u201d om te bevestigen",
+    "account.delete.now": "Definitief verwijderen",
+    "account.delete.cancel": "Annuleren",
+    "account.delete.failed": "Verwijderen is mislukt. Er is niets verwijderd.",
   },
 
   en: {
@@ -565,8 +707,8 @@ export const shellStrings: Bundle = {
     "settings.domain": "Domain of your address",
     "settings.domain.hint": "Evidence, not proof of enrolment.",
     "settings.stored": "What we keep",
-    "settings.stored.value": "Your provider's identifier, the domain of your address, and your preferences.",
-    "settings.stored.hint": "Not your full address, and not the name your provider sends us.",
+    "settings.stored.value": "Your provider's identifier, your email address, and your preferences.",
+    "settings.stored.hint": "Not the name your provider sends us: there is no column to put it in.",
     "settings.language": "Language",
     "settings.language.hint": "Changes the interface. Information from the institutions stays in its own language.",
     "settings.sessions": "Active sign-ins",
@@ -703,6 +845,16 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.reserved": "That name is reserved.",
     "firstrun.2.err.taken": "That username is already taken.",
     "firstrun.2.err.other": "Saving failed. Try again.",
+    "firstrun.err.save":
+      "Saving failed and nothing was lost. Try again; if it happens again, reload the page.",
+    "text.count": "{used} characters of {max}",
+    "text.err.long": "Too long: {used} characters, {max} at most.",
+    "text.err.control":
+      "This field is one line and cannot hold a line break or a control character.",
+    "text.err.bidi":
+      "This text contains a character that reverses the reading direction. It is not accepted, because it can display something other than what is written.",
+    "text.err.invisible":
+      "This text contains an invisible character, often pasted in from a web page. Remove it: it cannot be seen but it counts.",
 
     "firstrun.3.title": "Which language?",
     "firstrun.3.lede": "You can change it at any time.",
@@ -767,10 +919,14 @@ export const shellStrings: Bundle = {
       "The strict minimum, and nothing that would identify you to anybody else.",
     "privacy.keep.subject":
       "The identifier your provider (Microsoft or Google) gives us, which says nothing about you on its own.",
-    "privacy.keep.domain.claim": "The domain of your address,",
+    "privacy.keep.domain.claim": "Your email address,",
     "privacy.keep.domain.body":
-      "uclouvain.be for instance, never the address itself. We do not keep the name your provider sends us either.",
+      "your Microsoft or Google account's, and the one you ask us to write to if it is different. They are used to contact you and nothing else: never advertising, never sold on. The domain, uclouvain.be for instance, additionally serves as an indication.",
     "privacy.keep.chosen": "The username you choose, and your preferences.",
+    "privacy.keep.notname":
+      "Not the name your provider sends us: there is no column to put it in.",
+    "privacy.keep.rights":
+      "At any time you can download everything we keep, change your address, or delete your account, from \u201cMy account\u201d and without asking anybody.",
     "privacy.keep.fine":
       "The domain is an indication, not proof of enrolment, and is never presented as such.",
     "privacy.spec.lede":
@@ -799,5 +955,62 @@ export const shellStrings: Bundle = {
       "Outside contributions are welcome. All code is read by someone before it is merged.",
     "about.contribute.cta": "See the repository",
     "about.privacy.cta": "How your data is handled",
+
+    "account.email": "Contact address",
+    "account.email.hint":
+      "Where we write to you. It can be different from your Microsoft or Google account address.",
+    "account.email.contact": "Write to me at",
+    "account.email.send": "Change",
+    "account.email.pending":
+      "A message has gone to {email}. The address changes only once the link is opened.",
+    "account.email.unverified":
+      "This address has not been confirmed yet. Nothing optional is sent to it until it is.",
+    "account.email.err.shape": "That does not look like an address.",
+    "account.email.err.long": "That address is too long.",
+    "account.email.err.same": "That is already your contact address.",
+    "account.email.err.other": "The request failed. Try again.",
+    "account.email.provider": "Sign-in address",
+    "account.email.provider.hint":
+      "Your provider's. It is how you are recognised, and it cannot be changed here.",
+    "account.email.provider.absent":
+      "Your account was created before we kept addresses. It will appear at your next sign-in.",
+    "account.email.undeliverable":
+      "Request recorded for {email}, but this installation cannot send any message yet: no mail relay is configured. Nothing will leave until one is.",
+    "account.notifications.undeliverable":
+      "No message can be sent yet: this installation has no mail relay configured. Your choices are saved and will apply as soon as one is.",
+
+    "account.notifications": "What we may send you",
+    "account.notifications.hint":
+      "Everything starts off. Each kind is set separately, so that none of them serves as a way out of another.",
+    "account.notifications.transactional":
+      "Messages confirming something happening to your account (an address change, a deletion) are always sent: switching them off would hide from you what is happening to your own account.",
+    "account.notifications.anonymous":
+      "No message will ever be about an anonymous contribution, not even to its author: that would mean knowing which one is yours, and nobody does.",
+    "account.kind.moderation.outcome": "Moderation decisions",
+    "account.kind.moderation.outcome.hint":
+      "When something published under your name is removed or restored.",
+    "account.kind.reply.attributed": "Replies to what you sign",
+    "account.kind.reply.attributed.hint":
+      "When somebody responds to something published under your name.",
+    "account.kind.digest.weekly": "Weekly summary",
+    "account.kind.digest.weekly.hint": "What moved on what concerns you, once a week.",
+
+    "account.leaving": "Leaving",
+    "account.export": "Download my data",
+    "account.export.hint":
+      "A file with everything we keep about you, columns included, to keep or to check.",
+    "account.delete": "Delete my account",
+    "account.delete.hint": "Permanent. Read what follows before confirming.",
+    "account.delete.what.account": "Your account, your preferences and your sessions are erased.",
+    "account.delete.what.named":
+      "What you published under your name stays online, without your name.",
+    "account.delete.what.anonymous":
+      "What you published anonymously was already linked to nothing, and stays that way.",
+    "account.delete.what.text":
+      "The text itself does not change: if it identifies you, it will go on identifying you.",
+    "account.delete.type": "Type \u201c{word}\u201d to confirm",
+    "account.delete.now": "Delete permanently",
+    "account.delete.cancel": "Cancel",
+    "account.delete.failed": "The deletion failed. Nothing was deleted.",
   },
 };

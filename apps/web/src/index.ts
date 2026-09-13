@@ -31,3 +31,14 @@ export {
 export { Shell } from "./shell/Shell.js";
 export { Settings } from "./Settings.js";
 export { SessionProvider, useSession, type SessionState } from "./session.js";
+
+/**
+ * The browser's mirror of the server's text rules, exported so a test can run
+ * both over one corpus and fail if they drift. See test/kernel/text.test.ts.
+ */
+export {
+  TEXT_LIMITS,
+  countGraphemes,
+  textProblem,
+  type TextProblem,
+} from "./firstrun/text.js";

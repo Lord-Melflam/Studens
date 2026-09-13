@@ -54,6 +54,12 @@ async function devMember(prisma: PrismaClient): Promise<string> {
       provider: "dev",
       providerSubject: "local",
       emailDomain: "student.uclouvain.be",
+      // FR-A11: a real sign-in stores the address, so the development identity
+      // does too. Without it the account screen shows blanks where production
+      // shows an address, and the mail path cannot be exercised at all.
+      providerEmail: "developpeur.local@student.uclouvain.be",
+      contactEmail: "developpeur.local@student.uclouvain.be",
+      contactVerifiedAt: new Date(),
       tenantId: tenant.id,
     },
   });

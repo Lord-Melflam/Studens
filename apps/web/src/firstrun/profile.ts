@@ -16,6 +16,10 @@ export interface Profile {
   onboarded: boolean;
   onboardingStep: number;
   emailDomain?: string;
+  /** FR-A12. The provider's is identity and read-only; the contact one is not. */
+  providerEmail?: string | null;
+  contactEmail?: string | null;
+  contactVerified?: boolean;
 }
 
 export interface Institution {

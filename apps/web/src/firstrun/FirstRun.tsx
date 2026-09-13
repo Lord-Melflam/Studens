@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LOCALES, LOCALE_NAMES, localePath, useLocale, useT, type Locale } from "@studens/i18n";
 import { currentRoute, navigate } from "../router.js";
+import { TEXT_LIMITS, countGraphemes, textProblem, type TextProblem } from "./text.js";
 import {
   PatchFailed,
   fetchInstitutions,
@@ -57,6 +58,70 @@ export function hasExplicitStep(route: string): boolean {
 
 export function firstRunPath(step: number): string {
   return `${FIRST_RUN}/${Math.min(Math.max(step, 1), STEPS)}`;
+}
+
+/**
+ * One free text field, with its counter and its warning.
+ *
+ * THE WARNING APPEARS WHILE THE MISTAKE IS BEING MADE, not after the button is
+ * pressed. Before this there was no limit on screen, no counter, and no message
+ * for a refused value: François typed emoji, the save was refused for reasons
+ * nobody could see, and the reasonable conclusion was that the emoji were to
+ * blame. They were not. Nothing said what was.
+ *
+ * The rules come from `text.ts`, which mirrors the server, and a test fails if
+ * the two ever disagree. A warning that is wrong is worse than none.
+ */
+function FreeTextField({
+  id,
+  label,
+  placeholder,
+  value,
+  max,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  placeholder: string;
+  value: string;
+  max: number;
+  onChange: (v: string) => void;
+}) {
+  const t = useT();
+  const problem: TextProblem | null = textProblem(value, max);
+  const used = countGraphemes(value.replace(/\s+/gu, " ").trim());
+  // Quiet until it is nearly full, then present. A counter that is always there
+  // reads as a target to fill rather than a limit not to cross.
+  const showCount = used > max - 20;
+
+  return (
+    <>
+      <label className="field-label" htmlFor={id}>
+        {label}
+      </label>
+      <input
+        id={id}
+        className={problem ? "text-input bad" : "text-input"}
+        value={value}
+        // No maxLength: the browser would silently refuse the keystroke, and
+        // somebody pasting a long line would watch it truncate with nothing
+        // said. Being told why beats being stopped without a reason.
+        aria-invalid={problem !== null}
+        aria-describedby={`${id}-note`}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+      <p id={`${id}-note`} className={problem ? "field-note bad" : "field-note"}>
+        {problem === "long"
+          ? t("text.err.long", { used, max })
+          : problem
+            ? t(`text.err.${problem}`)
+            : showCount
+              ? t("text.count", { used, max })
+              : ""}
+      </p>
+    </>
+  );
 }
 
 export function FirstRun({ route, onDone }: { route: string; onDone: () => void }) {
@@ -182,6 +247,19 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
       </div>
       <p className="firstrun-step">{t("firstrun.step", { n: step, total: STEPS })}</p>
 
+      {/*
+        A FAILURE ON ANY STEP IS VISIBLE. Until 2026-09-13 the error line lived
+        inside step two only, so a refused save anywhere else did nothing at
+        all: the button appeared dead and there was nothing on screen to read.
+        The username problems keep their own precise wording on step two; this
+        catches every other step and every other reason.
+      */}
+      {problem && step !== 2 && (
+        <p className="error" role="alert">
+          {problem === "other" ? t("firstrun.err.save") : t(`firstrun.2.err.${problem}`)}
+        </p>
+      )}
+
       {step === 1 && (
         <section className="firstrun-card">
           <h1>{t("firstrun.1.title")}</h1>
@@ -295,16 +373,13 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
           <h1>{t("firstrun.4.title")}</h1>
           <p className="lede">{t("firstrun.4.lede")}</p>
 
-          <label className="field-label" htmlFor="fr-studies">
-            {t("firstrun.4.studies")}
-          </label>
-          <input
+          <FreeTextField
             id="fr-studies"
-            className="text-input"
-            value={studies}
-            maxLength={120}
-            onChange={(e) => setStudies(e.target.value)}
+            label={t("firstrun.4.studies")}
             placeholder={t("firstrun.4.studies.placeholder")}
+            value={studies}
+            max={TEXT_LIMITS.studies}
+            onChange={setStudies}
           />
 
           <label className="field-label" htmlFor="fr-year">
@@ -324,16 +399,13 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
             ))}
           </select>
 
-          <label className="field-label" htmlFor="fr-interests">
-            {t("firstrun.4.interests")}
-          </label>
-          <input
+          <FreeTextField
             id="fr-interests"
-            className="text-input"
-            value={interests}
-            maxLength={120}
-            onChange={(e) => setInterests(e.target.value)}
+            label={t("firstrun.4.interests")}
             placeholder={t("firstrun.4.interests.placeholder")}
+            value={interests}
+            max={TEXT_LIMITS.interests}
+            onChange={setInterests}
           />
 
           {/* FR-F7. The reason this screen can be answered honestly is that
@@ -356,7 +428,13 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
             <button
               type="button"
               className="cta"
-              disabled={saving}
+              // Blocked while a field is wrong, so the round trip that would
+              // fail never happens and the warning is the only thing to read.
+              disabled={
+                saving ||
+                textProblem(studies, TEXT_LIMITS.studies) !== null ||
+                textProblem(interests, TEXT_LIMITS.interests) !== null
+              }
               onClick={() =>
                 void save(
                   {

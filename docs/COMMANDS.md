@@ -283,6 +283,43 @@ applications is walked through in `design/authentication.md`, Appendix A.
 
 ---
 
+## Mail
+
+Nothing is sent inside a request (FR-H5). The app writes a row into
+`platform.MailOutbox` and the worker delivers it.
+
+```bash
+npm run mail               # send what is queued, once
+npm run mail -- --watch    # keep going, every 30 seconds
+```
+
+**With no relay configured nothing is sent, and that is the default.** The
+messages are still queued, so nothing is lost and they go out the day a relay
+exists. The worker **prints each one in full**, which is how the confirmation
+link for an address change is clicked with no mail server at all:
+
+```bash
+# change the address in /app/moi, then
+npm run mail               # the link is in the printed message; open it
+```
+
+The account screen says this too rather than claiming a message is on its way.
+That was a real bug: it said "A message has gone to ..." while the row sat
+queued and undeliverable, so somebody waited for a link that was never coming.
+
+To actually deliver, set the five `STUDENS_SMTP_*` variables in `.env`. Any
+plain SMTP relay works; `.env.example` walks through the zero-budget starting
+point, which is a Gmail account with an app password.
+
+```bash
+psql -d studens -c 'select kind, "toAddress", "sentAt", attempts, "lastError" \
+  from platform."MailOutbox" order by "createdAt" desc limit 10;'
+```
+
+A row with `attempts` at 5 and a `lastError` has given up and wants a person.
+
+---
+
 ## Poking the API directly
 
 ```bash

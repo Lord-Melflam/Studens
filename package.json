@@ -31,7 +31,8 @@
     "gates:db": "npm run db:migrate && npm run db:grant-local && npm run db:verify-isolation && npm run test:db",
     "db:load": "npm run --silent build:worker && node apps/worker/dist/load-catalogue.js",
     "dev:api:anon": "npm run build:api && node apps/api/dist/index.js",
-    "test:db": "STUDENS_REQUIRE_DB=1 vitest run"
+    "test:db": "STUDENS_REQUIRE_DB=1 vitest run",
+    "mail": "npm run --silent build:worker && node apps/worker/dist/send-mail.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",

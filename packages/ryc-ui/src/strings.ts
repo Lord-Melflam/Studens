@@ -126,6 +126,9 @@ export const rycStrings: Bundle = {
     "ryc.mock.anon.body":
       "Beaucoup de travail non encadré en dehors des séances, et le barème du travail de groupe mérite d'être lu en entier avant de s'inscrire.",
     "ryc.anonymous": "Anonyme",
+    "ryc.detached": "Compte supprimé",
+    "ryc.reviews.detached.one": "{count} vient d'un compte supprimé.",
+    "ryc.reviews.detached.other": "{count} viennent de comptes supprimés.",
     "ryc.imported": "Repris de {source}",
     "ryc.err.send": "l'envoi a échoué",
     "ryc.signin.required":
@@ -385,6 +388,9 @@ export const rycStrings: Bundle = {
     "ryc.mock.anon.body":
       "Veel onbegeleid werk buiten de sessies, en het beoordelingsschema van het groepswerk verdient het om volledig gelezen te worden vóór je inschrijft.",
     "ryc.anonymous": "Anoniem",
+    "ryc.detached": "Verwijderd account",
+    "ryc.reviews.detached.one": "{count} komt van een verwijderd account.",
+    "ryc.reviews.detached.other": "{count} komen van verwijderde accounts.",
     "ryc.imported": "Overgenomen uit {source}",
     "ryc.err.send": "verzenden is mislukt",
     "ryc.signin.required":
@@ -643,6 +649,9 @@ export const rycStrings: Bundle = {
     "ryc.mock.anon.body":
       "A lot of unsupervised work outside the sessions, and the group-work marking scheme is worth reading in full before you sign up.",
     "ryc.anonymous": "Anonymous",
+    "ryc.detached": "Deleted account",
+    "ryc.reviews.detached.one": "{count} is from a deleted account.",
+    "ryc.reviews.detached.other": "{count} are from deleted accounts.",
     "ryc.imported": "Taken from {source}",
     "ryc.err.send": "sending failed",
     "ryc.signin.required":
