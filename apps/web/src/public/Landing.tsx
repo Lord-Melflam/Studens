@@ -137,7 +137,7 @@ export function Landing() {
           </li>
         </ul>
         <a className="ghost" {...linkProps("/confidentialite")}>
-          Ce que l&apos;anonymat ne protège pas
+          {t("promises.limits")}
         </a>
       </section>
 
@@ -164,7 +164,7 @@ export function Landing() {
           )}
         </ol>
         <a className="cta big" {...linkProps("/connexion")}>
-          Créer un compte
+          {t("nav.register")}
         </a>
       </section>
     </>

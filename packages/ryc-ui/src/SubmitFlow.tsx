@@ -12,6 +12,7 @@
  * costs you the text you wrote.
  */
 import { useEffect, useState } from "react";
+import { useT } from "@studens/i18n";
 import { api, SubmitFailed, type ReviewContext, type ReviewDraft } from "./api.js";
 import { ReviewForm } from "./ReviewForm.js";
 import { AnonymousConfirm, PathChoice } from "./PathChoice.js";
@@ -21,27 +22,16 @@ import { next, type Event, type Step } from "./flow.js";
 type SentResult = { anonymous: boolean };
 
 function Sent({ result, onDone }: { result: SentResult; onDone: () => void }) {
+  const t = useT();
   return (
     <section className="sent">
       <span className={result.anonymous ? "chip-anon" : "chip-named"}>
-        {result.anonymous ? "Anonyme" : "Sous mon nom"}
+        {result.anonymous ? t("ryc.anonymous") : t("ryc.fork.named.chip")}
       </span>
-      <h3>Avis envoyé</h3>
-      {result.anonymous ? (
-        <p>
-          Il part en modération sans rien qui le relie à vous. Cette page ne
-          peut pas vous le montrer, ni maintenant ni plus tard: nous ne savons
-          pas lequel est le vôtre, et c&apos;est exactement ce que vous avez
-          choisi.
-        </p>
-      ) : (
-        <p>
-          Il part en modération sous votre nom, et apparaîtra sur la fiche du
-          cours une fois relu.
-        </p>
-      )}
+      <h3>{t("ryc.sent.title")}</h3>
+      <p>{result.anonymous ? t("ryc.sent.anon") : t("ryc.sent.named")}</p>
       <button type="button" className="primary" onClick={onDone}>
-        Retour à la fiche
+        {t("ryc.sent.back")}
       </button>
     </section>
   );
@@ -57,6 +47,7 @@ export function SubmitFlow({
   /** Lets the course page reload its reviews without knowing this flow's state. */
   onSubmitted: () => void;
 }) {
+  const t = useT();
   const [step, setStep] = useState<Step>("form");
   const [ctx, setCtx] = useState<ReviewContext | null>(null);
   const [draft, setDraft] = useState<ReviewDraft | null>(null);
@@ -105,7 +96,7 @@ export function SubmitFlow({
         // form with their text intact is the only tolerable failure mode here.
         if (err.status === 400) setStep(next(step, "rejected").step);
       } else {
-        setError("l'envoi a échoué");
+        setError(t("ryc.err.send"));
       }
     } finally {
       setBusy(false);
@@ -113,7 +104,7 @@ export function SubmitFlow({
   }
 
   if (error && !ctx) return <p className="error">{error}</p>;
-  if (!ctx) return <p className="meta">chargement…</p>;
+  if (!ctx) return <p className="meta">{t("ryc.loading")}</p>;
 
   // No quota means no member: nobody is signed in. Saying so plainly beats a
   // form that fails on submit. The module cannot offer a sign-in itself, since
@@ -121,12 +112,9 @@ export function SubmitFlow({
   if (ctx.quotaRemaining === null && step !== "sent") {
     return (
       <section className="notice">
-        <p>
-          Publier un avis demande d&apos;être connecté. La commande de connexion
-          est en haut de la page.
-        </p>
+        <p>{t("ryc.signin.required")}</p>
         <button type="button" className="back" onClick={onClose}>
-          retour à la fiche
+          {t("ryc.form.back")}
         </button>
       </section>
     );
@@ -140,17 +128,10 @@ export function SubmitFlow({
   if (ctx.quotaRemaining === 0 && step !== "sent") {
     return (
       <section className="notice">
-        <p>
-          Vous avez atteint votre limite d&apos;avis pour cette période. Elle se
-          renouvelle: revenez dans quelques jours.
-        </p>
-        <p className="hint">
-          Nous comptons combien d&apos;avis vous publiez, jamais lesquels. Un
-          avis anonyme reste sans lien avec votre compte, y compris pour ce
-          décompte.
-        </p>
+        <p>{t("ryc.quota.done")}</p>
+        <p className="hint">{t("ryc.quota.note")}</p>
         <button type="button" className="back" onClick={onClose}>
-          retour à la fiche
+          {t("ryc.form.back")}
         </button>
       </section>
     );

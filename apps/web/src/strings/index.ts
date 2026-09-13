@@ -206,6 +206,78 @@ export const shellStrings: Bundle = {
     "firstrun.5.soon": "pas encore ouvert",
     "firstrun.5.declared":
       "C'est une simple déclaration. Elle n'ouvre aucun accès et ne prouve rien.",
+
+    "privacy.title": "Ce que l'anonymat protège, et ce qu'il ne protège pas",
+    "privacy.lede":
+      "Cette page dit les limites. Elle existe parce qu'une garantie dont on ne donne que la moitié n'en est pas une.",
+    "privacy.built.title": "Ce qui est vrai par construction",
+    "privacy.built.lede":
+      "Ces points ne dépendent pas de notre bonne volonté. Ils dépendent de la façon dont la base de données est faite, ce qui est vérifiable dans le code.",
+    "privacy.built.noid.claim": "Une publication anonyme ne porte aucun identifiant de son auteur.",
+    "privacy.built.noid.body":
+      "Pas de colonne vide, pas de référence chiffrée : la table n'a pas de champ pour ça.",
+    "privacy.built.final.claim": "Elle est définitive.",
+    "privacy.built.final.body":
+      "Ni modification, ni suppression par son auteur, jamais. C'est la conséquence du point précédent, pas une règle que nous avons choisie.",
+    "privacy.built.unfindable.claim": "Nous ne pouvons pas la retrouver pour vous.",
+    "privacy.built.unfindable.body":
+      "Même avec un accès complet à la base, il n'y a rien à joindre.",
+    "privacy.built.nothing.claim": "Aucune information sur vous n'apparaît dessus.",
+    "privacy.built.nothing.body":
+      "Ni établissement, ni domaine d'adresse, ni quoi que ce soit venant de votre profil.",
+    "privacy.limits.title": "Ce que ça ne protège pas",
+    "privacy.limits.words.claim": "Ce que vous écrivez peut vous désigner.",
+    "privacy.limits.words.body":
+      "Une tournure, un détail que seules trois personnes connaissent, une situation particulière : aucun système ne peut retirer ça d'un texte que vous avez écrit vous-même.",
+    "privacy.limits.complement.claim": "Publier sous son nom réduit l'anonymat des autres.",
+    "privacy.limits.complement.body":
+      "Si presque tout le monde signe, celles et ceux qui ne signent pas forment un groupe petit et facile à deviner. C'est pourquoi les chiffres vous sont montrés avant que vous choisissiez : vous êtes la seule personne à savoir combien d'autres auraient pu écrire la même chose.",
+    "privacy.limits.counting.claim": "Nous comptons combien vous publiez.",
+    "privacy.limits.counting.body":
+      "Une limite par période existe pour éviter les abus. Elle compte des publications, jamais lesquelles.",
+    "privacy.limits.moderation.claim": "Un modérateur peut retirer un contenu",
+    "privacy.limits.moderation.body":
+      "sans savoir qui l'a écrit. C'est nécessaire : un texte peut être diffamatoire ou nommer quelqu'un qui n'a pas demandé à l'être.",
+    "privacy.limits.open.claim": "Créer un compte est ouvert à tous.",
+    "privacy.limits.open.body":
+      "Rien ne vérifie que vous êtes inscrit quelque part. Les limites portent donc sur des comptes, pas sur des personnes, et nous ne les présentons pas comme plus que ça.",
+    "privacy.keep.title": "Ce que nous gardons sur vous",
+    "privacy.keep.lede":
+      "Le strict nécessaire, et rien qui serve à vous identifier auprès de quelqu'un d'autre.",
+    "privacy.keep.subject":
+      "L'identifiant que votre fournisseur (Microsoft ou Google) nous donne, qui ne dit rien de vous par lui-même.",
+    "privacy.keep.domain.claim": "Le domaine de votre adresse,",
+    "privacy.keep.domain.body":
+      "par exemple uclouvain.be, jamais l'adresse elle-même. Nous ne gardons pas non plus le nom que votre fournisseur nous envoie.",
+    "privacy.keep.chosen": "Le pseudonyme que vous choisissez, et vos préférences.",
+    "privacy.keep.fine":
+      "Le domaine est une indication, pas une preuve d'inscription, et n'est jamais présenté comme telle.",
+    "privacy.spec.lede":
+      "Le raisonnement complet, y compris l'arithmétique, est public dans le dépôt.",
+    "privacy.spec.cta": "Lire la spécification",
+    "privacy.about": "À propos de ce projet",
+
+    "about.title": "À propos",
+    "about.lede": "Un projet indépendant, construit par des étudiants, pour des étudiants.",
+    "about.not.title": "Ce que Studens n'est pas",
+    "about.not.university.claim": "Ce n'est pas un projet d'université.",
+    "about.not.university.body":
+      "Studens n'est affilié à aucune université ni haute école, n'est mandaté par aucune, et ne parle au nom d'aucune.",
+    "about.not.official.claim": "Ce n'est pas une source officielle.",
+    "about.not.official.body":
+      "Les informations reprises des sites institutionnels le sont à titre indicatif. En cas de doute, la fiche officielle fait foi, et un lien vers elle est affiché à chaque fois.",
+    "about.not.commercial.claim": "Ce n'est pas un produit commercial.",
+    "about.not.commercial.body": "Pas de publicité, pas de revente de données, pas d'abonnement.",
+    "about.open.title": "Ouvert, et vérifiable",
+    "about.open.1":
+      "Le code est public sous licence MIT. La spécification aussi, avec le raisonnement derrière chaque décision : ce qui a été rejeté, ce que ça coûte, et ce qui ferait reconsidérer le choix.",
+    "about.open.2":
+      "Cela vaut en particulier pour les garanties de vie privée. Une promesse qu'on ne peut pas vérifier ne vaut que la confiance qu'on accorde à celui qui la fait.",
+    "about.contribute.title": "Contribuer",
+    "about.contribute.body":
+      "Les contributions extérieures sont les bienvenues. Tout le code est relu avant d'être intégré.",
+    "about.contribute.cta": "Voir le dépôt",
+    "about.privacy.cta": "Comment vos données sont traitées",
   },
 
   nl: {
@@ -395,6 +467,78 @@ export const shellStrings: Bundle = {
     "firstrun.5.soon": "nog niet open",
     "firstrun.5.declared":
       "Dit is enkel een verklaring. Ze opent geen toegang en bewijst niets.",
+
+    "privacy.title": "Wat anonimiteit beschermt, en wat niet",
+    "privacy.lede":
+      "Deze pagina benoemt de grenzen. Ze bestaat omdat een garantie waarvan je maar de helft vertelt geen garantie is.",
+    "privacy.built.title": "Wat door de opbouw zelf waar is",
+    "privacy.built.lede":
+      "Deze punten hangen niet af van onze goede wil. Ze hangen af van hoe de databank is gebouwd, en dat is na te gaan in de code.",
+    "privacy.built.noid.claim": "Een anonieme bijdrage draagt geen enkele verwijzing naar haar auteur.",
+    "privacy.built.noid.body":
+      "Geen leeg veld, geen versleutelde verwijzing: de tabel heeft er geen kolom voor.",
+    "privacy.built.final.claim": "Ze is definitief.",
+    "privacy.built.final.body":
+      "Nooit aan te passen of te verwijderen door de auteur. Dat volgt uit het vorige punt, het is geen regel die wij gekozen hebben.",
+    "privacy.built.unfindable.claim": "Wij kunnen ze niet voor u terugvinden.",
+    "privacy.built.unfindable.body":
+      "Zelfs met volledige toegang tot de databank valt er niets te koppelen.",
+    "privacy.built.nothing.claim": "Er staat geen enkel gegeven over u bij.",
+    "privacy.built.nothing.body":
+      "Geen instelling, geen e-maildomein, niets uit uw profiel.",
+    "privacy.limits.title": "Wat het niet beschermt",
+    "privacy.limits.words.claim": "Wat u schrijft kan u verraden.",
+    "privacy.limits.words.body":
+      "Een formulering, een detail dat maar drie mensen kennen, een bijzondere situatie: geen enkel systeem haalt dat uit een tekst die u zelf geschreven hebt.",
+    "privacy.limits.complement.claim": "Onder eigen naam publiceren verkleint de anonimiteit van anderen.",
+    "privacy.limits.complement.body":
+      "Als bijna iedereen tekent, vormen wie niet tekent een kleine en makkelijk te raden groep. Daarom krijgt u de aantallen te zien vóór u kiest: u bent de enige die weet hoeveel anderen hetzelfde hadden kunnen schrijven.",
+    "privacy.limits.counting.claim": "Wij tellen hoeveel u publiceert.",
+    "privacy.limits.counting.body":
+      "Er geldt een limiet per periode tegen misbruik. Ze telt bijdragen, nooit welke.",
+    "privacy.limits.moderation.claim": "Een moderator kan inhoud verwijderen",
+    "privacy.limits.moderation.body":
+      "zonder te weten wie ze schreef. Dat moet kunnen: een tekst kan lasterlijk zijn of iemand noemen die daar niet om gevraagd heeft.",
+    "privacy.limits.open.claim": "Iedereen kan een account maken.",
+    "privacy.limits.open.body":
+      "Niets controleert of u ergens ingeschreven bent. De limieten gelden dus voor accounts, niet voor personen, en wij doen niet alsof ze meer zijn.",
+    "privacy.keep.title": "Wat wij over u bijhouden",
+    "privacy.keep.lede":
+      "Het strikt noodzakelijke, en niets waarmee iemand anders u kan identificeren.",
+    "privacy.keep.subject":
+      "De identificatie die uw aanbieder (Microsoft of Google) ons geeft, en die op zichzelf niets over u zegt.",
+    "privacy.keep.domain.claim": "Het domein van uw adres,",
+    "privacy.keep.domain.body":
+      "bijvoorbeeld uclouvain.be, nooit het adres zelf. Wij bewaren evenmin de naam die uw aanbieder ons doorgeeft.",
+    "privacy.keep.chosen": "De gebruikersnaam die u kiest, en uw voorkeuren.",
+    "privacy.keep.fine":
+      "Het domein is een aanwijzing, geen bewijs van inschrijving, en wordt ook nooit zo gepresenteerd.",
+    "privacy.spec.lede":
+      "De volledige redenering, het rekenwerk inbegrepen, staat publiek in de repository.",
+    "privacy.spec.cta": "De specificatie lezen",
+    "privacy.about": "Over dit project",
+
+    "about.title": "Over ons",
+    "about.lede": "Een onafhankelijk project, gebouwd door studenten, voor studenten.",
+    "about.not.title": "Wat Studens niet is",
+    "about.not.university.claim": "Het is geen project van een universiteit.",
+    "about.not.university.body":
+      "Studens is aan geen enkele universiteit of hogeschool verbonden, heeft van geen enkele een opdracht, en spreekt voor geen enkele.",
+    "about.not.official.claim": "Het is geen officiële bron.",
+    "about.not.official.body":
+      "Informatie overgenomen van instellingswebsites is louter indicatief. Bij twijfel geldt de officiële fiche, en er staat telkens een link naartoe.",
+    "about.not.commercial.claim": "Het is geen commercieel product.",
+    "about.not.commercial.body": "Geen reclame, geen doorverkoop van gegevens, geen abonnement.",
+    "about.open.title": "Open, en na te gaan",
+    "about.open.1":
+      "De code is publiek onder de MIT-licentie. De specificatie ook, met de redenering achter elke beslissing: wat verworpen is, wat het kost, en wat de keuze zou doen herzien.",
+    "about.open.2":
+      "Dat geldt in het bijzonder voor de privacygaranties. Een belofte die niet na te gaan is, is niet meer waard dan het vertrouwen in wie ze doet.",
+    "about.contribute.title": "Meewerken",
+    "about.contribute.body":
+      "Bijdragen van buitenaf zijn welkom. Alle code wordt nagelezen voor ze wordt opgenomen.",
+    "about.contribute.cta": "Naar de repository",
+    "about.privacy.cta": "Hoe uw gegevens behandeld worden",
   },
 
   en: {
@@ -583,5 +727,77 @@ export const shellStrings: Bundle = {
       "Only UCLouvain can be chosen: Studens is not open anywhere else yet. The others are listed because they are coming.",
     "firstrun.5.soon": "not open yet",
     "firstrun.5.declared": "This is a statement, nothing more. It opens no access and proves nothing.",
+
+    "privacy.title": "What anonymity protects, and what it does not",
+    "privacy.lede":
+      "This page states the limits. It exists because a guarantee you only tell half of is not a guarantee.",
+    "privacy.built.title": "What is true by construction",
+    "privacy.built.lede":
+      "These points do not depend on our good intentions. They depend on how the database is built, which can be checked in the code.",
+    "privacy.built.noid.claim": "An anonymous contribution carries no identifier of its author.",
+    "privacy.built.noid.body":
+      "No empty column, no encrypted reference: the table has no field for it.",
+    "privacy.built.final.claim": "It is permanent.",
+    "privacy.built.final.body":
+      "Never editable or deletable by its author. That follows from the point above; it is not a rule we chose.",
+    "privacy.built.unfindable.claim": "We cannot find it again for you.",
+    "privacy.built.unfindable.body":
+      "Even with full access to the database, there is nothing to join on.",
+    "privacy.built.nothing.claim": "Nothing about you appears on it.",
+    "privacy.built.nothing.body":
+      "No institution, no email domain, nothing from your profile.",
+    "privacy.limits.title": "What it does not protect",
+    "privacy.limits.words.claim": "What you write can identify you.",
+    "privacy.limits.words.body":
+      "A turn of phrase, a detail only three people know, a particular situation: no system can take that out of a text you wrote yourself.",
+    "privacy.limits.complement.claim": "Publishing under your own name reduces everyone else's anonymity.",
+    "privacy.limits.complement.body":
+      "If almost everyone signs, those who do not form a small group that is easy to guess. That is why the counts are shown to you before you choose: you are the only person who knows how many others could have written the same thing.",
+    "privacy.limits.counting.claim": "We count how much you publish.",
+    "privacy.limits.counting.body":
+      "There is a limit per period, against abuse. It counts contributions, never which ones.",
+    "privacy.limits.moderation.claim": "A moderator can remove content",
+    "privacy.limits.moderation.body":
+      "without knowing who wrote it. That has to be possible: a text may be defamatory, or name somebody who did not ask to be named.",
+    "privacy.limits.open.claim": "Anyone can create an account.",
+    "privacy.limits.open.body":
+      "Nothing verifies that you are enrolled anywhere. So the limits bound accounts, not people, and we do not present them as more than that.",
+    "privacy.keep.title": "What we keep about you",
+    "privacy.keep.lede":
+      "The strict minimum, and nothing that would identify you to anybody else.",
+    "privacy.keep.subject":
+      "The identifier your provider (Microsoft or Google) gives us, which says nothing about you on its own.",
+    "privacy.keep.domain.claim": "The domain of your address,",
+    "privacy.keep.domain.body":
+      "uclouvain.be for instance, never the address itself. We do not keep the name your provider sends us either.",
+    "privacy.keep.chosen": "The username you choose, and your preferences.",
+    "privacy.keep.fine":
+      "The domain is an indication, not proof of enrolment, and is never presented as such.",
+    "privacy.spec.lede":
+      "The full reasoning, arithmetic included, is public in the repository.",
+    "privacy.spec.cta": "Read the specification",
+    "privacy.about": "About this project",
+
+    "about.title": "About",
+    "about.lede": "An independent project, built by students, for students.",
+    "about.not.title": "What Studens is not",
+    "about.not.university.claim": "It is not a university project.",
+    "about.not.university.body":
+      "Studens is affiliated with no university or haute école, is mandated by none, and speaks for none.",
+    "about.not.official.claim": "It is not an official source.",
+    "about.not.official.body":
+      "Information taken from institutional sites is indicative. In case of doubt the official page prevails, and a link to it is shown every time.",
+    "about.not.commercial.claim": "It is not a commercial product.",
+    "about.not.commercial.body": "No advertising, no selling of data, no subscription.",
+    "about.open.title": "Open, and checkable",
+    "about.open.1":
+      "The code is public under the MIT licence. So is the specification, with the reasoning behind every decision: what was rejected, what it costs, and what would change the answer.",
+    "about.open.2":
+      "That matters most for the privacy guarantees. A promise you cannot check is worth only the trust you place in whoever made it.",
+    "about.contribute.title": "Contributing",
+    "about.contribute.body":
+      "Outside contributions are welcome. All code is read by someone before it is merged.",
+    "about.contribute.cta": "See the repository",
+    "about.privacy.cta": "How your data is handled",
   },
 };

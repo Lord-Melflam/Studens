@@ -11,53 +11,40 @@
  * three numbers, a year, and the prose that is the actual contribution.
  */
 import { useState } from "react";
+import { useT, type Translate } from "@studens/i18n";
 import { MAX_BODY, MIN_BODY, type ReviewDraft } from "./api.js";
 import { Steps } from "./Steps.js";
 
-/** FR-D5, FR-D6, FR-D7. The ends are named so 3 is not silently "average". */
+/**
+ * FR-D5, FR-D6, FR-D7. The ends are named so 3 is not silently "average".
+ *
+ * Keys rather than sentences: the labels and both ends of every scale are
+ * translated, and a scale whose ends read in one language while its question
+ * reads in another is worse than either.
+ */
 const SCALES = [
-  {
-    key: "recommendation" as const,
-    label: "Le recommanderiez-vous ?",
-    low: "je déconseille",
-    high: "je recommande",
-  },
-  {
-    key: "workloadVsEcts" as const,
-    label: "Charge de travail, par rapport à ses ECTS",
-    low: "bien plus léger",
-    high: "bien plus lourd",
-  },
-  {
-    key: "difficulty" as const,
-    label: "Difficulté",
-    low: "très facile",
-    high: "très difficile",
-  },
+  { key: "recommendation" as const },
+  { key: "workloadVsEcts" as const },
+  { key: "difficulty" as const },
 ];
 
 function Scale({
   name,
-  label,
-  low,
-  high,
   value,
   invalid,
   onChange,
 }: {
   name: string;
-  label: string;
-  low: string;
-  high: string;
   value: number | null;
   invalid: boolean;
   onChange: (v: number) => void;
 }) {
+  const t = useT();
   return (
     <fieldset className={invalid ? "scale missing" : "scale"}>
-      <legend>{label}</legend>
+      <legend>{t(`ryc.scale.${name}.label`)}</legend>
       <div className="scale-row">
-        <span className="scale-end">{low}</span>
+        <span className="scale-end">{t(`ryc.scale.${name}.low`)}</span>
         {[1, 2, 3, 4, 5].map((n) => (
           <label key={n} className={value === n ? "scale-dot on" : "scale-dot"}>
             <input
@@ -70,7 +57,7 @@ function Scale({
             {n}
           </label>
         ))}
-        <span className="scale-end">{high}</span>
+        <span className="scale-end">{t(`ryc.scale.${name}.high`)}</span>
       </div>
     </fieldset>
   );
@@ -103,6 +90,7 @@ export function ReviewForm({
   /** Carried back when someone returns from the fork to change something. */
   initial?: ReviewDraft | null;
 }) {
+  const t: Translate = useT();
   const years = yearOptions();
   const [academicYear, setAcademicYear] = useState<number>(initial?.academicYear ?? years[0]!);
   const [scores, setScores] = useState<Record<string, number | null>>({
@@ -124,10 +112,10 @@ export function ReviewForm({
   const long = trimmed.length > MAX_BODY;
 
   const missing: string[] = [];
-  if (!completed) missing.push("confirmer que vous avez terminé le cours");
-  for (const s of SCALES) if (scores[s.key] === null) missing.push(s.label.toLowerCase());
-  if (short) missing.push("le texte de l'avis");
-  if (long) missing.push(`raccourcir le texte (${MAX_BODY} caractères maximum)`);
+  if (!completed) missing.push(t("ryc.form.missing.completed"));
+  for (const s of SCALES) if (scores[s.key] === null) missing.push(t(`ryc.scale.${s.key}.short`));
+  if (short) missing.push(t("ryc.form.missing.body"));
+  if (long) missing.push(t("ryc.form.missing.long", { max: MAX_BODY }));
 
   /** Something worth losing. Used to decide whether leaving needs a question. */
   const hasWork = trimmed.length > 0 || advice.trim().length > 0;
@@ -135,7 +123,7 @@ export function ReviewForm({
   function leave() {
     // A back link that silently throws away twenty minutes of writing is the
     // one interaction on this screen that cannot be undone either.
-    if (hasWork && !window.confirm("Abandonner cet avis ? Le texte sera perdu.")) return;
+    if (hasWork && !window.confirm(t("ryc.form.abandon"))) return;
     onCancel();
   }
 
@@ -163,23 +151,15 @@ export function ReviewForm({
     <form className="review-form" onSubmit={submit} noValidate>
       <Steps current="form" />
       <button type="button" className="back" onClick={leave}>
-        retour à la fiche
+        {t("ryc.form.back")}
       </button>
-      <h3>Votre avis sur {courseCode.toUpperCase()}</h3>
-      <p className="form-lead">
-        Le choix entre votre nom et l&apos;anonymat vient après, sur un écran à
-        lui seul.
-      </p>
+      <h3>{t("ryc.form.title", { code: courseCode.toUpperCase() })}</h3>
+      <p className="form-lead">{t("ryc.form.lede")}</p>
 
       {quotaRemaining !== null && quotaRemaining <= 2 && (
         <p className="notice" role="status">
-          {quotaRemaining === 1
-            ? "Il vous reste un avis à publier pour cette période."
-            : `Il vous reste ${quotaRemaining} avis à publier pour cette période.`}{" "}
-          <em>
-            La limite compte les avis, jamais lesquels: elle vaut pour les deux
-            voies, sans lien entre votre compte et un avis anonyme.
-          </em>
+          {t("ryc.form.quota", { count: quotaRemaining })}{" "}
+          <em>{t("ryc.form.quota.note")}</em>
         </p>
       )}
 
@@ -192,13 +172,13 @@ export function ReviewForm({
           onChange={(e) => setCompleted(e.target.checked)}
         />
         <span>
-          J&apos;ai suivi ce cours jusqu&apos;au bout.
-          <em>Sans cela, il n&apos;y a pas d&apos;avis à donner.</em>
+          {t("ryc.form.completed")}
+          <em>{t("ryc.form.completed.note")}</em>
         </span>
       </label>
 
       <label className="picker">
-        Année où vous l&apos;avez suivi
+        {t("ryc.form.year")}
         <select value={academicYear} onChange={(e) => setAcademicYear(Number(e.target.value))}>
           {years.map((y) => (
             <option key={y} value={y}>
@@ -212,9 +192,6 @@ export function ReviewForm({
         <Scale
           key={s.key}
           name={s.key}
-          label={s.label}
-          low={s.low}
-          high={s.high}
           value={scores[s.key] ?? null}
           invalid={touched && scores[s.key] === null}
           onChange={(v) => setScores((prev) => ({ ...prev, [s.key]: v }))}
@@ -222,83 +199,80 @@ export function ReviewForm({
       ))}
 
       <label className="field-inline">
-        Heures par semaine, en dehors des séances
+        {t("ryc.form.hours")}
         <input
           type="number"
           min={0}
           max={100}
           value={hours}
           onChange={(e) => setHours(e.target.value)}
-          placeholder="facultatif"
+          placeholder={t("ryc.form.optional")}
         />
       </label>
 
       {/* FR-D22 optional, FR-D23: never shown per review, only as a band above
           a floor. Saying so here is why someone answers it at all. */}
       <fieldset className="scale">
-        <legend>Avez-vous réussi ce cours ?</legend>
+        <legend>{t("ryc.form.passed")}</legend>
         <div className="scale-row">
           {[
-            { v: "yes" as const, t: "oui" },
-            { v: "no" as const, t: "non" },
-            { v: "" as const, t: "je préfère ne pas dire" },
+            { v: "yes" as const, k: "yes" },
+            { v: "no" as const, k: "no" },
+            { v: "" as const, k: "unsaid" },
           ].map((o) => (
-            <label key={o.t} className={passed === o.v ? "scale-dot wide on" : "scale-dot wide"}>
+            <label key={o.k} className={passed === o.v ? "scale-dot wide on" : "scale-dot wide"}>
               <input
                 type="radio"
                 name="passed"
                 checked={passed === o.v}
                 onChange={() => setPassed(o.v)}
               />
-              {o.t}
+              {t(`ryc.form.passed.${o.k}`)}
             </label>
           ))}
         </div>
-        <p className="hint">
-          Jamais affiché avec votre avis. Utilisé seulement pour une indication
-          globale, à partir de cinq réponses.
-        </p>
+        <p className="hint">{t("ryc.form.passed.note")}</p>
       </fieldset>
 
       <label className={touched && (short || long) ? "field-block missing" : "field-block"}>
-        Votre avis
+        {t("ryc.form.body")}
         <textarea
           rows={8}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           aria-invalid={touched && (short || long)}
-          placeholder="Comment le cours est donné, ce qui aide, ce qui manque."
+          placeholder={t("ryc.form.body.placeholder")}
         />
         <span className={short || long ? "counter short" : "counter"}>
           {short
-            ? `encore ${left} caractère${left > 1 ? "s" : ""}`
+            ? t("ryc.form.count.short", { count: left })
             : long
-              ? `${over} caractère${over > 1 ? "s" : ""} de trop`
-              : `${trimmed.length} caractères, sur ${MAX_BODY} au maximum`}
+              ? t("ryc.form.count.long", { count: over })
+              : t("ryc.form.count.ok", { n: trimmed.length, max: MAX_BODY })}
         </span>
       </label>
 
       <label className="field-block">
-        Un conseil à qui le prendra l&apos;an prochain
+        {t("ryc.form.advice")}
         <textarea
           rows={3}
           value={advice}
           onChange={(e) => setAdvice(e.target.value)}
-          placeholder="facultatif"
+          placeholder={t("ryc.form.optional")}
         />
       </label>
 
       {touched && missing.length > 0 && (
         <p className="error" role="alert">
-          Il manque: {missing.join(", ")}.
+          {t("ryc.form.missing", { list: missing.join(", ") })}
         </p>
       )}
 
       <div className="actions">
         <button type="submit" className="primary">
-          Continuer
+          {t("ryc.form.continue")}
         </button>
-        <span className="hint">Rien n&apos;est envoyé à cette étape.</span>
+        <span className="hint">{t("ryc.form.nothing.sent")}</span>
       </div>
     </form>
   );

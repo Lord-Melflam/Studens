@@ -6,6 +6,7 @@
  * is why the review form will be short.
  */
 import { useCallback, useEffect, useState } from "react";
+import { useT } from "@studens/i18n";
 import { api, type Aggregate, type CourseDetail, type PublishedReview } from "./api.js";
 import { ProseField } from "./Prose.js";
 import { Reviews } from "./Reviews.js";
@@ -41,6 +42,7 @@ export function CoursePage({
     sessionRequired: boolean;
   } | null>(null);
   const [failed, setFailed] = useState(false);
+  const t = useT();
 
   const load = useCallback(() => {
     api
@@ -71,7 +73,7 @@ export function CoursePage({
   return (
     <article className="course">
       <button type="button" className="back" onClick={onBack}>
-        retour
+        {t("ryc.course.back")}
       </button>
 
       <h2>
@@ -79,36 +81,33 @@ export function CoursePage({
       </h2>
 
       <p className="ribbon">
-        {course.ects} ECTS
+        {t("ryc.course.ects", { n: course.ects })}
         {course.quarter ? ` · ${course.quarter}` : ""}
         {course.language ? ` · ${course.language}` : ""}
         {` · ${course.year}-${course.year + 1}`}
       </p>
 
       {course.external && (
-        <p className="notice">
-          Ce cours est donné dans une autre institution. UCLouvain n&apos;en publie
-          que la référence, donc les détails ci-dessous sont incomplets.
-        </p>
+        <p className="notice">{t("ryc.course.external.note")}</p>
       )}
 
       <dl>
         <Field
-          label="Enseignants"
+          label={t("ryc.course.teachers")}
           value={course.teachers.length ? course.teachers.join(", ") : null}
         />
-        <Field label="Faculté en charge" value={course.owningFaculty} />
+        <Field label={t("ryc.course.entity")} value={course.owningFaculty} />
         <Field
-          label="Accessible via"
+          label={t("ryc.course.reachedVia")}
           value={course.reachedVia.length ? course.reachedVia.join(", ").toUpperCase() : null}
         />
-        <Field label="Heures encadrées" value={course.contactHours} />
-        <ProseField label="Évaluation" blocks={course.assessment} />
-        <ProseField label="Thèmes abordés" blocks={course.themes} />
-        <ProseField label="Contenu" blocks={course.content} />
+        <Field label={t("ryc.course.hours")} value={course.contactHours} />
+        <ProseField label={t("ryc.course.assessment")} blocks={course.assessment} />
+        <ProseField label={t("ryc.course.themes")} blocks={course.themes} />
+        <ProseField label={t("ryc.course.content")} blocks={course.content} />
 
         <div className="field">
-          <dt>Fiche officielle</dt>
+          <dt>{t("ryc.course.official")}</dt>
           <dd>
             {/*
               rel="noreferrer" as well as noopener: it stops UCLouvain seeing
@@ -130,8 +129,8 @@ export function CoursePage({
 
       {failed && (
         <section className="reviews-absent">
-          <h3>Avis</h3>
-          <p>Les avis n&apos;ont pas pu être chargés.</p>
+          <h3>{t("ryc.reviews.title")}</h3>
+          <p>{t("ryc.reviews.failed")}</p>
         </section>
       )}
 

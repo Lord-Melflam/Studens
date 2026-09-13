@@ -119,6 +119,155 @@ export const rycStrings: Bundle = {
     "ryc.kind.approfondissement": "Approfondissement",
     "ryc.kind.certificat": "Certificat",
     "ryc.kind.autre": "Autre",
+
+    "ryc.mock.ribbon": "5 ECTS · Q2 · Français · 30.0 h + 30.0 h",
+    "ryc.mock.named.body":
+      "Le projet est long mais c'est là que j'ai le plus appris. Commencez l'architecture la première semaine, pas la troisième.",
+    "ryc.mock.anon.body":
+      "Beaucoup de travail non encadré en dehors des séances, et le barème du travail de groupe mérite d'être lu en entier avant de s'inscrire.",
+    "ryc.anonymous": "Anonyme",
+    "ryc.imported": "Repris de {source}",
+    "ryc.err.send": "l'envoi a échoué",
+    "ryc.signin.required":
+      "Publier un avis demande d'être connecté. La commande de connexion est en haut de la page.",
+
+    "ryc.steps.label": "Étapes",
+    "ryc.steps.form": "Votre avis",
+    "ryc.steps.fork": "Nom ou anonyme",
+    "ryc.steps.confirm": "Confirmation",
+
+    "ryc.course.back": "retour",
+    "ryc.course.teachers": "Enseignants",
+    "ryc.course.entity": "Entité en charge",
+    "ryc.course.reachedVia": "Accessible via",
+    "ryc.course.hours": "Heures encadrées",
+    "ryc.course.assessment": "Évaluation",
+    "ryc.course.themes": "Thèmes abordés",
+    "ryc.course.content": "Contenu",
+    "ryc.course.official": "Fiche officielle",
+    "ryc.course.external.note":
+      "Ce cours est donné dans une autre institution. UCLouvain n'en publie que la référence, donc les détails ci-dessous sont incomplets.",
+
+    "ryc.stat.of": "sur 5",
+    "ryc.stat.recommendation": "recommandé",
+    "ryc.stat.workload": "charge / ECTS",
+    "ryc.stat.difficulty": "difficulté",
+    "ryc.reviews.title": "Avis",
+    "ryc.reviews.write": "Donner mon avis",
+    "ryc.reviews.failed": "Les avis n'ont pas pu être chargés.",
+    "ryc.reviews.denominator": "Sur {count} avis : {named} nommés, {anonymous} anonymes.",
+    "ryc.reviews.pass": "Réussite : {band}.",
+    "ryc.reviews.none":
+      "Personne n'a encore donné son avis sur ce cours. Le premier avis est le plus utile, et le plus exposé : le choix entre votre nom et l'anonymat vous sera présenté avant l'envoi.",
+    "ryc.reviews.locked":
+      "Les chiffres ci-dessus décrivent le cours et restent publics. Le texte des avis demande un compte.",
+    "ryc.review.taken": "suivi en {from}-{to}",
+    "ryc.review.scores":
+      "recommandé {recommendation}/5 · charge {workload}/5 · difficulté {difficulty}/5",
+
+    "ryc.scale.recommendation.label": "Le recommanderiez-vous ?",
+    "ryc.scale.recommendation.low": "je déconseille",
+    "ryc.scale.recommendation.high": "je recommande",
+    "ryc.scale.recommendation.short": "la recommandation",
+    "ryc.scale.workloadVsEcts.label": "Charge de travail, par rapport à ses ECTS",
+    "ryc.scale.workloadVsEcts.low": "bien plus léger",
+    "ryc.scale.workloadVsEcts.high": "bien plus lourd",
+    "ryc.scale.workloadVsEcts.short": "la charge de travail",
+    "ryc.scale.difficulty.label": "Difficulté",
+    "ryc.scale.difficulty.low": "très facile",
+    "ryc.scale.difficulty.high": "très difficile",
+    "ryc.scale.difficulty.short": "la difficulté",
+
+    "ryc.form.back": "retour à la fiche",
+    "ryc.form.title": "Votre avis sur {code}",
+    "ryc.form.lede":
+      "Le choix entre votre nom et l'anonymat vient après, sur un écran à lui seul.",
+    "ryc.form.quota.one": "Il vous reste un avis à publier pour cette période.",
+    "ryc.form.quota.other": "Il vous reste {count} avis à publier pour cette période.",
+    "ryc.form.quota.note":
+      "La limite compte les avis, jamais lesquels : elle vaut pour les deux voies, sans lien entre votre compte et un avis anonyme.",
+    "ryc.form.completed": "J'ai suivi ce cours jusqu'au bout.",
+    "ryc.form.completed.note": "Sans cela, il n'y a pas d'avis à donner.",
+    "ryc.form.year": "Année où vous l'avez suivi",
+    "ryc.form.hours": "Heures par semaine, en dehors des séances",
+    "ryc.form.optional": "facultatif",
+    "ryc.form.passed": "Avez-vous réussi ce cours ?",
+    "ryc.form.passed.yes": "oui",
+    "ryc.form.passed.no": "non",
+    "ryc.form.passed.unsaid": "je préfère ne pas dire",
+    "ryc.form.passed.note":
+      "Jamais affiché avec votre avis. Utilisé seulement pour une indication globale, à partir de cinq réponses.",
+    "ryc.form.body": "Votre avis",
+    "ryc.form.body.placeholder": "Comment le cours est donné, ce qui aide, ce qui manque.",
+    "ryc.form.count.short.one": "encore {count} caractère",
+    "ryc.form.count.short.other": "encore {count} caractères",
+    "ryc.form.count.long.one": "{count} caractère de trop",
+    "ryc.form.count.long.other": "{count} caractères de trop",
+    "ryc.form.count.ok": "{n} caractères, sur {max} au maximum",
+    "ryc.form.advice": "Un conseil à qui le prendra l'an prochain",
+    "ryc.form.missing": "Il manque : {list}.",
+    "ryc.form.missing.completed": "confirmer que vous avez terminé le cours",
+    "ryc.form.missing.body": "le texte de l'avis",
+    "ryc.form.missing.long": "raccourcir le texte ({max} caractères maximum)",
+    "ryc.form.abandon": "Abandonner cet avis ? Le texte sera perdu.",
+    "ryc.form.continue": "Continuer",
+    "ryc.form.nothing.sent": "Rien n'est envoyé à cette étape.",
+
+    "ryc.quota.done":
+      "Vous avez atteint votre limite d'avis pour cette période. Elle se renouvelle : revenez dans quelques jours.",
+    "ryc.quota.note":
+      "Nous comptons combien d'avis vous publiez, jamais lesquels. Un avis anonyme reste sans lien avec votre compte, y compris pour ce décompte.",
+
+    "ryc.draft.reread": "Relire mon avis",
+    "ryc.draft.facts":
+      "recommandé {recommendation}/5 · charge {workload}/5 · difficulté {difficulty}/5 · {chars} caractères",
+    "ryc.draft.advice": "Conseil :",
+
+    "ryc.counts.lead": "Ce cours a",
+    "ryc.counts.and": "et",
+    "ryc.counts.named.one": "{count} avis nommé",
+    "ryc.counts.named.other": "{count} avis nommés",
+    "ryc.counts.anon.one": "{count} avis anonyme",
+    "ryc.counts.anon.other": "{count} avis anonymes",
+    "ryc.counts.first": "Vous seriez le premier.",
+    "ryc.counts.note":
+      "Plus il y a d'avis anonymes, moins le vôtre ressort. Vous seul savez combien d'étudiants ont suivi ce cours : nous ne le savons pas.",
+
+    "ryc.fork.back": "revenir au formulaire",
+    "ryc.fork.title": "Comment voulez-vous publier cet avis ?",
+    "ryc.fork.lede": "Ce choix ne peut pas être changé après l'envoi. Lisez les deux avant de choisir.",
+    "ryc.fork.named.chip": "Sous mon nom",
+    "ryc.fork.named.1": "Votre nom apparaît sur la fiche du cours.",
+    "ryc.fork.named.2": "On peut vous demander des précisions, ou vous contredire.",
+    "ryc.fork.named.3": "Vous restez rattaché à cet avis, y compris dans un an.",
+    "ryc.fork.named.cta": "Publier sous mon nom",
+    "ryc.fork.anon.chip": "Anonyme",
+    "ryc.fork.anon.lead": "Définitif",
+    "ryc.fork.anon.1": "Aucun nom, aucune faculté, aucun domaine.",
+    "ryc.fork.anon.2": "Impossible à modifier ou à supprimer.",
+    "ryc.fork.anon.3": "Vous ne pourrez pas prouver qu'il est de vous.",
+    "ryc.fork.anon.cta": "Continuer en anonyme",
+    "ryc.fork.note":
+      "La modification d'un avis nommé est prévue et n'est pas encore en place. Elle ne concernera jamais un avis anonyme : personne, nous y compris, ne peut retrouver lequel est le vôtre.",
+
+    "ryc.confirm.back": "revenir au choix",
+    "ryc.confirm.title": "Dernière étape avant l'envoi",
+    "ryc.confirm.1.before": "Cet avis sera publié",
+    "ryc.confirm.1.strong": "sans aucun lien avec votre compte.",
+    "ryc.confirm.2": "Vous ne pourrez plus le modifier, le corriger ni le retirer.",
+    "ryc.confirm.2.em": "Nous non plus, à votre demande : nous ne saurons pas lequel est le vôtre.",
+    "ryc.confirm.3":
+      "Un modérateur pourra le retirer s'il pose problème, sans savoir qui l'a écrit.",
+    "ryc.confirm.sending": "envoi…",
+    "ryc.confirm.cta": "Publier anonymement, définitivement",
+    "ryc.confirm.return": "Revenir en arrière",
+
+    "ryc.sent.title": "Avis envoyé",
+    "ryc.sent.anon":
+      "Il part en modération sans rien qui le relie à vous. Cette page ne peut pas vous le montrer, ni maintenant ni plus tard : nous ne savons pas lequel est le vôtre, et c'est exactement ce que vous avez choisi.",
+    "ryc.sent.named":
+      "Il part en modération sous votre nom, et apparaîtra sur la fiche du cours une fois relu.",
+    "ryc.sent.back": "Retour à la fiche",
   },
 
   nl: {
@@ -229,6 +378,155 @@ export const rycStrings: Bundle = {
     "ryc.kind.approfondissement": "Verdieping",
     "ryc.kind.certificat": "Getuigschrift",
     "ryc.kind.autre": "Andere",
+
+    "ryc.mock.ribbon": "5 studiepunten · Q2 · Frans · 30.0 u + 30.0 u",
+    "ryc.mock.named.body":
+      "Het project is lang, maar het is waar ik het meeste geleerd heb. Begin met de architectuur in de eerste week, niet in de derde.",
+    "ryc.mock.anon.body":
+      "Veel onbegeleid werk buiten de sessies, en het beoordelingsschema van het groepswerk verdient het om volledig gelezen te worden vóór je inschrijft.",
+    "ryc.anonymous": "Anoniem",
+    "ryc.imported": "Overgenomen uit {source}",
+    "ryc.err.send": "verzenden is mislukt",
+    "ryc.signin.required":
+      "Een beoordeling plaatsen vereist dat u aangemeld bent. De aanmeldknop staat bovenaan de pagina.",
+
+    "ryc.steps.label": "Stappen",
+    "ryc.steps.form": "Uw beoordeling",
+    "ryc.steps.fork": "Naam of anoniem",
+    "ryc.steps.confirm": "Bevestiging",
+
+    "ryc.course.back": "terug",
+    "ryc.course.teachers": "Docenten",
+    "ryc.course.entity": "Verantwoordelijke entiteit",
+    "ryc.course.reachedVia": "Bereikbaar via",
+    "ryc.course.hours": "Begeleide uren",
+    "ryc.course.assessment": "Evaluatie",
+    "ryc.course.themes": "Behandelde thema's",
+    "ryc.course.content": "Inhoud",
+    "ryc.course.official": "Officiële fiche",
+    "ryc.course.external.note":
+      "Deze cursus wordt aan een andere instelling gegeven. UCLouvain publiceert er enkel de verwijzing van, dus de details hieronder zijn onvolledig.",
+
+    "ryc.stat.of": "op 5",
+    "ryc.stat.recommendation": "aanbevolen",
+    "ryc.stat.workload": "belasting / studiepunten",
+    "ryc.stat.difficulty": "moeilijkheid",
+    "ryc.reviews.title": "Beoordelingen",
+    "ryc.reviews.write": "Mijn beoordeling geven",
+    "ryc.reviews.failed": "De beoordelingen konden niet geladen worden.",
+    "ryc.reviews.denominator": "Op {count} beoordelingen: {named} met naam, {anonymous} anoniem.",
+    "ryc.reviews.pass": "Slaagkans: {band}.",
+    "ryc.reviews.none":
+      "Niemand heeft deze cursus al beoordeeld. De eerste beoordeling is de nuttigste, en ook de meest zichtbare: de keuze tussen uw naam en anonimiteit krijgt u vóór het verzenden.",
+    "ryc.reviews.locked":
+      "De cijfers hierboven beschrijven de cursus en blijven publiek. De tekst van de beoordelingen vereist een account.",
+    "ryc.review.taken": "gevolgd in {from}-{to}",
+    "ryc.review.scores":
+      "aanbevolen {recommendation}/5 · belasting {workload}/5 · moeilijkheid {difficulty}/5",
+
+    "ryc.scale.recommendation.label": "Zou u ze aanraden?",
+    "ryc.scale.recommendation.low": "ik raad ze af",
+    "ryc.scale.recommendation.high": "ik raad ze aan",
+    "ryc.scale.recommendation.short": "de aanbeveling",
+    "ryc.scale.workloadVsEcts.label": "Werklast, tegenover de studiepunten",
+    "ryc.scale.workloadVsEcts.low": "veel lichter",
+    "ryc.scale.workloadVsEcts.high": "veel zwaarder",
+    "ryc.scale.workloadVsEcts.short": "de werklast",
+    "ryc.scale.difficulty.label": "Moeilijkheid",
+    "ryc.scale.difficulty.low": "heel makkelijk",
+    "ryc.scale.difficulty.high": "heel moeilijk",
+    "ryc.scale.difficulty.short": "de moeilijkheid",
+
+    "ryc.form.back": "terug naar de fiche",
+    "ryc.form.title": "Uw beoordeling van {code}",
+    "ryc.form.lede": "De keuze tussen uw naam en anonimiteit komt daarna, op een scherm apart.",
+    "ryc.form.quota.one": "U kunt deze periode nog één beoordeling plaatsen.",
+    "ryc.form.quota.other": "U kunt deze periode nog {count} beoordelingen plaatsen.",
+    "ryc.form.quota.note":
+      "De limiet telt beoordelingen, nooit welke: ze geldt voor beide wegen, zonder verband tussen uw account en een anonieme beoordeling.",
+    "ryc.form.completed": "Ik heb deze cursus tot het einde gevolgd.",
+    "ryc.form.completed.note": "Zonder dat valt er niets te beoordelen.",
+    "ryc.form.year": "Jaar waarin u ze gevolgd hebt",
+    "ryc.form.hours": "Uren per week, buiten de lessen",
+    "ryc.form.optional": "optioneel",
+    "ryc.form.passed": "Bent u geslaagd voor deze cursus?",
+    "ryc.form.passed.yes": "ja",
+    "ryc.form.passed.no": "nee",
+    "ryc.form.passed.unsaid": "dat zeg ik liever niet",
+    "ryc.form.passed.note":
+      "Wordt nooit bij uw beoordeling getoond. Enkel gebruikt voor een algemene aanwijzing, vanaf vijf antwoorden.",
+    "ryc.form.body": "Uw beoordeling",
+    "ryc.form.body.placeholder": "Hoe de cursus gegeven wordt, wat helpt, wat ontbreekt.",
+    "ryc.form.count.short.one": "nog {count} teken",
+    "ryc.form.count.short.other": "nog {count} tekens",
+    "ryc.form.count.long.one": "{count} teken te veel",
+    "ryc.form.count.long.other": "{count} tekens te veel",
+    "ryc.form.count.ok": "{n} tekens, op maximaal {max}",
+    "ryc.form.advice": "Een tip voor wie ze volgend jaar neemt",
+    "ryc.form.missing": "Er ontbreekt: {list}.",
+    "ryc.form.missing.completed": "bevestigen dat u de cursus afgerond hebt",
+    "ryc.form.missing.body": "de tekst van de beoordeling",
+    "ryc.form.missing.long": "de tekst inkorten (maximaal {max} tekens)",
+    "ryc.form.abandon": "Deze beoordeling laten vallen? De tekst gaat verloren.",
+    "ryc.form.continue": "Verder",
+    "ryc.form.nothing.sent": "In deze stap wordt niets verzonden.",
+
+    "ryc.quota.done":
+      "U hebt uw limiet aan beoordelingen voor deze periode bereikt. Ze wordt vernieuwd: kom over enkele dagen terug.",
+    "ryc.quota.note":
+      "Wij tellen hoeveel beoordelingen u plaatst, nooit welke. Een anonieme beoordeling blijft los van uw account, ook voor die telling.",
+
+    "ryc.draft.reread": "Mijn beoordeling nalezen",
+    "ryc.draft.facts":
+      "aanbevolen {recommendation}/5 · belasting {workload}/5 · moeilijkheid {difficulty}/5 · {chars} tekens",
+    "ryc.draft.advice": "Tip:",
+
+    "ryc.counts.lead": "Deze cursus heeft",
+    "ryc.counts.and": "en",
+    "ryc.counts.named.one": "{count} beoordeling met naam",
+    "ryc.counts.named.other": "{count} beoordelingen met naam",
+    "ryc.counts.anon.one": "{count} anonieme beoordeling",
+    "ryc.counts.anon.other": "{count} anonieme beoordelingen",
+    "ryc.counts.first": "U zou de eerste zijn.",
+    "ryc.counts.note":
+      "Hoe meer anonieme beoordelingen er zijn, hoe minder de uwe opvalt. Alleen u weet hoeveel studenten deze cursus gevolgd hebben: wij weten dat niet.",
+
+    "ryc.fork.back": "terug naar het formulier",
+    "ryc.fork.title": "Hoe wilt u deze beoordeling publiceren?",
+    "ryc.fork.lede":
+      "Deze keuze kan na het verzenden niet meer veranderd worden. Lees beide vóór u kiest.",
+    "ryc.fork.named.chip": "Onder mijn naam",
+    "ryc.fork.named.1": "Uw naam verschijnt op de fiche van de cursus.",
+    "ryc.fork.named.2": "Men kan u om verduidelijking vragen, of u tegenspreken.",
+    "ryc.fork.named.3": "U blijft aan deze beoordeling verbonden, ook over een jaar.",
+    "ryc.fork.named.cta": "Publiceren onder mijn naam",
+    "ryc.fork.anon.chip": "Anoniem",
+    "ryc.fork.anon.lead": "Definitief",
+    "ryc.fork.anon.1": "Geen naam, geen faculteit, geen domein.",
+    "ryc.fork.anon.2": "Niet aan te passen of te verwijderen.",
+    "ryc.fork.anon.3": "U zult niet kunnen bewijzen dat ze van u is.",
+    "ryc.fork.anon.cta": "Anoniem verdergaan",
+    "ryc.fork.note":
+      "Een beoordeling met naam aanpassen is gepland en bestaat nog niet. Het zal nooit gelden voor een anonieme beoordeling: niemand, wij inbegrepen, kan terugvinden welke de uwe is.",
+
+    "ryc.confirm.back": "terug naar de keuze",
+    "ryc.confirm.title": "Laatste stap vóór het verzenden",
+    "ryc.confirm.1.before": "Deze beoordeling wordt gepubliceerd",
+    "ryc.confirm.1.strong": "zonder enig verband met uw account.",
+    "ryc.confirm.2": "U kunt ze daarna niet meer aanpassen, verbeteren of intrekken.",
+    "ryc.confirm.2.em": "Wij evenmin, op uw vraag: wij zullen niet weten welke de uwe is.",
+    "ryc.confirm.3":
+      "Een moderator kan ze verwijderen als ze problemen geeft, zonder te weten wie ze schreef.",
+    "ryc.confirm.sending": "verzenden…",
+    "ryc.confirm.cta": "Anoniem publiceren, definitief",
+    "ryc.confirm.return": "Terugkeren",
+
+    "ryc.sent.title": "Beoordeling verzonden",
+    "ryc.sent.anon":
+      "Ze gaat naar moderatie zonder iets dat ze aan u koppelt. Deze pagina kan ze u niet tonen, nu niet en later niet: wij weten niet welke de uwe is, en dat is precies wat u gekozen hebt.",
+    "ryc.sent.named":
+      "Ze gaat naar moderatie onder uw naam, en verschijnt op de fiche van de cursus zodra ze nagelezen is.",
+    "ryc.sent.back": "Terug naar de fiche",
   },
 
   en: {
@@ -338,5 +636,153 @@ export const rycStrings: Bundle = {
     "ryc.kind.approfondissement": "Specialisation path",
     "ryc.kind.certificat": "Certificate",
     "ryc.kind.autre": "Other",
+
+    "ryc.mock.ribbon": "5 ECTS · Q2 · French · 30.0 h + 30.0 h",
+    "ryc.mock.named.body":
+      "The project is long but it is where I learned the most. Start on the architecture in week one, not week three.",
+    "ryc.mock.anon.body":
+      "A lot of unsupervised work outside the sessions, and the group-work marking scheme is worth reading in full before you sign up.",
+    "ryc.anonymous": "Anonymous",
+    "ryc.imported": "Taken from {source}",
+    "ryc.err.send": "sending failed",
+    "ryc.signin.required":
+      "Posting a review requires being signed in. The sign-in control is at the top of the page.",
+
+    "ryc.steps.label": "Steps",
+    "ryc.steps.form": "Your review",
+    "ryc.steps.fork": "Name or anonymous",
+    "ryc.steps.confirm": "Confirmation",
+
+    "ryc.course.back": "back",
+    "ryc.course.teachers": "Lecturers",
+    "ryc.course.entity": "Entity in charge",
+    "ryc.course.reachedVia": "Reachable through",
+    "ryc.course.hours": "Contact hours",
+    "ryc.course.assessment": "Assessment",
+    "ryc.course.themes": "Themes covered",
+    "ryc.course.content": "Content",
+    "ryc.course.official": "Official page",
+    "ryc.course.external.note":
+      "This course is taught at another institution. UCLouvain publishes only the reference, so the details below are incomplete.",
+
+    "ryc.stat.of": "out of 5",
+    "ryc.stat.recommendation": "recommended",
+    "ryc.stat.workload": "workload / ECTS",
+    "ryc.stat.difficulty": "difficulty",
+    "ryc.reviews.title": "Reviews",
+    "ryc.reviews.write": "Write a review",
+    "ryc.reviews.failed": "The reviews could not be loaded.",
+    "ryc.reviews.denominator": "Out of {count} reviews: {named} named, {anonymous} anonymous.",
+    "ryc.reviews.pass": "Passing: {band}.",
+    "ryc.reviews.none":
+      "Nobody has reviewed this course yet. The first review is the most useful, and the most exposed: the choice between your name and anonymity is put to you before sending.",
+    "ryc.reviews.locked":
+      "The figures above describe the course and stay public. The text of the reviews requires an account.",
+    "ryc.review.taken": "taken in {from}-{to}",
+    "ryc.review.scores":
+      "recommended {recommendation}/5 · workload {workload}/5 · difficulty {difficulty}/5",
+
+    "ryc.scale.recommendation.label": "Would you recommend it?",
+    "ryc.scale.recommendation.low": "I advise against",
+    "ryc.scale.recommendation.high": "I recommend it",
+    "ryc.scale.recommendation.short": "the recommendation",
+    "ryc.scale.workloadVsEcts.label": "Workload, against its ECTS",
+    "ryc.scale.workloadVsEcts.low": "much lighter",
+    "ryc.scale.workloadVsEcts.high": "much heavier",
+    "ryc.scale.workloadVsEcts.short": "the workload",
+    "ryc.scale.difficulty.label": "Difficulty",
+    "ryc.scale.difficulty.low": "very easy",
+    "ryc.scale.difficulty.high": "very hard",
+    "ryc.scale.difficulty.short": "the difficulty",
+
+    "ryc.form.back": "back to the course",
+    "ryc.form.title": "Your review of {code}",
+    "ryc.form.lede": "The choice between your name and anonymity comes after, on a screen of its own.",
+    "ryc.form.quota.one": "You have one review left to post this period.",
+    "ryc.form.quota.other": "You have {count} reviews left to post this period.",
+    "ryc.form.quota.note":
+      "The limit counts reviews, never which ones: it applies to both paths, with no link between your account and an anonymous review.",
+    "ryc.form.completed": "I took this course through to the end.",
+    "ryc.form.completed.note": "Without that, there is nothing to review.",
+    "ryc.form.year": "Year you took it",
+    "ryc.form.hours": "Hours per week, outside the sessions",
+    "ryc.form.optional": "optional",
+    "ryc.form.passed": "Did you pass this course?",
+    "ryc.form.passed.yes": "yes",
+    "ryc.form.passed.no": "no",
+    "ryc.form.passed.unsaid": "I would rather not say",
+    "ryc.form.passed.note":
+      "Never shown with your review. Used only for an overall indication, from five answers upward.",
+    "ryc.form.body": "Your review",
+    "ryc.form.body.placeholder": "How the course is taught, what helps, what is missing.",
+    "ryc.form.count.short.one": "{count} character to go",
+    "ryc.form.count.short.other": "{count} characters to go",
+    "ryc.form.count.long.one": "{count} character too many",
+    "ryc.form.count.long.other": "{count} characters too many",
+    "ryc.form.count.ok": "{n} characters, out of {max} maximum",
+    "ryc.form.advice": "A tip for whoever takes it next year",
+    "ryc.form.missing": "Missing: {list}.",
+    "ryc.form.missing.completed": "confirming that you finished the course",
+    "ryc.form.missing.body": "the text of the review",
+    "ryc.form.missing.long": "shortening the text ({max} characters maximum)",
+    "ryc.form.abandon": "Abandon this review? The text will be lost.",
+    "ryc.form.continue": "Continue",
+    "ryc.form.nothing.sent": "Nothing is sent at this step.",
+
+    "ryc.quota.done":
+      "You have reached your review limit for this period. It renews: come back in a few days.",
+    "ryc.quota.note":
+      "We count how many reviews you post, never which ones. An anonymous review stays unlinked to your account, including for that count.",
+
+    "ryc.draft.reread": "Reread my review",
+    "ryc.draft.facts":
+      "recommended {recommendation}/5 · workload {workload}/5 · difficulty {difficulty}/5 · {chars} characters",
+    "ryc.draft.advice": "Tip:",
+
+    "ryc.counts.lead": "This course has",
+    "ryc.counts.and": "and",
+    "ryc.counts.named.one": "{count} named review",
+    "ryc.counts.named.other": "{count} named reviews",
+    "ryc.counts.anon.one": "{count} anonymous review",
+    "ryc.counts.anon.other": "{count} anonymous reviews",
+    "ryc.counts.first": "You would be the first.",
+    "ryc.counts.note":
+      "The more anonymous reviews there are, the less yours stands out. Only you know how many students took this course: we do not.",
+
+    "ryc.fork.back": "back to the form",
+    "ryc.fork.title": "How do you want to publish this review?",
+    "ryc.fork.lede": "This choice cannot be changed after sending. Read both before choosing.",
+    "ryc.fork.named.chip": "Under my name",
+    "ryc.fork.named.1": "Your name appears on the course page.",
+    "ryc.fork.named.2": "People can ask you for detail, or disagree with you.",
+    "ryc.fork.named.3": "You stay attached to this review, a year from now included.",
+    "ryc.fork.named.cta": "Publish under my name",
+    "ryc.fork.anon.chip": "Anonymous",
+    "ryc.fork.anon.lead": "Permanent",
+    "ryc.fork.anon.1": "No name, no faculty, no domain.",
+    "ryc.fork.anon.2": "Impossible to edit or delete.",
+    "ryc.fork.anon.3": "You will not be able to prove it is yours.",
+    "ryc.fork.anon.cta": "Continue anonymously",
+    "ryc.fork.note":
+      "Editing a named review is planned and does not exist yet. It will never apply to an anonymous one: nobody, us included, can find out which is yours.",
+
+    "ryc.confirm.back": "back to the choice",
+    "ryc.confirm.title": "Last step before sending",
+    "ryc.confirm.1.before": "This review will be published",
+    "ryc.confirm.1.strong": "with no link at all to your account.",
+    "ryc.confirm.2": "You will not be able to edit it, correct it or withdraw it.",
+    "ryc.confirm.2.em": "Nor will we, at your request: we will not know which one is yours.",
+    "ryc.confirm.3":
+      "A moderator will be able to remove it if it causes a problem, without knowing who wrote it.",
+    "ryc.confirm.sending": "sending…",
+    "ryc.confirm.cta": "Publish anonymously, permanently",
+    "ryc.confirm.return": "Go back",
+
+    "ryc.sent.title": "Review sent",
+    "ryc.sent.anon":
+      "It goes to moderation with nothing linking it to you. This page cannot show it to you, now or later: we do not know which one is yours, and that is exactly what you chose.",
+    "ryc.sent.named":
+      "It goes to moderation under your name, and will appear on the course page once reviewed.",
+    "ryc.sent.back": "Back to the course",
   },
 };

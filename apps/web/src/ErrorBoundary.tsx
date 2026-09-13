@@ -49,11 +49,19 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           color: "#16191d",
         }}
       >
-        <h1 style={{ fontSize: "1.5rem", margin: "0 0 0.6rem" }}>Quelque chose a cassé</h1>
+        {/*
+          NOT TRANSLATED, on purpose, and the one screen in the product that is
+          not. A failure inside the translator or its bundle is exactly one of
+          the things this has to survive, so it cannot call it. Three languages
+          in one paragraph is the honest way to say the same thing to everyone
+          without depending on anything.
+        */}
+        <h1 style={{ fontSize: "1.5rem", margin: "0 0 0.6rem" }}>
+          Something broke · Er ging iets mis · Quelque chose a cassé
+        </h1>
         <p style={{ color: "#5b6470", margin: "0 0 1.25rem" }}>
-          Cette page n&apos;a pas pu s&apos;afficher. Ce n&apos;est pas vous, c&apos;est nous.
-          Rechargez la page ; si cela recommence, le message ci-dessous est ce qu&apos;il faut
-          nous envoyer.
+          This page could not be displayed. Reload it; if it happens again, the message below
+          is what to send us.
         </p>
         <pre
           style={{
@@ -83,10 +91,10 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
               cursor: "pointer",
             }}
           >
-            Recharger
+            Reload
           </button>{" "}
           <a href="/" style={{ marginLeft: "0.6rem", color: "#1b4a8f" }}>
-            Retour à l&apos;accueil
+            Home
           </a>
         </p>
       </main>
