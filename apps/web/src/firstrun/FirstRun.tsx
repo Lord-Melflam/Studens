@@ -182,6 +182,19 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
       </div>
       <p className="firstrun-step">{t("firstrun.step", { n: step, total: STEPS })}</p>
 
+      {/*
+        A FAILURE ON ANY STEP IS VISIBLE. Until 2026-09-13 the error line lived
+        inside step two only, so a refused save anywhere else did nothing at
+        all: the button appeared dead and there was nothing on screen to read.
+        The username problems keep their own precise wording on step two; this
+        catches every other step and every other reason.
+      */}
+      {problem && step !== 2 && (
+        <p className="error" role="alert">
+          {problem === "other" ? t("firstrun.err.save") : t(`firstrun.2.err.${problem}`)}
+        </p>
+      )}
+
       {step === 1 && (
         <section className="firstrun-card">
           <h1>{t("firstrun.1.title")}</h1>

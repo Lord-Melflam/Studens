@@ -70,7 +70,7 @@ function Studens() {
  * require a session, so it must not require a finished setup either.
  */
 function Zone({ route }: { route: string }) {
-  const { session } = useSession();
+  const { session, reload } = useSession();
 
   // Tested EXPLICITLY, never for falsiness: `null` means the answer has not
   // arrived, and treating that as "not signed in" would bounce people out of
@@ -95,7 +95,24 @@ function Zone({ route }: { route: string }) {
   if (isFirstRunPath(route)) {
     // Signed out and standing in the wizard: there is nothing to set up.
     if (strayed) return null;
-    return <FirstRun route={route} onDone={() => navigate(takeDestination())} />;
+    return (
+      <FirstRun
+        route={route}
+        /*
+          RELOAD BEFORE NAVIGATING, and wait for it.
+          
+          `divert` is computed from the session, and the session in memory is
+          the one fetched on mount: it still says the first run has never been
+          opened. Navigating to /app without refreshing it sends somebody
+          straight back here, the wizard resumes at their saved step, and the
+          Finish button looks dead while having saved everything correctly.
+          Reported that way on 2026-09-13.
+        */
+        onDone={() => {
+          void reload().then(() => navigate(takeDestination()));
+        }}
+      />
+    );
   }
 
   if (isAppPath(route)) {

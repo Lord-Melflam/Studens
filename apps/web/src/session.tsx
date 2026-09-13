@@ -27,10 +27,19 @@ export interface SessionState {
 interface SessionValue {
   /** null while the first request is in flight. */
   session: SessionState | null;
-  reload: () => void;
+  /**
+   * Fetch it again, and RESOLVE WHEN THE STATE HAS BEEN SET.
+   *
+   * The promise is the whole point. Anything that changes what the session says
+   * about itself, finishing the first run above all, has to be able to wait for
+   * the new answer before it navigates. Without that, the next screen is
+   * decided from the answer fetched on mount, which is the one that is no
+   * longer true.
+   */
+  reload: () => Promise<void>;
 }
 
-const Ctx = createContext<SessionValue>({ session: null, reload: () => {} });
+const Ctx = createContext<SessionValue>({ session: null, reload: () => Promise.resolve() });
 
 export function SessionProvider({
   children,
@@ -49,14 +58,18 @@ export function SessionProvider({
 }) {
   const [session, setSession] = useState<SessionState | null>(initial);
 
-  const reload = useCallback(() => {
-    fetch("/api/session")
-      .then((r) => (r.ok ? (r.json() as Promise<SessionState>) : null))
-      .then(setSession)
-      .catch(() => setSession(null));
+  const reload = useCallback(async () => {
+    try {
+      const r = await fetch("/api/session");
+      setSession(r.ok ? ((await r.json()) as SessionState) : null);
+    } catch {
+      setSession(null);
+    }
   }, []);
 
-  useEffect(reload, [reload]);
+  useEffect(() => {
+    void reload();
+  }, [reload]);
 
   return <Ctx.Provider value={{ session, reload }}>{children}</Ctx.Provider>;
 }

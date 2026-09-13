@@ -181,6 +181,8 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.reserved": "Ce nom est réservé.",
     "firstrun.2.err.taken": "Ce pseudonyme est déjà pris.",
     "firstrun.2.err.other": "L'enregistrement a échoué. Réessayez.",
+    "firstrun.err.save":
+      "L'enregistrement a échoué et rien n'a été perdu. Réessayez ; si cela recommence, rechargez la page.",
 
     "firstrun.3.title": "Dans quelle langue ?",
     "firstrun.3.lede": "Vous pouvez en changer à tout moment.",
@@ -503,6 +505,8 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.reserved": "Deze naam is voorbehouden.",
     "firstrun.2.err.taken": "Deze gebruikersnaam is al bezet.",
     "firstrun.2.err.other": "Opslaan is mislukt. Probeer opnieuw.",
+    "firstrun.err.save":
+      "Opslaan is mislukt en er is niets verloren. Probeer opnieuw; gebeurt het weer, herlaad dan de pagina.",
 
     "firstrun.3.title": "In welke taal?",
     "firstrun.3.lede": "U kunt dit op elk moment wijzigen.",
@@ -825,6 +829,8 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.reserved": "That name is reserved.",
     "firstrun.2.err.taken": "That username is already taken.",
     "firstrun.2.err.other": "Saving failed. Try again.",
+    "firstrun.err.save":
+      "Saving failed and nothing was lost. Try again; if it happens again, reload the page.",
 
     "firstrun.3.title": "Which language?",
     "firstrun.3.lede": "You can change it at any time.",
