@@ -115,14 +115,15 @@ export function SubmitFlow({
   if (error && !ctx) return <p className="error">{error}</p>;
   if (!ctx) return <p className="meta">chargement…</p>;
 
-  // FR-A is not built, so there may be no member at all. Saying so plainly
-  // beats a form that fails on submit.
+  // No quota means no member: nobody is signed in. Saying so plainly beats a
+  // form that fails on submit. The module cannot offer a sign-in itself, since
+  // that is the shell's business (FR-B16), so it points at where the control is.
   if (ctx.quotaRemaining === null && step !== "sent") {
     return (
       <section className="notice">
         <p>
-          Publier un avis demande un compte. La connexion n&apos;est pas encore
-          en place (FR-A), donc le formulaire n&apos;est pas ouvert ici.
+          Publier un avis demande d&apos;être connecté. La commande de connexion
+          est en haut de la page.
         </p>
         <button type="button" className="back" onClick={onClose}>
           retour à la fiche

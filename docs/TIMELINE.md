@@ -10,17 +10,17 @@ gone wrong and what each failure changed.
 
 ---
 
-## State, as of 2026-09-12
+## State, as of 2026-09-13
 
 | | |
 |---|---|
-| Stage | **Working software.** Catalogue end to end, and reviews submitted and read on both paths |
-| Commits | 39 |
+| Stage | **Working software.** Catalogue end to end, sign-in with Google, a first run, and reviews submitted and read on both paths |
+| Commits | 40 |
 | Requirements | **140**: 122 functional and 18 non-functional. Counted, not carried forward |
 | Open questions | **8** open, 37 resolved |
-| Tests | **267**, plus 15 database isolation assertions |
-| Code | ~4,900 lines TypeScript in `packages`, `apps` and `scripts`, plus ~1,900 lines of tests and ~800 of SQL and Prisma |
-| Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, in PostgreSQL |
+| Tests | **311**, plus 15 database isolation assertions |
+| Code | 9,968 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 3,788 of tests, 978 of SQL and Prisma, 937 of CSS. Re-measured 2026-09-13 over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts`; the earlier "~4,900" counted a narrower set and is not comparable |
+| Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, and 11 institutions, in PostgreSQL |
 
 ### What runs today
 
@@ -35,12 +35,15 @@ npm run dev:web                        # terminal 2, then localhost:5173
 ```
 
 `dev:api` sets `STUDENS_DEV_IDENTITY=1`, because submission needs a member
-(FR-C4) and FR-A is not built, so without it the review form refuses to open and
-looks like a bug. The fence is unchanged: the code still requires the variable
-to be set explicitly, still refuses when `NODE_ENV=production`, and still prints
-a warning naming FR-A at every start. Production does not run this script. The
-cost is that a signed-out session is no longer the default locally, hence
-`dev:api:anon`. Both scripts go away when FR-A ships.
+(FR-C4) and signing in for real needs provider credentials a contributor will not
+have. It signs in one fixed member and issues a real session, so everything
+downstream runs production's code path. The fence is unchanged: the code requires
+the variable to be set explicitly, refuses when `NODE_ENV=production`, and prints
+a warning at every start. Production does not run this script. The cost is that a
+signed-out session is no longer the default locally, hence `dev:api:anon`.
+
+That member starts with no username and no first-run progress (FR-F14), so what
+a developer lands on is the first-run sequence, not somebody's finished account.
 
 You land on the **shell**, choose a module, and inside RYC you can browse a
 programme or search a course code and open its page: ECTS, quarter, language,
@@ -872,16 +875,77 @@ Namur's course code and not their URL grammar.
 
 Eight open questions remain, from thirteen.
 
+### Phase 25: the first run
+
+Signing in worked and landed people nowhere. There was a Member row with a
+provider subject, an email domain and a tenant, and nothing a person had chosen:
+no name, no institution, no way to be anything other than "membre" beside their
+own review. FR-F4 to FR-F14 had been written on 2026-09-12 and none of it
+existed.
+
+Five screens at `/bienvenue/1` to `/5`: what this is, a username, a language,
+studies, an institution. One question per screen, and only the username required
+(FR-F6). The step is in the URL **and** on the Member row, so a refresh resumes
+and so does a different device tomorrow (FR-F5). The whole sequence is a third
+zone, next to the public site and the app: no module navigation and no crumbs,
+because a wizard you can wander out of is one people leave halfway.
+
+**Four things were decided while building it, and three of them were caught by a
+gate rather than by me.**
+
+**`displayName` was dropped rather than filled in.** OPEN-36 had already decided
+the provider's display name is not kept. It was a column nothing wrote except
+the development identity, and leaving it there made the decision a habit
+somebody could quietly reverse. Removing it makes it structural. That is the
+same argument as the anonymous table having no member column at all.
+
+**Notification preferences were removed from FR-F8.** The column was written,
+and then it became clear it could never work: FR-A9 stores the email *domain*
+and never the address, so the platform cannot send mail to anybody. An unused
+field is one thing; a preference for something that cannot happen is a promise.
+Restoring it means first deciding to store addresses, which is a separate
+decision with its own weight. The amendment is recorded against FR-F8 and needs
+François's confirmation, because the original was his call.
+
+**`programme` became `studies`, because FR-B6's frontend gate refused it.** The
+first run asked for a "programme" and `test/architecture/frontend-shell.test.ts`
+failed on five lines: that word belongs to the catalogue. The gate was right for
+a second reason it does not know about, which is the better one: the field is
+free text, it is matched against no catalogue row, and naming it after one
+implies it is. Renaming fixed a real misdirection, not just a lint.
+
+**The username reaches a review through a function, not a query.** `studens_ryc`
+holds no grant on `platform.Member` and must not: a module that can query the
+member table can enumerate members. So `reviewsFor` takes a `NameResolver`, the
+API composes the two, and neither side gains the other's access. The module
+still cannot look anybody up; it can only ask about ids already in its own
+table, which are attributed reviews by definition.
+
+Two older claims on screen were false and are now not. The submission form said
+"la connexion n'est pas encore en place (FR-A)", which stopped being true when
+FR-A shipped in phase 19, and the API start-up banner said "there is no
+authentication". Both were written when they were true and nothing made them
+change with the code.
+
+The account panel gained the username, the institution and the studies it used
+to list under "not yet available", and `test/ui/navigation.test.ts` gained the
+harder half of that rule: a test that fails if something which has shipped is
+still listed as missing. The first half was already there. Only the first half
+ever gets written.
+
 ---
 
 ## Next
 
-1. **Authentication** (FR-A). It is now the only thing between the review path
-   and a real user: submission runs on a development identity that refuses to
-   work in production. Needs OAuth client credentials from Microsoft and Google,
-   which only François can register.
-2. **Moderation** (FR-E). A submitted review publishes directly today. The queue
-   has a schema and no consumer.
-3. **Editing an attributed review** (FR-C14) and "Mes avis" (FR-D12), both of
+1. ~~Authentication~~ done, phases 19 and 25. Google works end to end. Microsoft
+   is registered and untried: UCLouvain's tenant turns an outside account into
+   an `#EXT#` guest, so it needs testing from the `procyo.be` tenant instead.
+2. **FR-E8, the notice and action mechanism.** Legally required, and nothing
+   implements it. First piece of moderation work, ahead of the queue.
+3. **Moderation** (FR-E) beyond that. A submitted review publishes directly
+   today. The queue has a schema and no consumer.
+4. **Editing an attributed review** (FR-C14) and "Mes avis" (FR-D12), both of
    which the fork already promises on screen.
-4. ~~Branch protection~~ done 2026-09-11, see phase 17.
+5. **Deployment.** Nothing deploys. The API does not serve the single-page
+   application, so path routing would 404 in production on any refresh.
+6. ~~Branch protection~~ done 2026-09-11, see phase 17.

@@ -11,3 +11,11 @@ export { PublicLayout } from "./public/PublicLayout.js";
 export { currentPath, isAppPath, moduleIdFrom, linkProps, APP_PREFIX } from "./router.js";
 export { modules, liveModules, presentModules, activeModuleFor } from "./shell/registry.js";
 export { bundle } from "./bundle.js";
+export {
+  FIRST_RUN,
+  STEPS,
+  firstRunPath,
+  hasExplicitStep,
+  isFirstRunPath,
+  stepFrom,
+} from "./firstrun/FirstRun.js";

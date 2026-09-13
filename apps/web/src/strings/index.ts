@@ -55,9 +55,18 @@ export const shellStrings: Bundle = {
     "settings.sessions.since": "depuis le {when}",
     "settings.sessions.end": "Déconnecter",
     "settings.sessions.endthis": "Me déconnecter ici",
+    "settings.profile": "Profil",
+    "settings.username": "Pseudonyme",
+    "settings.username.hint": "La seule information de votre profil que les autres voient.",
+    "settings.save": "Enregistrer",
+    "settings.saved": "Enregistré.",
+    "settings.unset": "Non renseigné",
+    "settings.institution": "Établissement",
+    "settings.institution.hint": "Déclaré par vous. N'ouvre aucun accès et ne prouve rien.",
+    "settings.studies": "Études",
+    "settings.studies.hint": "N'apparaît jamais à côté de ce que vous publiez.",
+    "settings.redo": "Refaire la configuration",
     "settings.soon": "Pas encore disponible",
-    "settings.soon.username": "Choisir un pseudonyme, qui apparaîtra sur ce que vous publiez sous votre nom.",
-    "settings.soon.institution": "Indiquer votre établissement.",
     "settings.soon.contributions": "Retrouver et modifier vos contributions signées.",
     "nav.language": "Langue",
 
@@ -138,6 +147,63 @@ export const shellStrings: Bundle = {
 
     "lang.note":
       "L'interface existe en trois langues. Les informations reprises des institutions restent dans la langue où elles sont publiées.",
+
+    "firstrun.step": "Étape {n} sur {total}",
+    "firstrun.later": "Plus tard",
+    "firstrun.start": "Commencer",
+    "firstrun.back": "Retour",
+    "firstrun.next": "Suivant",
+    "firstrun.skip": "Passer",
+    "firstrun.finish": "Terminer",
+
+    "firstrun.1.title": "Bienvenue sur Studens",
+    "firstrun.1.lede":
+      "Quatre écrans, une minute. Vous pouvez vous arrêter quand vous voulez et reprendre où vous en étiez.",
+    "firstrun.1.point.name": "Un pseudonyme. C'est la seule chose demandée.",
+    "firstrun.1.point.rest": "Le reste est facultatif et sert à vous proposer ce qui vous concerne.",
+    "firstrun.1.point.later": "Tout est modifiable ensuite dans votre compte.",
+    "firstrun.1.known": "Nous savons déjà que vous avez une adresse chez {domain}. Rien d'autre.",
+
+    "firstrun.2.title": "Choisissez un pseudonyme",
+    "firstrun.2.lede":
+      "C'est le nom sous lequel vous apparaissez quand vous publiez quelque chose en votre nom.",
+    "firstrun.2.label": "Pseudonyme",
+    "firstrun.2.placeholder": "par exemple : lou.martin",
+    "firstrun.2.rule":
+      "De 3 à 24 caractères : lettres minuscules, chiffres, et point, tiret ou tiret bas entre deux.",
+    "firstrun.2.public":
+      "C'est la seule information de cette configuration qui soit visible par les autres.",
+    "firstrun.2.err.short": "Trop court : 3 caractères au minimum.",
+    "firstrun.2.err.long": "Trop long : 24 caractères au maximum.",
+    "firstrun.2.err.shape": "Caractères non autorisés, ou un séparateur au début ou à la fin.",
+    "firstrun.2.err.reserved": "Ce nom est réservé.",
+    "firstrun.2.err.taken": "Ce pseudonyme est déjà pris.",
+    "firstrun.2.err.other": "L'enregistrement a échoué. Réessayez.",
+
+    "firstrun.3.title": "Dans quelle langue ?",
+    "firstrun.3.lede": "Vous pouvez en changer à tout moment.",
+    "firstrun.3.note":
+      "Cela change l'interface. Les informations reprises des institutions restent dans la langue où elles sont publiées.",
+
+    "firstrun.4.title": "Vos études",
+    "firstrun.4.lede":
+      "Facultatif, et utile seulement pour vous montrer ce qui vous concerne d'abord. Passez cet écran si vous préférez.",
+    "firstrun.4.studies": "Ce que vous étudiez",
+    "firstrun.4.studies.placeholder": "par exemple : bachelier ingénieur civil",
+    "firstrun.4.year": "Année",
+    "firstrun.4.year.none": "Je préfère ne pas le dire",
+    "firstrun.4.year.n": "Année {n}",
+    "firstrun.4.interests": "Centres d'intérêt",
+    "firstrun.4.interests.placeholder": "par exemple : sécurité, données, langues",
+    "firstrun.4.never":
+      "Rien de cet écran n'apparaît à côté de ce que vous publiez, ni signé, ni anonyme.",
+
+    "firstrun.5.title": "Votre établissement",
+    "firstrun.5.lede":
+      "Seule l'UCLouvain peut être choisie : Studens n'est pas encore ouvert ailleurs. Les autres sont listées parce qu'elles viendront.",
+    "firstrun.5.soon": "pas encore ouvert",
+    "firstrun.5.declared":
+      "C'est une simple déclaration. Elle n'ouvre aucun accès et ne prouve rien.",
   },
 
   nl: {
@@ -175,9 +241,18 @@ export const shellStrings: Bundle = {
     "settings.sessions.since": "sinds {when}",
     "settings.sessions.end": "Afmelden",
     "settings.sessions.endthis": "Mij hier afmelden",
+    "settings.profile": "Profiel",
+    "settings.username": "Gebruikersnaam",
+    "settings.username.hint": "Het enige gegeven uit uw profiel dat anderen te zien krijgen.",
+    "settings.save": "Opslaan",
+    "settings.saved": "Opgeslagen.",
+    "settings.unset": "Niet ingevuld",
+    "settings.institution": "Instelling",
+    "settings.institution.hint": "Door uzelf opgegeven. Opent geen toegang en bewijst niets.",
+    "settings.studies": "Studie",
+    "settings.studies.hint": "Verschijnt nooit naast wat u publiceert.",
+    "settings.redo": "De installatie opnieuw doorlopen",
     "settings.soon": "Nog niet beschikbaar",
-    "settings.soon.username": "Een schuilnaam kiezen, die verschijnt bij wat je onder je eigen naam publiceert.",
-    "settings.soon.institution": "Je instelling opgeven.",
     "settings.soon.contributions": "Je ondertekende bijdragen terugvinden en aanpassen.",
     "nav.language": "Taal",
 
@@ -258,6 +333,64 @@ export const shellStrings: Bundle = {
 
     "lang.note":
       "De interface bestaat in drie talen. Informatie die van de instellingen komt blijft in de taal waarin ze gepubliceerd is.",
+
+    "firstrun.step": "Stap {n} van {total}",
+    "firstrun.later": "Later",
+    "firstrun.start": "Beginnen",
+    "firstrun.back": "Terug",
+    "firstrun.next": "Volgende",
+    "firstrun.skip": "Overslaan",
+    "firstrun.finish": "Afronden",
+
+    "firstrun.1.title": "Welkom bij Studens",
+    "firstrun.1.lede":
+      "Vier schermen, één minuut. U kunt altijd stoppen en later verdergaan waar u gebleven was.",
+    "firstrun.1.point.name": "Een gebruikersnaam. Dat is het enige dat we vragen.",
+    "firstrun.1.point.rest": "De rest is optioneel en helpt ons te tonen wat u aangaat.",
+    "firstrun.1.point.later": "Alles is achteraf aanpasbaar in uw account.",
+    "firstrun.1.known": "We weten alleen dat u een adres hebt bij {domain}. Niets anders.",
+
+    "firstrun.2.title": "Kies een gebruikersnaam",
+    "firstrun.2.lede":
+      "Dit is de naam waaronder u verschijnt wanneer u iets onder uw eigen naam publiceert.",
+    "firstrun.2.label": "Gebruikersnaam",
+    "firstrun.2.placeholder": "bijvoorbeeld: lou.martin",
+    "firstrun.2.rule":
+      "3 tot 24 tekens: kleine letters, cijfers, en een punt, koppelteken of liggend streepje ertussen.",
+    "firstrun.2.public":
+      "Dit is het enige gegeven uit deze installatie dat anderen te zien krijgen.",
+    "firstrun.2.err.short": "Te kort: minstens 3 tekens.",
+    "firstrun.2.err.long": "Te lang: hoogstens 24 tekens.",
+    "firstrun.2.err.shape":
+      "Niet-toegelaten tekens, of een scheidingsteken aan het begin of het einde.",
+    "firstrun.2.err.reserved": "Deze naam is voorbehouden.",
+    "firstrun.2.err.taken": "Deze gebruikersnaam is al bezet.",
+    "firstrun.2.err.other": "Opslaan is mislukt. Probeer opnieuw.",
+
+    "firstrun.3.title": "In welke taal?",
+    "firstrun.3.lede": "U kunt dit op elk moment wijzigen.",
+    "firstrun.3.note":
+      "Dit verandert de interface. Informatie van de instellingen blijft in de taal waarin ze gepubliceerd is.",
+
+    "firstrun.4.title": "Uw studie",
+    "firstrun.4.lede":
+      "Optioneel, en alleen nuttig om u eerst te tonen wat u aangaat. Sla dit scherm gerust over.",
+    "firstrun.4.studies": "Wat u studeert",
+    "firstrun.4.studies.placeholder": "bijvoorbeeld: bachelor burgerlijk ingenieur",
+    "firstrun.4.year": "Jaar",
+    "firstrun.4.year.none": "Dat zeg ik liever niet",
+    "firstrun.4.year.n": "Jaar {n}",
+    "firstrun.4.interests": "Interesses",
+    "firstrun.4.interests.placeholder": "bijvoorbeeld: beveiliging, data, talen",
+    "firstrun.4.never":
+      "Niets van dit scherm verschijnt naast wat u publiceert, ondertekend noch anoniem.",
+
+    "firstrun.5.title": "Uw instelling",
+    "firstrun.5.lede":
+      "Alleen de UCLouvain kan gekozen worden: Studens is elders nog niet open. De andere staan erbij omdat ze komen.",
+    "firstrun.5.soon": "nog niet open",
+    "firstrun.5.declared":
+      "Dit is enkel een verklaring. Ze opent geen toegang en bewijst niets.",
   },
 
   en: {
@@ -295,9 +428,18 @@ export const shellStrings: Bundle = {
     "settings.sessions.since": "since {when}",
     "settings.sessions.end": "Sign out",
     "settings.sessions.endthis": "Sign me out here",
+    "settings.profile": "Profile",
+    "settings.username": "Username",
+    "settings.username.hint": "The only thing in your profile that other people can see.",
+    "settings.save": "Save",
+    "settings.saved": "Saved.",
+    "settings.unset": "Not given",
+    "settings.institution": "Institution",
+    "settings.institution.hint": "Declared by you. It opens no access and proves nothing.",
+    "settings.studies": "Studies",
+    "settings.studies.hint": "Never appears beside what you publish.",
+    "settings.redo": "Go through the setup again",
     "settings.soon": "Not available yet",
-    "settings.soon.username": "Choose a pseudonym, which appears on what you publish under your own name.",
-    "settings.soon.institution": "Name your institution.",
     "settings.soon.contributions": "Find and edit the contributions you signed.",
     "nav.language": "Language",
 
@@ -378,5 +520,62 @@ export const shellStrings: Bundle = {
 
     "lang.note":
       "The interface exists in three languages. Information taken from the institutions stays in the language it is published in.",
+
+    "firstrun.step": "Step {n} of {total}",
+    "firstrun.later": "Later",
+    "firstrun.start": "Start",
+    "firstrun.back": "Back",
+    "firstrun.next": "Next",
+    "firstrun.skip": "Skip",
+    "firstrun.finish": "Finish",
+
+    "firstrun.1.title": "Welcome to Studens",
+    "firstrun.1.lede":
+      "Four screens, one minute. You can stop whenever you like and pick up where you left off.",
+    "firstrun.1.point.name": "A username. That is the only thing we ask for.",
+    "firstrun.1.point.rest": "The rest is optional, and helps us show you what concerns you.",
+    "firstrun.1.point.later": "Everything can be changed afterwards in your account.",
+    "firstrun.1.known":
+      "All we already know is that you hold an address at {domain}. Nothing else.",
+
+    "firstrun.2.title": "Choose a username",
+    "firstrun.2.lede":
+      "This is the name you appear under when you publish something in your own name.",
+    "firstrun.2.label": "Username",
+    "firstrun.2.placeholder": "for example: lou.martin",
+    "firstrun.2.rule":
+      "3 to 24 characters: lowercase letters, digits, and a dot, hyphen or underscore between two of them.",
+    "firstrun.2.public": "It is the only thing from this setup that other people can see.",
+    "firstrun.2.err.short": "Too short: 3 characters at least.",
+    "firstrun.2.err.long": "Too long: 24 characters at most.",
+    "firstrun.2.err.shape":
+      "Characters that are not allowed, or a separator at the start or the end.",
+    "firstrun.2.err.reserved": "That name is reserved.",
+    "firstrun.2.err.taken": "That username is already taken.",
+    "firstrun.2.err.other": "Saving failed. Try again.",
+
+    "firstrun.3.title": "Which language?",
+    "firstrun.3.lede": "You can change it at any time.",
+    "firstrun.3.note":
+      "This changes the interface. Information taken from the institutions stays in the language it is published in.",
+
+    "firstrun.4.title": "Your studies",
+    "firstrun.4.lede":
+      "Optional, and useful only to show you what concerns you first. Skip this screen if you would rather.",
+    "firstrun.4.studies": "What you study",
+    "firstrun.4.studies.placeholder": "for example: bachelor of civil engineering",
+    "firstrun.4.year": "Year",
+    "firstrun.4.year.none": "I would rather not say",
+    "firstrun.4.year.n": "Year {n}",
+    "firstrun.4.interests": "Interests",
+    "firstrun.4.interests.placeholder": "for example: security, data, languages",
+    "firstrun.4.never":
+      "Nothing on this screen appears beside what you publish, signed or anonymous.",
+
+    "firstrun.5.title": "Your institution",
+    "firstrun.5.lede":
+      "Only UCLouvain can be chosen: Studens is not open anywhere else yet. The others are listed because they are coming.",
+    "firstrun.5.soon": "not open yet",
+    "firstrun.5.declared": "This is a statement, nothing more. It opens no access and proves nothing.",
   },
 };

@@ -1,0 +1,409 @@
+/**
+ * The first run: five screens, once, after a member first signs in.
+ *
+ * FR-F4 to FR-F14.
+ *
+ * WHY IT IS A SEQUENCE AND NOT A FORM. Only one answer is required (FR-F6). A
+ * single form with one required field and six optional ones teaches people that
+ * the optional ones are also expected, and they answer them to be safe. One
+ * question per screen lets each screen say what the answer is for and what
+ * happens if it is skipped, and "Passer" is a real button rather than fine
+ * print.
+ *
+ * WHY THE STEP IS IN THE URL. Refreshing is the commonest thing anyone does
+ * when a form looks stuck, and losing three screens of work to it is the
+ * cheapest possible way to lose somebody. The step is also saved server side
+ * (FR-F5), so coming back tomorrow on another device resumes in the same place.
+ *
+ * THIS IS NOT THE APP AND NOT THE PUBLIC SITE. No module navigation, no
+ * crumbs, no account menu: the only ways out are forward, back one screen, and
+ * signing out. A wizard you can wander out of halfway is a wizard people leave
+ * halfway. It mentions no module's domain either (FR-B16).
+ */
+import { useCallback, useEffect, useState } from "react";
+import { LOCALES, LOCALE_NAMES, localePath, useLocale, useT, type Locale } from "@studens/i18n";
+import { currentRoute, linkProps, navigate } from "../router.js";
+import {
+  PatchFailed,
+  fetchInstitutions,
+  fetchProfile,
+  patchProfile,
+  type Institution,
+  type Profile,
+  type UsernameProblem,
+} from "./profile.js";
+
+/** The zone's own prefix, the way `/app` is the shell's. */
+export const FIRST_RUN = "/bienvenue";
+export const STEPS = 5;
+
+export function isFirstRunPath(route: string): boolean {
+  return route === FIRST_RUN || route.startsWith(`${FIRST_RUN}/`);
+}
+
+/** The step in the path, clamped. `/bienvenue` alone means step one. */
+export function stepFrom(route: string): number {
+  const rest = route.slice(FIRST_RUN.length).replace(/^\//, "");
+  const n = Number.parseInt(rest, 10);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(Math.max(n, 1), STEPS);
+}
+
+/** True when the path names a step, rather than being the bare prefix. */
+export function hasExplicitStep(route: string): boolean {
+  const rest = route.slice(FIRST_RUN.length).replace(/^\//, "");
+  return /^[0-9]+$/.test(rest);
+}
+
+export function firstRunPath(step: number): string {
+  return `${FIRST_RUN}/${Math.min(Math.max(step, 1), STEPS)}`;
+}
+
+export function FirstRun({ route, onDone }: { route: string; onDone: () => void }) {
+  const t = useT();
+  const locale = useLocale();
+  const step = stepFrom(route);
+
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [problem, setProblem] = useState<UsernameProblem | "other" | null>(null);
+
+  // Draft values. Held here rather than read straight off `profile` so a field
+  // can be typed in without a request per keystroke.
+  const [username, setUsername] = useState("");
+  const [studies, setStudies] = useState("");
+  const [year, setYear] = useState<number | null>(null);
+  const [interests, setInterests] = useState("");
+  const [institution, setInstitution] = useState<string | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      const [p, list] = await Promise.all([fetchProfile(), fetchInstitutions()]);
+      if (!p) return;
+      setProfile(p);
+      setUsername(p.username ?? "");
+      setStudies(p.studies ?? "");
+      setYear(p.yearOfStudy);
+      setInterests(p.interests ?? "");
+      setInstitution(p.institutionCode);
+      setInstitutions(list);
+
+      // FR-F5: `/bienvenue` with no number means "wherever I was". The saved
+      // step is the server's, so this resumes on a different device too, which
+      // a URL alone cannot do.
+      if (!hasExplicitStep(route) && p.onboardingStep > 1) {
+        navigate(firstRunPath(p.onboardingStep));
+      }
+    })();
+    // Deliberately once, and `route` is deliberately not a dependency: this
+    // reads the step to resume with, and re-running it on every navigation
+    // would fight the person pressing Back.
+  }, []);
+
+  /** Save this screen's fields, then move. A failed save does not move. */
+  const save = useCallback(
+    async (patch: Record<string, unknown>, next: number) => {
+      setSaving(true);
+      setProblem(null);
+      try {
+        const saved = await patchProfile({ ...patch, onboardingStep: Math.min(next, STEPS) });
+        setProfile(saved);
+        if (next > STEPS) onDone();
+        else navigate(firstRunPath(next));
+      } catch (err) {
+        if (err instanceof PatchFailed && err.field === "username") {
+          setProblem(err.reason ?? "other");
+        } else {
+          setProblem("other");
+        }
+      } finally {
+        setSaving(false);
+      }
+    },
+    [onDone],
+  );
+
+  const back = () => navigate(firstRunPath(step - 1));
+
+  if (!profile) {
+    return (
+      <main className="firstrun">
+        <p className="hint">…</p>
+      </main>
+    );
+  }
+
+  return (
+    // The institution screen is a grid of every Belgian university, so it gets
+    // more room than the screens that ask one question.
+    <main className={step === 5 ? "firstrun wide" : "firstrun"}>
+      <header className="firstrun-top">
+        <span className="brand">Studens</span>
+        {/*
+          Signing out is the only way out, and it is deliberately present.
+          Someone who has just arrived and changed their mind must not have to
+          finish a setup to leave.
+        */}
+        <a className="quiet" {...linkProps("/")}>
+          {t("firstrun.later")}
+        </a>
+      </header>
+
+      <div className="firstrun-progress" aria-hidden="true">
+        {Array.from({ length: STEPS }, (_, i) => (
+          <span key={i} className={i < step ? "on" : ""} />
+        ))}
+      </div>
+      <p className="firstrun-step">{t("firstrun.step", { n: step, total: STEPS })}</p>
+
+      {step === 1 && (
+        <section className="firstrun-card">
+          <h1>{t("firstrun.1.title")}</h1>
+          <p className="lede">{t("firstrun.1.lede")}</p>
+          <ul className="plain">
+            <li>{t("firstrun.1.point.name")}</li>
+            <li>{t("firstrun.1.point.rest")}</li>
+            <li>{t("firstrun.1.point.later")}</li>
+          </ul>
+          {/* FR-A10. The one thing we already know, said plainly, so nobody
+              wonders what was taken from the provider. */}
+          <p className="hint">
+            {t("firstrun.1.known", { domain: profile.emailDomain ?? "" })}
+          </p>
+          <div className="firstrun-actions">
+            <button type="button" className="cta" onClick={() => void save({}, 2)} disabled={saving}>
+              {t("firstrun.start")}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {step === 2 && (
+        <section className="firstrun-card">
+          <h1>{t("firstrun.2.title")}</h1>
+          <p className="lede">{t("firstrun.2.lede")}</p>
+          <label className="field-label" htmlFor="fr-username">
+            {t("firstrun.2.label")}
+          </label>
+          <input
+            id="fr-username"
+            className="text-input"
+            value={username}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            maxLength={24}
+            onChange={(e) => {
+              // Lowercased as it is typed, because the rule is lowercase and
+              // rejecting a capital afterwards is a worse way to teach that.
+              setUsername(e.target.value.toLowerCase());
+              setProblem(null);
+            }}
+            placeholder={t("firstrun.2.placeholder")}
+          />
+          <p className="hint">{t("firstrun.2.rule")}</p>
+          {problem && <p className="error">{t(`firstrun.2.err.${problem}`)}</p>}
+          {/* FR-F7 in the positive: every other profile field stays off every
+              contribution, so this is the only one that is not private. Said
+              here rather than in a policy page nobody opens. */}
+          <p className="hint strong">{t("firstrun.2.public")}</p>
+          <div className="firstrun-actions">
+            <button type="button" className="ghost" onClick={back} disabled={saving}>
+              {t("firstrun.back")}
+            </button>
+            <button
+              type="button"
+              className="cta"
+              disabled={saving || username.trim().length < 3}
+              onClick={() => void save({ username }, 3)}
+            >
+              {t("firstrun.next")}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {step === 3 && (
+        <section className="firstrun-card">
+          <h1>{t("firstrun.3.title")}</h1>
+          <p className="lede">{t("firstrun.3.lede")}</p>
+          <div className="choice-row">
+            {LOCALES.map((l) => (
+              <button
+                key={l}
+                type="button"
+                lang={l}
+                className={l === locale ? "choice on" : "choice"}
+                onClick={() => {
+                  // Two things at once, on purpose: the URL carries the language
+                  // so the change is visible immediately, and the profile
+                  // remembers it for the next sign-in on another device.
+                  void patchProfile({ locale: l });
+                  window.history.replaceState({}, "", localePath(currentRoute(), l as Locale));
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }}
+              >
+                {LOCALE_NAMES[l]}
+              </button>
+            ))}
+          </div>
+          <p className="hint">{t("firstrun.3.note")}</p>
+          <div className="firstrun-actions">
+            <button type="button" className="ghost" onClick={back} disabled={saving}>
+              {t("firstrun.back")}
+            </button>
+            <button
+              type="button"
+              className="cta"
+              disabled={saving}
+              onClick={() => void save({ locale }, 4)}
+            >
+              {t("firstrun.next")}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {step === 4 && (
+        <section className="firstrun-card">
+          <h1>{t("firstrun.4.title")}</h1>
+          <p className="lede">{t("firstrun.4.lede")}</p>
+
+          <label className="field-label" htmlFor="fr-studies">
+            {t("firstrun.4.studies")}
+          </label>
+          <input
+            id="fr-studies"
+            className="text-input"
+            value={studies}
+            maxLength={120}
+            onChange={(e) => setStudies(e.target.value)}
+            placeholder={t("firstrun.4.studies.placeholder")}
+          />
+
+          <label className="field-label" htmlFor="fr-year">
+            {t("firstrun.4.year")}
+          </label>
+          <select
+            id="fr-year"
+            className="text-input"
+            value={year ?? ""}
+            onChange={(e) => setYear(e.target.value === "" ? null : Number(e.target.value))}
+          >
+            <option value="">{t("firstrun.4.year.none")}</option>
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <option key={n} value={n}>
+                {t("firstrun.4.year.n", { n })}
+              </option>
+            ))}
+          </select>
+
+          <label className="field-label" htmlFor="fr-interests">
+            {t("firstrun.4.interests")}
+          </label>
+          <input
+            id="fr-interests"
+            className="text-input"
+            value={interests}
+            maxLength={120}
+            onChange={(e) => setInterests(e.target.value)}
+            placeholder={t("firstrun.4.interests.placeholder")}
+          />
+
+          {/* FR-F7. The reason this screen can be answered honestly is that
+              none of it ever renders beside anything published, on either
+              path. Said here, where the question is asked. */}
+          <p className="hint strong">{t("firstrun.4.never")}</p>
+
+          <div className="firstrun-actions">
+            <button type="button" className="ghost" onClick={back} disabled={saving}>
+              {t("firstrun.back")}
+            </button>
+            <button
+              type="button"
+              className="linkish"
+              disabled={saving}
+              onClick={() => void save({}, 5)}
+            >
+              {t("firstrun.skip")}
+            </button>
+            <button
+              type="button"
+              className="cta"
+              disabled={saving}
+              onClick={() =>
+                void save(
+                  {
+                    studies: studies.trim() || null,
+                    yearOfStudy: year,
+                    interests: interests.trim() || null,
+                  },
+                  5,
+                )
+              }
+            >
+              {t("firstrun.next")}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {step === 5 && (
+        <section className="firstrun-card">
+          <h1>{t("firstrun.5.title")}</h1>
+          <p className="lede">{t("firstrun.5.lede")}</p>
+
+          {/*
+            FR-F12: every institution is listed and only the ones whose
+            catalogue is loaded can be chosen. Showing the whole landscape says
+            "this is coming"; showing UCLouvain alone would suggest Studens is a
+            UCLouvain product, and it is not one.
+          */}
+          <ul className="institutions">
+            {institutions.map((i) => (
+              <li key={i.code}>
+                <button
+                  type="button"
+                  disabled={!i.available || saving}
+                  className={i.code === institution ? "institution on" : "institution"}
+                  style={i.colour ? { ["--mark" as string]: i.colour } : undefined}
+                  onClick={() => setInstitution(i.code === institution ? null : i.code)}
+                >
+                  <span className="mark" aria-hidden="true">
+                    {i.name.slice(0, 1)}
+                  </span>
+                  <span className="who">
+                    <span className="name">{i.name}</span>
+                    {i.city && <span className="city">{i.city}</span>}
+                  </span>
+                  {!i.available && <span className="soon">{t("firstrun.5.soon")}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {/* FR-F13: self-declared. It opens nothing and proves nothing, and
+              the tenant comes from the provider, not from this button. */}
+          <p className="hint strong">{t("firstrun.5.declared")}</p>
+
+          <div className="firstrun-actions">
+            <button type="button" className="ghost" onClick={back} disabled={saving}>
+              {t("firstrun.back")}
+            </button>
+            <button
+              type="button"
+              className="cta"
+              disabled={saving}
+              onClick={() =>
+                void save({ institutionCode: institution, onboardedAt: true }, STEPS + 1)
+              }
+            >
+              {t("firstrun.finish")}
+            </button>
+          </div>
+        </section>
+      )}
+    </main>
+  );
+}

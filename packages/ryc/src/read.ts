@@ -65,9 +65,24 @@ function band(passed: number, answers: number): Aggregate["passBand"] {
 const mean = (xs: number[]): number | null =>
   xs.length === 0 ? null : Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10;
 
+/**
+ * How a name is resolved for an attributed review.
+ *
+ * The module does NOT look usernames up. It holds no grant on platform.Member
+ * and must not: a module that can query the member table can enumerate members,
+ * which is the capability FR-C keeps away from the code that stores
+ * contributions. So it is handed a function by whoever composes the two, and it
+ * calls that function with the ids already in its own table.
+ *
+ * Absent, the named path renders without a name, which is what happened before
+ * usernames existed at all.
+ */
+export type NameResolver = (memberIds: string[]) => Promise<Map<string, string | null>>;
+
 export async function reviewsFor(
   prisma: PrismaClient,
   courseId: string,
+  opts: { names?: NameResolver } = {},
 ): Promise<{ reviews: PublishedReview[]; aggregate: Aggregate }> {
   const where = { courseId, status: "published" };
   const [named, anon, imported] = await Promise.all([
@@ -76,9 +91,12 @@ export async function reviewsFor(
     prisma.reviewImported.findMany({ where: { courseId }, orderBy: { academicYear: "desc" } }),
   ]);
 
-  // Member display names are not resolved here: the module holds no grant on
-  // platform.Member and must not. Until FR-A exists there is no display name
-  // to show, so the named path renders as a member without one.
+  // FR-F6: the username, resolved through the caller's function rather than by
+  // a query this module could make. A member with no name yet renders as an
+  // unnamed member rather than as anonymous, because the two must never look
+  // alike (FR-C15).
+  const names = opts.names ? await opts.names(named.map((r) => r.memberId)) : new Map();
+
   const reviews: PublishedReview[] = [
     ...named.map((r) => ({
       id: r.id,
@@ -87,7 +105,7 @@ export async function reviewsFor(
       body: r.body,
       advice: r.advice,
       date: r.createdAt.toISOString().slice(0, 10),
-      author: "membre",
+      author: names.get(r.memberId) ?? "membre",
       recommendation: r.recommendation,
       workloadVsEcts: r.workloadVsEcts,
       difficulty: r.difficulty,

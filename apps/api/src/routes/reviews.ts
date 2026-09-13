@@ -7,7 +7,7 @@
  */
 import { Router, json } from "express";
 import { PrismaClient } from "@prisma/client";
-import { QuotaExceeded, quotaRemaining } from "@studens/platform";
+import { QuotaExceeded, quotaRemaining, usernamesFor } from "@studens/platform";
 import { ReviewInvalid, reviewsFor, submitAnonymous, submitAttributed, type ReviewInput } from "@studens/ryc";
 import { identify, identifyIfAny, NotAuthenticated } from "../identity.js";
 
@@ -57,7 +57,11 @@ export function reviewRoutes(prisma: PrismaClient): Router {
         res.status(404).json({ error: "no such course" });
         return;
       }
-      const { reviews, aggregate } = await reviewsFor(prisma, course.id);
+      // The composition point: the module asks for names, the platform
+      // answers. Neither one gains the other's access (FR-B11).
+      const { reviews, aggregate } = await reviewsFor(prisma, course.id, {
+        names: (ids) => usernamesFor(prisma, ids),
+      });
 
       const signedIn = (await identifyIfAny(prisma, req)) !== null;
       if (!signedIn) {
@@ -107,7 +111,7 @@ export function reviewRoutes(prisma: PrismaClient): Router {
       res.status(201).json(anonymous ? { anonymous: true } : { anonymous: false, id: created.id });
     })().catch((err: unknown) => {
       if (err instanceof NotAuthenticated) {
-        res.status(401).json({ error: "sign in required", detail: "FR-A is not built" });
+        res.status(401).json({ error: "sign in required" });
         return;
       }
       if (err instanceof ReviewInvalid) {

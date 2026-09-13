@@ -354,3 +354,29 @@ main.app {
   .settings-link { order: 3; }
   .app-body { padding: 1.8rem 1rem 0; }
 }
+
+/* The profile controls in the account panel. The first run owns the rest of
+   these questions (FR-F14), so this is a name, a save, and two read-only rows. */
+.panel .field-label {
+  display: block;
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.panel .inline-field { display: flex; gap: 0.5rem; align-items: stretch; }
+.panel .inline-field .text-input { flex: 1; min-width: 0; }
+.panel .inline-field button.ghost {
+  padding: 0 1rem;
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.panel .inline-field button.ghost:hover:not(:disabled) { border-color: var(--accent); }
+.panel .inline-field button:disabled { opacity: 0.45; cursor: not-allowed; }
+.panel .error { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--danger); }
+.panel .saved { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--named); }
+.panel .rows { margin-top: 1.1rem; }
+.panel > button.linkish { margin-top: 1rem; padding: 0; }

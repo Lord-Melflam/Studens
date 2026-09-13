@@ -22,6 +22,7 @@ export {
 
 export {
   reviewsFor,
+  type NameResolver,
   PASS_BAND_FLOOR,
   type PublishedReview,
   type Aggregate,

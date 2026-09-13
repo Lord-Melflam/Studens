@@ -1,0 +1,170 @@
+/* The first run's own frame.
+
+   Separate from shell.css and public.css because it is a third zone with a
+   different job: one decision per screen, nothing else on the page to look at.
+   It reuses the tokens and styles no module's vocabulary (FR-B16).
+
+   It deliberately does not reuse the public site's .cta and .ghost, which are
+   styled for anchors there. These are buttons: they save before they move. */
+
+.firstrun {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 3rem 1.25rem 5rem;
+}
+.firstrun.wide, .firstrun-card.wide { max-width: 44rem; }
+
+.firstrun-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+}
+.firstrun-top .brand { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+.firstrun-top .quiet { font-size: 0.85rem; color: var(--muted); text-decoration: none; }
+.firstrun-top .quiet:hover { color: var(--ink); text-decoration: underline; }
+
+/* Five bars, not a percentage. A person can count what is left. */
+.firstrun-progress { display: flex; gap: 0.3rem; margin-bottom: 0.5rem; }
+.firstrun-progress span {
+  height: 3px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--line);
+  transition: background 0.2s;
+}
+.firstrun-progress span.on { background: var(--accent); }
+.firstrun-step { margin: 0 0 1.75rem; font-size: 0.8rem; color: var(--muted); }
+
+.firstrun-card h1 { margin: 0 0 0.6rem; font-size: 1.9rem; letter-spacing: -0.02em; }
+.firstrun-card .lede { margin: 0 0 1.5rem; color: var(--muted); font-size: 1.02rem; }
+.firstrun-card ul.plain { margin: 0 0 1.5rem; padding-left: 1.1rem; }
+.firstrun-card ul.plain li { margin-bottom: 0.45rem; }
+.firstrun-card .hint { margin: 0.6rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.firstrun-card .hint.strong { color: var(--ink); }
+.firstrun-card .error { margin: 0.6rem 0 0; font-size: 0.88rem; color: var(--danger); }
+
+.field-label {
+  display: block;
+  margin: 1.1rem 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.text-input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.text-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+
+.firstrun-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 2rem;
+}
+/* Next is last and on the right, so the forward move is always in the same
+   place from screen to screen. Skip sits between them as plain text: it is a
+   real choice and must not look like the one being recommended. */
+.firstrun-actions .cta { margin-left: auto; order: 3; }
+.firstrun-actions .linkish { order: 2; }
+.firstrun-actions .ghost { order: 1; }
+
+.firstrun button.cta,
+.firstrun button.ghost {
+  padding: 0.6rem 1.2rem;
+  font: inherit;
+  font-weight: 600;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.firstrun button.cta { color: #fff; background: var(--accent); border: 1px solid var(--accent); }
+.firstrun button.cta:hover:not(:disabled) { background: #16407c; }
+.firstrun button.ghost { color: var(--ink); background: transparent; border: 1px solid var(--line); }
+.firstrun button.ghost:hover:not(:disabled) { border-color: var(--accent); }
+.firstrun button.linkish {
+  padding: 0.6rem 0.2rem;
+  font: inherit;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.firstrun button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.firstrun .choice-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.firstrun button.choice {
+  padding: 0.55rem 1rem;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.firstrun button.choice:hover { border-color: var(--accent); }
+.firstrun button.choice.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+/* The institution list. Two columns where there is room, one on a phone. */
+.institutions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.institutions button.institution {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.institutions button.institution:hover:not(:disabled) { border-color: var(--accent); }
+.institutions button.institution.on {
+  border-color: var(--mark, var(--accent));
+  box-shadow: inset 0 0 0 1px var(--mark, var(--accent));
+}
+/* Unavailable ones stay legible. They are not errors, they are the roadmap:
+   greying them into unreadability would make the list look broken. */
+.institutions button.institution:disabled { cursor: default; background: transparent; }
+.institutions button.institution:disabled .mark { background: var(--line); color: var(--muted); }
+.institutions button.institution:disabled .name { color: var(--muted); }
+
+/* An initial in a coloured square, not a logo. A logo is somebody else's
+   trademark, and Studens is affiliated with none of these institutions. */
+.institutions .mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--mark, var(--muted));
+  border-radius: 6px;
+}
+.institutions .who { display: flex; flex-direction: column; min-width: 0; }
+.institutions .name { font-weight: 600; font-size: 0.92rem; }
+.institutions .city { font-size: 0.78rem; color: var(--muted); }
+.institutions .soon {
+  margin-left: auto;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}

@@ -12,6 +12,7 @@
  * first, which is the usual way.
  */
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DEFAULT_LOCALE, I18nProvider, LOCALES, createTranslator } from "@studens/i18n";
@@ -116,8 +117,11 @@ describe("the account panel exists and promises nothing it cannot do", () => {
       "settings.language", "settings.language.hint",
       "settings.sessions", "settings.sessions.hint", "settings.sessions.this",
       "settings.sessions.other", "settings.sessions.end", "settings.sessions.endthis",
-      "settings.soon", "settings.soon.username", "settings.soon.institution",
-      "settings.soon.contributions",
+      "settings.profile", "settings.username", "settings.username.hint",
+      "settings.save", "settings.saved", "settings.unset",
+      "settings.institution", "settings.institution.hint",
+      "settings.studies", "settings.studies.hint", "settings.redo",
+      "settings.soon", "settings.soon.contributions",
     ];
     for (const locale of LOCALES) {
       const t = createTranslator(bundle, locale);
@@ -140,8 +144,30 @@ describe("the account panel exists and promises nothing it cannot do", () => {
     // like a setting is a promise the product has not made.
     const t = createTranslator(bundle, DEFAULT_LOCALE);
     expect(t("settings.soon")).not.toBe("settings.soon");
-    for (const k of ["settings.soon.username", "settings.soon.institution"]) {
-      expect(t(k)).not.toBe(k);
+    expect(t("settings.soon.contributions")).not.toBe("settings.soon.contributions");
+  });
+
+  /**
+   * The other half of the same rule, and the one that is easy to forget: when
+   * something ships, its "not built yet" line has to GO. A panel that still
+   * lists a feature the screen above it now offers is wrong in the opposite
+   * direction, and it is wrong quietly.
+   *
+   * The username and the institution shipped with the first run (FR-F6,
+   * FR-F13), so their entries must no longer resolve to anything.
+   */
+  it("nothing that shipped is still listed as missing", () => {
+    const panel = readFileSync(
+      new URL("../../apps/web/src/Settings.tsx", import.meta.url).pathname,
+      "utf8",
+    );
+    for (const key of ["settings.soon.username", "settings.soon.institution"]) {
+      expect(panel, `${key} still renders on a screen that now does the thing`).not.toContain(key);
+      for (const locale of LOCALES) {
+        // Gone from the catalogues too, so nobody re-adds the line by finding
+        // a translation already sitting there waiting for it.
+        expect(createTranslator(bundle, locale)(key), `${locale}:${key}`).toBe(key);
+      }
     }
   });
 });

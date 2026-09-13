@@ -61,8 +61,13 @@ export interface LoadOptions {
    * The institution the crawl belongs to. Not derived from the snapshot,
    * because a snapshot of uclouvain.be contains courses taught elsewhere
    * (OPEN-45) and this is the crawl's own institution, not each course's.
+   *
+   * A code, not a name, since institutions gained a natural key with the first
+   * run (FR-F10). The row must already exist: the migration seeds the list, and
+   * a load for an unknown code fails rather than inventing an institution whose
+   * name and language it would have to guess.
    */
-  institutionName?: string;
+  institutionCode?: string;
   /**
    * Assume the role the grants intend before writing. If the grants are wrong
    * the load fails here rather than succeeding with more privilege than the
@@ -77,7 +82,7 @@ export async function loadSnapshot(
   opts: LoadOptions = {},
 ): Promise<LoadResult> {
   const prisma = opts.client ?? new PrismaClient();
-  const institutionName = opts.institutionName ?? "UCLouvain";
+  const institutionCode = opts.institutionCode ?? "uclouvain";
   const assumeRole = opts.assumeRole === undefined ? "studens_ref" : opts.assumeRole;
 
   const result: LoadResult = {
@@ -104,11 +109,16 @@ export async function loadSnapshot(
         await tx.$executeRawUnsafe(`SET LOCAL ROLE ${quoteIdent(assumeRole)}`);
       }
 
-      const institution = await tx.institution.upsert({
-        where: { id: await stableInstitutionId(tx, institutionName) },
-        update: { name: institutionName },
-        create: { name: institutionName },
+      const institution = await tx.institution.findUnique({
+        where: { code: institutionCode },
+        select: { id: true },
       });
+      if (!institution) {
+        throw new Error(
+          `no institution with code ${institutionCode}. ` +
+            `Institutions are seeded by migration, not created by a load.`,
+        );
+      }
       result.institutions = 1;
 
       const facultyIds = new Map<string, string>();
@@ -223,15 +233,6 @@ export async function loadSnapshot(
 
   if (!opts.client) await prisma.$disconnect();
   return result;
-}
-
-/** Institutions have no natural key in the schema, so find one by name. */
-async function stableInstitutionId(
-  tx: Prisma.TransactionClient,
-  name: string,
-): Promise<string> {
-  const found = await tx.institution.findFirst({ where: { name } });
-  return found?.id ?? "00000000-0000-0000-0000-000000000000";
 }
 
 /** Role names are identifiers, not values, so they cannot be parameterised. */

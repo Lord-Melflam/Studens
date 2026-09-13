@@ -40,3 +40,4 @@ export {
   type FacultySummary,
   type ProgrammeSummary,
 } from "./read.js";
+export { listInstitutions, type InstitutionSummary } from "./institutions.js";

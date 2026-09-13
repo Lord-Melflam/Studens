@@ -51,11 +51,32 @@ model Member {
   /// FR-A9: taken from the verified provider token, never from user input.
   /// FR-A10: evidence of holding an address at a domain, never proof of enrolment.
   emailDomain     String
-  displayName     String?
+  /// OPEN-36: the provider sends a display name and we do NOT keep it. There
+  /// is no column for it, so the decision is structural rather than a habit.
+  /// What a Member is known by is the username below, which they choose.
+  username        String?  @unique
   tenantId        String
   tenant          Tenant   @relation(fields: [tenantId], references: [id])
   role            String   @default("member")
   createdAt       DateTime @default(now())
+
+  /// FR-F: the first run. Null means it has not been completed, which is what
+  /// sends a Member to it and what "recommencer l'introduction" resets
+  /// (FR-F14). Progress is the furthest step reached, so closing the tab does
+  /// not start again (FR-F5).
+  onboardedAt     DateTime?
+  onboardingStep  Int      @default(0)
+
+  /// Preferences. FR-F6: only the username is required, everything here is
+  /// optional. FR-F7: none of it renders on any contribution, attributed or
+  /// anonymous, because a public "3rd year, SINF" beside a named review
+  /// sharpens the complement attack (3.3) against every anonymous one.
+  /// FR-F13: the institution is a PREFERENCE and does not set a tenant.
+  locale          String?
+  institutionCode String?
+  studies         String?
+  yearOfStudy     Int?
+  interests       String?
 
   quota    MemberQuota?
   sessions Session[]
@@ -122,8 +143,25 @@ model AuditLog {
 
 model Institution {
   /// See requirements 1.6: identity fields here are not uncontested facts.
+  ///
+  /// FR-F10: institutions are DATA, not code, so adding one is a row. Seeded
+  /// by migration from the list of recognised Belgian institutions.
   id         String    @id @default(uuid())
+  /// Stable, lowercase, used in Member.institutionCode and in URLs.
+  code       String    @unique
   name       String
+  city       String?
+  /// FR-F11: name, city and colours, never the mark. Trademark is the blocker
+  /// whatever the copyright status of a logo file. Null where the colour has
+  /// not been verified: an approximation of an institution's colour is still
+  /// an invented fact about it.
+  colour     String?
+  /// Which community recognises it. Belgium legislates higher education
+  /// separately, which is why the platform cannot be monolingual (FR-G1).
+  community  String?
+  /// FR-F12: every institution is listed; only those whose catalogue is
+  /// ingested can be chosen, and the rest say why rather than looking broken.
+  available  Boolean   @default(false)
   faculties  Faculty[]
 
   @@schema("ref")

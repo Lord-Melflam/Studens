@@ -3,13 +3,17 @@
 A modular web platform for students in higher education. People log in securely, then use
 **modules**: self-contained tools covering the things that make student life better.
 
-**Status: working software, one module, no authentication yet.** The specification came
-first and still leads: 106 requirements, each with the reasoning that produced it, and 14
+**Status: working software, one module, nothing deployed.** The specification came first
+and still leads: 140 requirements, each with the reasoning that produced it, and 8
 questions still open rather than guessed.
 
 ## What runs today
 
-**RYC**, Rate Your Courses, the first module. Against the real UCLouvain catalogue: 546
+Three zones in one deployable: a **public site** that needs no account, **signing in** with
+Google followed by a five screen **first run**, and the **app** itself, where modules are
+mounted. Three languages throughout, with the language in the URL.
+
+**RYC**, Rate Your Courses, is the first module. Against the real UCLouvain catalogue: 546
 courses reached through 43 Ecole polytechnique de Louvain programmes, scraped rather than
 hand-listed, with the faculty and programme structure discovered at runtime.
 
@@ -23,13 +27,19 @@ hand-listed, with the faculty and programme structure discovered at runtime.
   returns the text and the date and nothing else: no author attribute, and no per-review
   numbers, because those go only into the aggregate.
 
-Not built, and deliberately not faked: **authentication** (submission runs on a development
-identity that refuses to work in production), **moderation** (the queue has a schema and no
-consumer), and **editing a review**. Nothing on screen offers them.
+**Signing in** uses Google or Microsoft and no passwords of our own. What is kept is the
+provider's subject identifier, the **domain** of the email address and never the address
+itself, and whatever the member chose during the first run. The provider's display name is
+not kept, and there is no column it could go in.
+
+Not built, and deliberately not faked: **moderation** (the queue has a schema and no
+consumer, and the notice and action mechanism the DSA requires does not exist yet),
+**editing a review**, and **deployment**. Microsoft sign-in is registered and untried.
+Nothing on screen offers any of it.
 
 ```bash
 npm install
-npm run gates              # typecheck, lint, 186 tests, schema validation. No database needed
+npm run gates              # typecheck, lint, 311 tests, schema validation. No database needed
 ```
 
 `docs/COMMANDS.md` is the command reference: setup, running it, the database, the
