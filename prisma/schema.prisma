@@ -75,6 +75,21 @@ model Member {
   /// is no column for it, so the decision is structural rather than a habit.
   /// What a Member is known by is the username below, which they choose.
   username        String?  @unique
+  /// The same name with its separators removed, and the column that actually
+  /// decides whether a name is free.
+  ///
+  /// `username` alone let `lou.martin`, `lou-martin`, `lou_martin` and
+  /// `loumartin` all exist at once: four accounts that read as one person, and
+  /// a username is displayed beside an opinion about a named lecturer. So the
+  /// uniqueness that matters is uniqueness of what a reader sees, not of the
+  /// stored string. Case is already handled, since the name is lowercased
+  /// before it is checked.
+  ///
+  /// What this does NOT solve: letters that look like digits, `1` for `l` and
+  /// `0` for `o`. Folding those too would reject legitimate names with a digit
+  /// in them, so the residual risk is accepted and written down rather than
+  /// half-solved. See FR-F6.
+  usernameKey     String?  @unique
   tenantId        String
   tenant          Tenant   @relation(fields: [tenantId], references: [id])
   role            String   @default("member")

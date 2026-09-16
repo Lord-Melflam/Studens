@@ -119,6 +119,43 @@ describe("a username is decided by the index, not by a lookup (FR-F6)", () => {
     const saved = await writeProfile(prisma, one, { username: "  ZTST_Two " });
     expect(saved.username).toBe("ztst_two");
   });
+
+  /**
+   * THE NAME A READER SEES IS WHAT HAS TO BE UNIQUE.
+   *
+   * `username` alone was unique, and that let `lou.martin`, `lou-martin`,
+   * `lou_martin` and `loumartin` all exist at once: four accounts that read as
+   * one person. It matters here more than in most products, because the name is
+   * displayed beside somebody's opinion of a named lecturer, and because one of
+   * those four could be the administrator.
+   */
+  dbit("refuses a name that differs only by its separators", async () => {
+    await writeProfile(prisma, one, { username: "ztst.sep" });
+    for (const impersonation of ["ztst-sep", "ztst_sep", "ztstsep", "ZTST.SEP"]) {
+      const clash = await writeProfile(prisma, two, { username: impersonation }).catch(
+        (e: unknown) => e as UsernameInvalid,
+      );
+      expect(clash).toBeInstanceOf(UsernameInvalid);
+      expect(clash.reason).toBe("taken");
+    }
+  });
+
+  dbit("still lets somebody keep their own name, separators and all", async () => {
+    // The check must not fire against oneself, or a member with a separator in
+    // their name could never save their profile again.
+    await writeProfile(prisma, one, { username: "ztst.keep" });
+    const again = await writeProfile(prisma, one, { username: "ztst.keep", studies: "droit" });
+    expect(again.username).toBe("ztst.keep");
+  });
+
+  dbit("refuses a reserved name spelled with separators", async () => {
+    // `m.o.d.e.r.a.t.o.r` reads as the platform speaking and walked straight
+    // past a list that only matched the stored string.
+    const clash = await writeProfile(prisma, one, { username: "m.o.d.e.r.a.t.o.r" }).catch(
+      (e: unknown) => e as UsernameInvalid,
+    );
+    expect(clash.reason).toBe("reserved");
+  });
 });
 
 describe("one screen at a time (FR-F5)", () => {

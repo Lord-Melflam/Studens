@@ -297,10 +297,16 @@ a.cta:hover { background: #16407c; }
 .page-head .lede { margin-left: 0; }
 .module-detail h3 { margin: 2.2rem 0 0.8rem; font-size: 1.15rem; }
 
-/* --- sign in ------------------------------------------------------------ */
-.signin { max-width: 30rem !important; text-align: center; padding-top: 4.5rem !important; }
-.signin h1 { margin: 0 0 1rem; font-size: 2rem; }
-.signin .lede { font-size: 1rem; margin-bottom: 2.2rem; }
+/* --- sign in ------------------------------------------------------------
+   `signin-page` and not `signin`. This rule used to be written `.signin`, one
+   bare class in a stylesheet loaded on every screen, and the app bar's sign-in
+   link carries that same word. So a page's 4.5rem top padding landed on a
+   header link, and with the pill's own border-radius the control rendered as a
+   large empty circle with its label spilling out of the bottom. A page and a
+   link are different things and no longer share a name. */
+.signin-page { max-width: 30rem !important; text-align: center; padding-top: 4.5rem !important; }
+.signin-page h1 { margin: 0 0 1rem; font-size: 2rem; }
+.signin-page .lede { font-size: 1rem; margin-bottom: 2.2rem; }
 .signin-buttons { display: flex; flex-direction: column; gap: 0.7rem; }
 .provider {
   display: block;
@@ -324,7 +330,7 @@ a.cta:hover { background: #16407c; }
   border-radius: 3px;
 }
 .signin-fine { margin-top: 2rem; font-size: 0.85rem; line-height: 1.6; color: var(--muted); }
-.signin .notice { font-size: 0.92rem; color: var(--muted); }
+.signin-page .notice { font-size: 0.92rem; color: var(--muted); }
 
 /* --- footer ------------------------------------------------------------- */
 .site-footer {

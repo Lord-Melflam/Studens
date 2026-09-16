@@ -35,6 +35,8 @@ export {
   RYC_REVIEW_KIND,
   detachMemberReviews,
   exportMemberReviews,
+  describeReviewForModeration,
   holdReview,
+  releaseReview,
   reviewExists,
 } from "./account.js";

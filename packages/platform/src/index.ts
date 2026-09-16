@@ -69,6 +69,7 @@ export {
   writeProfile,
   usernamesFor,
   checkUsername,
+  usernameKeyFor,
   UsernameInvalid,
   USERNAME_MIN,
   USERNAME_MAX,
@@ -131,3 +132,37 @@ export {
   type ReportOutcome,
   type ReportSummary,
 } from "./reports.js";
+
+/** FR-E14 and FR-E3: who may do what, and how they came to. */
+export {
+  AppointmentRefused,
+  NotPermitted,
+  OPERATOR,
+  ROLES,
+  appointmentHistory,
+  canAppoint,
+  canModerate,
+  grantFirstAdmin,
+  isRole,
+  listAppointments,
+  requireModerator,
+  setRole,
+  type Appointment,
+  type AppointmentEvent,
+  type Role,
+} from "./roles.js";
+
+/** FR-E10 to FR-E14: the moderator's queue and decisions. */
+export {
+  ModerationRefused,
+  REPORT_OUTCOMES,
+  decide,
+  moderationHistory,
+  moderationQueue,
+  type Decision,
+  type DecisionResult,
+  type ModeratableContent,
+  type ModeratedTarget,
+  type QueueEntry,
+  type ReportOutcome as ReportDecisionOutcome,
+} from "./moderation.js";

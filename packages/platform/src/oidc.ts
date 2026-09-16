@@ -152,6 +152,21 @@ export async function beginAuthorization(
   url.searchParams.set("code_challenge", challengeFor(codeVerifier));
   url.searchParams.set("code_challenge_method", "S256");
 
+  // ALWAYS ASK WHICH ACCOUNT. Without this the provider silently reuses the one
+  // session the browser happens to hold, so somebody with a personal and a
+  // university account signs in as whichever they used last, with nothing on
+  // screen naming it. That matters more here than in most products: the account
+  // is what a review is published under, and a review is permanent and public.
+  // Choosing the wrong one is not a login annoyance, it is the wrong name on an
+  // opinion about a named lecturer.
+  //
+  // `select_account` and not `login`: the question is which account, not proving
+  // the password again, and forcing a re-authentication on every sign-in trains
+  // people to type credentials whenever a page asks. Cost: one extra click for
+  // the majority who hold a single account. It is a request rather than an
+  // order, and a provider is free to ignore it.
+  url.searchParams.set("prompt", "select_account");
+
   return { url: url.toString(), state, nonce, codeVerifier };
 }
 

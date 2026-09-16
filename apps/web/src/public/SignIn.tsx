@@ -37,7 +37,7 @@ export function SignIn() {
   }
 
   return (
-    <section className="signin">
+    <section className="signin-page">
       <h1>{t("signin.title")}</h1>
       <p className="lede">{t("signin.lede")}</p>
 

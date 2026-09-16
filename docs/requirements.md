@@ -988,6 +988,35 @@ pretending the anonymity guarantee is stronger than it is. See OPEN-37.
 | FR-E13 | MUST | **No moderation response time is published until one has been measured.** The legal standard in DSA Article 6 is acting expeditiously once you have actual knowledge, which names no number; naming one ourselves creates an obligation the law did not impose, and a missed published promise is evidence against us at the moment someone is complaining. What is published is what happens: reports are read and acted on as fast as we can, and anything plausibly illegal or naming a third party is held first. Measured from the first day via FR-E1 and published once it is a fact. **[VERIFIED]** François, 2026-09-13, resolving OPEN-7. |
 | FR-E14 | MUST | **A Moderator is appointed by an Administrator, one at a time, and the appointment is recorded** in the audit log naming the administrator (FR-B12 permits naming an actor there because the actor is a moderator). No self-service, no election, no promotion by tenure or reputation: each is a way to acquire the power without a human granting it, and a reputation system is gameable by exactly the person you least want moderating. **A Moderator cannot appoint a Moderator.** Powers are content powers only: hold, publish, remove with a reason. Never reading authorship, never sanctioning a person on the anonymous path (FR-E7). Cost accepted: it does not scale and makes the owner a bottleneck on recruiting, which is the right shape at this size. **[VERIFIED]** François, 2026-09-13, resolving the appointment half of OPEN-8. |
 
+**Who may do what.** Three roles, in a straight line: each holds everything the one before
+it holds, plus one thing. There is no permission table, no group and no per-action grant,
+because there are two powers to control and a system for them would be a thing to maintain
+rather than a rule to read. It grows when there is a third power, and not before.
+
+| | Member | Moderator | Administrator |
+|---|---|---|---|
+| Read, contribute, report (FR-E8) | yes | yes | yes |
+| Read the queue of notices (FR-E12) | no | yes | yes |
+| Hold, release, close a notice (FR-E10, FR-E11) | no | yes | yes |
+| Appoint and remove (FR-E3, FR-E14) | no | **no** | yes |
+
+An Administrator is a Moderator who can also change who the Moderators are. The line
+between the two rows is the whole reason they are separate roles: a Moderator who could
+appoint one could grow the set holding content powers without a person deciding to.
+
+Three limits bind every role, including an Administrator. Nobody can change their own role
+or demote the last Administrator, both refusals existing to prevent the one state that
+needs a database to undo: nobody able to appoint anybody. Nobody sees who wrote an
+anonymous contribution, because there is nothing to see (FR-C2). Every appointment is
+recorded, naming the Administrator who made it.
+
+**The first Administrator cannot be appointed in the product**, since every appointment
+needs one. A command does it once and refuses as soon as one exists, and it is a command
+rather than a route because an endpoint that promotes somebody while no Administrator
+exists is open to whoever reaches it first, and registration is public (FR-A6). That one
+entry names the operator rather than a member, since no member made it. See
+`COMMANDS.md`. **[DERIVED]** 2026-09-16, completing FR-E14.
+
 Screening is intended to combine deterministic filters with language model passes over
 open weight models, to detect defamation and similar categories. **[VERIFIED]** François,
 2026-09-09.
@@ -1031,7 +1060,7 @@ the costs, in `design/information-architecture.md`.
 | FR-F3 | MUST | **Signing in and creating an account are the same act.** FR-A6 makes registration open and FR-A7 removes passwords, so a provider subject we have not seen simply becomes a Member. Two labels exist because a visitor joining and a visitor returning look for different words, not because there are two paths. |
 | FR-F4 | MUST | A Member's **first sign-in leads to a first-run sequence**, one question per screen with a Next button, in the register of setting up a new machine. Rejected: one long form, which asks a person to absorb every question before answering any, and the first question this product asks is about anonymity. |
 | FR-F5 | MUST | The sequence is **resumable**: progress is stored per step, so closing the tab does not restart it. This is also what makes each step testable on its own. |
-| FR-F6 | MUST | **Only the username is required** (OPEN-36). Every other field is optional, skippable, and settable later from the profile. A first run that cannot be escaped is a first run people lie to. |
+| FR-F6 | MUST | **Only the username is required** (OPEN-36). Every other field is optional, skippable, and settable later from the profile. A first run that cannot be escaped is a first run people lie to. **A username is unique in the form a reader sees it**, not in the form it is stored: separators are removed before the comparison, so `lou.martin`, `lou-martin`, `lou_martin` and `loumartin` are one name and the first person to take it has it. Case needs no rule, since the name is lowercased before it is checked. The constraint is a unique index, because a check followed by a write lets two people pass at the same instant. Alternatives rejected: uniqueness of the stored string alone, which is what allowed four accounts to read as one person next to an opinion about a named lecturer; and folding digits into the letters they resemble (`1` into `l`, `0` into `o`), which would catch more impersonation and also refuse legitimate names containing a digit. Cost accepted: somebody is refused a name that looks free to them, which the message has to explain, and that residual homoglyph risk stays. What would change it: an actual impersonation using digits. **[DERIVED]** 2026-09-16. |
 | FR-F7 | MUST | **No profile field renders on any contribution, attributed or anonymous.** FR-C16 forbids author attributes on the anonymous path; this extends it to the attributed path for profile fields, because a public "3rd year, SINF" beside a named review sharpens the complement attack (3.3) against every *anonymous* review of the same course. A named reviewer consents for themselves and cannot consent for the silent ones. **[DERIVED]** 2026-09-12. |
 | FR-F8 | MUST | Profile fields with **no consumer today** (studies, year of study, interests) are collected anyway. **[VERIFIED]** François, 2026-09-12, over a recommendation to defer them to the module that needs them. The recorded cost: under GDPR minimisation they are data we are accountable for holding and cannot justify by pointing at a use, and they enlarge the attribute set behind 3.3. FR-F6 and FR-F7 are what make it acceptable, and neither may be relaxed while FR-F8 stands. **Two amendments made while building it, 2026-09-13, both awaiting confirmation.** (1) **Notification preferences are struck from the list**: FR-A9 stores the email *domain* and never the address, so the platform cannot send mail to anybody, and a preference for something that cannot happen is not an unused field but a promise. The column was written and then removed before the change was proposed; restoring it means first deciding to store addresses, which is a separate decision with its own GDPR weight. (2) **"Programme" is named `studies`**: it is free text, it is matched against no catalogue row, and naming it after one would put the reference module's vocabulary inside the platform, which FR-B16's gate rejected outright. |
 | FR-F9 | MUST | A Member names their **institution**, and it is **self-declared**. Neither it nor the email domain may be presented as proof of enrolment (FR-A10). Where the declared institution disagrees with the email domain, the declaration wins and nothing is said: exchange students, alumni and personal accounts are all ordinary under FR-A6. |

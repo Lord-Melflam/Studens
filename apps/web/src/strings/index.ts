@@ -179,7 +179,8 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.long": "Trop long : 24 caractères au maximum.",
     "firstrun.2.err.shape": "Caractères non autorisés, ou un séparateur au début ou à la fin.",
     "firstrun.2.err.reserved": "Ce nom est réservé.",
-    "firstrun.2.err.taken": "Ce pseudonyme est déjà pris.",
+    "firstrun.2.err.taken":
+      "Ce pseudonyme est déjà pris, y compris s'il ne diffère que par les points, tirets ou soulignés.",
     "firstrun.2.err.other": "L'enregistrement a échoué. Réessayez.",
     "firstrun.err.save":
       "L'enregistrement a échoué et rien n'a été perdu. Réessayez ; si cela recommence, rechargez la page.",
@@ -319,6 +320,8 @@ export const shellStrings: Bundle = {
     "account.notifications": "Ce que nous pouvons vous envoyer",
     "account.notifications.hint":
       "Tout est désactivé au départ. Chaque type se règle séparément, pour qu'aucun ne serve à en fuir un autre.",
+    "account.notifications.auto":
+      "Chaque interrupteur est enregistré tout de suite : il n'y a pas de bouton à valider.",
     "account.notifications.transactional":
       "Les messages qui confirment une action sur votre compte (changement d'adresse, suppression) partent toujours : les couper reviendrait à vous cacher ce qui arrive à votre compte.",
     "account.notifications.anonymous":
@@ -349,6 +352,67 @@ export const shellStrings: Bundle = {
     "account.delete.now": "Supprimer définitivement",
     "account.delete.cancel": "Annuler",
     "account.delete.failed": "La suppression a échoué. Rien n'a été supprimé.",
+
+    "mod.title": "Modération",
+    "mod.queue": "Signalements à traiter",
+    "mod.queue.hint":
+      "Du plus ancien au plus récent, jamais du plus signalé : trier par le nombre mettrait en tête ce qu'un groupe a décidé de cibler.",
+    "mod.queue.empty": "Rien à traiter.",
+    "mod.counts.one": "{count} signalement",
+    "mod.counts.other": "{count} signalements",
+    "mod.counts.members.one": "dont {count} depuis un compte",
+    "mod.counts.members.other": "dont {count} depuis des comptes",
+    "mod.since": "le plus ancien : {when}",
+    "mod.held": "masqué",
+    "mod.gone": "contenu introuvable",
+    "mod.gone.detail":
+      "Ce contenu n'existe plus. Le signalement reste ici pour pouvoir être clôturé.",
+    "mod.path.named": "Publié sous un nom",
+    "mod.path.anonymous": "Publié anonymement : personne ne sait qui l'a écrit, vous non plus.",
+    "mod.path.detached": "Publié sous un nom, dont le compte a été supprimé.",
+    "mod.path.imported": "Repris d'une source extérieure.",
+    "mod.cat.illegal": "illégal",
+    "mod.cat.thirdparty": "désigne quelqu'un",
+    "mod.cat.abuse": "attaque",
+    "mod.cat.spam": "hors sujet",
+    "mod.cat.inaccurate": "inexact",
+    "mod.reason": "Motif de votre décision",
+    "mod.reason.placeholder": "ce que vous avez décidé, et pourquoi",
+    "mod.reason.rule":
+      "Obligatoire, au moins 5 caractères. Il est enregistré : une trace qui dit qu'il s'est passé quelque chose sans dire quoi n'en est pas une.",
+    "mod.hold": "Masquer",
+    "mod.release": "Réafficher",
+    "mod.dismiss": "Classer sans suite",
+    "mod.failed": "L'action a échoué. Rien n'a changé.",
+    "mod.noremoval":
+      "Masquer retire de la vue publique et se défait. La suppression définitive n'existe pas encore : elle doit publier un motif à la place du contenu, et ce point attend une lecture juridique.",
+
+    "mod.appointments": "Qui peut modérer",
+    "mod.appointments.hint":
+      "Nommé par un administrateur, un à la fois, et consigné. Un modérateur ne peut pas en nommer un autre.",
+    "mod.group.member": "Membres",
+    "mod.group.moderator": "Modérateurs",
+    "mod.group.admin": "Administrateurs",
+    "mod.appoint.add": "Donner un pouvoir à quelqu'un d'autre",
+    "mod.appoint.change": "Changer",
+    "mod.appoint.confirm": "Retirer ce pouvoir à {name} ? Cette personne deviendra {role}.",
+    "mod.appoint.confirm.yes": "Retirer",
+    "mod.appoint.confirm.no": "Annuler",
+    "mod.appoint.you": "vous",
+    "mod.appointments.history": "Historique",
+    "mod.appoint": "Nommer",
+    "mod.appoint.who": "Pseudonyme",
+    "mod.appoint.role": "Rôle",
+    "mod.appoint.placeholder": "le pseudonyme de la personne",
+    "mod.appoint.err.unknown-member": "Aucun compte avec ce pseudonyme.",
+    "mod.appoint.err.bad-role": "Rôle inconnu.",
+    "mod.appoint.err.self": "Vous ne pouvez pas changer votre propre rôle.",
+    "mod.appoint.err.last-admin":
+      "C'est le dernier administrateur : le rétrograder ne laisserait personne pour nommer qui que ce soit.",
+    "mod.appoint.err.failed": "L'opération a échoué.",
+    "mod.role.member": "membre",
+    "mod.role.moderator": "modérateur",
+    "mod.role.admin": "administrateur",
   },
 
   nl: {
@@ -511,7 +575,8 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.shape":
       "Niet-toegelaten tekens, of een scheidingsteken aan het begin of het einde.",
     "firstrun.2.err.reserved": "Deze naam is voorbehouden.",
-    "firstrun.2.err.taken": "Deze gebruikersnaam is al bezet.",
+    "firstrun.2.err.taken":
+      "Deze gebruikersnaam is al bezet, ook als ze enkel verschilt door punten, streepjes of liggende streepjes.",
     "firstrun.2.err.other": "Opslaan is mislukt. Probeer opnieuw.",
     "firstrun.err.save":
       "Opslaan is mislukt en er is niets verloren. Probeer opnieuw; gebeurt het weer, herlaad dan de pagina.",
@@ -651,6 +716,8 @@ export const shellStrings: Bundle = {
     "account.notifications": "Wat wij u mogen sturen",
     "account.notifications.hint":
       "Alles staat om te beginnen uit. Elk soort regelt u apart, zodat geen enkel dient om aan een ander te ontsnappen.",
+    "account.notifications.auto":
+      "Elke schakelaar wordt meteen bewaard: er is geen knop om te bevestigen.",
     "account.notifications.transactional":
       "Berichten die een actie op uw account bevestigen (adreswijziging, verwijdering) vertrekken altijd: ze afzetten zou verbergen wat er met uw account gebeurt.",
     "account.notifications.anonymous":
@@ -681,6 +748,67 @@ export const shellStrings: Bundle = {
     "account.delete.now": "Definitief verwijderen",
     "account.delete.cancel": "Annuleren",
     "account.delete.failed": "Verwijderen is mislukt. Er is niets verwijderd.",
+
+    "mod.title": "Moderatie",
+    "mod.queue": "Meldingen te behandelen",
+    "mod.queue.hint":
+      "Van oudste naar nieuwste, nooit van meest gemeld: sorteren op aantal zou bovenaan zetten waar een groep zich op gericht heeft.",
+    "mod.queue.empty": "Niets te behandelen.",
+    "mod.counts.one": "{count} melding",
+    "mod.counts.other": "{count} meldingen",
+    "mod.counts.members.one": "waarvan {count} vanaf een account",
+    "mod.counts.members.other": "waarvan {count} vanaf accounts",
+    "mod.since": "oudste: {when}",
+    "mod.held": "verborgen",
+    "mod.gone": "inhoud niet gevonden",
+    "mod.gone.detail":
+      "Deze inhoud bestaat niet meer. De melding blijft hier zodat ze afgesloten kan worden.",
+    "mod.path.named": "Onder een naam gepubliceerd",
+    "mod.path.anonymous": "Anoniem gepubliceerd: niemand weet wie het schreef, u ook niet.",
+    "mod.path.detached": "Onder een naam gepubliceerd, waarvan het account verwijderd is.",
+    "mod.path.imported": "Overgenomen uit een externe bron.",
+    "mod.cat.illegal": "onwettig",
+    "mod.cat.thirdparty": "wijst iemand aan",
+    "mod.cat.abuse": "aanval",
+    "mod.cat.spam": "hoort hier niet",
+    "mod.cat.inaccurate": "onjuist",
+    "mod.reason": "Reden van uw beslissing",
+    "mod.reason.placeholder": "wat u beslist hebt, en waarom",
+    "mod.reason.rule":
+      "Verplicht, minstens 5 tekens. Ze wordt bewaard: een spoor dat zegt dat er iets gebeurd is zonder te zeggen wat, is er geen.",
+    "mod.hold": "Verbergen",
+    "mod.release": "Opnieuw tonen",
+    "mod.dismiss": "Zonder gevolg klasseren",
+    "mod.failed": "De actie is mislukt. Er is niets gewijzigd.",
+    "mod.noremoval":
+      "Verbergen haalt het uit het publieke zicht en is omkeerbaar. Definitief verwijderen bestaat nog niet: daarvoor moet een reden in de plaats van de inhoud gepubliceerd worden, en dat punt wacht op een juridische lezing.",
+
+    "mod.appointments": "Wie mag modereren",
+    "mod.appointments.hint":
+      "Aangesteld door een beheerder, één tegelijk, en geregistreerd. Een moderator kan er geen andere aanstellen.",
+    "mod.group.member": "Leden",
+    "mod.group.moderator": "Moderatoren",
+    "mod.group.admin": "Beheerders",
+    "mod.appoint.add": "Iemand anders een bevoegdheid geven",
+    "mod.appoint.change": "Wijzigen",
+    "mod.appoint.confirm": "Deze bevoegdheid van {name} afnemen? Deze persoon wordt {role}.",
+    "mod.appoint.confirm.yes": "Afnemen",
+    "mod.appoint.confirm.no": "Annuleren",
+    "mod.appoint.you": "u",
+    "mod.appointments.history": "Geschiedenis",
+    "mod.appoint": "Aanstellen",
+    "mod.appoint.who": "Gebruikersnaam",
+    "mod.appoint.role": "Rol",
+    "mod.appoint.placeholder": "de gebruikersnaam van de persoon",
+    "mod.appoint.err.unknown-member": "Geen account met die gebruikersnaam.",
+    "mod.appoint.err.bad-role": "Onbekende rol.",
+    "mod.appoint.err.self": "U kunt uw eigen rol niet wijzigen.",
+    "mod.appoint.err.last-admin":
+      "Dit is de laatste beheerder: degraderen zou niemand overlaten om nog iemand aan te stellen.",
+    "mod.appoint.err.failed": "De bewerking is mislukt.",
+    "mod.role.member": "lid",
+    "mod.role.moderator": "moderator",
+    "mod.role.admin": "beheerder",
   },
 
   en: {
@@ -843,7 +971,8 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.shape":
       "Characters that are not allowed, or a separator at the start or the end.",
     "firstrun.2.err.reserved": "That name is reserved.",
-    "firstrun.2.err.taken": "That username is already taken.",
+    "firstrun.2.err.taken":
+      "That username is already taken, including one differing only by dots, dashes or underscores.",
     "firstrun.2.err.other": "Saving failed. Try again.",
     "firstrun.err.save":
       "Saving failed and nothing was lost. Try again; if it happens again, reload the page.",
@@ -982,6 +1111,8 @@ export const shellStrings: Bundle = {
     "account.notifications": "What we may send you",
     "account.notifications.hint":
       "Everything starts off. Each kind is set separately, so that none of them serves as a way out of another.",
+    "account.notifications.auto":
+      "Each switch is saved as you flip it: there is no button to confirm.",
     "account.notifications.transactional":
       "Messages confirming something happening to your account (an address change, a deletion) are always sent: switching them off would hide from you what is happening to your own account.",
     "account.notifications.anonymous":
@@ -1012,5 +1143,65 @@ export const shellStrings: Bundle = {
     "account.delete.now": "Delete permanently",
     "account.delete.cancel": "Cancel",
     "account.delete.failed": "The deletion failed. Nothing was deleted.",
+
+    "mod.title": "Moderation",
+    "mod.queue": "Reports to handle",
+    "mod.queue.hint":
+      "Oldest first, never most reported: sorting by the count would put whatever a group decided to target at the top.",
+    "mod.queue.empty": "Nothing to handle.",
+    "mod.counts.one": "{count} report",
+    "mod.counts.other": "{count} reports",
+    "mod.counts.members.one": "{count} from an account",
+    "mod.counts.members.other": "{count} from accounts",
+    "mod.since": "oldest: {when}",
+    "mod.held": "hidden",
+    "mod.gone": "content not found",
+    "mod.gone.detail": "This content no longer exists. The report stays here so it can be closed.",
+    "mod.path.named": "Published under a name",
+    "mod.path.anonymous": "Published anonymously: nobody knows who wrote it, including you.",
+    "mod.path.detached": "Published under a name whose account has since been deleted.",
+    "mod.path.imported": "Taken from an outside source.",
+    "mod.cat.illegal": "unlawful",
+    "mod.cat.thirdparty": "identifies somebody",
+    "mod.cat.abuse": "attack",
+    "mod.cat.spam": "does not belong",
+    "mod.cat.inaccurate": "inaccurate",
+    "mod.reason": "Reason for your decision",
+    "mod.reason.placeholder": "what you decided, and why",
+    "mod.reason.rule":
+      "Required, at least 5 characters. It is recorded: a trail saying something happened without saying what is not one.",
+    "mod.hold": "Hide",
+    "mod.release": "Show again",
+    "mod.dismiss": "Close with no action",
+    "mod.failed": "The action failed. Nothing changed.",
+    "mod.noremoval":
+      "Hiding takes it out of public view and can be undone. Permanent removal does not exist yet: it has to publish a reason in place of the content, and that point is waiting on a legal reading.",
+
+    "mod.appointments": "Who may moderate",
+    "mod.appointments.hint":
+      "Appointed by an administrator, one at a time, and recorded. A moderator cannot appoint another.",
+    "mod.group.member": "Members",
+    "mod.group.moderator": "Moderators",
+    "mod.group.admin": "Administrators",
+    "mod.appoint.add": "Give somebody else a power",
+    "mod.appoint.change": "Change",
+    "mod.appoint.confirm": "Take this power away from {name}? They become {role}.",
+    "mod.appoint.confirm.yes": "Take it away",
+    "mod.appoint.confirm.no": "Cancel",
+    "mod.appoint.you": "you",
+    "mod.appointments.history": "History",
+    "mod.appoint": "Appoint",
+    "mod.appoint.who": "Username",
+    "mod.appoint.role": "Role",
+    "mod.appoint.placeholder": "the person's username",
+    "mod.appoint.err.unknown-member": "No account with that username.",
+    "mod.appoint.err.bad-role": "Unknown role.",
+    "mod.appoint.err.self": "You cannot change your own role.",
+    "mod.appoint.err.last-admin":
+      "This is the last administrator: demoting them would leave nobody able to appoint anybody.",
+    "mod.appoint.err.failed": "The operation failed.",
+    "mod.role.member": "member",
+    "mod.role.moderator": "moderator",
+    "mod.role.admin": "administrator",
   },
 };

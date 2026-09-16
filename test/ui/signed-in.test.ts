@@ -18,7 +18,16 @@ import { describe, expect, it } from "vitest";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DEFAULT_LOCALE, I18nProvider } from "@studens/i18n";
-import { Shell, SessionProvider, Settings, FirstRun, bundle, type SessionState } from "@studens/web";
+import {
+  Shell,
+  SessionProvider,
+  Settings,
+  FirstRun,
+  bundle,
+  signOutDestination,
+  takesPowerAway,
+  type SessionState,
+} from "@studens/web";
 
 /** Signed in, has never opened the first run. The state that broke. */
 const fresh: SessionState = {
@@ -110,6 +119,42 @@ describe("the app renders for a signed-in member", () => {
     at("/fr/app");
     expect(draw(createElement(Shell), settled)).toContain("lou.martin");
   });
+
+  /**
+   * Signing out does not empty the app, it changes who is looking at it, and
+   * the header has to follow. It did not: François signed out of the console
+   * and the page kept offering an account screen that can only fail, while the
+   * console's own URL answered with the message meant for a stranger guessing
+   * it. What is drawn comes from the session now, so the header is right the
+   * moment the session changes rather than the next time the page is loaded.
+   */
+  it("offers the account screen to somebody signed in, and not to somebody signed out", () => {
+    at("/fr/app/ryc");
+    const signedOut: SessionState = { signedIn: false, devSignInAvailable: true };
+    expect(draw(createElement(Shell), settled)).toContain("/fr/app/moi");
+    expect(draw(createElement(Shell), signedOut)).not.toContain("/fr/app/moi");
+  });
+
+  /**
+   * The console's segment answers exactly as any unknown one does to anybody
+   * without the power. That sameness is the point: the API answers 404 rather
+   * than 403 so the console cannot be confirmed to exist, and a screen that
+   * said something different here would hand back what the API withholds.
+   */
+  it("says nothing about the console to somebody who cannot open it", () => {
+    at("/fr/app/moderation");
+    const html = draw(createElement(Shell), settled);
+    at("/fr/app/pas-un-module");
+    const unknown = draw(createElement(Shell), settled);
+    // The same answer, and nothing else on the page that names the console.
+    // The language switcher does carry the current path, so this asserts on the
+    // link and the breadcrumb rather than on the string appearing at all.
+    expect(html).toContain('class="error"');
+    expect(unknown).toContain('class="error"');
+    expect(html).not.toContain('class="settings-link" href="/fr/app/moderation"');
+    expect(html).not.toContain('class="here"');
+    expect(html.replace(/<nav class="lang".*?<\/nav>/s, "")).not.toContain("Modération");
+  });
 });
 
 describe("the first run renders at every step", () => {
@@ -139,5 +184,55 @@ describe("no screen leaks an untranslated key", () => {
     expect(draw(createElement(Settings), settled)).not.toMatch(
       /\b(?:app|nav|settings|foot)\.[a-z.]+/,
     );
+  });
+});
+
+/**
+ * Signing out is a full page load, so a screen that cannot be rendered signed
+ * out has to be left before it happens, not after. The first attempt reacted to
+ * the session instead and did nothing at all: the page came back fresh on the
+ * console's URL, the change it was waiting for had already happened, and
+ * François hit the same "Unknown module" a second time.
+ */
+describe("signing out leaves a screen that needs a session", () => {
+  it("leaves the console and the account panel, and nothing else", () => {
+    expect(signOutDestination("moderation", "fr")).toBe("/fr/app");
+    expect(signOutDestination("moi", "en")).toBe("/en/app");
+    // A course page survives signing out and should stay where it is.
+    expect(signOutDestination("ryc", "fr")).toBeUndefined();
+    expect(signOutDestination(null, "fr")).toBeUndefined();
+  });
+});
+
+/**
+ * Taking a power away asks first; giving one does not.
+ *
+ * The direction is read from the order the API sends the roles in, which runs
+ * from fewest powers to most. A role added later therefore gets its rank with
+ * no change here, which is the point of sending the list at all.
+ */
+describe("a demotion is confirmed, a promotion is not", () => {
+  const roles = ["member", "moderator", "admin"];
+
+  it("asks only when the change removes something", () => {
+    expect(takesPowerAway(roles, "moderator", "member")).toBe(true);
+    expect(takesPowerAway(roles, "admin", "moderator")).toBe(true);
+    expect(takesPowerAway(roles, "admin", "member")).toBe(true);
+
+    expect(takesPowerAway(roles, "member", "moderator")).toBe(false);
+    expect(takesPowerAway(roles, "moderator", "admin")).toBe(false);
+    expect(takesPowerAway(roles, "admin", "admin")).toBe(false);
+  });
+
+  it("treats a role it does not know as no change, never as a demotion", () => {
+    // Confirming an upgrade would teach people to confirm everything, and then
+    // the confirmation that mattered is the one they click through.
+    expect(takesPowerAway(roles, "admin", "auditor")).toBe(false);
+    expect(takesPowerAway(roles, "auditor", "member")).toBe(false);
+  });
+
+  it("follows the order it is given, not one written into the screen", () => {
+    // The same two roles, ordered the other way round, reverse the answer.
+    expect(takesPowerAway(["admin", "member"], "member", "admin")).toBe(true);
   });
 });

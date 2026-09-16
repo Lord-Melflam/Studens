@@ -8,14 +8,25 @@
  * the path and hands the rest to the module without parsing it, so a module can
  * own its URLs while the shell stays ignorant of what they mean.
  */
-import { useT } from "@studens/i18n";
+import { useEffect, useRef, useState } from "react";
+import { localePath, useT, type Locale } from "@studens/i18n";
 import { Account } from "../Account.js";
 import { LanguageSwitcher } from "../LanguageSwitcher.js";
 import { Settings } from "../Settings.js";
 import { activeModuleFor, liveModules } from "./registry.js";
 import { useSession } from "../session.js";
 import { FIRST_RUN } from "../firstrun/FirstRun.js";
-import { APP_PREFIX, currentRoute, linkProps, moduleIdFrom, navigate, usePath } from "../router.js";
+import { ModerationConsole } from "../moderation/Console.js";
+import { fetchPowers, type Powers } from "../moderation/api.js";
+import {
+  APP_PREFIX,
+  currentLocale,
+  currentRoute,
+  linkProps,
+  moduleIdFrom,
+  navigate,
+  usePath,
+} from "../router.js";
 
 /**
  * The shell's own screen, reachable at /app/moi.
@@ -25,6 +36,37 @@ import { APP_PREFIX, currentRoute, linkProps, moduleIdFrom, navigate, usePath } 
  * id would simply never mount.
  */
 const SETTINGS = "moi";
+
+/**
+ * The moderator's console. Reserved like the account panel: no module may claim
+ * this id, and one declaring it would simply never mount.
+ *
+ * Moderation is the platform's rather than a module's, because it acts on any
+ * module's content through a kind and an id (FR-E8). A console inside RYC would
+ * have to be built again for the second module.
+ */
+const MODERATION = "moderation";
+
+/**
+ * Where signing out lands, given the screen it is done from.
+ *
+ * `undefined` means stay put and reload, which is right for every screen that
+ * still makes sense signed out, a course page above all.
+ *
+ * SIGNING OUT IS A FULL PAGE LOAD, not a state change, which is why this is a
+ * decision taken before leaving rather than a redirect taken after arriving.
+ * The page comes back fresh on the same URL with nobody signed in, so a screen
+ * that only exists for somebody signed in cannot get out of its own way by
+ * reacting to the session: it never sees the change. That is exactly how
+ * signing out of the console kept answering "Unknown module".
+ *
+ * A pure function, and exported, because the version of this written inline was
+ * wrong and nothing could reach it to say so.
+ */
+export function signOutDestination(routeId: string | null, locale: Locale): string | undefined {
+  if (routeId !== SETTINGS && routeId !== MODERATION) return undefined;
+  return localePath(APP_PREFIX, locale);
+}
 
 function Home() {
   const t = useT();
@@ -83,7 +125,22 @@ function SetupPrompt() {
 export function Shell() {
   const t = useT();
   const path = usePath();
+  const { session } = useSession();
+  // Asked again whenever the session changes, not once per mount. The answer is
+  // about who is signed in, so it stops being true the moment that does: asking
+  // once meant signing in did not reveal the console until a reload, and
+  // signing out left the link to it on screen.
+  const [powers, setPowers] = useState<Powers | null>(null);
+  useEffect(() => {
+    if (session === null) return;
+    if (!session.signedIn) {
+      setPowers({ canModerate: false, canAppoint: false });
+      return;
+    }
+    void fetchPowers().then(setPowers);
+  }, [session]);
   const route = currentRoute(path);
+  const locale = currentLocale(path);
   const routeId = moduleIdFrom(path);
   const active = activeModuleFor(path);
   const Module = active?.component;
@@ -91,6 +148,34 @@ export function Shell() {
   // The shell's own screens sit alongside the modules and are not modules:
   // they are about the member, not about anything a module owns.
   const settings = routeId === SETTINGS;
+  const moderating = routeId === MODERATION;
+  // Whether the console is actually being shown, which is not the same as being
+  // on its URL. The breadcrumb used the second and so printed "Moderation" over
+  // a body saying the id was unknown: two answers to the same question, and the
+  // pair tells somebody without the power that the segment is reserved.
+  const console_ = moderating && powers?.canModerate === true;
+
+  // Signing out of a screen that only exists for somebody signed in leaves you
+  // standing on it. Before this, signing out of the console kept the URL and
+  // answered "Unknown module: moderation", which is the message meant for a
+  // stranger guessing the address, shown to the person who had just been using
+  // it. Leaving is the only sensible reading of signing out from there.
+  //
+  // ON THE TRANSITION, never on arrival. Somebody who simply opens the console's
+  // URL without the power has to get exactly what any unknown id gets, or the
+  // difference between the two answers tells them the segment is reserved and
+  // undoes the reason the API answers 404 rather than 403.
+  const wasSignedIn = useRef(false);
+  useEffect(() => {
+    if (session?.signedIn) {
+      wasSignedIn.current = true;
+      return;
+    }
+    if (session && !session.signedIn && wasSignedIn.current && (moderating || settings)) {
+      wasSignedIn.current = false;
+      navigate(APP_PREFIX);
+    }
+  }, [session, moderating, settings]);
 
   // Everything below /app/<id> belongs to the module. Sliced here, never read.
   const inside = active ? route.slice(`${APP_PREFIX}/${active.id}`.length) || "/" : "/";
@@ -110,19 +195,34 @@ export function Shell() {
           <button type="button" onClick={() => navigate(APP_PREFIX)}>
             {t("app.modules")}
           </button>
-          {(active || settings) && (
+          {(active || settings || console_) && (
             <>
               <span aria-hidden="true">/</span>
-              <span className="here">{active ? active.name : t("settings.title")}</span>
+              <span className="here">
+                {active ? active.name : console_ ? t("mod.title") : t("settings.title")}
+              </span>
             </>
           )}
         </nav>
         <div className="app-bar-right">
           <LanguageSwitcher route={route} />
-          <a className="settings-link" {...linkProps(`${APP_PREFIX}/${SETTINGS}`)}>
-            {t("settings.title")}
-          </a>
-          <Account />
+          {/* Only where there is one. A link to a console somebody cannot open
+              is a link that teaches them the console exists. */}
+          {powers?.canModerate && (
+            <a className="settings-link" {...linkProps(`${APP_PREFIX}/${MODERATION}`)}>
+              {t("mod.title")}
+            </a>
+          )}
+          {/* An account screen is no use without an account, and offering it to
+              somebody signed out sends them to a page that can only fail. */}
+          {session?.signedIn && (
+            <a className="settings-link" {...linkProps(`${APP_PREFIX}/${SETTINGS}`)}>
+              {t("settings.title")}
+            </a>
+          )}
+          {/* The account panel and the console do not survive signing out, so
+              signing out leaves them. Everything else stays where it is. */}
+          <Account signOutTo={signOutDestination(routeId, locale)} />
         </div>
       </header>
 
@@ -131,6 +231,15 @@ export function Shell() {
       <div className="app-body">
       {settings ? (
         <Settings />
+      ) : moderating ? (
+        // Rendered only where the power exists. Somebody typing the URL without
+        // it gets the unknown-screen message, and the API answers 404 to every
+        // request behind it anyway, so nothing here is the only guard.
+        powers?.canModerate ? (
+          <ModerationConsole canAppoint={powers.canAppoint} />
+        ) : (
+          <p className="error">{t("app.unknown", { id: MODERATION })}</p>
+        )
       ) : routeId && !active ? (
         <p className="error">
           {t("app.unknown", { id: routeId })}{" "}

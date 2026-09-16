@@ -123,11 +123,30 @@ header { margin-bottom: 1.75rem; }
 
 /* The account control. Pushed to the right of the header, quiet by default:
    who you are is context, not the point of the page. */
-.account { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; }
+.account {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
 .account .domain { color: var(--muted); }
+/* Never narrower than its own label.
+   A flex item shrinks by default, so "Continue with Google" was being squeezed
+   until the words wrapped inside a pill whose padding and rounding stayed put,
+   which reads as a box that does not fit its text. Wrapping the bar onto a
+   second row is the right answer at a narrow width; breaking one control is
+   not. */
+.account .signin,
+.account button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
 .account button {
   font: inherit;
   font-size: 0.82rem;
+  line-height: 1.4;
   padding: 0.25rem 0.6rem;
   color: var(--ink);
   background: #fff;
@@ -148,9 +167,14 @@ header { margin-bottom: 1.75rem; }
   border: 1px solid var(--warn);
   border-radius: 3px;
 }
-/* A real sign-in is a link, because the browser has to leave for the provider. */
+/* A real sign-in is a link, because the browser has to leave for the provider.
+   Styled as a pill to match the buttons beside it: same shape, same box, so the
+   two do not read as two different kinds of control. */
 .account .signin {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.82rem;
+  line-height: 1.4;
   padding: 0.25rem 0.6rem;
   color: var(--ink);
   text-decoration: none;
@@ -212,14 +236,27 @@ main.app {
   z-index: 10;
   display: flex;
   align-items: center;
+  /* The bar carries most when nobody is signed in: the provider buttons are
+     only there then, and they are the widest thing in it. Wrapping is what
+     happens when the window is too narrow for all of it. */
+  flex-wrap: wrap;
   gap: 1.2rem;
+  row-gap: 0.6rem;
   margin: 0;
   padding: 0.8rem 1.5rem;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
 }
-.app-bar-right { margin-left: auto; display: flex; align-items: center; gap: 0.8rem; }
+.app-bar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  row-gap: 0.5rem;
+}
+.app-bar-right .settings-link { white-space: nowrap; }
 .settings-link {
   font-size: 0.85rem;
   color: var(--muted);
@@ -416,3 +453,121 @@ main.app {
 .panel button.ghost.danger:hover:not(:disabled) { border-color: var(--danger); }
 .panel.danger > button.ghost { padding: 0.45rem 0.9rem; font: inherit; background: transparent;
   border: 1px solid var(--line); border-radius: 7px; cursor: pointer; }
+
+/* The moderator's console. Deliberately plain: it is a working screen for a
+   handful of people, and every hour spent styling it is an hour not spent on
+   the product. */
+.queue { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+.queue-entry {
+  padding: 0.9rem 1rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+/* Already out of public view. Marked so a moderator does not hide it twice. */
+.queue-entry.held { border-color: var(--warn); background: var(--warn-soft); }
+.queue-entry header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+.queue-context { font-weight: 700; font-variant-numeric: tabular-nums; }
+.queue-counts, .queue-age { font-size: 0.8rem; color: var(--muted); }
+.queue-age { margin-left: auto; }
+.queue-categories { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.6rem; }
+.chip-cat, .chip-held {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+.chip-cat { color: var(--danger); background: #f7ecea; }
+.chip-held { color: var(--warn); background: #fff; border: 1px solid var(--warn); }
+/* Which path it was published on, which is also a statement of what a
+   moderator can and cannot know about who wrote it. */
+.queue-path { margin: 0 0 0.4rem; font-size: 0.8rem; color: var(--muted); }
+.queue-body {
+  margin: 0 0 0.6rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.92rem;
+  white-space: pre-wrap;
+  background: var(--bg);
+  border-left: 3px solid var(--line);
+}
+.queue-advice { margin: 0 0 0.6rem; font-size: 0.88rem; color: var(--muted); }
+.queue-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+.queue-actions button {
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.queue-actions button:hover:not(:disabled) { border-color: var(--accent); }
+.queue-actions button.danger { color: var(--danger); border-color: #e6cdc9; }
+.queue-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+.queue-entry .field-note { margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--muted); }
+.panel h4.sub { margin: 1.2rem 0 0.4rem; font-size: 0.85rem; }
+.panel ul.plain.small { font-size: 0.8rem; color: var(--muted); }
+
+/* --- who holds a power ---------------------------------------------------
+   A row per person, grouped by role, because the list is the thing being
+   managed: changing somebody's role used to mean retyping their name into a
+   form that sat under it. */
+.holder-group { margin-top: 1.2rem; }
+.holder-group .sub .count {
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.holders { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+.holder {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--line);
+}
+.holder:first-child { border-top: 0; }
+.holder-name { flex: 1 1 10rem; }
+.holder-you {
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent-soft);
+  border-radius: 3px;
+}
+/* `width: auto` because `.text-input` is 100% wide by default, which is right
+   for a field on its own line and wrong for one control in a row: it pushed the
+   button onto a third line and made every holder three lines tall. */
+.holder select { flex: 0 0 auto; width: auto; padding: 0.25rem 0.5rem; font-size: 0.85rem; }
+.holder button { flex: 0 0 auto; }
+.holder .field-note, .holder .error { flex: 1 1 100%; margin: 0; font-size: 0.78rem; }
+/* The confirmation sits in the row it is about, so the name it asks about is
+   beside the name it names. A dialog would cover the list you are reading. */
+.holder-confirm {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: 7px;
+}
+.holder-confirm > span { flex: 1 1 14rem; }
+.holder-confirm button.danger { color: var(--danger); border-color: #e6cdc9; }
