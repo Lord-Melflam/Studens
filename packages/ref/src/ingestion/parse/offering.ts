@@ -175,12 +175,29 @@ function richField(
   return blocks;
 }
 
+/**
+ * ECTS from the header, where ZERO IS A REAL ANSWER.
+ *
+ * `cours-2026-bmeta1000` publishes "0.00 crédits" beside "18.0 h" and "Q2": a
+ * real course, taught, with credits counted somewhere other than on it. Refusing
+ * zero as implausible ended a crawl of 6,654 pages after 250 of them, and the
+ * course it refused is one a student takes and would then fail to find.
+ *
+ * WHAT STILL FAILS, and it is the part that matters: a page with NO credits cell
+ * at all. That is the guard against a layout change, and it is untouched, so
+ * allowing zero cannot let a missing value through disguised as one. The upper
+ * bound stays too: 120 credits is a whole master's year, not a course.
+ *
+ * Same lesson as the empty evaluation field two faculties ago. A value the
+ * university actually publishes is data, however odd it looks, and the place to
+ * notice a broken parser is across the whole run rather than on one page.
+ */
 function parseEcts(headerCells: string[], url: string): number {
   for (const cell of headerCells) {
     const m = /([\d]+(?:[.,][\d]+)?)\s*cr/i.exec(cell);
     if (m?.[1]) {
       const n = Number(m[1].replace(",", "."));
-      if (!Number.isFinite(n) || n <= 0 || n > 120) {
+      if (!Number.isFinite(n) || n < 0 || n > 120) {
         throw new ParseError(url, "ects", `implausible value ${m[1]}`);
       }
       return n;

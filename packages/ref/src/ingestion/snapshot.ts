@@ -173,7 +173,10 @@ export function validate(s: Snapshot): void {
   if (s.offerings.length === 0) throw new SnapshotInvalid("no course offerings parsed");
 
   for (const o of s.offerings) {
-    if (!Number.isFinite(o.ects) || o.ects <= 0) {
+    // Zero is permitted because UCLouvain publishes it: `cours-2026-bmeta1000`
+    // states "0.00 crédits" beside 18 hours of teaching. Negative is not, and
+    // neither is a missing cell, which the parser refuses before this.
+    if (!Number.isFinite(o.ects) || o.ects < 0) {
       throw new SnapshotInvalid(`${o.code}: ECTS is required in every era, got ${o.ects}`);
     }
     if (!COURSE_CODE.test(o.code)) {
@@ -234,6 +237,19 @@ function assertNothingWentBlank(s: Snapshot): void {
           `A field empty everywhere is a layout change, not a catalogue.`,
       );
     }
+  }
+
+  // The same rule for ECTS, which is a number and so cannot be "empty".
+  //
+  // A single zero is real: UCLouvain publishes "0.00 crédits" on courses whose
+  // credits are counted elsewhere. Every offering at zero is a parser that has
+  // stopped reading the header, and letting that through would replace a
+  // catalogue with a list of courses all apparently worth nothing.
+  if (s.offerings.every((o) => o.ects === 0)) {
+    throw new SnapshotInvalid(
+      `every one of the ${s.offerings.length} offerings has 0 ECTS. ` +
+        `One zero is a real course; all of them is a layout change.`,
+    );
   }
 }
 

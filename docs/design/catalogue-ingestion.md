@@ -854,3 +854,27 @@ count against the number printed on that screen will conclude a third of the
 catalogue is missing, and be wrong. Coverage comes from the per-faculty index,
 which is the source that lists minors too; the search supplies dimensions for
 the programmes it does cover and nothing else. Section 11.1.
+
+### 12.6 A course can be worth zero credits
+
+Found on the first full crawl, 2026-09-16, which stopped after 250 of 6,654
+course pages.
+
+`cours-2026-bmeta1000` publishes **"0.00 crédits"** beside "18.0 h" and "Q2". It
+is a taught course whose credits are counted somewhere other than on it, and the
+parser refused the value as implausible, which ended the run.
+
+Zero is now accepted. **What still fails is a page with no credits cell at all**,
+which is the check that catches a layout change, so allowing zero cannot let a
+missing value through disguised as one. The upper bound stays: 120 credits is a
+master's year, not a course. And the snapshot refuses a run where EVERY offering
+is zero, on the same reasoning as a field empty everywhere: one is a course, all
+of them is a parser that stopped reading the header.
+
+This is the third time the same mistake has been made in this file, and it is
+worth naming as a pattern rather than as three bugs. A field published empty, a
+page the university cannot serve, and now a value that looks wrong and is not:
+each time the parser treated something UCLouvain actually publishes as proof
+that the parser was broken. **The place to notice a broken parser is across the
+whole run, never on one page**, because a real catalogue is full of individually
+surprising entries and a broken parser is uniform.
