@@ -7,7 +7,86 @@ Everything runs from the repository root, `~/projects/studens`, inside WSL.
 
 ---
 
+## Start here, every time
+
+Four steps, in this order. Steps 2 and 3 are only needed after pulling a change
+that touched migrations or the catalogue, so most days it is 1 and 4.
+
+```bash
+# 1. PostgreSQL. The one thing that needs sudo, because it is a system service.
+sudo service postgresql start
+
+# 2. Only after pulling a migration.
+npm run db:migrate
+npm run db:grant-local
+
+# 3. Only the first time on a machine, or to refresh the catalogue.
+npm run ingest -- --faculty epl
+npm run db:load
+
+# 4. The app. Two terminals.
+npm run dev:api      # terminal 1, http://localhost:3001
+npm run dev:web      # terminal 2, http://localhost:5173
+```
+
+Then open **<http://localhost:5173>**.
+
+**The API must be running before the web app is useful.** The browser only ever
+talks to 5173, which proxies `/api` to 3001; with the API down every page loads
+and nothing in it works, which looks like a frontend bug and is not one.
+
+To stop them, kill by port and never by pattern:
+
+```bash
+fuser -k 3001/tcp 5173/tcp
+```
+
+### Every script, and what it is for
+
+The complete list. Anything not here does not exist, whatever it looks like it
+should be called.
+
+| Command | What it does |
+|---|---|
+| **Running it** | |
+| `npm run dev` | API and web together in one terminal. Harder to read the logs |
+| `npm run dev:api` | The API, with the development sign-in. Port 3001 |
+| `npm run dev:api:anon` | The API with **no** development identity: what a signed-out visitor sees |
+| `npm run dev:web` | Vite, port 5173. Proxies `/api` to 3001 |
+| `npm run mail` | Drain the mail outbox. Prints each message when no relay is configured. `-- --watch` loops every 30 seconds |
+| **Before you push** | |
+| `npm run gates` | The whole no-database gate. What CI's `gates` job runs |
+| `npm run gates:db` | The database half. What CI's `database` job runs |
+| `npm run typecheck` | `tsc --build`, plus the two `--noEmit` passes for `ryc-ui` and `web` |
+| `npm run lint` | ESLint, including the FR-B6 boundary rules |
+| `npm run test` | Vitest. **Silently skips** the database tests when PostgreSQL is down |
+| `npm run test:db` | Vitest where an unreachable database is a hard failure instead of a skip |
+| `npm run schema:validate` | The Prisma schema is valid. Connects to nothing |
+| `npm run docs:links` | Every path a tracked file mentions exists and is tracked |
+| **Database** | |
+| `npm run db:migrate` | Apply pending migrations |
+| `npm run db:grant-local` | Let your user assume the three module roles, so `SET ROLE` works |
+| `npm run db:verify-isolation` | Assert every module role can and cannot do exactly what it should |
+| `npm run db:reset` | **Destructive.** Drops and rebuilds: you lose the catalogue and every review |
+| **Catalogue** | |
+| `npm run ingest` | Scrape into `data/catalogue.json`. Takes `-- --faculty epl`, `-- --max 40`, `-- --year 2025` |
+| `npm run db:load` | Load that snapshot into PostgreSQL, in one transaction |
+| **Build** | |
+| `npm run build:api` | Compile the API. Run for you by `dev:api` |
+| `npm run build:worker` | Compile the worker. Run for you by `ingest`, `db:load` and `mail` |
+
+Two of those behave differently from how they read, and both have cost time:
+
+- **`npm run test` passes with no database**, skipping about a hundred tests and
+  saying so only in a line most people scroll past. `npm run test:db` is the one
+  that refuses to be quiet about it.
+- **`npm run db:reset` is not a repair tool.** It drops everything, including
+  every review submitted while testing.
+
+---
+
 ## First time on a machine
+
 
 ```bash
 git clone git@github.com:Lord-Melflam/Studens.git ~/projects/studens
