@@ -443,7 +443,7 @@ describe("a field that went blank everywhere", () => {
       }
     }
     return {
-      version: 6,
+      version: 7,
       takenAt: new Date().toISOString(),
       year: YEAR,
       faculties: [{ code: "zzz", name: "Zeta" }],
@@ -457,6 +457,8 @@ describe("a field that went blank everywhere", () => {
           site: null,
           domain: null,
           siteSource: null,
+          listing: "listed",
+          courses: 1,
         },
       ],
       offerings,
@@ -672,5 +674,59 @@ describe("courses the university will not serve", () => {
     await expect(crawl({ year: YEAR, fetcher: site.fetcher })).rejects.toThrow(
       /unrecognised course page layout/,
     );
+  });
+});
+
+/**
+ * "NO COURSES" MEANT TWO DIFFERENT THINGS AND SAID NEITHER.
+ *
+ * 22 of 79 programmes in a real two-faculty crawl had no courses. One of them,
+ * `prog-2025-cyse2m`, is a joint master whose courses are hosted by the partner
+ * institutions: three pages, all legitimately empty. Another could have been a
+ * page that failed to load, which means every one of its courses is missing
+ * from Studens. Telling them apart meant opening the site by hand, and that
+ * does not scale to 692 programmes.
+ */
+describe("what happened to a programme's course list", () => {
+  it("records a list that was read", async () => {
+    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const z = snap.programmes.find((p) => p.code === "zprog");
+    expect(z?.listing).toBe("listed");
+    expect(z?.courses).toBe(2);
+  });
+
+  it("separates a page that loaded with nothing on it from one that never loaded", async () => {
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: fakeSite({
+        // Loads, and has no course links. A joint programme looks exactly like
+        // this, and it is not a problem.
+        [`https://uclouvain.be/prog-${YEAR}-zprog-programme`]: "<html><body>nothing here</body></html>",
+        [`https://uclouvain.be/prog-${YEAR}-zprog-programme_annual_blocks`]:
+          "<html><body>nothing here either</body></html>",
+      }).fetcher,
+    });
+    expect(snap.programmes.find((p) => p.code === "zprog")?.listing).toBe("empty");
+    // yprog's pages are absent from the fake site entirely, so nothing loaded.
+    // That is the one that means a student will not find their course.
+    const y = snap.programmes.find((p) => p.code === "yprog");
+    expect(y?.listing).toBe("listed");
+  });
+
+  it("marks a programme unreachable when no listing page loads at all", async () => {
+    const said: string[] = [];
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: fakeSite({
+        [`https://uclouvain.be/prog-${YEAR}-yprog-programme`]: 503,
+        [`https://uclouvain.be/prog-${YEAR}-yprog-programme_annual_blocks`]: 503,
+      }).fetcher,
+      onProgress: (m) => said.push(m),
+    });
+    expect(snap.programmes.find((p) => p.code === "yprog")?.listing).toBe("unreachable");
+    expect(snap.programmes.find((p) => p.code === "yprog")?.courses).toBe(0);
+    // Said out loud as well as written down: a loss nobody mentions is a loss
+    // nobody notices until a student does.
+    expect(said.some((m) => m.includes("could not be read"))).toBe(true);
   });
 });

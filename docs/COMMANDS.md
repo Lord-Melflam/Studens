@@ -71,6 +71,7 @@ should be called.
 | **Catalogue** | |
 | `npm run ingest` | Scrape into `data/catalogue.json`. Takes `-- --faculty epl,lsm`, `-- --year 2025`, `-- --max 40` (sample), `-- --max-requests 1500` (ceiling), `-- --no-cache` |
 | `npm run db:load` | Load that snapshot into PostgreSQL, in one transaction |
+| `npm run catalogue:report` | **After any crawl:** what the crawl lost and whether the database holds it. Writes `data/catalogue-report.txt`. Exit 1 when something is missing |
 | **Build** | |
 | `npm run build:api` | Compile the API. Run for you by `dev:api` |
 | `npm run build:worker` | Compile the worker. Run for you by `ingest`, `db:load` and `mail` |
@@ -359,6 +360,30 @@ same thing.
 With real credentials in `.env`, `GET /api/auth/providers` lists what is
 configured and the sign-in page shows a button per provider. Registering the two
 applications is walked through in `design/authentication.md`, Appendix A.
+
+### After a full crawl, always
+
+A full crawl is about 9,000 requests over roughly two hours, and the things that
+go wrong in it are individually small: one course page the server would not
+serve, one programme whose course list never loaded. Each one is a student who
+cannot find their course, and the line that mentioned it scrolled past an hour
+ago.
+
+```bash
+npm run catalogue:report
+```
+
+It reads the snapshot and the database, compares them, and ends with one line
+saying whether anything is missing. It writes the same to
+`data/catalogue-report.txt`, changes nothing, and exits 1 when there is a gap,
+so it can gate a deployment without anybody reading it.
+
+Three things it calls a **gap**, meaning somebody will not find their course:
+a programme whose course list never loaded, a course page the university would
+not serve, and a course parsed into the snapshot that never reached the
+database. A programme that simply lists no courses is a **note**, not a gap:
+`prog-2025-cyse2m` is a joint master whose courses are hosted by the partner
+institutions, and all three of its pages are legitimately empty.
 
 ---
 

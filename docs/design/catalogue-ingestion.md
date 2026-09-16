@@ -797,3 +797,60 @@ else ever is.
 
 Filters appear only when there is more than one value to choose between, so a
 single-faculty catalogue looks exactly as it did.
+
+### 12.4 Knowing whether the catalogue is complete
+
+A full crawl loses things one at a time, and each loss is small enough to scroll
+past: one course page the server would not serve, one programme whose course
+list never loaded. Each one is a student who looks for their course and does not
+find it, months later, with nothing to point at.
+
+`npm run catalogue:report` reads the snapshot and the database, compares them,
+and ends with one line. It changes nothing and exits 1 when something is
+missing, so it can gate a deployment without being read.
+
+**"No courses" used to mean two different things and said neither.** In the
+first two-faculty crawl, 22 of 79 programmes had no courses. That is either a
+joint programme whose courses are hosted by the partner institution, which is
+ordinary, or a page that failed to load, which means every one of its courses is
+absent from Studens. Telling them apart meant opening the site by hand, and it
+does not scale to 692. A programme now records which it was:
+
+| | Meaning | Severity |
+|---|---|---|
+| `listed` | the course list was read | |
+| `empty` | a page loaded and had nothing on it | note |
+| `unreachable` | no listing page loaded at all | **gap** |
+
+Checked on the real two-faculty crawl: all 22 are `empty`, none `unreachable`,
+and `prog-2025-cyse2m` is one of them, with three pages that are genuinely
+blank. The report also compares both directions against the database, because a
+course parsed into the snapshot and missing from `ref.CourseOffering` is the
+same invisible loss arriving one step later.
+
+### 12.5 The search application's own count is not a target
+
+Measured 2026-09-16, on `document_type=Training&academic_year=2026`:
+
+| Query | "Nombre de résultats" | Rows on the page |
+|---|---|---|
+| Every site | 939 | 597 |
+| Louvain-la-Neuve only | 565 | 337 |
+| Louvain-la-Neuve, bacheliers only | 34 | 34 |
+| Louvain-la-Neuve, certificats only | 147 | 147 |
+
+Filtered to one education group the two agree exactly. Asked for "toutes les
+formations" they do not, and the gap is not a rounding error: the rendered page
+holds five sections (bacheliers, masters, masters en enseignement, masters de
+spécialisation, certificats) which sum to exactly the rows shown, while the
+counter also counts documents that have no section to render into. Doctorates
+and continuing education have their own catalogues and their own pages.
+
+There is no pagination and no "show more": every row the page has is in the
+response, and every code on it is unique.
+
+**So the counter is not a coverage target.** Anybody comparing our programme
+count against the number printed on that screen will conclude a third of the
+catalogue is missing, and be wrong. Coverage comes from the per-faculty index,
+which is the source that lists minors too; the search supplies dimensions for
+the programmes it does cover and nothing else. Section 11.1.
