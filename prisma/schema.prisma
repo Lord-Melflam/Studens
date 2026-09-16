@@ -196,6 +196,61 @@ model Session {
   @@schema("platform")
 }
 
+/// FR-E8. A notice that something hosted here should not be.
+///
+/// DSA Article 16 requires every hosting provider, whatever its size, to offer
+/// a mechanism for anyone to report content they consider illegal. Article 19's
+/// micro-enterprise exemption covers the internal complaints system and trusted
+/// flaggers; it does not cover this.
+///
+/// WHAT `targetKind` IS FOR. The platform does not know what a review is
+/// (FR-B16) and must not learn. A report names a kind and an id, both opaque
+/// here, and whichever module owns that kind is asked to act on it. A second
+/// module becomes reportable by registering, not by editing this.
+///
+/// ON RECORDING THE REPORTER. `reporterMemberId` links a MEMBER to a
+/// CONTRIBUTION, which is the shape FR-C2 forbids, and it is permitted here
+/// because of which member it is: the one who REPORTED it, never the one who
+/// wrote it. Knowing that somebody objected to a review says nothing about who
+/// authored it. It is recorded because FR-E12's brigading signal, many reports
+/// from accounts created in the same week, cannot be seen without it, and it is
+/// null for anyone not signed in because FR-E8 lets anyone report.
+///
+/// This table is in the platform schema, so no module can read it: a module
+/// that could see who reported what could correlate reporters with contributions
+/// it stores. **[VERIFIED]** François, 2026-09-16.
+model Report {
+  id               String    @id @default(uuid())
+  /// Who owns the reported thing, for example "ryc.review". Opaque here.
+  targetKind       String
+  targetId         String
+  /// Null when the reporter was not signed in. FR-E8: anyone may report.
+  reporterMemberId String?
+  /// Why. A small set rather than free choice, because two of them decide
+  /// whether the target is held at once (FR-E11).
+  category         String
+  /// Article 16(2)(a): a substantiated explanation. Required, and the reason
+  /// the categories above are not enough on their own.
+  detail           String
+  /// Article 16(2)(c) and 16(4): optional, and the only way to tell a reporter
+  /// what was decided. Stored on the report rather than on a member, because
+  /// most reporters will have no account.
+  contactEmail     String?
+  createdAt        DateTime  @default(now())
+  /// open, upheld, rejected, duplicate. Never deleted: a notice that vanished
+  /// is a notice we cannot show we acted on.
+  status           String    @default("open")
+  decidedAt        DateTime?
+  /// The moderator, never the author of the reported contribution (FR-B12).
+  decidedBy        String?
+
+  /// The queue, oldest first: what a moderator reads.
+  @@index([status, createdAt])
+  /// Every report about one thing, for the count FR-E12 shows.
+  @@index([targetKind, targetId])
+  @@schema("platform")
+}
+
 model AuditLog {
   /// FR-E1. NFR-O2: this lives in the database because the candidate free
   /// tiers retain runtime logs for as little as an hour.
@@ -463,6 +518,15 @@ model ReviewImported {
   source       String
   importedBy   String
   importedAt   DateTime @default(now())
+  /// FR-E8 and FR-E11, added 2026-09-16 when notice and action was built.
+  ///
+  /// It was missing, and its absence meant imported content could not be held:
+  /// the read path returned it whatever happened, so it was the one kind of
+  /// contribution nobody could report effectively. That is the wrong gap for a
+  /// hosting provider to have, and worse here than elsewhere, because imported
+  /// text was written somewhere else under other norms and arrives in bulk
+  /// rather than one considered submission at a time.
+  status       String   @default("published")
 
   @@index([courseId])
   @@schema("ryc")

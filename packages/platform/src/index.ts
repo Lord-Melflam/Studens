@@ -113,3 +113,21 @@ export {
 
 /** What a person may type into a free text field (FR-F6, FR-F7). */
 export { TEXT_LIMITS, TextInvalid, checkFreeText, countGraphemes } from "./text.js";
+
+/** FR-E8 to FR-E12: notice and action, DSA Articles 16 and 6. */
+export {
+  DETAIL_MAX,
+  DETAIL_MIN,
+  MAX_OPEN_PER_TARGET,
+  REPORT_CATEGORIES,
+  ReportInvalid,
+  detachMemberReports,
+  holdsImmediately,
+  openReportSummary,
+  submitReport,
+  type Moderatable,
+  type NewReport,
+  type ReportCategory,
+  type ReportOutcome,
+  type ReportSummary,
+} from "./reports.js";

@@ -601,3 +601,58 @@ button.ghost {
   border-radius: 999px;
 }
 .review-detached { border-left: 3px solid var(--line); }
+
+/* FR-E8, DSA Article 16: the report control must be easy to find and use.
+   Quiet until hovered or focused, because a control shouting at every reader
+   invites reports rather than receiving them. Never hidden: it keeps its place
+   in the layout and in the tab order, so a keyboard or a screen reader reaches
+   it exactly as a mouse does. */
+.report-link {
+  margin-top: 0.5rem;
+  padding: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.65;
+}
+.review:hover .report-link,
+.report-link:hover,
+.report-link:focus-visible { opacity: 1; color: var(--danger); }
+
+.report-form {
+  margin-top: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.report-form h4 { margin: 0 0 0.3rem; font-size: 1rem; }
+.report-form .hint { display: block; margin: 0 0 0.8rem; font-size: 0.82rem; color: var(--muted); }
+.report-form .field-label { display: block; margin: 0.9rem 0 0.3rem; font-size: 0.8rem; font-weight: 600; }
+.report-form .text-input { width: 100%; }
+.report-form .field-note { margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--muted); }
+.report-form .field-note.bad { color: var(--danger); }
+.report-form .actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+.report-form.sent p { margin: 0 0 0.5rem; font-size: 0.9rem; }
+
+.report-categories { margin: 0; padding: 0; border: 0; }
+.report-categories legend { padding: 0; font-size: 0.8rem; font-weight: 600; }
+.report-cat {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.report-cat:hover { border-color: var(--accent); }
+.report-cat.on { border-color: var(--accent); background: var(--accent-soft); }
+.report-cat input { margin-top: 0.25rem; flex: none; }
+.report-cat strong { display: block; font-size: 0.88rem; }
+.report-cat .hint { display: block; margin: 0.1rem 0 0; font-size: 0.78rem; }

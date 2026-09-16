@@ -11,7 +11,9 @@
  * top as one aggregate; the prose discusses the teaching, so it sits below, one
  * voice at a time.
  */
+import { useState } from "react";
 import { useT } from "@studens/i18n";
+import { ReportForm } from "./ReportForm.js";
 import type { Aggregate, PublishedReview } from "./api.js";
 
 function Stat({ label, value, of }: { label: string; value: number | null; of: string }) {
@@ -55,6 +57,7 @@ function Summary({ a }: { a: Aggregate }) {
 
 function Review({ r }: { r: PublishedReview }) {
   const t = useT();
+  const [reporting, setReporting] = useState(false);
   return (
     <article className={`review review-${r.path}`}>
       <header>
@@ -93,6 +96,24 @@ function Review({ r }: { r: PublishedReview }) {
         <p className="review-advice">
           <strong>{t("ryc.draft.advice")}</strong> {r.advice}
         </p>
+      )}
+
+      {/*
+        FR-E8 and DSA Article 16: the mechanism must be easily accessible, which
+        means on the contribution rather than behind a contact page. Quiet until
+        hovered or focused, because a report control shouting at every reader
+        invites reports rather than receiving them, but always reachable by
+        keyboard and never hidden from a screen reader.
+
+        It needs no account. The person most likely to notice that a review
+        names them is the lecturer it names, who has no reason to have one.
+      */}
+      {reporting ? (
+        <ReportForm targetId={r.id} onClose={() => setReporting(false)} />
+      ) : (
+        <button type="button" className="report-link" onClick={() => setReporting(true)}>
+          {t("ryc.report.open")}
+        </button>
       )}
     </article>
   );

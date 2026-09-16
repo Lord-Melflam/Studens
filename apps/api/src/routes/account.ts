@@ -24,6 +24,7 @@ import {
   OPTIONAL_KINDS,
   confirmEmailChange,
   deleteAccount,
+  detachMemberReports,
   exportAccount,
   mailRelayConfigured,
   readPreferences,
@@ -49,6 +50,17 @@ const ERASURES: MemberErasure[] = [
     module: RYC_MODULE,
     erase: detachMemberReviews,
     export: exportMemberReviews,
+  },
+  {
+    /*
+      FR-E8 and FR-A15. The notices somebody filed stay; the link to them goes.
+      A report is not theirs to withdraw: one may already have caused a
+      contribution to be held, and Article 16 asks us to be able to show what we
+      did about it. This is why platform.Report has no foreign key to Member,
+      which would have cascaded them away.
+    */
+    module: "reports",
+    erase: detachMemberReports,
   },
 ];
 
