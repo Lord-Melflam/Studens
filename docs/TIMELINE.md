@@ -1239,6 +1239,66 @@ one in a minute. The gates hold the guarantees. They do not hold the experience,
 and nothing except use will.
 
 
+### Phase 30: the catalogue stops being one faculty, and starts saying what it lost
+
+François read the first-run screen and said the thing nobody had: "UCLouvain is
+not only in LLN even if it's the main location". The institution row carried a
+city, and the screen printed it. Counted from UCLouvain's own catalogue, **268 of
+692 programmes are taught somewhere else**, across eight campuses. The column is
+gone, and not merely emptied: ULiege names Gembloux and Arlon beside Liege, so a
+column that has to stay null everywhere it is not wrong is one the next person
+fills in.
+
+**A second catalogue application exists**, at `catalogue-formations.uclouvain.be`,
+and it publishes as fields what the pages we were scraping only imply inside a
+title: the site, the field of study, the organising faculty. Eight sites, 21
+faculties, 24 fields of study, six academic years with 2026-2027 already live.
+One GET returns a whole year.
+
+**Neither source is complete.** The search returns 605 programmes and drops
+minors and doctorates; the per-faculty index returns 692 including 62 minors,
+which is exactly what somebody is choosing at PAE time. So the index decides
+WHICH programmes exist and the search decides WHAT they are, and where they
+disagree the losing value is kept rather than averaged away. On EPL: 27 of 43
+matched, 16 not covered, zero disagreed.
+
+Site, kind and credits were being parsed out of the title on every read, so the
+database could not be asked for the masters in Charleroi and the field of study
+had nowhere to live. They are columns now, and `read.ts` stops deriving them,
+because two places computing one fact is how they drift.
+
+**Widening to a second faculty broke the crawl three times**, and each break was
+a thing one faculty could not have shown:
+
+- A field UCLouvain publishes EMPTY. The parser read a label with no value as
+  proof the layout had changed. Published-and-empty is a third state and it is
+  an absence; the guard moved to where the evidence is, a field empty on every
+  offering.
+- A server having a bad minute: 503 three times then 200. Retries now, with a
+  growing wait. The first version read HTTP statuses only and let a timeout
+  through, ending a run of 969 after 750: a timeout carries no status.
+- A page the university simply cannot serve, 503 on every attempt while its 2024
+  edition is fine. **A page we could not GET is tolerated, a page we could not
+  UNDERSTAND is not.** One is a course missing, the other is a course wrong.
+
+**Then the question that mattered more than any of it.** François: "we should
+have a way to check data consistency after the full crawl and even log what
+happens bad ... so that we don't get a message from someone later like 'I can
+see my course in RYC'". He was right that it did not exist. 22 of 79 programmes
+had no courses, and nothing said whether that was a joint programme with none to
+list or a page that failed to load. Answering it meant opening the site by hand,
+which does not scale to 692. A programme now records `listed`, `empty` or
+`unreachable`, and `npm run catalogue:report` compares the snapshot against the
+database in both directions and ends with one line, exiting 1 on a gap.
+
+**What this phase says.** Every defect in it was found by running the thing, and
+two of them only by running it at a scale nobody had tried. The crawl's own
+numbers are not evidence either: UCLouvain's search prints 939 results and
+renders 597, so anybody comparing our count against that screen would conclude a
+third of the catalogue was missing. Written down in the design note for the
+person who will do exactly that.
+
+
 ---
 
 ## Next
@@ -1264,6 +1324,12 @@ and nothing except use will.
    application, so path routing would 404 in production on any refresh.
 7. **The rest of RYC in three languages.** The course page, the review form and
    the fork are still hardcoded French. Phase 26 did the browse and search path.
+   The catalogue's own text is French too: a programme's title, its site and its
+   field of study are stored as crawled, so an English interface shows French
+   facts. The search application serves both languages, so the data exists.
+7b. **The full catalogue.** Two faculties of 21 are ingested. The full crawl is
+   about 10,000 requests and two hours, and `npm run catalogue:report` says
+   afterwards whether anything was lost.
 8. **A programme is not in the URL.** `Browse` holds the chosen programme in
    component state, so it cannot be linked or refreshed, which is the same bug
    phase 20 fixed for courses. The filters sit on top of that and inherit it.
