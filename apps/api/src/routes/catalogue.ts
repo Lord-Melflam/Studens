@@ -46,6 +46,18 @@ export async function catalogueRoutes(source: {
     void Promise.resolve(catalogue.faculties()).then((faculties) => res.json({ faculties }));
   });
 
+  /**
+   * Every programme of the year, across faculties.
+   *
+   * Added when the catalogue stopped being one faculty. Browsing used to make
+   * somebody choose a faculty before seeing anything, which works with one and
+   * fails with twenty-one: a student looking for a minor does not know which
+   * faculty owns it, and UCLouvain's own catalogue does not ask.
+   */
+  router.get("/programmes", (_req, res) => {
+    void Promise.resolve(catalogue.programmes()).then((programmes) => res.json({ programmes }));
+  });
+
   router.get("/faculties/:code/programmes", (req, res) => {
     void Promise.resolve(catalogue.programmes(req.params.code)).then((programmes) => {
       if (programmes.length === 0) {

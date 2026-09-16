@@ -18,6 +18,7 @@ interface Args {
   max?: number;
   out: string;
   delayMs: number;
+  maxRequests?: number;
   /**
    * On-disk page cache. On by default, because developing the ingestion means
    * re-running it and every re-run without a cache is another few hundred
@@ -59,6 +60,10 @@ function parseArgs(argv: string[]): Args {
         args.delayMs = Number(value);
         i += 1;
         break;
+      case "--max-requests":
+        args.maxRequests = Number(value);
+        i += 1;
+        break;
       case "--no-cache":
         args.cacheDir = undefined;
         break;
@@ -78,6 +83,7 @@ async function main(): Promise<void> {
   const started = Date.now();
   const fetcher = new PoliteFetcher({
     delayMs: args.delayMs,
+    maxRequests: args.maxRequests,
     cacheDir: args.cacheDir,
   });
 

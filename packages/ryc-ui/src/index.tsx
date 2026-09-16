@@ -158,6 +158,7 @@ export {
   courseFilterIsEmpty,
   programmeFacets,
   programmeFilterIsEmpty,
+  titleWithoutSite,
   toggle,
   type CourseFacets,
   type CourseFilter,

@@ -69,7 +69,7 @@ should be called.
 | `npm run db:verify-isolation` | Assert every module role can and cannot do exactly what it should |
 | `npm run db:reset` | **Destructive.** Drops and rebuilds: you lose the catalogue and every review |
 | **Catalogue** | |
-| `npm run ingest` | Scrape into `data/catalogue.json`. Takes `-- --faculty epl`, `-- --max 40`, `-- --year 2025` |
+| `npm run ingest` | Scrape into `data/catalogue.json`. Takes `-- --faculty epl,lsm`, `-- --year 2025`, `-- --max 40` (sample), `-- --max-requests 1500` (ceiling), `-- --no-cache` |
 | `npm run db:load` | Load that snapshot into PostgreSQL, in one transaction |
 | **Build** | |
 | `npm run build:api` | Compile the API. Run for you by `dev:api` |

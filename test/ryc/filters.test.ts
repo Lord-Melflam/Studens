@@ -15,6 +15,7 @@ import {
   courseFacets,
   courseFilterIsEmpty,
   programmeFacets,
+  titleWithoutSite,
   toggle,
 } from "@studens/ryc-ui";
 import type { CourseSummary, ProgrammeSummary } from "@studens/ryc-ui";
@@ -167,10 +168,12 @@ const programme = (over: Partial<ProgrammeSummary>): ProgrammeSummary => ({
   code: "sinf1ba",
   title: "Bachelier en sciences informatiques (Louvain-la-Neuve)",
   faculty: "epl",
+  facultyName: "Ecole polytechnique de Louvain",
   courses: 40,
   kind: "bachelier",
   credits: null,
   site: "Louvain-la-Neuve",
+  domain: "Sciences",
   ...over,
 });
 
@@ -182,6 +185,18 @@ const programmes: ProgrammeSummary[] = [
   programme({ code: "minsinf", kind: "mineure", title: "Mineure en sciences informatiques (Louvain-la-Neuve)" }),
   programme({ code: "filinfo", kind: "filiere", title: "Filière en Informatique (Louvain-la-Neuve)" }),
   programme({ code: "weird", kind: null, title: "Quelque chose de neuf (Autre site)", site: "Autre site" }),
+  // A second faculty, and a programme the search application does not cover, so
+  // it has no field of study at all. Every minor is in that position.
+  programme({
+    code: "gest2m",
+    faculty: "lsm",
+    facultyName: "Louvain School of Management",
+    kind: "master",
+    credits: 120,
+    title: "Master [120] en sciences de gestion (Louvain-la-Neuve)",
+    domain: "Sciences économiques et de gestion",
+  }),
+  programme({ code: "minlsm", faculty: "lsm", facultyName: "Louvain School of Management", kind: "mineure", domain: null }),
 ];
 
 describe("filtering programmes", () => {
@@ -189,8 +204,8 @@ describe("filtering programmes", () => {
     const of = (k: string | null) =>
       applyProgrammeFilter(programmes, { ...NO_PROGRAMME_FILTER, kinds: [k] }).map((p) => p.code);
     expect(of("bachelier")).toEqual(["sinf1ba", "sinc1ba"]);
-    expect(of("master")).toEqual(["info2m", "sinf2m1"]);
-    expect(of("mineure")).toEqual(["minsinf"]);
+    expect(of("master")).toEqual(["info2m", "sinf2m1", "gest2m"]);
+    expect(of("mineure")).toEqual(["minsinf", "minlsm"]);
     expect(of("filiere")).toEqual(["filinfo"]);
   });
 
@@ -363,5 +378,99 @@ describe("the filter bar on screen", () => {
 
   it("says what it is showing", () => {
     expect(render(catalogue, counts)).toContain(`${catalogue.length} cours sur ${catalogue.length}`);
+  });
+});
+
+/**
+ * THE FACULTY AND THE FIELD OF STUDY.
+ *
+ * The faculty used to be a choice made before anything was shown at all, which
+ * works with one faculty and fails with twenty-one: somebody looking for a
+ * minor does not know which faculty owns it. Both are filters now, alongside
+ * the kind and the site.
+ */
+describe("filtering programmes across faculties", () => {
+  it("narrows to a faculty without hiding the rest until asked", () => {
+    const all = applyProgrammeFilter(programmes, NO_PROGRAMME_FILTER);
+    expect(all.length).toBe(programmes.length);
+    const lsm = applyProgrammeFilter(programmes, { ...NO_PROGRAMME_FILTER, faculties: ["lsm"] });
+    expect(lsm.map((p) => p.code)).toEqual(["gest2m", "minlsm"]);
+  });
+
+  it("labels a faculty by its name and keys it by its code", () => {
+    // Two faculties can read alike in a list, and the code is what the rest of
+    // the catalogue joins on.
+    const facets = programmeFacets(programmes, NO_PROGRAMME_FILTER).faculties;
+    expect(facets.map((f) => f.value).sort()).toEqual(["epl", "lsm"]);
+    expect(facets.find((f) => f.value === "lsm")?.label).toBe("Louvain School of Management");
+    expect(facets.find((f) => f.value === "lsm")?.count).toBe(2);
+  });
+
+  it("filters by field of study, and leaves out what has none", () => {
+    const gestion = applyProgrammeFilter(programmes, {
+      ...NO_PROGRAMME_FILTER,
+      domains: ["Sciences économiques et de gestion"],
+    });
+    expect(gestion.map((p) => p.code)).toEqual(["gest2m"]);
+    // `minlsm` has no field of study because the source that publishes one does
+    // not cover minors. It must not appear under any domain, and must not
+    // vanish when no domain is chosen.
+    expect(applyProgrammeFilter(programmes, NO_PROGRAMME_FILTER).map((p) => p.code)).toContain(
+      "minlsm",
+    );
+    const facets = programmeFacets(programmes, NO_PROGRAMME_FILTER).domains;
+    expect(facets.reduce((n, f) => n + f.count, 0)).toBe(programmes.length - 1);
+  });
+
+  it("orders faculties and fields of study by name, not by count", () => {
+    // An order that moves as the other filters change is one nobody can learn.
+    const facets = programmeFacets(programmes, NO_PROGRAMME_FILTER);
+    expect(facets.faculties.map((f) => f.label)).toEqual([
+      "Ecole polytechnique de Louvain",
+      "Louvain School of Management",
+    ]);
+    const domains = facets.domains.map((d) => d.label);
+    expect(domains).toEqual([...domains].sort((a, b) => a.localeCompare(b)));
+  });
+
+  it("counts each facet as if its own dimension were not applied", () => {
+    // Otherwise choosing EPL shows "EPL 7" and every other faculty at zero, and
+    // the counts stop being a reason to click anything.
+    const chosen = { ...NO_PROGRAMME_FILTER, faculties: ["epl"] };
+    const facets = programmeFacets(programmes, chosen).faculties;
+    expect(facets.find((f) => f.value === "lsm")?.count).toBe(2);
+  });
+});
+
+/**
+ * The site is a fact beside the row now, so the row must not say it twice.
+ */
+describe("the published title, de-duplicated against the site", () => {
+  it("drops the parenthesis when it is exactly the site being shown", () => {
+    expect(titleWithoutSite("Bachelier en sciences de gestion (Mons)", "Mons")).toBe(
+      "Bachelier en sciences de gestion",
+    );
+  });
+
+  it("keeps a parenthesis that says something else", () => {
+    // Nothing is lost: only an exact match of the fact shown next to it goes.
+    expect(titleWithoutSite("Master [120] en cybersécurité (Autre site)", "Mons")).toBe(
+      "Master [120] en cybersécurité (Autre site)",
+    );
+    expect(titleWithoutSite("Bachelier en droit (horaire décalé)", "Louvain-la-Neuve")).toBe(
+      "Bachelier en droit (horaire décalé)",
+    );
+  });
+
+  it("leaves the title alone when there is no site to show", () => {
+    expect(titleWithoutSite("Mineure en Electricité (Louvain-la-Neuve)", null)).toBe(
+      "Mineure en Electricité (Louvain-la-Neuve)",
+    );
+  });
+
+  it("only touches the end, never a parenthesis inside the name", () => {
+    expect(titleWithoutSite("Master (120) en gestion (Mons)", "Mons")).toBe(
+      "Master (120) en gestion",
+    );
   });
 });

@@ -155,6 +155,15 @@ export interface ProgrammeSummary {
   code: string;
   title: string;
   faculty: string;
+  /**
+   * The faculty's own name.
+   *
+   * Carried because the browse screen no longer makes somebody pick a faculty
+   * before seeing anything: with 21 of them, a student looking for a minor does
+   * not know which one owns it. The faculty is a filter now, and a filter needs
+   * a label a person recognises rather than a four-letter code.
+   */
+  facultyName: string;
   courses: number;
   /**
    * What kind of programme it is (FR-D24), null when nothing known matched.
@@ -187,7 +196,8 @@ export interface Catalogue {
   get(code: string): (CourseDetail | null) | Promise<CourseDetail | null>;
   /** FR-D24 and FR-D25: browsing, not only searching. */
   faculties(): FacultySummary[] | Promise<FacultySummary[]>;
-  programmes(facultyCode: string): ProgrammeSummary[] | Promise<ProgrammeSummary[]>;
+  /** Every programme of the year, or only one faculty's. */
+  programmes(facultyCode?: string): ProgrammeSummary[] | Promise<ProgrammeSummary[]>;
   coursesOfProgramme(
     programmeCode: string,
   ): (CourseSummary[] | null) | Promise<CourseSummary[] | null>;
@@ -235,14 +245,17 @@ export class SnapshotCatalogue implements Catalogue {
     }));
   }
 
-  programmes(facultyCode: string): ProgrammeSummary[] {
+  programmes(facultyCode?: string): ProgrammeSummary[] {
     const known = new Set(this.snapshot.offerings.map((o) => o.code));
+    const want = facultyCode?.toLowerCase();
+    const nameOf = new Map(this.snapshot.faculties.map((f) => [f.code, f.name]));
     return this.snapshot.programmes
-      .filter((p) => p.faculty === facultyCode.toLowerCase())
+      .filter((p) => want === undefined || p.faculty === want)
       .map((p) => ({
         code: p.code,
         title: p.title,
         faculty: p.faculty,
+        facultyName: nameOf.get(p.faculty) ?? p.faculty.toUpperCase(),
         // Only courses actually present in this snapshot: a scoped run holds a
         // sample, and claiming a count we cannot show would be a lie.
         courses: new Set(
@@ -380,9 +393,12 @@ export class DatabaseCatalogue implements Catalogue {
       .filter((f) => f.programmes > 0);
   }
 
-  async programmes(facultyCode: string): Promise<ProgrammeSummary[]> {
+  async programmes(facultyCode?: string): Promise<ProgrammeSummary[]> {
     const rows = await this.prisma.programme.findMany({
-      where: { year: this.year, faculty: { code: facultyCode.toLowerCase() } },
+      where: {
+        year: this.year,
+        ...(facultyCode ? { faculty: { code: facultyCode.toLowerCase() } } : {}),
+      },
       include: {
         faculty: true,
         site: true,
@@ -397,6 +413,7 @@ export class DatabaseCatalogue implements Catalogue {
         code: p.code,
         title: p.title,
         faculty: p.faculty.code,
+        facultyName: p.faculty.name,
         courses: p._count.offerings,
         kind: p.kind as ProgrammeKind | null,
         credits: p.credits,
@@ -429,6 +446,6 @@ export class DatabaseCatalogue implements Catalogue {
  */
 export interface BrowseQueries {
   faculties(): Promise<FacultySummary[]>;
-  programmes(facultyCode: string): Promise<ProgrammeSummary[]>;
+  programmes(facultyCode?: string): Promise<ProgrammeSummary[]>;
   coursesOfProgramme(programmeCode: string): Promise<CourseSummary[] | null>;
 }

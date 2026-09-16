@@ -119,8 +119,23 @@ function labelledFields($: CheerioAPI, era: Era): Map<string, FieldValue> {
 
 /**
  * Look up a field by any of several label spellings.
- * Absent label  -> null (the era lacks it).
- * Present label with an empty value -> ParseError (the layout changed).
+ *
+ * Absent label -> null (the era lacks it).
+ * Present label with an empty value -> ALSO null, and the reason is a real page.
+ *
+ * This used to raise, on the theory that a label with nothing under it meant
+ * the layout had changed. `cours-2025-lcems2066` disproved it: UCLouvain
+ * publishes the evaluation label with a literal `<div></div>` under it, and the
+ * run died on the second faculty ever crawled. Published-and-empty is a third
+ * state the rule had no room for, and treating it as a parse failure means one
+ * blank field on one page can stop a catalogue of nine thousand courses.
+ *
+ * WHAT THE OLD RULE WAS GUARDING IS STILL GUARDED, in the place it belongs. A
+ * selector that silently stops matching does not empty one field on one page,
+ * it empties that field on EVERY page, which is a fact about the run and not
+ * about a course. `snapshot.ts` checks exactly that, and the fill rates it is
+ * set against were measured: the least populated field in a real 546-course
+ * crawl is 84%, so zero across a substantial run cannot happen by accident.
  */
 function find(fields: Map<string, FieldValue>, labels: string[]): FieldValue | null {
   for (const [label, value] of fields) {
@@ -135,10 +150,11 @@ function field(
   url: string,
   name: string,
 ): string | null {
+  void url;
+  void name;
   const found = find(fields, labels);
   if (!found) return null;
-  if (!found.text) throw new ParseError(url, name, "label present but value empty");
-  return found.text;
+  return found.text || null;
 }
 
 /** The same lookup, keeping the structure of the value. */
@@ -149,12 +165,13 @@ function richField(
   url: string,
   name: string,
 ): Block[] | null {
+  void url;
+  void name;
   const found = find(fields, labels);
   if (!found) return null;
   const blocks = richBlocks($, found.node);
-  // The same rule as `field`: a label with nothing under it means the layout
-  // changed, and is an error rather than an absence.
-  if (!blocks) throw new ParseError(url, name, "label present but value empty");
+  // The same rule as `field`: published and empty is an absence, not a failure.
+  if (!blocks) return null;
   return blocks;
 }
 

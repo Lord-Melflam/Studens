@@ -162,15 +162,38 @@ export interface ProgrammeFilter {
   /** `null` in the list means "kind we could not parse", shown as its own group. */
   kinds: Array<string | null>;
   sites: string[];
+  /**
+   * The faculty, a filter rather than a gate.
+   *
+   * It used to be a choice made BEFORE anything was shown, which works with one
+   * faculty and fails with twenty-one: somebody looking for a minor does not
+   * know which faculty owns it, and the whole point of browsing is not knowing
+   * yet. UCLouvain's own catalogue does not ask either.
+   */
+  faculties: string[];
+  /** The decree's field of study. */
+  domains: string[];
 }
 
-export const NO_PROGRAMME_FILTER: ProgrammeFilter = { text: "", kinds: [], sites: [] };
+export const NO_PROGRAMME_FILTER: ProgrammeFilter = {
+  text: "",
+  kinds: [],
+  sites: [],
+  faculties: [],
+  domains: [],
+};
 
 export function programmeFilterIsEmpty(f: ProgrammeFilter): boolean {
-  return f.text.trim() === "" && f.kinds.length === 0 && f.sites.length === 0;
+  return (
+    f.text.trim() === "" &&
+    f.kinds.length === 0 &&
+    f.sites.length === 0 &&
+    f.faculties.length === 0 &&
+    f.domains.length === 0
+  );
 }
 
-type ProgrammeDimension = "text" | "kinds" | "sites";
+type ProgrammeDimension = "text" | "kinds" | "sites" | "faculties" | "domains";
 
 function matchesProgramme(
   p: ProgrammeSummary,
@@ -187,6 +210,12 @@ function matchesProgramme(
   if (ignore !== "sites" && f.sites.length > 0) {
     if (!p.site || !f.sites.includes(p.site)) return false;
   }
+  if (ignore !== "faculties" && f.faculties.length > 0) {
+    if (!f.faculties.includes(p.faculty)) return false;
+  }
+  if (ignore !== "domains" && f.domains.length > 0) {
+    if (!p.domain || !f.domains.includes(p.domain)) return false;
+  }
   return true;
 }
 
@@ -200,6 +229,8 @@ export function applyProgrammeFilter(
 export interface ProgrammeFacets {
   kinds: Array<Facet<string | null>>;
   sites: Array<Facet<string>>;
+  faculties: Array<Facet<string>>;
+  domains: Array<Facet<string>>;
 }
 
 export function programmeFacets(
@@ -215,6 +246,22 @@ export function programmeFacets(
   for (const p of programmes) {
     if (!matchesProgramme(p, f, "sites") || !p.site) continue;
     sites.set(p.site, (sites.get(p.site) ?? 0) + 1);
+  }
+  // Keyed by code and labelled by name, because two faculties can read alike in
+  // a list and the code is what the rest of the catalogue joins on.
+  const faculties = new Map<string, { label: string; count: number }>();
+  for (const p of programmes) {
+    if (!matchesProgramme(p, f, "faculties")) continue;
+    const seen = faculties.get(p.faculty);
+    faculties.set(p.faculty, {
+      label: p.facultyName || p.faculty.toUpperCase(),
+      count: (seen?.count ?? 0) + 1,
+    });
+  }
+  const domains = new Map<string, number>();
+  for (const p of programmes) {
+    if (!matchesProgramme(p, f, "domains") || !p.domain) continue;
+    domains.set(p.domain, (domains.get(p.domain) ?? 0) + 1);
   }
 
   /**
@@ -240,7 +287,37 @@ export function programmeFacets(
     sites: [...sites.entries()]
       .map(([value, count]) => ({ value, label: value, count }))
       .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value)),
+    // Both by name rather than by count: a faculty list and a list of fields of
+    // study are things somebody scans for a known word, and an order that moves
+    // as the other filters change is one you cannot learn.
+    faculties: [...faculties.entries()]
+      .map(([value, { label, count }]) => ({ value, label, count }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+    domains: [...domains.entries()]
+      .map(([value, count]) => ({ value, label: value, count }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
   };
+}
+
+/**
+ * The published title, without the site we are already showing beside it.
+ *
+ * UCLouvain writes the site into the name: "Bachelier en sciences de gestion
+ * (Mons)". That parenthesis is why the site could be parsed at all before it
+ * was a field, and now that the row states the site as a fact, keeping it in
+ * the title says the same word twice on one line.
+ *
+ * Only ever removes an EXACT match of the site being displayed, so nothing is
+ * lost: a title whose parenthesis says something else keeps it, and so does one
+ * whose site we do not have. The published name is not rewritten, it is
+ * de-duplicated against a fact shown next to it.
+ */
+export function titleWithoutSite(title: string, site: string | null): string {
+  if (!site) return title;
+  const trimmed = title.trimEnd();
+  const suffix = `(${site})`;
+  if (!trimmed.endsWith(suffix)) return title;
+  return trimmed.slice(0, -suffix.length).trimEnd();
 }
 
 /** Toggle a value in a multi-select list. */
