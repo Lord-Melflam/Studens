@@ -312,6 +312,43 @@ model Institution {
   /// ingested can be chosen, and the rest say why rather than looking broken.
   available  Boolean   @default(false)
   faculties  Faculty[]
+  sites      Site[]
+
+  @@schema("ref")
+}
+
+/// Where teaching happens. FR-B9: a fact about the outside world.
+///
+/// An institution is not in a city, a PROGRAMME is taught at a site. UCLouvain
+/// publishes eight of them and 268 of its 692 programmes for 2025-2026 are
+/// taught outside Louvain-la-Neuve, so this is not a detail about buildings: it
+/// is what separates `sinc1ba` from `sinf1ba`, which are the same bachelor in
+/// two cities. See design/catalogue-ingestion.md 10.
+model Site {
+  id            String      @id @default(uuid())
+  institutionId String
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  /// Slugified from the published name, so it is stable and usable in a URL.
+  code          String
+  /// As the institution publishes it, in the language it was crawled in.
+  name          String
+  programmes    Programme[]
+
+  @@unique([institutionId, code])
+  @@schema("ref")
+}
+
+/// The field of study, as the decree defines it.
+///
+/// NOT scoped to an institution, because the vocabulary is not one: the French
+/// Community legislates the domains, and the same 24 appear across its
+/// universities. An institution-scoped copy would duplicate 24 rows per
+/// institution and make "all the law programmes in Belgium" a join across them.
+model Domain {
+  id         String      @id @default(uuid())
+  code       String      @unique
+  name       String
+  programmes Programme[]
 
   @@schema("ref")
 }
@@ -338,9 +375,31 @@ model Programme {
   year      Int
   title     String
 
+  /// THE DIMENSIONS, STORED RATHER THAN RE-DERIVED ON EVERY READ.
+  ///
+  /// All three used to be pulled out of `title` by `programmeShape` each time a
+  /// programme was read, so the database could not be asked for "the masters in
+  /// Charleroi" and the domain had nowhere to live at all. The parse now runs
+  /// once, at ingestion, and its result is a column. `read.ts` therefore stops
+  /// deriving them: two sources for one fact is how they drift.
+  ///
+  /// Every one is nullable, and null means "not stated", never "none". A
+  /// programme whose title matches no known kind keeps a null rather than being
+  /// filed under the nearest one, which is the rule the parser already follows.
+  kind      String?
+  /// 120 or 60 for a master, from the bracket in the title. A different
+  /// commitment, and a student filtering for one does not want the other.
+  credits   Int?
+  siteId    String?
+  site      Site?   @relation(fields: [siteId], references: [id])
+  domainId  String?
+  domain    Domain? @relation(fields: [domainId], references: [id])
+
   offerings ProgrammeOffering[]
 
   @@unique([code, year])
+  @@index([siteId])
+  @@index([domainId])
   @@schema("ref")
 }
 

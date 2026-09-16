@@ -24,6 +24,7 @@
  */
 import { PrismaClient, Prisma } from "@prisma/client";
 import type { Snapshot } from "./snapshot.js";
+import { slug } from "./parse/search.js";
 import type { Block } from "./parse/rich.js";
 
 /**
@@ -54,6 +55,8 @@ export interface LoadResult {
   programmeLinks: number;
   teachers: number;
   facultyLinks: number;
+  sites: number;
+  domains: number;
 }
 
 export interface LoadOptions {
@@ -96,6 +99,8 @@ export async function loadSnapshot(
     teachers: 0,
     facultyLinks: 0,
     programmeLinks: 0,
+    sites: 0,
+    domains: 0,
   };
 
   await prisma.$transaction(
@@ -132,6 +137,36 @@ export async function loadSnapshot(
       }
       result.faculties = facultyIds.size;
 
+      // Sites and fields of study, from the labels the snapshot carries.
+      //
+      // Upserted on a slug of the published name rather than created fresh each
+      // run, so a re-crawl lands on the same row and a programme's site does not
+      // change identity every time the catalogue is reloaded. A site belongs to
+      // the institution being loaded; a field of study does not, because the
+      // decree that defines the vocabulary is not one institution's.
+      const siteIds = new Map<string, string>();
+      const domainIds = new Map<string, string>();
+      for (const p of snapshot.programmes) {
+        if (p.site && !siteIds.has(p.site)) {
+          const row = await tx.site.upsert({
+            where: { institutionId_code: { institutionId: institution.id, code: slug(p.site) } },
+            update: { name: p.site },
+            create: { institutionId: institution.id, code: slug(p.site), name: p.site },
+          });
+          siteIds.set(p.site, row.id);
+        }
+        if (p.domain && !domainIds.has(p.domain)) {
+          const row = await tx.domain.upsert({
+            where: { code: slug(p.domain) },
+            update: { name: p.domain },
+            create: { code: slug(p.domain), name: p.domain },
+          });
+          domainIds.set(p.domain, row.id);
+        }
+      }
+      result.sites = siteIds.size;
+      result.domains = domainIds.size;
+
       // Programmes. Same stability reasoning as courses: matched on
       // (code, year), never recreated, because ProgrammeOffering references
       // them and a fresh id would drop every link.
@@ -139,10 +174,25 @@ export async function loadSnapshot(
       for (const p of snapshot.programmes) {
         const facultyId = facultyIds.get(p.faculty);
         if (!facultyId) continue;
+        // Written as null rather than left alone when the snapshot has none, so
+        // a programme that loses its site upstream loses it here too. A load is
+        // a statement about the whole catalogue, not a patch over the last one.
+        const dimensions = {
+          kind: p.kind,
+          credits: p.credits,
+          siteId: p.site ? (siteIds.get(p.site) ?? null) : null,
+          domainId: p.domain ? (domainIds.get(p.domain) ?? null) : null,
+        };
         const row = await tx.programme.upsert({
           where: { code_year: { code: p.code, year: snapshot.year } },
-          update: { title: p.title, facultyId },
-          create: { code: p.code, year: snapshot.year, title: p.title, facultyId },
+          update: { title: p.title, facultyId, ...dimensions },
+          create: {
+            code: p.code,
+            year: snapshot.year,
+            title: p.title,
+            facultyId,
+            ...dimensions,
+          },
         });
         programmeIds.set(p.code, row.id);
       }

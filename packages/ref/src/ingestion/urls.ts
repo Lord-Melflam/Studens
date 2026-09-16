@@ -72,3 +72,34 @@ export const PROGRAMME_LISTING_SUFFIXES = ["-programme", "-programme_annual_bloc
 export function programmeListingUrls(year: number, programme: string): string[] {
   return PROGRAMME_LISTING_SUFFIXES.map((s) => `${BASE}/prog-${year}-${programme}${s}`);
 }
+
+/**
+ * The catalogue SEARCH application, a different host from everything above.
+ *
+ * Its results carry the site, the field of study and the organising faculty,
+ * none of which a programme page states. Section 10 of the design note.
+ *
+ * NO FACULTY FILTER FOR PROGRAMMES, on purpose: one request returns all 605 for
+ * a year, so filtering per faculty would be 21 requests for the same answer. The
+ * COURSE search is the opposite and must be filtered, because unfiltered it
+ * answers HTTP 504 after 50 seconds (measured 2026-09-16).
+ *
+ * The form carries a CSRF token for its POST. A GET needs none, verified on the
+ * same date, and a token minted for a session we do not hold would be worse
+ * than useless anyway.
+ */
+export const SEARCH_BASE = "https://catalogue-formations.uclouvain.be";
+
+export function searchUrl(
+  year: number,
+  documentType: "Training" | "LearningUnit",
+  faculty?: number,
+): string {
+  const q = new URLSearchParams({
+    "form[document_type]": documentType,
+    "form[academic_year]": String(year),
+    "form[submit]": "",
+  });
+  if (faculty !== undefined) q.set("form[faculty]", String(faculty));
+  return `${SEARCH_BASE}/fr/search?${q.toString()}`;
+}

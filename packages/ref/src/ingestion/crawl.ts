@@ -17,12 +17,20 @@ import {
   facultyLinkPattern,
   programmeLinkPattern,
   programmeListingUrls,
+  searchUrl,
 } from "./urls.js";
 import { extractLinks } from "./parse/links.js";
 import { parseOffering, type ParsedOffering } from "./parse/offering.js";
+import { parseSearchRows } from "./parse/search.js";
+import { programmeShape } from "./parse/programme.js";
 import { assertPlausibleYear, candidateYears } from "./year.js";
 import { BASE } from "./urls.js";
-import type { DiscoveredFaculty, Snapshot } from "./snapshot.js";
+import type {
+  DiscoveredFaculty,
+  Snapshot,
+  SnapshotConflict,
+  SnapshotProgramme,
+} from "./snapshot.js";
 
 export interface CrawlOptions {
   year?: number;
@@ -100,6 +108,63 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   }
   say(`${programmes.length} programme links`);
 
+  // 2b. THE SECOND SOURCE. One request returns every programme of the year with
+  //     its site, its field of study and its organising faculty, none of which
+  //     a programme page states (section 10). It is one request and not one per
+  //     faculty because the whole year fits in a single response.
+  //
+  //     A FAILURE HERE IS NOT FATAL. The search covers 605 of the 692
+  //     programmes the index lists and is a separate application that can be
+  //     down on its own; losing it costs the field of study and falls back to
+  //     the title for the site, which is what the crawl did before it existed.
+  //     Losing the whole catalogue over it would be the wrong trade.
+  const dimensions = new Map<string, { site: string | null; domain: string | null }>();
+  try {
+    const url = searchUrl(year, "Training");
+    const page = await fetcher.get(url);
+    for (const row of parseSearchRows(page.html, "programme", year)) {
+      dimensions.set(row.code, { site: row.site, domain: row.domain });
+    }
+    say(`${dimensions.size} programmes described by the search`);
+  } catch (err) {
+    say(`the search application could not be read (${String(err)}); falling back to titles`);
+  }
+
+  // 2c. Reconcile. The index decides WHICH programmes exist, because it lists
+  //     the 62 minors the search does not, and a minor is exactly what somebody
+  //     is choosing at PAE time. The search decides WHAT they are, because it
+  //     states as fields what the index only implies in a title.
+  const conflicts: SnapshotConflict[] = [];
+  const described: SnapshotProgramme[] = programmes.map((p) => {
+    const shape = programmeShape(p.title);
+    const found = dimensions.get(p.code);
+
+    // The search wins on the site: it publishes a field, while the title is a
+    // trailing parenthesis that survives only while they keep writing it. Both
+    // are kept when they disagree, because both are UCLouvain stating the same
+    // fact and picking one silently would throw away the evidence that they do.
+    if (found?.site && shape.site && found.site !== shape.site) {
+      conflicts.push({
+        code: p.code,
+        field: "site",
+        fromIndex: shape.site,
+        fromSearch: found.site,
+      });
+    }
+    const site = found?.site ?? shape.site;
+    return {
+      ...p,
+      kind: shape.kind,
+      credits: shape.credits,
+      site,
+      domain: found?.domain ?? null,
+      siteSource: site === null ? null : found?.site ? "search" : "title",
+    };
+  });
+  const missing = described.filter((p) => !dimensions.has(p.code)).length;
+  say(`${described.length - missing} programmes matched the search, ${missing} not covered`);
+  if (conflicts.length > 0) say(`${conflicts.length} site disagreements recorded`);
+
   // 3. courses per programme. A course reached through several programmes is
   //    recorded once per faculty it was reached through: many-to-many on
   //    purpose, because reaching a course through EPL says nothing about who
@@ -159,12 +224,13 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   say(`${offerings.length} offerings parsed`);
 
   return {
-    version: 4,
+    version: 5,
     takenAt: new Date().toISOString(),
     year,
     faculties,
-    programmes,
+    programmes: described,
     offerings,
+    conflicts,
     reachedVia: reachedVia.filter((r) => offerings.some((o) => o.code === r.code)),
   };
 }

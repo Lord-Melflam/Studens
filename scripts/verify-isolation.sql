@@ -122,6 +122,24 @@ SELECT pg_temp.expect_allowed('studens_ref',
   $$INSERT INTO ref."Course"(id,code) VALUES ('probe','zzzz9999')$$,
   'ingest a course');
 
+-- The two tables added with the programme dimensions. Probed by name rather
+-- than trusted: this file checks tables one at a time, so a table nobody names
+-- here is a table whose grants are never verified, and it would fail first at
+-- ingestion instead of here.
+SELECT pg_temp.expect_allowed('studens_ryc', 'SELECT 1 FROM ref."Site" LIMIT 1',
+  'read the sites');
+SELECT pg_temp.expect_denied('studens_ryc',
+  $$INSERT INTO ref."Site"(id,"institutionId",code,name) VALUES ('probe','probe','probe','probe')$$,
+  'write a site');
+SELECT pg_temp.expect_allowed('studens_ryc', 'SELECT 1 FROM ref."Domain" LIMIT 1',
+  'read the fields of study');
+SELECT pg_temp.expect_denied('studens_ryc',
+  $$INSERT INTO ref."Domain"(id,code,name) VALUES ('probe','probe','probe')$$,
+  'write a field of study');
+SELECT pg_temp.expect_allowed('studens_ref',
+  $$INSERT INTO ref."Domain"(id,code,name) VALUES ('probe','probe','probe')$$,
+  'ingest a field of study');
+
 -- THE ANONYMITY KERNEL (OPEN-39). Only the platform may create an anonymous
 -- contribution, because only the platform can perform the FR-C13 quota check
 -- in the same transaction. The module that owns the feature cannot bypass it.
