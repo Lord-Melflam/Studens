@@ -797,3 +797,33 @@ else ever is.
 
 Filters appear only when there is more than one value to choose between, so a
 single-faculty catalogue looks exactly as it did.
+
+### 12.4 Knowing whether the catalogue is complete
+
+A full crawl loses things one at a time, and each loss is small enough to scroll
+past: one course page the server would not serve, one programme whose course
+list never loaded. Each one is a student who looks for their course and does not
+find it, months later, with nothing to point at.
+
+`npm run catalogue:report` reads the snapshot and the database, compares them,
+and ends with one line. It changes nothing and exits 1 when something is
+missing, so it can gate a deployment without being read.
+
+**"No courses" used to mean two different things and said neither.** In the
+first two-faculty crawl, 22 of 79 programmes had no courses. That is either a
+joint programme whose courses are hosted by the partner institution, which is
+ordinary, or a page that failed to load, which means every one of its courses is
+absent from Studens. Telling them apart meant opening the site by hand, and it
+does not scale to 692. A programme now records which it was:
+
+| | Meaning | Severity |
+|---|---|---|
+| `listed` | the course list was read | |
+| `empty` | a page loaded and had nothing on it | note |
+| `unreachable` | no listing page loaded at all | **gap** |
+
+Checked on the real two-faculty crawl: all 22 are `empty`, none `unreachable`,
+and `prog-2025-cyse2m` is one of them, with three pages that are genuinely
+blank. The report also compares both directions against the database, because a
+course parsed into the snapshot and missing from `ref.CourseOffering` is the
+same invisible loss arriving one step later.

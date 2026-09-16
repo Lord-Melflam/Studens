@@ -40,6 +40,23 @@ export interface SnapshotProgramme {
    * the catalogue rests on the weaker one.
    */
   siteSource: "search" | "title" | null;
+  /**
+   * What happened when this programme's course list was read.
+   *
+   * `listed`      the listing page yielded courses.
+   * `empty`       a listing page loaded and had none on it. Real, and ordinary:
+   *               `prog-2025-cyse2m` is a joint master whose courses are hosted
+   *               by the partner institutions, and all three of its pages are
+   *               empty.
+   * `unreachable` no listing page could be fetched at all.
+   *
+   * The last one is why this field exists. It means a student will not find
+   * their course, and until now it was indistinguishable from the middle one:
+   * the crawl skipped the programme and said nothing at all.
+   */
+  listing: "listed" | "empty" | "unreachable";
+  /** How many distinct courses that listing yielded. */
+  courses: number;
 }
 
 export interface SnapshotConflict {
@@ -72,11 +89,15 @@ export interface Snapshot {
    *    run. `cours-2025-mlsmm2219` answers 503 every time while its 2024
    *    edition is fine, and a crawl of nine thousand pages meets several of
    *    those. Recorded rather than silently dropped.
+   * 7: a programme records what happened when its course list was read. 22 of
+   *    79 programmes had no courses and nothing said whether that was a joint
+   *    programme with none to list or a page that failed to load. Answering it
+   *    took opening the site by hand, which does not scale to 692.
    *
    * The version field exists to be used, so an older snapshot is refused
    * rather than silently loaded with a field missing.
    */
-  version: 6;
+  version: 7;
   /** When the crawl finished. */
   takenAt: string;
   /** The academic year crawled. */
@@ -142,9 +163,9 @@ const COURSE_CODE = /^[a-z]{3,6}\d{3,4}[a-z]?$/;
  * Every check here is a failure the crawl could plausibly produce.
  */
 export function validate(s: Snapshot): void {
-  if (s.version !== 6) {
+  if (s.version !== 7) {
     throw new SnapshotInvalid(
-      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 6)`,
+      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 7)`,
     );
   }
   if (s.faculties.length === 0) throw new SnapshotInvalid("no faculties discovered");

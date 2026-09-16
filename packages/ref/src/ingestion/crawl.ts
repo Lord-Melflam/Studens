@@ -160,6 +160,9 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
       site,
       domain: found?.domain ?? null,
       siteSource: site === null ? null : found?.site ? "search" : "title",
+      // Filled in below, once the course lists have been read.
+      listing: "unreachable" as const,
+      courses: 0,
     };
   });
   const missing = described.filter((p) => !dimensions.has(p.code)).length;
@@ -172,23 +175,41 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   //    owns it (section 2).
   const reachedVia: Array<{ code: string; faculty: string; programme: string }> = [];
   const seen = new Set<string>();
+  // What happened to each programme's course list, kept rather than inferred
+  // from an absence later. "No courses" used to mean either "a joint programme
+  // with none to list" or "every page failed to load", and telling them apart
+  // meant opening the site by hand.
+  const listing = new Map<string, { listing: "listed" | "empty" | "unreachable"; courses: number }>();
   for (const programme of programmes) {
     // The landing page carries no course list; the listing lives on one of the
     // suffixes in PROGRAMME_LISTING_SUFFIXES, which differ between bachelor and
     // master programmes. Try each and take the first that yields courses.
     let links: ReturnType<typeof extractLinks> | undefined;
+    let reached = false;
     for (const url of programmeListingUrls(year, programme.code)) {
+      let page;
       try {
-        const page = await fetcher.get(url);
+        page = await fetcher.get(url);
+      } catch {
+        // A missing variant is ordinary: the two suffixes are alternatives, and
+        // a bachelor has one while a master has the other.
+        continue;
+      }
+      // The page loaded, so the programme is reachable whatever is on it. That
+      // distinction is the whole point: a page with no courses is an answer, a
+      // page that never loaded is a gap.
+      reached = true;
+      try {
         links = extractLinks(page.html, courseLinkPattern(year), url, "course links");
         break;
       } catch {
-        // Neither a missing variant nor an empty listing is fatal on its own:
-        // some programmes are certificates or exchange tracks with no course
-        // list. A global failure is caught by the snapshot validation instead.
         continue;
       }
     }
+    listing.set(programme.code, {
+      listing: links ? "listed" : reached ? "empty" : "unreachable",
+      courses: links?.length ?? 0,
+    });
     if (!links) continue;
     for (const link of links) {
       // Keep the PROGRAMME, not only its faculty. Discarding it was what made
@@ -203,6 +224,13 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
     }
   }
   say(`${seen.size} distinct courses`);
+  const unreachable = [...listing.entries()].filter(([, l]) => l.listing === "unreachable");
+  if (unreachable.length > 0) {
+    say(
+      `${unreachable.length} programmes whose course list could not be read: ` +
+        unreachable.map(([code]) => code).join(", "),
+    );
+  }
 
   // 4. the offerings themselves
   const offerings: ParsedOffering[] = [];
@@ -268,8 +296,16 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
     throw new TooManyUnavailable(unavailable, tolerated);
   }
 
+  for (const p of described) {
+    const outcome = listing.get(p.code);
+    if (outcome) {
+      p.listing = outcome.listing;
+      p.courses = outcome.courses;
+    }
+  }
+
   return {
-    version: 6,
+    version: 7,
     takenAt: new Date().toISOString(),
     year,
     faculties,
