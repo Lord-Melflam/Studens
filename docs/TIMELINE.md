@@ -1081,6 +1081,163 @@ the tests that existed checked behaviour rather than what the product told
 somebody about it. `test/ui/signed-in.test.ts` and the claim gates from phase
 26 are the beginning of an answer; the rest is that a product has to be used.
 
+### Phase 28: the repository stops lying about itself, and notices start arriving
+
+Three changes, and only one of them is a feature.
+
+**The repository was untidy and, worse, untruthful.** Design documents sat mixed
+with process notes at the top level, and tracked files pointed at files that are
+deliberately not published, so a reader arriving from GitHub was sent to nothing.
+That is a public repository telling somebody a file exists when it does not.
+`scripts/check-links.mjs` now walks every tracked file, resolves every path it
+mentions, and fails when one is missing or untracked. It self-tests against a
+synthetic repository, because the first version proved nothing: it only matched
+paths starting at a top-level directory, so it passed while the problem stood.
+Rule 8 in the project instructions came out of this, and the layout is written
+down in `CONTRIBUTING.md` under "Where a file goes".
+
+**FR-E8, notice and action.** Anyone, signed in or not, can report a
+contribution. Article 16 binds every hosting provider whatever its size, and
+Article 19's micro-enterprise exemption does not cover it, so this was the first
+piece of moderation work rather than a later one.
+
+Two decisions inside it are worth keeping. **The reporter is recorded when they
+are signed in**, and that is not the link FR-C2 forbids: the forbidden link is
+between an author and their contribution, and a reporter is by definition
+somebody else. The tests assert exactly that, including that reporting an
+anonymous review stores nothing whatever about its author. **Two categories hold
+on arrival**, illegality and naming a third party, because the cost of holding a
+good contribution for a day is far below the cost of knowingly hosting a
+defamatory one. Nothing is ever removed automatically (FR-E10).
+
+**`docs/COMMANDS.md`** exists because the answer to "what do I type" was being
+retyped into chat. The launch order sits at the top, every script is listed with
+what it does, and a test fails when a script exists that the document does not
+mention. Two commands behave differently from how they read and both had cost
+time: `npm run test` passes with no database, and `npm run db:reset` is not a
+repair tool.
+
+### Phase 29: the console, the first administrator, and nine things found by using it
+
+Notices had nowhere to go. A report is actual knowledge under Article 6, so a
+queue nobody can read is not a feature waiting for a screen, it is a growing
+legal exposure. The console closes that: a queue oldest first, a decision that is
+one transaction, and an audit entry that must carry a reason.
+
+**Oldest first, never most reported.** Sorting by the count puts whatever a group
+decided to pile onto at the top, which is precisely what a brigade is buying, and
+Article 6's clock runs from the notice, so age is also the number that matters
+legally. The count is still shown, split by whether each notice came from an
+account, because that split is the brigading signal (FR-E12).
+
+**What a moderator sees is what a reader sees.** An anonymous contribution
+arrives with no author because there is none to arrive with. The module hands
+over a course id rather than a code, since it may not join across schemas, and
+the API turns it into a label before it reaches the shell: the console lives in
+the shell's zone and may not name what a module owns. The boundary gate caught
+that one, which is the gate doing its job on code written by the person who
+wrote the gate.
+
+**No removal button.** Hold takes a contribution out of public view and release
+puts it back; both are reversible and neither deletes anything. Removal has to
+publish a statement of reasons in the place the contribution occupied (FR-E9),
+that collides with FR-C9, and FR-E9 is still `[OPEN]` pending a qualified reader.
+A delete button would have been either a silent deletion or a legal reading
+nobody has agreed with.
+
+**The first administrator, which could not be appointed at all.** Every
+appointment needs an administrator to make it, so a fresh database has nobody who
+can appoint anybody and the console is unreachable forever. It was closed by hand
+in SQL once, which is the worst version: unrecorded, unrepeatable, and it invites
+editing a table nobody should edit by hand. `npm run admin -- <username>` does it
+once and refuses the moment an administrator exists, and that single condition is
+what keeps it a bootstrap rather than a way around FR-E14. It is a command and
+not a route because an endpoint that promotes somebody while no administrator
+exists is open to whoever reaches it first, and registration is public (FR-A6).
+Reaching the database is the check. The entry names the operator rather than a
+member, because no member made that appointment and recording the promoted person
+as their own appointer would state what `setRole` refuses.
+
+**Who may do what** is now written down in `requirements.md` under FR-E: three
+roles in a straight line, each holding everything the one before it holds plus
+one thing, and the two powers that separate them. The order of `ROLES` became
+load bearing when the console started reading it as rank, so it is documented as
+such and checked against the powers themselves rather than against a second copy
+of the list, which would only prove it equals itself.
+
+Then nine things, every one found by using the product rather than by reading it.
+
+**The queue died on a target that had gone.** Describing a vanished contribution
+threw, and since the queue describes its entries together, one missing row failed
+the whole request and left the console blank with nothing to explain it. It is
+reachable in normal use: a notice outlives the thing it is about, and the read is
+READ COMMITTED, so a concurrent delete is visible inside the transaction. Found
+by the test run, not by reading the code.
+
+**Two tests asserted on the head of a queue that is global by design.** Any other
+open notice, from another test file or from somebody using the running app, sat
+in front of them and the assertion became about that instead. The same run showed
+a new test leaving its notice behind every time, because the cleanup finds rows
+through reviews and that test deletes the review on purpose. Fifty stale
+appointment entries had also accumulated in the development database, because
+appointments are audited against a member rather than a review and no sweep could
+see them.
+
+**The sign-in control rendered as a large empty circle** with its label spilling
+out of the bottom. `.signin` was a bare class in the public stylesheet, written
+for the sign-in page, and the app bar's sign-in link carries the same word, so a
+page's 4.5rem top padding landed on a header link. A page and a link are
+different things and no longer share a name. Two attempts were spent reasoning
+about flex shrinking before the screen was actually rendered and looked at, which
+is the lesson: a layout bug is checked in a browser, not argued about.
+
+**Signing out of the console answered "Unknown module".** The first fix reacted
+to the session changing and could not work, because signing out is a full page
+load: the page comes back fresh on the same URL with nobody signed in, and the
+change it was waiting for has already happened. The decision is taken before
+leaving instead, by the screen being left. `signOutDestination` is a pure
+exported function with a test, because the version written inline was wrong and
+nothing could reach it to say so.
+
+**The breadcrumb named the console** to somebody who could not open it, over a
+body saying the id was unknown. Two answers to one question, and the pair gave
+away exactly what answering 404 rather than 403 is there to withhold.
+
+**Appointing meant retyping a username** for somebody already on screen. The list
+is the thing being managed, so the control lives in it: a row per person, grouped
+by role, with a select and a confirm. The groups and the selects are built from
+the roles the API sends, so a fourth role gets its group and its rank with no
+change to the screen. Taking a power away asks first and giving one does not,
+because confirming both teaches people to confirm everything and then the one
+that mattered is the one they click through.
+
+**The provider chose the account, silently.** The authorization request carried
+no `prompt`, so whichever session the browser held was reused. Somebody with a
+personal and a university account signed in as whichever they used last with
+nothing on screen naming it, and the account is what a review is published under.
+`select_account` and not `login`: the question is which account, not proving the
+password again.
+
+**A username was unique as stored, not as read.** `lou.martin`, `lou-martin`,
+`lou_martin` and `loumartin` were four accounts that read as one person, beside
+opinions about named lecturers, and one of them could be the administrator.
+Separators are removed before the comparison and a second unique index decides.
+Verified against the running database first, by inserting the three variants
+beside an existing name and watching all four sit there. Not solved and stated
+rather than half-solved: `1` for `l` and `0` for `o`, because folding those would
+refuse legitimate names holding a digit.
+
+**"1 reports".** The plural form is chosen from a variable named `count`, so one
+string carrying two numbers could only ever agree with one of them.
+
+**What this phase says, on top of phase 27's version of the same lesson.** Every
+one of the nine was found by using the product or by running it, and several were
+found only after a real browser was pointed at the real screen. Reasoning about
+CSS twice produced two wrong answers in a row; rendering it produced the right
+one in a minute. The gates hold the guarantees. They do not hold the experience,
+and nothing except use will.
+
+
 ---
 
 ## Next
@@ -1088,10 +1245,14 @@ somebody about it. `test/ui/signed-in.test.ts` and the claim gates from phase
 1. ~~Authentication~~ done, phases 19 and 25. Google works end to end. Microsoft
    is registered and untried: UCLouvain's tenant turns an outside account into
    an `#EXT#` guest, so it needs testing from the `procyo.be` tenant instead.
-2. **FR-E8, the notice and action mechanism.** Legally required, and nothing
-   implements it. First piece of moderation work, ahead of the queue.
-3. **Moderation** (FR-E) beyond that. A submitted review publishes directly
-   today. The queue has a schema and no consumer.
+2. ~~FR-E8, the notice and action mechanism~~ done, phase 28.
+3. ~~The moderator's console~~ done, phase 29. What is left of FR-E is
+   **FR-E9, the statement of reasons**, and it is `[OPEN]` rather than unbuilt:
+   removal has to publish a reason in the place the contribution occupied, that
+   collides with FR-C9, and it needs a qualified legal reader before a line of it
+   is written. The console holds and releases and deliberately cannot remove.
+   **FR-E4 screening** is also unbuilt: every submission publishes directly, and
+   only a notice can hold it.
 4. **Editing an attributed review** (FR-C14) and "Mes avis" (FR-D12), both of
    which the fork already promises on screen.
 5. **A mail relay.** Nothing is delivered until the five `STUDENS_SMTP_*`
