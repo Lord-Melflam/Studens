@@ -20,6 +20,7 @@ import {
   NotPermitted,
   appointmentHistory,
   OPERATOR,
+  ROLES,
   canAppoint,
   canModerate,
   decide,
@@ -646,5 +647,30 @@ describe("the first administrator (FR-E14)", () => {
     const target = await member("casedadmin");
     const appointed = await withNoAdmins(() => grantFirstAdmin(prisma, "  ZTST.CasedAdmin  "));
     expect(appointed.memberId).toBe(target.memberId);
+  });
+});
+
+/**
+ * The order of `ROLES` is read as rank, not just as a list.
+ *
+ * The console sends it to the screen unchanged, and the screen compares
+ * positions to tell an upgrade from a downgrade: taking a power away asks for a
+ * confirmation, giving one does not. Reordering the array would invert that
+ * quietly, so the order is checked against the powers themselves rather than
+ * against a second copy of the same list, which would only prove it equals
+ * itself.
+ */
+describe("the roles are ordered by how much they can do", () => {
+  it("each one can do everything the one before it can, and more", () => {
+    const powers = (role: string) => [canModerate(role), canAppoint(role)].filter(Boolean).length;
+    for (let i = 1; i < ROLES.length; i++) {
+      const weaker = ROLES[i - 1]!;
+      const stronger = ROLES[i]!;
+      expect(powers(stronger)).toBeGreaterThan(powers(weaker));
+      // A superset, not merely a bigger count: a role that traded one power for
+      // two would pass a count test and would not be an upgrade.
+      if (canModerate(weaker)) expect(canModerate(stronger)).toBe(true);
+      if (canAppoint(weaker)) expect(canAppoint(stronger)).toBe(true);
+    }
   });
 });

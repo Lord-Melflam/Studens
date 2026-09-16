@@ -20,6 +20,17 @@
  */
 import { PrismaClient, type Prisma } from "@prisma/client";
 
+/**
+ * The roles, ORDERED FROM FEWEST POWERS TO MOST, and the order is load bearing.
+ *
+ * It is sent to the console as it stands here, and the screen reads position to
+ * tell an upgrade from a downgrade, because taking a power away asks for a
+ * confirmation and giving one does not. Reordering this array silently inverts
+ * that, so `test/kernel/moderation.db.test.ts` checks the order against the
+ * powers themselves rather than against a copy of this list.
+ *
+ * A new role is inserted at its rank, not appended.
+ */
 export const ROLES = ["member", "moderator", "admin"] as const;
 export type Role = (typeof ROLES)[number];
 

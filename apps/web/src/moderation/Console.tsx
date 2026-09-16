@@ -162,6 +162,25 @@ function Entry({ entry, onDone }: { entry: QueueEntry; onDone: () => void }) {
 
 /** FR-E14 and FR-E3. Administrators only; the API refuses everybody else. */
 /**
+ * Whether a role change takes a power away.
+ *
+ * Read from the position in the list the API sent, which is ordered from fewest
+ * powers to most. That ordering is load bearing and is checked against the
+ * powers themselves in the platform's tests, so a role added later gets its
+ * rank without this screen being told about it.
+ *
+ * An unknown role counts as no change rather than as a downgrade: guessing that
+ * something unrecognised is a demotion would put a confirmation in front of an
+ * upgrade, and people who confirm everything confirm the one that mattered.
+ */
+export function takesPowerAway(roles: string[], from: string, to: string): boolean {
+  const a = roles.indexOf(from);
+  const b = roles.indexOf(to);
+  if (a < 0 || b < 0) return false;
+  return b < a;
+}
+
+/**
  * One person who holds a power, and the control that changes it.
  *
  * A row rather than a form. Appointing used to mean typing a username and
@@ -190,12 +209,17 @@ function Holder({
   const [choice, setChoice] = useState(who.role);
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   // Two refusals are certain before asking, so the control says so instead of
   // letting somebody press a button that cannot work. The server refuses them
   // as well and stays the authority: this only stops the pointless round trip.
   const frozen = isSelf || isLastAdmin;
   const changed = choice !== who.role;
+  // Only downwards. Giving a power is recorded and undone in two clicks; taking
+  // one away lands on somebody in the middle of using it, and a select sits one
+  // mis-click from the entry below the one meant.
+  const removing = takesPowerAway(roles, who.role, choice);
 
   async function apply() {
     setBusy(true);
@@ -208,6 +232,7 @@ function Holder({
       setChoice(who.role);
     } finally {
       setBusy(false);
+      setConfirming(false);
     }
   }
 
@@ -236,11 +261,37 @@ function Holder({
       <button
         type="button"
         className="ghost"
-        disabled={!changed || busy || frozen}
-        onClick={() => void apply()}
+        disabled={!changed || busy || frozen || confirming}
+        onClick={() => (removing ? setConfirming(true) : void apply())}
       >
         {t("mod.appoint.change")}
       </button>
+      {confirming && (
+        <span className="holder-confirm">
+          {/* Names the person and the role they would be left with, because
+              "are you sure?" asks about nothing in particular. */}
+          <span>
+            {t("mod.appoint.confirm", {
+              name: who.username ?? who.memberId,
+              role: t(`mod.role.${choice}`),
+            })}
+          </span>
+          <button type="button" className="ghost danger" disabled={busy} onClick={() => void apply()}>
+            {t("mod.appoint.confirm.yes")}
+          </button>
+          <button
+            type="button"
+            className="ghost"
+            disabled={busy}
+            onClick={() => {
+              setConfirming(false);
+              setChoice(who.role);
+            }}
+          >
+            {t("mod.appoint.confirm.no")}
+          </button>
+        </span>
+      )}
       {frozen && (
         <span className="field-note">
           {isSelf ? t("mod.appoint.err.self") : t("mod.appoint.err.last-admin")}

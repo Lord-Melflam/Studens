@@ -554,3 +554,20 @@ main.app {
 .holder select { flex: 0 0 auto; width: auto; padding: 0.25rem 0.5rem; font-size: 0.85rem; }
 .holder button { flex: 0 0 auto; }
 .holder .field-note, .holder .error { flex: 1 1 100%; margin: 0; font-size: 0.78rem; }
+/* The confirmation sits in the row it is about, so the name it asks about is
+   beside the name it names. A dialog would cover the list you are reading. */
+.holder-confirm {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: 7px;
+}
+.holder-confirm > span { flex: 1 1 14rem; }
+.holder-confirm button.danger { color: var(--danger); border-color: #e6cdc9; }

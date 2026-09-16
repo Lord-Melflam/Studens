@@ -25,6 +25,7 @@ import {
   FirstRun,
   bundle,
   signOutDestination,
+  takesPowerAway,
   type SessionState,
 } from "@studens/web";
 
@@ -200,5 +201,38 @@ describe("signing out leaves a screen that needs a session", () => {
     // A course page survives signing out and should stay where it is.
     expect(signOutDestination("ryc", "fr")).toBeUndefined();
     expect(signOutDestination(null, "fr")).toBeUndefined();
+  });
+});
+
+/**
+ * Taking a power away asks first; giving one does not.
+ *
+ * The direction is read from the order the API sends the roles in, which runs
+ * from fewest powers to most. A role added later therefore gets its rank with
+ * no change here, which is the point of sending the list at all.
+ */
+describe("a demotion is confirmed, a promotion is not", () => {
+  const roles = ["member", "moderator", "admin"];
+
+  it("asks only when the change removes something", () => {
+    expect(takesPowerAway(roles, "moderator", "member")).toBe(true);
+    expect(takesPowerAway(roles, "admin", "moderator")).toBe(true);
+    expect(takesPowerAway(roles, "admin", "member")).toBe(true);
+
+    expect(takesPowerAway(roles, "member", "moderator")).toBe(false);
+    expect(takesPowerAway(roles, "moderator", "admin")).toBe(false);
+    expect(takesPowerAway(roles, "admin", "admin")).toBe(false);
+  });
+
+  it("treats a role it does not know as no change, never as a demotion", () => {
+    // Confirming an upgrade would teach people to confirm everything, and then
+    // the confirmation that mattered is the one they click through.
+    expect(takesPowerAway(roles, "admin", "auditor")).toBe(false);
+    expect(takesPowerAway(roles, "auditor", "member")).toBe(false);
+  });
+
+  it("follows the order it is given, not one written into the screen", () => {
+    // The same two roles, ordered the other way round, reverse the answer.
+    expect(takesPowerAway(["admin", "member"], "member", "admin")).toBe(true);
   });
 });
