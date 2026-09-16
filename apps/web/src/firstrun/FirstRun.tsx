@@ -478,7 +478,6 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
                   </span>
                   <span className="who">
                     <span className="name">{i.name}</span>
-                    {i.city && <span className="city">{i.city}</span>}
                   </span>
                   {!i.available && <span className="soon">{t("firstrun.5.soon")}</span>}
                 </button>

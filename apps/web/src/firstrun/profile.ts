@@ -25,7 +25,6 @@ export interface Profile {
 export interface Institution {
   code: string;
   name: string;
-  city: string | null;
   colour: string | null;
   community: string | null;
   available: boolean;

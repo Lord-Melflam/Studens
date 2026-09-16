@@ -18,7 +18,6 @@ import { PrismaClient } from "@prisma/client";
 export interface InstitutionSummary {
   code: string;
   name: string;
-  city: string | null;
   /** FR-F11. Null where we do not know it, never approximated. */
   colour: string | null;
   /** The language community: "fr", "nl" or "de". Used for ordering, not access. */
@@ -42,7 +41,6 @@ export async function listInstitutions(
       select: {
         code: true,
         name: true,
-        city: true,
         colour: true,
         community: true,
         available: true,

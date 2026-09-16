@@ -2,12 +2,13 @@
 
 | | |
 |---|---|
-| Status | **Accepted** 2026-09-10 for the method. Not built. |
+| Status | **Accepted** 2026-09-10 for the method. Built for one faculty; see section 10 for what the catalogue actually contains. |
 | Decision | **Scrape uclouvain.be**, with the whole structure discovered at runtime and nothing hardcoded. |
 | Decided by | François, 2026-09-10 |
 | Resolves | `requirements.md` OPEN-33 |
 | Implements | FR-B9 (the catalogue is a reference module), supports FR-D1 to FR-D4 |
 | Raises | OPEN-38, OPEN-45 |
+| Explored | 2026-09-16, section 10: the search application, the eight sites, and the taxonomy. Nothing in that section is built. |
 
 ## 0. Decision
 
@@ -542,3 +543,118 @@ it should cost one migration and no rethinking.
   FR-D4 and the deferred trendline depend on. This is fuzzy matching rather than parsing, and
   it is the one place in this document where a model would genuinely earn its place. Not
   needed until there are two years of data.
+
+## 10. A second source: the catalogue search application
+
+Explored 2026-09-16, after François pointed out that the product was calling UCLouvain a
+Louvain-la-Neuve institution. Everything in this section was fetched and counted on that
+date, against the 2025-2026 year. Nothing here is built yet.
+
+### 10.1 UCLouvain is eight campuses, and the numbers are not marginal
+
+Their own catalogue page opens with it: *"L'UCLouvain est une université multisite !
+Louvain-la-Neuve, Bruxelles Saint-Louis, Bruxelles Woluwe, Bruxelles Saint-Gilles, Mons,
+Tournai, Namur et Charleroi : huit campus"*.
+
+Counted from `/en/study-programme/programmes-per-faculty-in-2025`, 692 programmes:
+
+| Site | Programmes |
+|---|---|
+| Louvain-la-Neuve | 424 |
+| Bruxelles Woluwe | 108 |
+| Autre site | 59 |
+| Bruxelles Saint-Louis | 46 |
+| Mons | 37 |
+| Charleroi | 12 |
+| Tournai | 4 |
+| Bruxelles Saint-Gilles | 2 |
+
+**268 of 692, or 39%, are taught outside Louvain-la-Neuve.** The site is not a detail about
+where a building is, it distinguishes two programmes that are otherwise the same thing:
+`sinc1ba` and `sinf1ba` are both "Bachelier en sciences informatiques", one in Charleroi and
+one in Louvain-la-Neuve. Today the only thing separating them in our data is a parenthesis
+inside a title string.
+
+Note the discrepancy, which is not resolved: the prose names **Namur** among the eight, the
+search application's site filter does not list it, and there is no `formations-namur-<year>`
+page beside the seven that exist. Do not assume it is an oversight in either direction.
+
+### 10.2 There is a second catalogue application, and it holds the taxonomy
+
+`catalogue-formations.uclouvain.be` is a separate application from the `uclouvain.be` pages
+section 2 walks. It is server-rendered HTML driven by GET parameters, and a plain GET needs
+no CSRF token even though the form carries one for POST.
+
+```
+https://catalogue-formations.uclouvain.be/fr/search
+  ?form[document_type]=Training        # or LearningUnit
+  &form[academic_year]=2025
+  &form[faculty]=18
+  &form[submit]=
+```
+
+Its form fields are UCLouvain's own vocabulary, which is the reason this matters. Sizes as
+listed on 2026-09-16:
+
+| Field | Values | What it is |
+|---|---|---|
+| `document_type` | 2 | `Training` (programme) or `LearningUnit` (course) |
+| `academic_year` | 6 | 2021 to 2026, and **2026/2027 is already live** |
+| `teaching_campus` / `campus` | 9 | the 8 sites plus "Autre site" |
+| `faculty` | 21 programmes, 22 courses | full names, Saint-Louis faculties included |
+| `decreeDomain` | 24 | the field of study, by decree |
+| `educationGroup` | 7 | bachelier, master, master en enseignement, master de spécialisation, agrégation, certificats |
+| `language` | 3 programmes, 11 courses | the teaching language |
+| `quadrimester` | 6 | Q1, Q2, Q1 and Q2, Q1 or Q2, Q3 |
+| `schedule_type` | 4 | horaire de jour, décalé, adapté |
+
+Each result row carries, in one place, the link to the `prog-<year>-<code>` or
+`cours-<year>-<code>` page we already parse, the title, the site, the domain, the language,
+the quadrimester or schedule, and the organising faculty with its short code.
+
+**This is the only place the site appears as data.** The programme page itself does not state
+it: `prog-2025-cyse2m` carries the faculty's postal address in Louvain-la-Neuve while the
+programme's site is "Autre site". The per-faculty index appends the site to the title in
+parentheses, in French and in English alike, 692 of 692 rows, which is what
+`packages/ryc-ui/src/filters.ts` parses today. The search application does the opposite: it
+strips the parenthesis from the title and gives the site as a field.
+
+### 10.3 Two limits, both measured
+
+**The unfiltered course search fails.** `document_type=LearningUnit` with no faculty returned
+**HTTP 504 after 50 seconds**. It was not retried. Any ingestion has to partition the course
+query, by faculty or by site. Per faculty it is comfortable: EPL returns 411 courses on one
+page, with the count printed in the markup.
+
+**Neither source is complete.** The search returns **605** programmes for 2025 and excludes
+minors and doctorates. The per-faculty index returns **692**, including **62 minors**, 203
+certificates, 46 attestations, 12 additional-year programmes and 6 microcertifications.
+A minor is exactly the kind of thing a student is choosing at PAE time, so the index cannot
+be dropped in favour of the tidier source.
+
+The two therefore have to be reconciled rather than one chosen, and where they disagree the
+disagreement is information: the same rule section 8 already applies to fields that are
+absent because an archived year lacks them rather than because a parse broke.
+
+### 10.4 What this means for the model
+
+The catalogue currently holds `Institution` and `Faculty`, and a programme with a code, a
+year and a title. Site, field of study and level exist only as substrings of that title, or
+not at all. Three dimensions UCLouvain publishes as data, we store as prose and re-derive
+with a regular expression.
+
+That is the change this section argues for and does not make: a **site** belongs to an
+institution and a programme is taught at one; a **level** and a **domain** are fields on a
+programme. All three are catalogue facts, so they live in `ref` with the rest of them.
+
+It is cheap now and expensive later, which is the test `requirements.md` 1.5 sets for
+deciding early. It also removes the one genuinely fragile thing in the browse screen: the
+site filter shipped in phase 26 works by reading the last parenthesised group of a title,
+and it is one upstream rewording away from silently filtering nothing.
+
+### 10.5 Scale, stated before anybody starts
+
+Today: 1 faculty, 43 programmes, 550 courses. The catalogue: 21 faculties, 692 programmes,
+411 courses in EPL alone. Widening beyond EPL is not the same crawl with a bigger number, it
+is roughly an order of magnitude more requests, so section 4's politeness rules and the page
+cache stop being a courtesy and become the thing that makes the run possible at all.

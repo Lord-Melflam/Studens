@@ -160,7 +160,6 @@
 }
 .institutions .who { display: flex; flex-direction: column; min-width: 0; }
 .institutions .name { font-weight: 600; font-size: 0.92rem; }
-.institutions .city { font-size: 0.78rem; color: var(--muted); }
 .institutions .soon {
   margin-left: auto;
   font-size: 0.7rem;
