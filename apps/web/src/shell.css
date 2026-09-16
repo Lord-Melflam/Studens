@@ -123,11 +123,30 @@ header { margin-bottom: 1.75rem; }
 
 /* The account control. Pushed to the right of the header, quiet by default:
    who you are is context, not the point of the page. */
-.account { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; }
+.account {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
 .account .domain { color: var(--muted); }
+/* Never narrower than its own label.
+   A flex item shrinks by default, so "Continue with Google" was being squeezed
+   until the words wrapped inside a pill whose padding and rounding stayed put,
+   which reads as a box that does not fit its text. Wrapping the bar onto a
+   second row is the right answer at a narrow width; breaking one control is
+   not. */
+.account .signin,
+.account button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
 .account button {
   font: inherit;
   font-size: 0.82rem;
+  line-height: 1.4;
   padding: 0.25rem 0.6rem;
   color: var(--ink);
   background: #fff;
@@ -148,9 +167,14 @@ header { margin-bottom: 1.75rem; }
   border: 1px solid var(--warn);
   border-radius: 3px;
 }
-/* A real sign-in is a link, because the browser has to leave for the provider. */
+/* A real sign-in is a link, because the browser has to leave for the provider.
+   Styled as a pill to match the buttons beside it: same shape, same box, so the
+   two do not read as two different kinds of control. */
 .account .signin {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.82rem;
+  line-height: 1.4;
   padding: 0.25rem 0.6rem;
   color: var(--ink);
   text-decoration: none;
@@ -212,14 +236,27 @@ main.app {
   z-index: 10;
   display: flex;
   align-items: center;
+  /* The bar carries most when nobody is signed in: the provider buttons are
+     only there then, and they are the widest thing in it. Wrapping is what
+     happens when the window is too narrow for all of it. */
+  flex-wrap: wrap;
   gap: 1.2rem;
+  row-gap: 0.6rem;
   margin: 0;
   padding: 0.8rem 1.5rem;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
 }
-.app-bar-right { margin-left: auto; display: flex; align-items: center; gap: 0.8rem; }
+.app-bar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  row-gap: 0.5rem;
+}
+.app-bar-right .settings-link { white-space: nowrap; }
 .settings-link {
   font-size: 0.85rem;
   color: var(--muted);

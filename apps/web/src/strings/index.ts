@@ -319,6 +319,8 @@ export const shellStrings: Bundle = {
     "account.notifications": "Ce que nous pouvons vous envoyer",
     "account.notifications.hint":
       "Tout est désactivé au départ. Chaque type se règle séparément, pour qu'aucun ne serve à en fuir un autre.",
+    "account.notifications.auto":
+      "Chaque interrupteur est enregistré tout de suite : il n'y a pas de bouton à valider.",
     "account.notifications.transactional":
       "Les messages qui confirment une action sur votre compte (changement d'adresse, suppression) partent toujours : les couper reviendrait à vous cacher ce qui arrive à votre compte.",
     "account.notifications.anonymous":
@@ -700,6 +702,8 @@ export const shellStrings: Bundle = {
     "account.notifications": "Wat wij u mogen sturen",
     "account.notifications.hint":
       "Alles staat om te beginnen uit. Elk soort regelt u apart, zodat geen enkel dient om aan een ander te ontsnappen.",
+    "account.notifications.auto":
+      "Elke schakelaar wordt meteen bewaard: er is geen knop om te bevestigen.",
     "account.notifications.transactional":
       "Berichten die een actie op uw account bevestigen (adreswijziging, verwijdering) vertrekken altijd: ze afzetten zou verbergen wat er met uw account gebeurt.",
     "account.notifications.anonymous":
@@ -1080,6 +1084,8 @@ export const shellStrings: Bundle = {
     "account.notifications": "What we may send you",
     "account.notifications.hint":
       "Everything starts off. Each kind is set separately, so that none of them serves as a way out of another.",
+    "account.notifications.auto":
+      "Each switch is saved as you flip it: there is no button to confirm.",
     "account.notifications.transactional":
       "Messages confirming something happening to your account (an address change, a deletion) are always sent: switching them off would hide from you what is happening to your own account.",
     "account.notifications.anonymous":

@@ -170,6 +170,10 @@ export function NotificationsPanel() {
     <section className="panel">
       <h3>{t("account.notifications")}</h3>
       <p className="hint">{t("account.notifications.hint")}</p>
+      {/* Said because the screen holds both kinds of saving: the username has a
+          button, these do not, and a person who has just used the button looks
+          for another one here and does not trust what they cannot see happen. */}
+      <p className="hint">{t("account.notifications.auto")}</p>
 
       {prefs === null ? (
         <p className="hint">…</p>

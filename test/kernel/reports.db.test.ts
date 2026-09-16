@@ -373,8 +373,13 @@ describe("the queue stays readable (Article 6)", () => {
     expect(forLoud?.open).toBe(2);
     // FR-E12: how many came from accounts is half the brigading signal.
     expect(forLoud?.fromMembers).toBe(1);
-    // Article 6's clock is the age of the oldest open notice.
-    expect(summary[0]?.targetId).toBe(loud);
+    // Article 6's clock is the age of the oldest open notice, checked between
+    // THIS test's two targets rather than at the head of the summary. The
+    // summary is deliberately global, so any other open notice in the database,
+    // from another test file or from somebody using the running app, would sit
+    // in front of both and this would be an assertion about that instead.
+    const ours = summary.filter((s) => s.targetId === loud || s.targetId === quiet);
+    expect(ours.map((s) => s.targetId)).toEqual([loud, quiet]);
   });
 });
 

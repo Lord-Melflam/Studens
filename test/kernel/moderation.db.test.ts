@@ -375,6 +375,13 @@ describe("the queue (FR-E12)", () => {
     expect(
       (await moderationQueue(prisma, mod, { content: CONTENT })).find((q) => q.targetId === id),
     ).toBeUndefined();
+
+    // Cleared here, because `clean` cannot reach it. That cleanup finds this
+    // file's rows through its own reviews, and this test deleted the review on
+    // purpose, so the notice would outlive every run and pile up in whatever
+    // database the tests were pointed at.
+    await prisma.report.deleteMany({ where: { targetId: id } });
+    await prisma.auditLog.deleteMany({ where: { targetId: id } });
   });
 });
 
