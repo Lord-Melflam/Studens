@@ -51,6 +51,32 @@ export interface ProgrammeSummary {
   site: string | null;
 }
 
+/**
+ * FR-E8. What a reporting form offers, mirrored from the platform.
+ *
+ * Duplicated rather than imported for the same reason the text rules are: the
+ * platform package is Node only. The endpoint publishes the authoritative list
+ * at `/api/reports/categories`, and a test asserts the two agree.
+ */
+export const REPORT_CATEGORIES = [
+  "illegal",
+  "thirdparty",
+  "abuse",
+  "spam",
+  "inaccurate",
+] as const;
+export type ReportCategory = (typeof REPORT_CATEGORIES)[number];
+
+/** Article 16(2)(a): a substantiated explanation, not a word. */
+export const REPORT_DETAIL_MIN = 20;
+
+export interface ReportOutcome {
+  received: boolean;
+  /** Whether this notice hid the review at once (FR-E11). */
+  held: boolean;
+  duplicate: boolean;
+}
+
 /** FR-D15 and FR-C16: the nulls below are the server's answer, not a client choice. */
 export interface PublishedReview {
   id: string;
@@ -119,8 +145,8 @@ export class SubmitFailed extends Error {
   }
 }
 
-async function json<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+async function json<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return (await res.json()) as T;
 }
@@ -187,6 +213,24 @@ export const api = {
    * what makes "only courses with reviews" possible at all.
    */
   reviewCounts: () => json<{ counts: Record<string, number> }>("/api/reviews/counts"),
+  /**
+   * FR-E8: file a notice. Works signed in or not, which Article 16 requires.
+   *
+   * The kind is fixed here rather than asked of the caller: a reporter sees a
+   * review, not a storage path, and the module knows what its own content is
+   * called.
+   */
+  report: (input: {
+    targetId: string;
+    category: ReportCategory;
+    detail: string;
+    contactEmail?: string;
+  }) =>
+    json<ReportOutcome>("/api/reports", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ targetKind: "ryc.review", ...input }),
+    }),
   reviewContext: (code: string) =>
     json<ReviewContext>(`/api/courses/${encodeURIComponent(code)}/review-context`),
   submitReview: submit,

@@ -190,6 +190,10 @@ export { PathChoice, AnonymousConfirm } from "./PathChoice.js";
 export { Steps, type StepName } from "./Steps.js";
 export { rycStrings } from "./strings.js";
 
+/** FR-E8: the notice form, exported so it can be rendered in a test. */
+export { ReportForm } from "./ReportForm.js";
+export { REPORT_CATEGORIES, REPORT_DETAIL_MIN, type ReportCategory } from "./api.js";
+
 /** The filter bar over a list of courses. Exported so it can be rendered in a test. */
 export { CourseFilters } from "./CourseFilters.js";
 export { CourseList } from "./CourseList.js";

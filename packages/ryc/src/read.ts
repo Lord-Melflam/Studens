@@ -100,7 +100,11 @@ export async function reviewsFor(
   const [named, anon, imported] = await Promise.all([
     prisma.reviewAttributed.findMany({ where, orderBy: { academicYear: "desc" } }),
     prisma.reviewAnonymous.findMany({ where, orderBy: { academicYear: "desc" } }),
-    prisma.reviewImported.findMany({ where: { courseId }, orderBy: { academicYear: "desc" } }),
+    // `where` and not `{ courseId }`: imported reviews are filtered by status
+    // like the other two. Until 2026-09-16 they were not, because the column
+    // did not exist, which made them the one kind of contribution a moderator
+    // could not hide.
+    prisma.reviewImported.findMany({ where, orderBy: { academicYear: "desc" } }),
   ]);
 
   // FR-F6: the username, resolved through the caller's function rather than by

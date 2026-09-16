@@ -69,3 +69,83 @@ export async function exportMemberReviews(
   });
   return { attributedReviews: reviews };
 }
+
+/**
+ * FR-E8 and FR-E11: what it means for a review to be reported and held.
+ *
+ * Handed to the platform as a `Moderatable`, so the platform never learns what
+ * a review is (FR-B16) and this module needs no grant on `platform.Report`.
+ * The same shape as the erasure handler above and the username resolver in
+ * `read.ts`: the API is the only place that knows both halves.
+ *
+ * ONE KIND FOR THREE TABLES. A reporter sees a review and an id, not a storage
+ * path, and asking them which table it is in would be absurd. It also means a
+ * notice about an anonymous review carries nothing distinguishing it from one
+ * about a named review, which is the point: the report names content, never an
+ * author, and the platform could not tell the difference if it wanted to.
+ */
+export const RYC_REVIEW_KIND = "ryc.review";
+
+/** Where an id might live. Order matters only for how many queries run. */
+async function locate(
+  tx: Prisma.TransactionClient,
+  id: string,
+): Promise<"attributed" | "anonymous" | "imported" | null> {
+  if (await tx.reviewAttributed.findUnique({ where: { id }, select: { id: true } })) {
+    return "attributed";
+  }
+  if (await tx.reviewAnonymous.findUnique({ where: { id }, select: { id: true } })) {
+    return "anonymous";
+  }
+  if (await tx.reviewImported.findUnique({ where: { id }, select: { id: true } })) {
+    return "imported";
+  }
+  return null;
+}
+
+/**
+ * Whether this id names a review anybody can currently see.
+ *
+ * Only published ones: a reporter cannot confirm the existence of something
+ * already held or removed, and an id that never existed answers the same way.
+ */
+export async function reviewExists(
+  tx: Prisma.TransactionClient,
+  id: string,
+): Promise<boolean> {
+  const where = { id, status: "published" };
+  const [a, b, c] = await Promise.all([
+    tx.reviewAttributed.count({ where }),
+    tx.reviewAnonymous.count({ where }),
+    tx.reviewImported.count({ where }),
+  ]);
+  return a + b + c > 0;
+}
+
+/**
+ * Hide it pending a human decision (FR-E11).
+ *
+ * HOLD, NEVER REMOVE. The row and its text are untouched; only `status` moves,
+ * so a moderator who decides the notice was wrong publishes it again and
+ * nothing was lost. FR-E10 makes removal a human act, always, and it is not
+ * this function.
+ *
+ * Returns whether anything changed, so a second notice about an already held
+ * review does not write a second audit entry claiming it held something.
+ */
+export async function holdReview(
+  tx: Prisma.TransactionClient,
+  id: string,
+): Promise<boolean> {
+  const where = { id, status: "published" };
+  const data = { status: "held" };
+  const kind = await locate(tx, id);
+  if (kind === null) return false;
+  const { count } =
+    kind === "attributed"
+      ? await tx.reviewAttributed.updateMany({ where, data })
+      : kind === "anonymous"
+        ? await tx.reviewAnonymous.updateMany({ where, data })
+        : await tx.reviewImported.updateMany({ where, data });
+  return count > 0;
+}

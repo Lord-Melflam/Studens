@@ -30,4 +30,11 @@ export {
 } from "./read.js";
 
 /** FR-A15 and OPEN-46: what this module does when a Member leaves. */
-export { RYC_MODULE, detachMemberReviews, exportMemberReviews } from "./account.js";
+export {
+  RYC_MODULE,
+  RYC_REVIEW_KIND,
+  detachMemberReviews,
+  exportMemberReviews,
+  holdReview,
+  reviewExists,
+} from "./account.js";

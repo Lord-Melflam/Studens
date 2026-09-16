@@ -78,6 +78,23 @@ SELECT pg_temp.expect_denied('studens_ryc',
 SELECT pg_temp.expect_denied('studens_ref', 'SELECT 1 FROM platform."MailOutbox"',
   'read the mail queue from the catalogue module');
 
+-- FR-E8. platform."Report" is the one table that deliberately links a member to
+-- a contribution, and it is allowed because the member is the REPORTER. A
+-- module that could read it would hold reporters beside the contributions it
+-- stores, which is a correlation it has no business being able to make.
+SELECT pg_temp.expect_denied('studens_ryc', 'SELECT 1 FROM platform."Report"',
+  'read who reported what');
+SELECT pg_temp.expect_denied('studens_ryc',
+  $q$INSERT INTO platform."Report" ("id", "targetKind", "targetId", "category", "detail")
+     VALUES ('x', 'ryc.review', 'y', 'abuse', 'z')$q$,
+  'file a notice of its own');
+-- A module must not be able to rewrite the record of what was reported about it.
+SELECT pg_temp.expect_denied('studens_ryc',
+  $q$UPDATE platform."Report" SET "status" = 'rejected'$q$,
+  'close a report about its own content');
+SELECT pg_temp.expect_denied('studens_ref', 'SELECT 1 FROM platform."Report"',
+  'read reports from the catalogue module');
+
 -- And the reverse: the platform does not read a feature module's own data.
 SELECT pg_temp.expect_denied('studens_platform', 'SELECT 1 FROM ryc."ReviewAttributed"',
   'read attributed reviews');

@@ -271,6 +271,44 @@ export const rycStrings: Bundle = {
     "ryc.sent.named":
       "Il part en modération sous votre nom, et apparaîtra sur la fiche du cours une fois relu.",
     "ryc.sent.back": "Retour à la fiche",
+
+    "ryc.report.open": "Signaler cet avis",
+    "ryc.report.title": "Signaler cet avis",
+    "ryc.report.lede":
+      "Dites-nous ce qui ne va pas. Pas besoin de compte. Un signalement est lu par une personne, jamais traité automatiquement.",
+    "ryc.report.why": "Pourquoi",
+    "ryc.report.cat.illegal": "C'est illégal",
+    "ryc.report.cat.illegal.hint": "Diffamation, menace, incitation à la haine, ou autre infraction.",
+    "ryc.report.cat.thirdparty": "Cela désigne quelqu'un",
+    "ryc.report.cat.thirdparty.hint":
+      "Nomme ou identifie une personne qui n'a pas demandé à l'être, ou donne ses coordonnées.",
+    "ryc.report.cat.abuse": "C'est une attaque",
+    "ryc.report.cat.abuse.hint": "Insultes ou harcèlement, plutôt qu'un avis sur le cours.",
+    "ryc.report.cat.spam": "C'est hors sujet",
+    "ryc.report.cat.spam.hint": "Publicité, répétition, ou sans rapport avec le cours.",
+    "ryc.report.cat.inaccurate": "C'est faux",
+    "ryc.report.cat.inaccurate.hint": "Des faits inexacts, sans relever des cas ci-dessus.",
+    "ryc.report.cat.immediate":
+      "Cet avis sera masqué immédiatement, le temps qu'une personne le lise.",
+    "ryc.report.detail": "Expliquez",
+    "ryc.report.detail.placeholder":
+      "Ce qui pose problème, et pourquoi. Plus c'est précis, plus vite c'est traitable.",
+    "ryc.report.detail.rule": "Au moins {min} caractères : une explication, pas un mot.",
+    "ryc.report.contact": "Votre adresse e-mail (facultatif)",
+    "ryc.report.contact.placeholder": "pour être tenu au courant",
+    "ryc.report.contact.hint":
+      "Uniquement pour vous dire ce qui a été décidé. Sans elle, nous n'avons aucun moyen de vous répondre.",
+    "ryc.report.send": "Envoyer le signalement",
+    "ryc.report.sending": "envoi…",
+    "ryc.report.cancel": "Annuler",
+    "ryc.report.close": "Fermer",
+    "ryc.report.thanks": "Signalement reçu.",
+    "ryc.report.sent.held":
+      "Cet avis est masqué le temps qu'une personne le lise. S'il ne pose pas de problème, il réapparaîtra.",
+    "ryc.report.sent.queued": "Il sera lu par une personne. L'avis reste visible en attendant.",
+    "ryc.report.nodeadline":
+      "Nous ne promettons pas de délai tant que nous n'en avons pas mesuré un. Ce qui est signalé comme illégal ou nommant quelqu'un est masqué d'abord.",
+    "ryc.report.failed": "L'envoi a échoué. Réessayez.",
   },
 
   nl: {
@@ -533,6 +571,45 @@ export const rycStrings: Bundle = {
     "ryc.sent.named":
       "Ze gaat naar moderatie onder uw naam, en verschijnt op de fiche van de cursus zodra ze nagelezen is.",
     "ryc.sent.back": "Terug naar de fiche",
+
+    "ryc.report.open": "Deze beoordeling melden",
+    "ryc.report.title": "Deze beoordeling melden",
+    "ryc.report.lede":
+      "Zeg ons wat er mis is. U hebt geen account nodig. Een melding wordt door een mens gelezen, nooit automatisch afgehandeld.",
+    "ryc.report.why": "Waarom",
+    "ryc.report.cat.illegal": "Het is onwettig",
+    "ryc.report.cat.illegal.hint": "Laster, bedreiging, aanzetten tot haat, of een ander misdrijf.",
+    "ryc.report.cat.thirdparty": "Het wijst iemand aan",
+    "ryc.report.cat.thirdparty.hint":
+      "Noemt of identificeert iemand die daar niet om gevraagd heeft, of geeft diens contactgegevens.",
+    "ryc.report.cat.abuse": "Het is een aanval",
+    "ryc.report.cat.abuse.hint": "Beledigingen of intimidatie, eerder dan een mening over de cursus.",
+    "ryc.report.cat.spam": "Het hoort hier niet",
+    "ryc.report.cat.spam.hint": "Reclame, herhaling, of zonder verband met de cursus.",
+    "ryc.report.cat.inaccurate": "Het klopt niet",
+    "ryc.report.cat.inaccurate.hint": "Onjuiste feiten, zonder onder het bovenstaande te vallen.",
+    "ryc.report.cat.immediate":
+      "Deze beoordeling wordt meteen verborgen, tot iemand ze gelezen heeft.",
+    "ryc.report.detail": "Leg uit",
+    "ryc.report.detail.placeholder":
+      "Wat er mis is, en waarom. Hoe preciezer, hoe sneller er iets mee kan gebeuren.",
+    "ryc.report.detail.rule": "Minstens {min} tekens: een uitleg, geen enkel woord.",
+    "ryc.report.contact": "Uw e-mailadres (optioneel)",
+    "ryc.report.contact.placeholder": "om op de hoogte gehouden te worden",
+    "ryc.report.contact.hint":
+      "Enkel om u te zeggen wat er beslist is. Zonder adres hebben wij geen enkele manier om u te antwoorden.",
+    "ryc.report.send": "Melding versturen",
+    "ryc.report.sending": "verzenden…",
+    "ryc.report.cancel": "Annuleren",
+    "ryc.report.close": "Sluiten",
+    "ryc.report.thanks": "Melding ontvangen.",
+    "ryc.report.sent.held":
+      "Deze beoordeling is verborgen tot iemand ze gelezen heeft. Is er niets mis mee, dan verschijnt ze opnieuw.",
+    "ryc.report.sent.queued":
+      "Ze wordt door een mens gelezen. De beoordeling blijft intussen zichtbaar.",
+    "ryc.report.nodeadline":
+      "Wij beloven geen termijn zolang wij er geen gemeten hebben. Wat als onwettig gemeld wordt, of wat iemand noemt, wordt eerst verborgen.",
+    "ryc.report.failed": "Verzenden is mislukt. Probeer opnieuw.",
   },
 
   en: {
@@ -793,5 +870,42 @@ export const rycStrings: Bundle = {
     "ryc.sent.named":
       "It goes to moderation under your name, and will appear on the course page once reviewed.",
     "ryc.sent.back": "Back to the course",
+
+    "ryc.report.open": "Report this review",
+    "ryc.report.title": "Report this review",
+    "ryc.report.lede":
+      "Tell us what is wrong with it. No account needed. A report is read by a person, never handled automatically.",
+    "ryc.report.why": "Why",
+    "ryc.report.cat.illegal": "It is unlawful",
+    "ryc.report.cat.illegal.hint": "Defamation, a threat, incitement to hatred, or another offence.",
+    "ryc.report.cat.thirdparty": "It identifies somebody",
+    "ryc.report.cat.thirdparty.hint":
+      "Names or identifies a person who did not ask to be, or gives their contact details.",
+    "ryc.report.cat.abuse": "It is an attack",
+    "ryc.report.cat.abuse.hint": "Insults or harassment, rather than a view on the course.",
+    "ryc.report.cat.spam": "It does not belong here",
+    "ryc.report.cat.spam.hint": "Advertising, repetition, or nothing to do with the course.",
+    "ryc.report.cat.inaccurate": "It is wrong",
+    "ryc.report.cat.inaccurate.hint": "Inaccurate facts, without falling under the above.",
+    "ryc.report.cat.immediate": "This review will be hidden at once, until a person has read it.",
+    "ryc.report.detail": "Explain",
+    "ryc.report.detail.placeholder":
+      "What is wrong, and why. The more precise, the sooner something can be done.",
+    "ryc.report.detail.rule": "At least {min} characters: an explanation, not one word.",
+    "ryc.report.contact": "Your email address (optional)",
+    "ryc.report.contact.placeholder": "to be told what happens",
+    "ryc.report.contact.hint":
+      "Only to tell you what was decided. Without it we have no way to answer you.",
+    "ryc.report.send": "Send the report",
+    "ryc.report.sending": "sending…",
+    "ryc.report.cancel": "Cancel",
+    "ryc.report.close": "Close",
+    "ryc.report.thanks": "Report received.",
+    "ryc.report.sent.held":
+      "This review is hidden until a person has read it. If there is nothing wrong with it, it comes back.",
+    "ryc.report.sent.queued": "A person will read it. The review stays visible meanwhile.",
+    "ryc.report.nodeadline":
+      "We promise no deadline until we have measured one. Anything reported as unlawful, or as naming somebody, is hidden first.",
+    "ryc.report.failed": "Sending failed. Try again.",
   },
 };
