@@ -18,7 +18,15 @@ import { describe, expect, it } from "vitest";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DEFAULT_LOCALE, I18nProvider } from "@studens/i18n";
-import { Shell, SessionProvider, Settings, FirstRun, bundle, type SessionState } from "@studens/web";
+import {
+  Shell,
+  SessionProvider,
+  Settings,
+  FirstRun,
+  bundle,
+  signOutDestination,
+  type SessionState,
+} from "@studens/web";
 
 /** Signed in, has never opened the first run. The state that broke. */
 const fresh: SessionState = {
@@ -175,5 +183,22 @@ describe("no screen leaks an untranslated key", () => {
     expect(draw(createElement(Settings), settled)).not.toMatch(
       /\b(?:app|nav|settings|foot)\.[a-z.]+/,
     );
+  });
+});
+
+/**
+ * Signing out is a full page load, so a screen that cannot be rendered signed
+ * out has to be left before it happens, not after. The first attempt reacted to
+ * the session instead and did nothing at all: the page came back fresh on the
+ * console's URL, the change it was waiting for had already happened, and
+ * François hit the same "Unknown module" a second time.
+ */
+describe("signing out leaves a screen that needs a session", () => {
+  it("leaves the console and the account panel, and nothing else", () => {
+    expect(signOutDestination("moderation", "fr")).toBe("/fr/app");
+    expect(signOutDestination("moi", "en")).toBe("/en/app");
+    // A course page survives signing out and should stay where it is.
+    expect(signOutDestination("ryc", "fr")).toBeUndefined();
+    expect(signOutDestination(null, "fr")).toBeUndefined();
   });
 });

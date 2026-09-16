@@ -28,7 +28,7 @@ export {
  * signed-in path while every test rendered either the public zone or a
  * component with no session. See test/ui/signed-in.test.ts.
  */
-export { Shell } from "./shell/Shell.js";
+export { Shell, signOutDestination } from "./shell/Shell.js";
 export { Settings } from "./Settings.js";
 export { SessionProvider, useSession, type SessionState } from "./session.js";
 

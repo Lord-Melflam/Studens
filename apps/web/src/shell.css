@@ -512,3 +512,45 @@ main.app {
 .queue-entry .field-note { margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--muted); }
 .panel h4.sub { margin: 1.2rem 0 0.4rem; font-size: 0.85rem; }
 .panel ul.plain.small { font-size: 0.8rem; color: var(--muted); }
+
+/* --- who holds a power ---------------------------------------------------
+   A row per person, grouped by role, because the list is the thing being
+   managed: changing somebody's role used to mean retyping their name into a
+   form that sat under it. */
+.holder-group { margin-top: 1.2rem; }
+.holder-group .sub .count {
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.holders { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+.holder {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--line);
+}
+.holder:first-child { border-top: 0; }
+.holder-name { flex: 1 1 10rem; }
+.holder-you {
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent-soft);
+  border-radius: 3px;
+}
+/* `width: auto` because `.text-input` is 100% wide by default, which is right
+   for a field on its own line and wrong for one control in a row: it pushed the
+   button onto a third line and made every holder three lines tall. */
+.holder select { flex: 0 0 auto; width: auto; padding: 0.25rem 0.5rem; font-size: 0.85rem; }
+.holder button { flex: 0 0 auto; }
+.holder .field-note, .holder .error { flex: 1 1 100%; margin: 0; font-size: 0.78rem; }

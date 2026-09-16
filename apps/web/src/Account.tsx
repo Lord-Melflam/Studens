@@ -24,7 +24,25 @@ interface Provider {
   label: string;
 }
 
-export function Account({ variant = "app" }: { variant?: "app" | "public" }) {
+export function Account({
+  variant = "app",
+  signOutTo,
+}: {
+  variant?: "app" | "public";
+  /**
+   * Where to land after signing out, when staying put would be wrong.
+   *
+   * Signing out is a full page load, not a state change, so a screen that only
+   * exists for somebody signed in cannot get out of the way by reacting to the
+   * session: the page comes back fresh on the same URL with nobody signed in.
+   * That is how signing out of the console kept answering "Unknown module".
+   *
+   * The caller decides, because only it knows whether its screen survives
+   * signing out. A course page does and should stay where it is; the console
+   * does not. This file learns nothing about either.
+   */
+  signOutTo?: string;
+}) {
   const t = useT();
   const { session: state, reload } = useSession();
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -56,7 +74,11 @@ export function Account({ variant = "app" }: { variant?: "app" | "public" }) {
     setBusy(true);
     try {
       await fetch("/api/session", { method: "DELETE" });
-      window.location.reload();
+      // `assign` rather than `reload` where the caller named a destination, so
+      // the URL of a screen that needs a session is left behind rather than
+      // reloaded into a state that cannot render it.
+      if (signOutTo) window.location.assign(signOutTo);
+      else window.location.reload();
     } finally {
       setBusy(false);
     }

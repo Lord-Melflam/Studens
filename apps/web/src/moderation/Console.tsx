@@ -21,6 +21,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useT, useLocale } from "@studens/i18n";
+import { useSession } from "../session.js";
 import {
   decide,
   fetchAppointments,
@@ -78,7 +79,12 @@ function Entry({ entry, onDone }: { entry: QueueEntry; onDone: () => void }) {
           is only visible if the split is.
         */}
         <span className="queue-counts">
-          {t("mod.counts", { open: entry.open, members: entry.fromMembers })}
+          {/* Two strings and not one sentence with two numbers in it. The
+              plural form is chosen from a variable named `count`, so a single
+              string could only ever agree with one of the two, which is how
+              "1 reports" reached the screen. */}
+          {t("mod.counts", { count: entry.open })}
+          {entry.fromMembers > 0 && <>, {t("mod.counts.members", { count: entry.fromMembers })}</>}
         </span>
         <span className="queue-age">{t("mod.since", { when: ago(entry.oldestAt, locale) })}</span>
       </header>
@@ -155,9 +161,100 @@ function Entry({ entry, onDone }: { entry: QueueEntry; onDone: () => void }) {
 }
 
 /** FR-E14 and FR-E3. Administrators only; the API refuses everybody else. */
+/**
+ * One person who holds a power, and the control that changes it.
+ *
+ * A row rather than a form. Appointing used to mean typing a username and
+ * picking a role again, even for somebody already on the list, so changing
+ * one person's role meant retyping their name correctly. The list is the
+ * thing being managed, so the control belongs in it.
+ *
+ * THE ROLES COME FROM THE SERVER, never from a list written here. A fourth role
+ * appears in every one of these selects, and in the grouping above, without
+ * this file changing. That is the whole reason the API sends them.
+ */
+function Holder({
+  who,
+  roles,
+  isSelf,
+  isLastAdmin,
+  onChanged,
+}: {
+  who: Appointment;
+  roles: string[];
+  isSelf: boolean;
+  isLastAdmin: boolean;
+  onChanged: () => void;
+}) {
+  const t = useT();
+  const [choice, setChoice] = useState(who.role);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Two refusals are certain before asking, so the control says so instead of
+  // letting somebody press a button that cannot work. The server refuses them
+  // as well and stays the authority: this only stops the pointless round trip.
+  const frozen = isSelf || isLastAdmin;
+  const changed = choice !== who.role;
+
+  async function apply() {
+    setBusy(true);
+    setProblem(null);
+    try {
+      await appoint(who.username ?? "", choice);
+      onChanged();
+    } catch (err) {
+      setProblem(err instanceof Error ? err.message : "failed");
+      setChoice(who.role);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <li className="holder">
+      <span className="holder-name">
+        <strong>{who.username ?? who.memberId}</strong>
+        {isSelf && <span className="holder-you">{t("mod.appoint.you")}</span>}
+      </span>
+      <select
+        className="text-input"
+        value={choice}
+        disabled={frozen || busy}
+        aria-label={t("mod.appoint.role")}
+        onChange={(e) => {
+          setChoice(e.target.value);
+          setProblem(null);
+        }}
+      >
+        {roles.map((r) => (
+          <option key={r} value={r}>
+            {t(`mod.role.${r}`)}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        className="ghost"
+        disabled={!changed || busy || frozen}
+        onClick={() => void apply()}
+      >
+        {t("mod.appoint.change")}
+      </button>
+      {frozen && (
+        <span className="field-note">
+          {isSelf ? t("mod.appoint.err.self") : t("mod.appoint.err.last-admin")}
+        </span>
+      )}
+      {problem && <span className="error">{t(`mod.appoint.err.${problem}`)}</span>}
+    </li>
+  );
+}
+
 function Appointments() {
   const t = useT();
   const locale = useLocale();
+  const { session } = useSession();
   const [data, setData] = useState<{
     roles: string[];
     appointments: Appointment[];
@@ -189,19 +286,45 @@ function Appointments() {
 
   if (!data) return null;
 
+  // Grouped, strongest first, and built from the server's own list of roles so
+  // a new one gets a group without this file being edited. Nobody appears under
+  // the plain member role: that is what not holding a power is, and listing
+  // every account would turn a page about accountability into a directory.
+  const strongestFirst = [...data.roles].reverse();
+  const admins = data.appointments.filter((a) => a.role === "admin");
+
   return (
     <section className="panel">
       <h3>{t("mod.appointments")}</h3>
       <p className="hint">{t("mod.appointments.hint")}</p>
 
-      <ul className="plain">
-        {data.appointments.map((a) => (
-          <li key={a.memberId}>
-            <strong>{a.username ?? a.memberId}</strong> {t(`mod.role.${a.role}`)}
-          </li>
-        ))}
-      </ul>
+      {strongestFirst.map((r) => {
+        const holders = data.appointments.filter((a) => a.role === r);
+        if (holders.length === 0) return null;
+        return (
+          <div className="holder-group" key={r}>
+            <h4 className="sub">
+              {t(`mod.group.${r}`)} <span className="count">{holders.length}</span>
+            </h4>
+            <ul className="holders">
+              {holders.map((a) => (
+                <Holder
+                  key={a.memberId}
+                  who={a}
+                  roles={data.roles}
+                  isSelf={!!session?.username && session.username === a.username}
+                  isLastAdmin={a.role === "admin" && admins.length === 1}
+                  onChanged={load}
+                />
+              ))}
+            </ul>
+          </div>
+        );
+      })}
 
+      {/* Still by name, because somebody who holds no power yet is not on any
+          list above: the page shows the set that matters, not every account. */}
+      <h4 className="sub">{t("mod.appoint.add")}</h4>
       <label className="field-label" htmlFor="appoint-username">
         {t("mod.appoint.who")}
       </label>

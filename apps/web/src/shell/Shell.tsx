@@ -9,7 +9,7 @@
  * own its URLs while the shell stays ignorant of what they mean.
  */
 import { useEffect, useRef, useState } from "react";
-import { useT } from "@studens/i18n";
+import { localePath, useT, type Locale } from "@studens/i18n";
 import { Account } from "../Account.js";
 import { LanguageSwitcher } from "../LanguageSwitcher.js";
 import { Settings } from "../Settings.js";
@@ -18,7 +18,15 @@ import { useSession } from "../session.js";
 import { FIRST_RUN } from "../firstrun/FirstRun.js";
 import { ModerationConsole } from "../moderation/Console.js";
 import { fetchPowers, type Powers } from "../moderation/api.js";
-import { APP_PREFIX, currentRoute, linkProps, moduleIdFrom, navigate, usePath } from "../router.js";
+import {
+  APP_PREFIX,
+  currentLocale,
+  currentRoute,
+  linkProps,
+  moduleIdFrom,
+  navigate,
+  usePath,
+} from "../router.js";
 
 /**
  * The shell's own screen, reachable at /app/moi.
@@ -38,6 +46,27 @@ const SETTINGS = "moi";
  * have to be built again for the second module.
  */
 const MODERATION = "moderation";
+
+/**
+ * Where signing out lands, given the screen it is done from.
+ *
+ * `undefined` means stay put and reload, which is right for every screen that
+ * still makes sense signed out, a course page above all.
+ *
+ * SIGNING OUT IS A FULL PAGE LOAD, not a state change, which is why this is a
+ * decision taken before leaving rather than a redirect taken after arriving.
+ * The page comes back fresh on the same URL with nobody signed in, so a screen
+ * that only exists for somebody signed in cannot get out of its own way by
+ * reacting to the session: it never sees the change. That is exactly how
+ * signing out of the console kept answering "Unknown module".
+ *
+ * A pure function, and exported, because the version of this written inline was
+ * wrong and nothing could reach it to say so.
+ */
+export function signOutDestination(routeId: string | null, locale: Locale): string | undefined {
+  if (routeId !== SETTINGS && routeId !== MODERATION) return undefined;
+  return localePath(APP_PREFIX, locale);
+}
 
 function Home() {
   const t = useT();
@@ -111,6 +140,7 @@ export function Shell() {
     void fetchPowers().then(setPowers);
   }, [session]);
   const route = currentRoute(path);
+  const locale = currentLocale(path);
   const routeId = moduleIdFrom(path);
   const active = activeModuleFor(path);
   const Module = active?.component;
@@ -190,7 +220,9 @@ export function Shell() {
               {t("settings.title")}
             </a>
           )}
-          <Account />
+          {/* The account panel and the console do not survive signing out, so
+              signing out leaves them. Everything else stays where it is. */}
+          <Account signOutTo={signOutDestination(routeId, locale)} />
         </div>
       </header>
 
