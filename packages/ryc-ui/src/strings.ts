@@ -82,6 +82,7 @@ export const rycStrings: Bundle = {
     "ryc.search.none": "Aucun cours pour « {query} ».",
 
     "ryc.course.ects": "{n} ECTS",
+    "ryc.course.ects.unstated": "crédits non précisés",
     "ryc.course.external": "autre institution",
     "ryc.course.reviews.one": "{count} avis",
     "ryc.course.reviews.other": "{count} avis",
@@ -382,6 +383,7 @@ export const rycStrings: Bundle = {
     "ryc.search.none": "Geen cursus voor \u201c{query}\u201d.",
 
     "ryc.course.ects": "{n} studiepunten",
+    "ryc.course.ects.unstated": "studiepunten niet vermeld",
     "ryc.course.external": "andere instelling",
     "ryc.course.reviews.one": "{count} beoordeling",
     "ryc.course.reviews.other": "{count} beoordelingen",
@@ -682,6 +684,7 @@ export const rycStrings: Bundle = {
     "ryc.search.none": "No course for \u201c{query}\u201d.",
 
     "ryc.course.ects": "{n} ECTS",
+    "ryc.course.ects.unstated": "credits not stated",
     "ryc.course.external": "another institution",
     "ryc.course.reviews.one": "{count} review",
     "ryc.course.reviews.other": "{count} reviews",

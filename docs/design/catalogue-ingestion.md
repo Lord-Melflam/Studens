@@ -878,3 +878,74 @@ each time the parser treated something UCLouvain actually publishes as proof
 that the parser was broken. **The place to notice a broken parser is across the
 whole run, never on one page**, because a real catalogue is full of individually
 surprising entries and a broken parser is uniform.
+
+### 12.7 One real find, and one false alarm of my own making
+
+Both came from checking all 6,654 discovered course codes out of the page cache
+on 2026-09-16, before the crawl reached them.
+
+**Real: ten course codes have five digits.** The validator allowed three or
+four, so the snapshot would have been refused at promote time, after the entire
+run. Measured across the whole year:
+
+| Shape | Count | | Shape | Count |
+|---|---|---|---|---|
+| `AAAAA9999` | 5408 | | `AAAAA9999A` | 164 |
+| `AAAA9999` | 978 | | `AAAA9999A` | 85 |
+| `AAAAA99999` | **10** | | `AAA9999` | 8 |
+
+The ten are the `wbcmm21021` family of clinical biology seminars. The pattern
+now allows five digits and stays strict otherwise, because it is the only guard
+against reading something that is not a course code at all.
+
+**False: "ten courses publish no credits".** They publish credits like every
+other course. `cours-2026-wbcmm21021` is worth 2 ECTS, and the parser had always
+read it correctly. The mistake was in the check, not the catalogue: I searched
+the RAW HTML for the word "crédit", and the page writes it `cr&eacute;dits`, so
+the search found nothing on a page that says it plainly. The parser uses
+cheerio, which decodes entities, and never had the problem.
+
+**The rule that follows, and it is worth more than the bug.** Verify against the
+representation the code actually sees. A raw-HTML grep answers a different
+question from the parser's own view of the page, and the two disagree on
+entities, on whitespace, on attribute order and on anything a browser normalises.
+Every claim in this document that came from a grep over stored HTML should be
+read with that in mind, and the measurements above were re-taken through the
+parser.
+
+Checked that way across 1,800 cached course pages: **none lacks credits**, and
+five state `0.00`, which is the `bmeta` family from 12.6.
+
+### 12.8 A missing field must never cost the course
+
+No course currently lacks credits, and the column is nullable anyway. That is a
+decision about what the catalogue is, taken by François after the first answer
+to 12.7 was to skip such courses:
+
+> "instead of suppressing those course or not considering them, we should accept
+> them and just find a way to state that those field are not mentionned in the
+> official course page. Losing all the infos just for some fields? ... We know we
+> don't have access to administration data directly, so we accept the gap and
+> manage ourselves accordingly."
+
+**The requirement it serves:** the catalogue is scraped from a source nobody here
+controls, so a field the source omits is an ordinary state to record, and a
+course carries thirty or so fields that a student came to read. Dropping all of
+them over one absent field inverts the value of the exercise.
+
+**Alternatives rejected:** skipping the course, which loses everything else and
+makes the student's search fail; storing zero, which states as fact something the
+university did not say, and collides with the `bmeta` courses where zero is real.
+
+**The cost accepted:** `ects` is nullable through the whole stack, so every
+reader handles the null, and a course with no credits cannot be filtered by
+credits. The interface says "credits not stated" rather than showing a number.
+
+**What would change it:** nothing observed so far, since no course has needed it.
+It is there because the next unfetched page might, and because three crawls have
+already been stopped by the parser calling something real impossible.
+
+The guard that used to justify refusing such a page now lives in the snapshot,
+where the evidence is: a run in which NOT ONE offering states its credits is a
+parser that stopped reading the header, and that is only visible across a whole
+run.

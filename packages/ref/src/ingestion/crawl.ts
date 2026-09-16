@@ -272,8 +272,11 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
       unavailable.push(code);
       continue;
     }
-    // Deliberately NOT caught: a parse failure fails the run. A catalogue with
-    // wrong data is worse than one that refused to update (section 6).
+    // A parse failure is still fatal. A catalogue with wrong data is worse than
+    // one that refused to update (section 6), and a page we could not
+    // understand is exactly that. A page missing a FIELD is a different thing
+    // and is not a failure: the parser returns null for it and the course is
+    // kept, because the other thirty fields are what a student came to read.
     offerings.push(parseOffering(page.html, code, year, page.finalUrl));
     // A long run has to say it is alive. At one faculty this prints twice; at
     // twenty-one it is the difference between a crawl and a hang.
@@ -305,7 +308,7 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   }
 
   return {
-    version: 7,
+    version: 8,
     takenAt: new Date().toISOString(),
     year,
     faculties,

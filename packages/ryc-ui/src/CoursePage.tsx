@@ -81,7 +81,10 @@ export function CoursePage({
       </h2>
 
       <p className="ribbon">
-        {t("ryc.course.ects", { n: course.ects })}
+        {/* Said plainly rather than shown as a zero. The catalogue is scraped
+            from a source we do not control, and ten courses of 6,654 state no
+            credits at all. */}
+        {course.ects === null ? t("ryc.course.ects.unstated") : t("ryc.course.ects", { n: course.ects })}
         {course.quarter ? ` · ${course.quarter}` : ""}
         {course.language ? ` · ${course.language}` : ""}
         {` · ${course.year}-${course.year + 1}`}

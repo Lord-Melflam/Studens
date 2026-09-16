@@ -74,6 +74,9 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
   out.push("");
 
   // --- what the crawl found -------------------------------------------------
+  // Derived rather than stored: a course with no credits is kept like any
+  // other, so the snapshot has nothing extra to carry.
+  const noEcts = snapshot.offerings.filter((o) => o.ects === null).map((o) => o.code);
   const listed = snapshot.programmes.filter((p) => p.listing === "listed");
   const empty = snapshot.programmes.filter((p) => p.listing === "empty");
   const unreachable = snapshot.programmes.filter((p) => p.listing === "unreachable");
@@ -87,6 +90,7 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
   out.push(line("distinct courses reached", new Set(snapshot.reachedVia.map((r) => r.code)).size));
   out.push(line("course pages parsed", snapshot.offerings.length));
   out.push(line("course pages the server would not give", snapshot.unavailable.length));
+  out.push(line("courses whose page states no credits", noEcts.length));
   out.push("");
 
   if (unreachable.length > 0) {
@@ -108,6 +112,17 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
       explain:
         "Reached from a programme and then not served, after the retries. Some are\n" +
         "  broken upstream for days; check one by hand before re-running.",
+    });
+  }
+  if (noEcts.length > 0) {
+    findings.push({
+      severity: "note",
+      title: `${noEcts.length} courses whose official page states no credits`,
+      codes: noEcts,
+      explain:
+        "Stored and findable like any other course, with the interface saying the\n" +
+        "  credits are not stated rather than showing a zero. A note and not a gap:\n" +
+        "  nothing is missing from Studens that the source publishes.",
     });
   }
   if (empty.length > 0) {

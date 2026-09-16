@@ -12,7 +12,8 @@ export interface CourseSummary {
   code: string;
   title: string;
   year: number;
-  ects: number;
+  /** Null when the official page does not state it. Never 0 as a stand-in. */
+  ects: number | null;
   quarter: string | null;
   teachers: string[];
   external: boolean;

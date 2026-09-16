@@ -29,7 +29,12 @@ export { parseOffering, detectEra, type ParsedOffering, type Era } from "./inges
 export { richBlocks, blocksToText, type Block, type Span } from "./ingestion/parse/rich.js";
 export { academicYearFor, candidateYears, ROLLOVER } from "./ingestion/year.js";
 export { courseUrl } from "./ingestion/urls.js";
-export { ParseError, FetchError, BudgetExceeded, TooManyUnavailable } from "./ingestion/errors.js";
+export {
+  ParseError,
+  FetchError,
+  BudgetExceeded,
+  TooManyUnavailable,
+} from "./ingestion/errors.js";
 export { loadSnapshot, type LoadResult, type LoadOptions } from "./ingestion/load.js";
 export {
   type Catalogue,

@@ -93,11 +93,16 @@ export interface Snapshot {
    *    79 programmes had no courses and nothing said whether that was a joint
    *    programme with none to list or a page that failed to load. Answering it
    *    took opening the site by hand, which does not scale to 692.
+   * 8: `ects` became nullable, because the official page does not always state
+   *    it. Ten of the 6,654 courses in 2026-2027 publish none. The first
+   *    attempt skipped those courses, which lost every other field the
+   *    catalogue does publish about them over the one it does not. A scraped
+   *    source omitting a field is an ordinary state to record and say plainly.
    *
    * The version field exists to be used, so an older snapshot is refused
    * rather than silently loaded with a field missing.
    */
-  version: 7;
+  version: 8;
   /** When the crawl finished. */
   takenAt: string;
   /** The academic year crawled. */
@@ -156,16 +161,16 @@ export class SnapshotInvalid extends Error {}
  * a parser reading something that is not a course code at all, so widening it
  * to `.+` would remove the only guard against that.
  */
-const COURSE_CODE = /^[a-z]{3,6}\d{3,4}[a-z]?$/;
+const COURSE_CODE = /^[a-z]{3,6}\d{3,5}[a-z]?$/;
 
 /**
  * Refuse to promote a snapshot that would make the catalogue worse.
  * Every check here is a failure the crawl could plausibly produce.
  */
 export function validate(s: Snapshot): void {
-  if (s.version !== 7) {
+  if (s.version !== 8) {
     throw new SnapshotInvalid(
-      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 7)`,
+      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 8)`,
     );
   }
   if (s.faculties.length === 0) throw new SnapshotInvalid("no faculties discovered");
@@ -173,11 +178,12 @@ export function validate(s: Snapshot): void {
   if (s.offerings.length === 0) throw new SnapshotInvalid("no course offerings parsed");
 
   for (const o of s.offerings) {
-    // Zero is permitted because UCLouvain publishes it: `cours-2026-bmeta1000`
-    // states "0.00 crédits" beside 18 hours of teaching. Negative is not, and
-    // neither is a missing cell, which the parser refuses before this.
-    if (!Number.isFinite(o.ects) || o.ects < 0) {
-      throw new SnapshotInvalid(`${o.code}: ECTS is required in every era, got ${o.ects}`);
+    // Null is permitted: the official page does not always state credits, and
+    // ten courses of 6,654 in 2026-2027 do not. Zero is permitted too, because
+    // UCLouvain publishes it on `cours-2026-bmeta1000`. A negative number is
+    // not, and neither is anything that is not a number at all.
+    if (o.ects !== null && (!Number.isFinite(o.ects) || o.ects < 0)) {
+      throw new SnapshotInvalid(`${o.code}: implausible ECTS, got ${o.ects}`);
     }
     if (!COURSE_CODE.test(o.code)) {
       throw new SnapshotInvalid(`${o.code}: not a plausible course code`);
@@ -249,6 +255,16 @@ function assertNothingWentBlank(s: Snapshot): void {
     throw new SnapshotInvalid(
       `every one of the ${s.offerings.length} offerings has 0 ECTS. ` +
         `One zero is a real course; all of them is a layout change.`,
+    );
+  }
+  // The same rule for an absent value, and this is where the guard that used to
+  // live in the parser now sits. One course without credits is a course the
+  // official page does not describe fully; every course without credits is a
+  // parser that stopped reading the header.
+  if (s.offerings.every((o) => o.ects === null)) {
+    throw new SnapshotInvalid(
+      `not one of the ${s.offerings.length} offerings states its ECTS. ` +
+        `A few is the catalogue; all of them is a layout change.`,
     );
   }
 }

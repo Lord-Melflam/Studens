@@ -12,7 +12,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { blocksToText, detectEra, parseOffering, ParseError } from "@studens/ref";
+import { blocksToText, detectEra, parseOffering } from "@studens/ref";
 
 const dir = join(new URL("../..", import.meta.url).pathname, "test/fixtures/catalogue");
 const modern = readFileSync(join(dir, "modern-era.html"), "utf8");
@@ -103,11 +103,28 @@ describe("archive era: cours-2012-lfsa2995", () => {
 describe("failing loudly rather than storing nulls", () => {
   const url = "https://example.invalid/cours-2025-test";
 
-  it("refuses a page with no credits cell", () => {
+  /**
+   * A page with no credits KEEPS THE COURSE, and says the field is not stated.
+   *
+   * This asserted the opposite twice in one evening. First the parser refused
+   * the page outright, which ended a crawl; then it refused it distinguishably
+   * so the crawl could skip the course, which threw away every other field the
+   * page does publish. François: "Losing all the infos just for some fields?"
+   *
+   * `cours-2026-wbcmm21021` is a real seminar with a title, a faculty, a
+   * quarter and contact hours. We scrape a source we do not control, so a field
+   * the source omits is a fact to record and state plainly, never a course to
+   * lose.
+   */
+  it("keeps the course when the page states no credits, and returns null", () => {
     const html = '<html><body><div class="fa_cell_0">Q1</div><h1>X</h1>' +
       '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';
-    expect(() => parseOffering(html, "x", 2025, url)).toThrow(ParseError);
-    expect(() => parseOffering(html, "x", 2025, url)).toThrow(/ECTS is required in every era/);
+    const parsed = parseOffering(html, "x", 2025, url);
+    expect(parsed.ects).toBeNull();
+    // Everything else on the page is still there, which is the entire point.
+    expect(parsed.title).toBe("X");
+    expect(parsed.quarter).toBe("Q1");
+    expect(parsed.content).not.toBeNull();
   });
 
   /**
@@ -123,12 +140,15 @@ describe("failing loudly rather than storing nulls", () => {
     expect(parseOffering(html, "x", 2025, url).ects).toBe(0);
   });
 
-  it("still refuses a page with no credits cell at all", () => {
-    // The guard that matters: allowing zero must not let a MISSING value
-    // through disguised as one. This is what catches a layout change.
-    const html = '<html><body><div class="fa_cell_0">18.0 h</div><h1>X</h1>' +
+  it("tells a stated zero apart from no statement at all", () => {
+    // Both are kept, and they mean different things: 0.00 is the university
+    // saying the course is worth nothing, null is the university not saying.
+    const withZero = '<html><body><div class="fa_cell_0">0.00 crédits</div><h1>X</h1>' +
       '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';
-    expect(() => parseOffering(html, "x", 2025, url)).toThrow(/no credits cell found/);
+    const withNone = '<html><body><div class="fa_cell_0">18.0 h</div><h1>X</h1>' +
+      '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';
+    expect(parseOffering(withZero, "x", 2025, url).ects).toBe(0);
+    expect(parseOffering(withNone, "x", 2025, url).ects).toBeNull();
   });
 
   it("refuses an implausible ECTS value", () => {

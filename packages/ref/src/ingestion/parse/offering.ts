@@ -31,8 +31,15 @@ export interface ParsedOffering {
   year: number;
   era: Era;
   title: string;
-  /** ECTS. Required in every era. */
-  ects: number;
+  /**
+   * ECTS, or null when the official page does not state it.
+   *
+   * Ten courses of 6,654 in 2026-2027 publish none. Null is "not stated on the
+   * official page", which the interface says in those words: this is a
+   * catalogue scraped from a source we do not control, so a field the source
+   * omits is a fact to record rather than a course to lose.
+   */
+  ects: number | null;
   /** Official TEACHING hours, not student effort. A different measurement from FR-D6. */
   contactHours: string | null;
   quarter: string | null;
@@ -176,23 +183,29 @@ function richField(
 }
 
 /**
- * ECTS from the header, where ZERO IS A REAL ANSWER.
+ * ECTS from the header, where ZERO IS A REAL ANSWER AND ABSENCE IS ANOTHER.
  *
  * `cours-2026-bmeta1000` publishes "0.00 crédits" beside "18.0 h" and "Q2": a
  * real course, taught, with credits counted somewhere other than on it. Refusing
  * zero as implausible ended a crawl of 6,654 pages after 250 of them, and the
  * course it refused is one a student takes and would then fail to find.
  *
- * WHAT STILL FAILS, and it is the part that matters: a page with NO credits cell
- * at all. That is the guard against a layout change, and it is untouched, so
- * allowing zero cannot let a missing value through disguised as one. The upper
- * bound stays too: 120 credits is a whole master's year, not a course.
+ * A page with NO credits cell yields null. That used to throw, on the reasoning
+ * that ECTS is required in every era, and the cost of that reading was the whole
+ * course: `cours-2026-wbcmm21021` is a real seminar with a title, a faculty, a
+ * quarter and contact hours, and it was being dropped over the one field its
+ * page omits. The upper bound stays: 120 credits is a master's year, not a
+ * course.
+ *
+ * The guard against a layout change moved to the snapshot, where it belongs: a
+ * run in which EVERY offering lost its credits is a parser that stopped reading
+ * the header, and that is visible only across the whole run.
  *
  * Same lesson as the empty evaluation field two faculties ago. A value the
  * university actually publishes is data, however odd it looks, and the place to
  * notice a broken parser is across the whole run rather than on one page.
  */
-function parseEcts(headerCells: string[], url: string): number {
+function parseEcts(headerCells: string[], url: string): number | null {
   for (const cell of headerCells) {
     const m = /([\d]+(?:[.,][\d]+)?)\s*cr/i.exec(cell);
     if (m?.[1]) {
@@ -203,7 +216,10 @@ function parseEcts(headerCells: string[], url: string): number {
       return n;
     }
   }
-  throw new ParseError(url, "ects", "no credits cell found; ECTS is required in every era");
+  // Null, not an error and not a zero. The page is understood; it simply does
+  // not state credits, and the course is worth keeping for the thirty other
+  // fields it does publish.
+  return null;
 }
 
 export function parseOffering(
