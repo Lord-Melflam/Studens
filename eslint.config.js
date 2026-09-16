@@ -38,6 +38,21 @@ export default tseslint.config(
     rules: { "no-restricted-imports": ["error", deepImportBan] },
   },
   {
+    // Plain Node scripts run by hand or by CI, not part of any deployable.
+    // The globals are listed rather than pulled from the `globals` package: a
+    // dependency for four names is not worth the supply chain (CON-1's habit,
+    // applied to dev dependencies too).
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+        URL: "readonly",
+        Buffer: "readonly",
+      },
+    },
+  },
+  {
     // Tier 1 depends on nothing.
     files: ["packages/platform/**/*.ts", "packages/platform/**/*.tsx"],
     rules: {

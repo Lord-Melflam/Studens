@@ -53,8 +53,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           NOT TRANSLATED, on purpose, and the one screen in the product that is
           not. A failure inside the translator or its bundle is exactly one of
           the things this has to survive, so it cannot call it. Three languages
-          in one paragraph is the honest way to say the same thing to everyone
-          without depending on anything.
+          in one paragraph says the same thing to everyone without depending on
+          anything.
         */}
         <h1 style={{ fontSize: "1.5rem", margin: "0 0 0.6rem" }}>
           Something broke · Er ging iets mis · Quelque chose a cassé

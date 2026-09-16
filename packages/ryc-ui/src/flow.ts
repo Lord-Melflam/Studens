@@ -14,7 +14,7 @@
  * The asymmetry is deliberate and should not be "tidied up" later: the named
  * path sends on one press, the anonymous path costs one press more, because
  * only one of the two can be taken back
- * (docs/design/frontend-design.tex 6, requirements.md FR-C9).
+ * (docs/typeset/frontend-design.tex 6, requirements.md FR-C9).
  */
 
 export type Step = "form" | "fork" | "confirm" | "sent";

@@ -59,7 +59,7 @@ the same day all contributing to the same target. Hold the burst, ask a human.
 
 ## 3. Recommendation: A plus D, and not B or C
 
-**A, because the honest framing is already the design's framing.** The whole of
+**A, because that framing is already the design's framing.** The whole of
 FR-C is built on refusing to claim guarantees it cannot deliver, and this is the
 same move: the quota slows volume, it does not establish identity, and the
 privacy statement says so plainly.
@@ -75,7 +75,7 @@ identity-based detection would be.
 
 **Not B.** A CAPTCHA is bypassed for a few cents by anyone doing this at scale,
 and email confirmation is a loop around a mailbox the provider already verified,
-so it costs the honest user a step and the determined attacker nothing. Proof of
+so it costs an ordinary user a step and the determined attacker nothing. Proof of
 work costs a phone battery and is defeated by a laptop. Each adds a barrier at
 the exact moment we are asking a stranger to trust us, for an attacker cost near
 zero.

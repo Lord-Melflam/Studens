@@ -21,8 +21,8 @@ import { moduleIdFrom } from "../router.js";
  *
  * It has a name, a line and a status, and deliberately nothing else. Writing a
  * problem statement or a feature list for something unbuilt is how a roadmap
- * turns into a promise, and `CLAUDE.md` is explicit that this one has no shape
- * yet and must not be given one in passing.
+ * turns into a promise. MPA has no shape yet, by decision rather than by
+ * omission (requirements 1.0), and must not be given one in passing.
  *
  * It lives here rather than in a package because there is no package: the
  * registry is where the shell learns a module exists, and "exists" includes

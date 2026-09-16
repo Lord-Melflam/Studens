@@ -90,7 +90,7 @@ export function reviewRoutes(prisma: PrismaClient): Router {
 
       // A GET must not start a session: SameSite=Lax sends the cookie on a
       // cross-site top-level GET, so a GET that changes state is reachable from
-      // another site. See design/authentication.md 0.3.
+      // another site. See docs/design/authentication.md 0.3.
       const who = await identifyIfAny(prisma, req);
       const remaining = who ? await quotaRemaining(who.memberId, { client: prisma }) : null;
       res.json({ course: course.code, named, anonymous, quotaRemaining: remaining });

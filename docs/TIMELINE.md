@@ -122,12 +122,14 @@ deployment), OPEN-41 (backup cadence, now a privacy parameter), OPEN-34
 Established the working environment (Windows 11 host, WSL2, Ubuntu 22.04) and
 the hard rules that govern everything since: no AI attribution, plain
 punctuation, never assume, plain tone, no touching secrets, a hard check before
-every commit, challenge rather than agree, and later **rule 8: every choice must
+every commit, challenge rather than agree, and later **the rule that every choice must
 be justified** by naming the requirement it serves, the alternatives rejected,
 the cost accepted, and what would change the answer.
 
-`CLAUDE.md` is deliberately untracked: it holds machine-specific context that
-has no place in a public repository.
+The contributor's local working notes are deliberately untracked: they hold
+machine-specific context that has no place in a public repository. Everything
+a contributor actually needs is in `README.md`, `CONTRIBUTING.md` and the
+specification, and the rules above are restated in `CONTRIBUTING.md`.
 
 ### Phase 1: specification before code
 
@@ -295,7 +297,7 @@ section 5.
 ### Phase 12: drawing the target product
 
 Before building the review submission path, the frontend was designed rather
-than invented screen by screen: `design/frontend-design.tex`, 13 pages of
+than invented screen by screen: `docs/typeset/frontend-design.tex`, 13 pages of
 LaTeX and TikZ, marked proposed. Architecture, screen map, three personas, four
 scenarios, twelve use cases, and the anonymity seam drawn once.
 
@@ -310,7 +312,7 @@ hand-computed layout with guessed text widths. See `LESSONS.md` section 1.
 
 ### Phase 13: drawing the backend
 
-`design/backend-design.tex`, 12 pages. The architecture was already decided and
+`docs/typeset/backend-design.tex`, 12 pages. The architecture was already decided and
 running; this draws it, which the prose could not. Every fact about the schema,
 the roles and the grants was read out of the live database while writing rather
 than recalled, which is how the unintended grant on `_prisma_migrations` was
@@ -348,7 +350,7 @@ holds no grant on `ryc.ReviewAttributed`, because the grant matrix says the
 platform has no rights over a feature module's own data. The boundary was working
 correctly, and the fix was not to weaken it: the kernel now takes a second role
 and switches with `SET LOCAL ROLE` between the quota and the insert, one
-transaction, two identities. `design/backend-design.tex` 5.3.
+transaction, two identities. `docs/typeset/backend-design.tex` 5.3.
 
 **Reading, with the privacy rules on the server.** `ryc/read.ts` returns an
 anonymous review with `author`, `recommendation`, `workloadVsEcts` and
@@ -365,7 +367,7 @@ more than the named one, and that asymmetry is the design.
 
 **Making the asymmetry checkable.** That property lived in JSX across three
 `onClick` handlers, where it is readable but not testable, so the state machine
-was pulled out into `ryc-ui/src/flow.ts` as a pure function. `test/ui` now
+was pulled out into `packages/ryc-ui/src/flow.ts` as a pure function. `test/ui` now
 asserts over every step and every event that **no step other than the
 confirmation can write an anonymous review**. Verified by mutation: removing the
 confirmation step fails three tests. Recorded as FR-C23.
@@ -420,7 +422,7 @@ Seven things, and the first was not cosmetic.
 **The fork was advertising three features that do not exist.** The named card
 offered "modifiable plus tard", "apparaît dans Mes avis" and "vous pouvez
 demander sa suppression". FR-C14 and FR-D12 are specified and have no code. The
-copy had been lifted from `design/frontend-design.tex`, which draws the target
+copy had been lifted from `docs/typeset/frontend-design.tex`, which draws the target
 product in the present tense.
 
 That matters because of which screen it was on. The fork is where a permanent,
@@ -428,7 +430,7 @@ unprovable choice is made by comparing two lists, so a false claim on one side
 pushes the decision toward it, and here that was the side that is not
 anonymous. The cards now say only what is true today, the planned edit is
 mentioned once below both of them in the quietest type on the screen, and
-`test/ui/path-honesty.test.ts` fails if a card names an unbuilt capability
+`test/ui/path-claims.test.ts` fails if a card names an unbuilt capability
 again. Recorded as FR-D28 and in `LESSONS.md` section 1.
 
 **The rest.** The submission limit is shown before the review is written rather
@@ -696,8 +698,8 @@ Now the platform makes the platform's claim, the modules are what is inside it,
 and the first module gets a section in its own words labelled as the first
 module rather than as the product. `MPA` is listed as announced, with a name, a
 line and a status and deliberately nothing else: writing a problem statement for
-something unbuilt is how a roadmap turns into a promise, and `CLAUDE.md` is
-explicit that it has no shape yet. A test asserts a planned module carries no
+something unbuilt is how a roadmap turns into a promise, and requirements 1.0
+is explicit that it has no shape yet. A test asserts a planned module carries no
 problem statement, no steps, no mock and no component.
 
 *"If you have to illustrate to pics, at least put real data."* The mock said
@@ -1076,7 +1078,7 @@ arriving through the back door, in the module whose header says it never strips.
 **What the pattern of this phase says.** Four bugs, four reports, zero caught by
 469 tests. Every one sat on the signed-in path or in a claim made on screen, and
 the tests that existed checked behaviour rather than what the product told
-somebody about it. `test/ui/signed-in.test.ts` and the honesty gates from phase
+somebody about it. `test/ui/signed-in.test.ts` and the claim gates from phase
 26 are the beginning of an answer; the rest is that a product has to be used.
 
 ---

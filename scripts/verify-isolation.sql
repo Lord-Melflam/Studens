@@ -85,7 +85,7 @@ SELECT pg_temp.expect_denied('studens_platform', 'SELECT 1 FROM ryc."ReviewAttri
 -- exact denial: the tempting fix was to grant the platform INSERT here, and
 -- nothing in this file would have noticed, because only SELECT was asserted.
 -- The real fix was a second role inside one transaction, see
--- design/backend-design.tex 5.3. This assertion is what stops the tempting one.
+-- docs/typeset/backend-design.tex 5.3. This assertion is what stops the tempting one.
 SELECT pg_temp.expect_denied('studens_platform',
   -- Every NOT NULL column without a default is supplied, so the only reason
   -- this statement can fail is the missing grant. A probe that would be

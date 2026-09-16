@@ -26,7 +26,7 @@ export const APP_PREFIX = "/app";
 
 export function currentPath(): string {
   // Guarded so the router can be exercised outside a browser. A module that
-  // throws on import in a test harness is a module nobody writes a test for.
+  // throws on import under a test runner is a module nobody writes a test for.
   if (typeof window === "undefined") return "/";
   const p = window.location.pathname.replace(/\/+$/, "");
   return p === "" ? "/" : p;

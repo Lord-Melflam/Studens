@@ -35,7 +35,7 @@
 /test/architecture/                       @Lord-Melflam
 /test/kernel/                             @Lord-Melflam
 /test/ui/review-flow.test.ts              @Lord-Melflam
-/test/ui/path-honesty.test.ts             @Lord-Melflam
+/test/ui/path-claims.test.ts             @Lord-Melflam
 /eslint.config.js                         @Lord-Melflam
 /.github/                                 @Lord-Melflam
 

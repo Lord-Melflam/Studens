@@ -165,7 +165,7 @@ describe("finishing, and doing it again (FR-F14)", () => {
 });
 
 describe("the institutions (FR-F10, FR-F12)", () => {
-  dbit("lists the whole landscape, with one of them open", async () => {
+  dbit("lists every institution, with one of them open", async () => {
     const all = await listInstitutions({ client: prisma });
     // Every Belgian university, because listing UCLouvain alone would read as
     // a UCLouvain product. Eleven, and Saint-Louis is deliberately not one of

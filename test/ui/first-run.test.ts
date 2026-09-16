@@ -91,7 +91,7 @@ describe("the username rule (FR-F6, FR-F9)", () => {
 });
 
 /**
- * FR-F7, and the reason people can answer screen four honestly.
+ * FR-F7, and the reason people can answer screen four truthfully.
  *
  * Checked against the module's source rather than against a rendered page,
  * because the property is "the module never receives these", and a page can be

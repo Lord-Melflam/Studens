@@ -131,7 +131,7 @@ export function accountRoutes(prisma: PrismaClient): Router {
       // 202: the change has been accepted for processing and has not happened.
       // Saying "saved" here would be a lie for as long as the link is unclicked.
       //
-      // `deliverable` is the second half of the same honesty. With no relay
+      // `deliverable` is the second half of the same point. With no relay
       // configured the message is queued and can never leave, and a screen that
       // says "a message has gone to you" would have somebody waiting for
       // something that is not coming.

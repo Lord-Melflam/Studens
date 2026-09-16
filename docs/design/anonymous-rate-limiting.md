@@ -81,7 +81,7 @@ token it issued to whom, and a spent-token table prevents reuse.
   platform's own administrators acting in real time.
 - Costs: a blind signature implementation, key management, key rotation, and a niche
   cryptographic dependency in the supply chain. Getting it subtly wrong yields a false
-  guarantee, which is worse than an honest weaker one.
+  guarantee, which is worse than a weaker one stated plainly.
 - Disproportionate for v1 with a team of two or three (CON-2). Reasonable later.
 
 ### Option C: deterministic pseudonym, rejected
@@ -104,7 +104,7 @@ mechanism that implements FR-C4.
 Moves the entire cost of abuse onto a moderation rota the team may not be able to staff
 (OPEN-7).
 
-## 4. What Option A leaks, stated honestly
+## 4. What Option A leaks
 
 A guarantee is only worth what its weakest correlation allows. Three residual leaks.
 
@@ -200,7 +200,7 @@ recorded upgrade path: it can be adopted later without changing the contribution
 since it only adds a spent token table.
 
 Rationale against the constraints: it is free (CON-1), buildable and reviewable by a small
-team (CON-2), and honest about what it does not do, which is the standard this project has
+team (CON-2), and plain about what it does not do, which is the standard this project has
 set for itself elsewhere.
 
 ## 6. Verification

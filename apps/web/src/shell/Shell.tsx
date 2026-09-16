@@ -153,7 +153,7 @@ export function Shell() {
         per-institution theme is planned. That makes it easy to mistake for an
         institutional product, and it is not one. Borrowing colours is ordinary;
         implying affiliation is not, so this line carries in words what a colour
-        cannot. See docs/design/frontend-design.tex, section 2.
+        cannot. See docs/typeset/frontend-design.tex, section 2.
 
         The wording deliberately says nothing about what the modules do. The
         first draft said "the institutions whose courses it lists", which the

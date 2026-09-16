@@ -206,7 +206,7 @@ member across modules is the linkage.
 
 ## 5. What this proposal does not solve
 
-Stated honestly, in the manner of the rate-limiting note.
+Stated plainly, in the manner of the rate-limiting note.
 
 **It does not fix the complement problem.** Section 2 explains why a shared PAE store would
 make it much worse, and this proposal avoids that. It does not improve the situation that

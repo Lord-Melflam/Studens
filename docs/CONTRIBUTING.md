@@ -235,7 +235,7 @@ anonymous branch costs one more, and that asymmetry is the design rather than an
 oversight: only one of the two can be taken back. Deleting the confirmation step
 fails three of these.
 
-`test/ui/path-honesty.test.ts` asserts that the fork's two cards **name no
+`test/ui/path-claims.test.ts` asserts that the fork's two cards **name no
 capability that is not built** (FR-D28). That screen is where a permanent choice
 is made by comparing two lists, so a claim that is not true today biases the
 decision, and it biases it away from anonymity. When FR-C14 and FR-D12 ship,
@@ -249,7 +249,7 @@ theme is planned and must never be able to make the two paths look alike.
 take it. The rules are shared deliberately (FR-C6): a lower bar on the anonymous
 path would itself be a signal.
 
-## The honesty gates
+## Gates on what the product claims
 
 Added on 2026-09-13, after four bugs in a row reached François and none of them
 reached a test. Every one was a case of the product **saying** something that
@@ -270,8 +270,8 @@ whole product behind sign-in was never drawn. **Both of that day's worst bugs
 sat there.** `SessionProvider` takes an optional starting answer purely so those
 trees can be rendered; the application never passes it.
 
-`test/ui/path-honesty.test.ts` now runs every assertion in all three languages.
-A promise that is honest in French and wrong in Dutch is exactly as damaging:
+`test/ui/path-claims.test.ts` now runs every assertion in all three languages.
+A promise that is true in French and wrong in Dutch is exactly as damaging:
 the person reading the Dutch is the one making the permanent choice.
 
 `test/auth/mail-templates.test.ts` pins the confirmation link's stated lifetime
@@ -290,9 +290,53 @@ and two cases had silently decayed to plain `"ab"`.
 screen that lies about it. When something claims a thing happened, has happened,
 or will happen, that claim is what needs the test.
 
+## Where a file goes
+
+Settled 2026-09-16, after `docs/design/` had grown to fourteen files mixing
+markdown decision notes with LaTeX sources and their build output, and nobody
+could tell from the folder what was in it.
+
+```
+docs/
+  README.md        the index: what each document is, and where to start
+  requirements.md  the specification. Requirement IDs are permanent
+  TIMELINE.md      state, and the log of how each decision was reached
+  LESSONS.md       what has gone wrong, and what each failure changed
+  CONTRIBUTING.md  this file
+  COMMANDS.md      what to type
+  design/          one markdown note per decision, nothing else
+  typeset/         the LaTeX documents and their (ignored) build output
+scripts/           things run by hand, not by the application
+test/              mirrors the source tree it tests
+```
+
+Three rules, and they are cheap to keep and expensive to recover:
+
+1. **A new file at the top level of the repository needs a reason.** The root is
+   `README.md`, `LICENSE`, and configuration that tooling insists on finding
+   there. Anything else belongs in a directory.
+2. **A directory holds one kind of thing.** The reason `design/` became hard to
+   read is that it held two.
+3. **Moving a file means updating what points at it, in the same change.** There
+   were 103 references into `docs/design/` when it was split. `npm run gates`
+   does not check links, so `npm run docs:links` does, and it runs in CI.
+
+**Nothing tracked may reference a file that is not tracked.** Local working
+notes, machine setup and study material are deliberately untracked, so a
+document citing them sends a public reader to nothing. Nine such references had
+accumulated and are gone; the link check now fails on a new one.
+
 ## Writing style in this repository
 
-No em dashes and no double dashes in prose. Plain words, short sentences. Every
+No em dashes and no double dashes in prose. Plain words, short sentences.
+
+**Some words are banned because they are filler.** `honest` and its family were
+used 54 times before 2026-09-16 and almost always stood in for something
+concrete: say "states the limit", "does not claim what is not built", "says what
+was actually sent". The same goes for `leverage`, `robust`, `seamless`,
+`comprehensive`, `crucial`, `delve`, `realm`, `landscape`, `showcase` as a verb,
+`foster` and `holistic`. If the sentence still works with the word deleted, it
+was filler; if it does not, name the thing instead. Every
 choice is justified by naming the requirement it serves, the alternatives
 rejected, the cost accepted, and what would change the answer. If it cannot be
 justified that way it is not a decision yet, and it is marked `[OPEN]` in

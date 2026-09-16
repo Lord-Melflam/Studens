@@ -233,7 +233,7 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
           A real way out, into the app rather than out of the product. Someone
           who has just arrived and would rather look around first must be able
           to, and FR-F6's whole argument is that a setup you cannot escape is
-          one people answer dishonestly to get past.
+          one people answer falsely to get past.
         */}
         <button type="button" className="quiet" disabled={saving} onClick={() => void later()}>
           {t("firstrun.later")}
@@ -408,7 +408,7 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
             onChange={setInterests}
           />
 
-          {/* FR-F7. The reason this screen can be answered honestly is that
+          {/* FR-F7. The reason this screen can be answered truthfully is that
               none of it ever renders beside anything published, on either
               path. Said here, where the question is asked. */}
           <p className="hint strong">{t("firstrun.4.never")}</p>
@@ -459,7 +459,7 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
 
           {/*
             FR-F12: every institution is listed and only the ones whose
-            catalogue is loaded can be chosen. Showing the whole landscape says
+            catalogue is loaded can be chosen. Showing every institution says
             "this is coming"; showing UCLouvain alone would suggest Studens is a
             UCLouvain product, and it is not one.
           */}

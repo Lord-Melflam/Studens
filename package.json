@@ -16,7 +16,7 @@
     "typecheck": "tsc --build && tsc -p packages/ryc-ui --noEmit && tsc -p apps/web --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "gates": "npm run typecheck && npm run lint && npm run test && npm run schema:validate",
+    "gates": "npm run typecheck && npm run lint && npm run test && npm run schema:validate && npm run docs:links",
     "schema:validate": "DATABASE_URL=\"postgresql://validate:validate@localhost:5432/validate\" prisma validate --schema prisma/schema.prisma",
     "ingest": "npm run --silent build:worker && node apps/worker/dist/ingest-catalogue.js",
     "build:worker": "tsc --build apps/worker",
@@ -32,7 +32,8 @@
     "db:load": "npm run --silent build:worker && node apps/worker/dist/load-catalogue.js",
     "dev:api:anon": "npm run build:api && node apps/api/dist/index.js",
     "test:db": "STUDENS_REQUIRE_DB=1 vitest run",
-    "mail": "npm run --silent build:worker && node apps/worker/dist/send-mail.js"
+    "mail": "npm run --silent build:worker && node apps/worker/dist/send-mail.js",
+    "docs:links": "node scripts/check-links.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",

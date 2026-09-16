@@ -14,7 +14,7 @@
  * EVERY ASSERTION RUNS IN EVERY LANGUAGE. Until 2026-09-13 this screen existed
  * only in French, so the test could match French sentences in the rendered
  * output and be complete. Now the screen is translated, and a promise that is
- * honest in French and wrong in Dutch is exactly as damaging: the person
+ * true in French and wrong in Dutch is exactly as damaging: the person
  * reading the Dutch is the one making the permanent choice.
  *
  * WHEN FR-C14 AND FR-D12 SHIP, this test is updated in the same change that

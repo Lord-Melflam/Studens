@@ -6,7 +6,7 @@
 | Decision | **Option C: modular monolith with enforced boundaries, plus one worker process**, one Postgres with a schema per module and a role per schema, on the single Always Free VM. |
 | Decided by | François, 2026-09-10, after reviewing the concrete schema in section 12 |
 | Date | 2026-09-10 |
-| Decides | `CLAUDE.md` open decision "Architecture style" |
+| Decides | The open decision "Architecture style", recorded in requirements 1.7 |
 | Constrained by | FR-C2, FR-C6, FR-C13, FR-B3, FR-B9 to FR-B13, CON-1, CON-3, section 5.2 |
 | Depends on | ~~OPEN-16~~ **resolved 2026-09-10: trusted contributors.** The dependency in section 6 is discharged, see 6.1 |
 | Raises | OPEN-39, OPEN-40, OPEN-41 |
@@ -46,8 +46,8 @@ live for this project.
 ## 2. Criteria, derived from our own documents
 
 Not a generic checklist. Each criterion is something this project has already committed to,
-in the priority order of `CLAUDE.md` Goals, with the hard constraint first because it
-overrides preference.
+in the priority order of the goals in requirements 1.05, with the hard constraint
+first because it overrides preference.
 
 1. **Preserves the anonymity invariant.** FR-C2, FR-C6, FR-C13. Not negotiable.
 2. **Verifiable.** Goal 4, the two V's. Can the invariant be *proven*, not just reviewed?
@@ -103,7 +103,7 @@ transaction. It fails on other criteria instead.
 
 **F, plugin host.** Neutral if plugins are trusted, fatal if not. See section 6.
 
-**One honest qualification.** The monolith does not make correlation vanish. Both writes land
+**One qualification.** The monolith does not make correlation vanish. Both writes land
 in the same transaction, so the database's write-ahead log contains them together. That is
 the same family of exposure as write-timing correlation, which `anonymous-rate-limiting.md`
 section 4.1 already documents and which OPEN-27 placed out of scope. The difference is real
@@ -517,6 +517,6 @@ snapshots taken within one quota window. FR-C12 then obliges the privacy stateme
 
 The design does not change. The promise does. Weakening the backup was considered and
 rejected: an untested backup is not a backup, and this project has lost data twice
-(`CLAUDE.md`, known pitfalls). What remains genuinely open is the backup **cadence and
+on the machine this is developed on. What remains genuinely open is the backup **cadence and
 retention** relative to the quota window, since those two numbers set the bound. Recorded as
 **OPEN-41**.

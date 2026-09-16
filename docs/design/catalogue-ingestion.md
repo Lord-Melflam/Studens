@@ -269,7 +269,7 @@ extracts description, content and teachers but **not ECTS**, which is the field 
 workload index needs.
 
 If his code ever becomes worth using, the fix is one message asking him to add a licence
-file. Until then, ours is written from scratch, and a credit for the pointer is the honest
+file. Until then, ours is written from scratch, and a credit for the pointer is the correct
 form of thanks.
 
 ## 6. How this one is built differently
@@ -313,7 +313,7 @@ extra in code and hardcoding EPL would breach the rule in section 0. UCLouvain h
 But the **module** launches scoped to EPL. The reason is not technical: thousands of courses
 with zero reviews each makes every page look abandoned, and it makes the small-cohort problem
 in OPEN-19 worse everywhere at once instead of in one place we can watch. A complete
-catalogue with a scoped module gives the honest version of both, and widening is a
+catalogue with a scoped module gives the true version of both, and widening is a
 configuration change rather than a migration.
 
 ## 8. What the first live runs taught
@@ -414,7 +414,7 @@ List nesting: 3,857 items at depth 1, 176 at depth 2, 7 at depth 3.
 
 So the model needs lists ordered and unordered, nested three deep, line breaks,
 inline emphasis, headings and tables, and nothing else. That is what
-`parse/rich.ts` produces.
+`packages/ref/src/ingestion/parse/rich.ts` produces.
 
 **Two bullet conventions are both in heavy use.** Some authors use
 `<ul><li>`; others type `- ` at the start of a line and separate lines with

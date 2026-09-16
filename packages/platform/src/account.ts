@@ -55,7 +55,7 @@ export interface DeletionReport {
  * WHAT IT CANNOT REACH, and this is the guarantee working rather than failing:
  * anonymous contributions. Nothing joins them to a member (FR-C2), so there is
  * no query that could find them. FR-C9 says this before the contribution is
- * made, on the screen, which is the only honest moment to say it.
+ * made, on the screen, which is the only moment at which saying it helps.
  */
 export async function deleteAccount(
   prisma: PrismaClient,
@@ -129,7 +129,7 @@ export async function exportAccount(
     account: {
       ...account,
       // The quota is two numbers and no timestamps, by design
-      // (design/anonymous-rate-limiting.md). Included so the export shows that
+      // (docs/design/anonymous-rate-limiting.md). Included so the export shows that
       // is all it is.
       quota: quota ? { windowStart: quota.windowStart, used: quota.used } : null,
     },

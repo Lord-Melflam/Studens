@@ -16,7 +16,7 @@
 # It says nothing about trademark. See the design document, section on marks.
 set -euo pipefail
 
-dir="$(cd "$(dirname "$0")/.." && pwd)/docs/design/frontend/logos"
+dir="$(cd "$(dirname "$0")/.." && pwd)/docs/typeset/frontend/logos"
 mkdir -p "$dir"
 ua="StudensDesignDraft/0.1 (+https://github.com/Lord-Melflam/Studens)"
 

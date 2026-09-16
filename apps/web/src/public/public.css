@@ -4,7 +4,7 @@
    by the module; this file only lays it out.
 
    The register is deliberately quieter than a product site usually is. Studens
-   asks people to write honestly about their own school, and a page that shouts
+   asks people to write frankly about their own school, and a page that shouts
    is a page that reads as marketing. Wide measure, generous space, one accent. */
 
 .site { display: flex; flex-direction: column; min-height: 100vh; }

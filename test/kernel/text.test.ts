@@ -94,7 +94,7 @@ describe("the rules", () => {
 
   /**
    * The rules REJECT rather than strip. Quietly removing a character means what
-   * somebody sees saved is not what they wrote, which is its own dishonesty.
+   * somebody sees saved is not what they wrote, which is its own kind of wrong.
    */
   it("never silently removes a character it objects to", () => {
     for (const bad of ["a\u202Eb", "a\u200Bb", "a\u0007b"]) {

@@ -26,7 +26,7 @@
  * else on the anonymous table, so a module cannot write one by itself at any
  * price; `studens_platform` holds INSERT. The quota therefore cannot be
  * bypassed by the module that owns the feature, and the exception is one grant
- * rather than an open door. See docs/design/backend-design.tex section 5.
+ * rather than an open door. See docs/typeset/backend-design.tex section 5.
  */
 import { PrismaClient, Prisma } from "@prisma/client";
 import { QUOTA_PER_WINDOW, QuotaExceeded, WINDOW_DAYS, windowStartFor } from "./quota.js";

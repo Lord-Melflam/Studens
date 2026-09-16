@@ -38,8 +38,9 @@ Agreed.
 2026-09-09, it was never finished, and it does not work. He describes it as "a context
 refining experiment". **[VERIFIED]** François, 2026-09-09.
 
-It therefore carries **no authority** in this document. Its README, `docs/PRIVACY.md`,
-`docs/MODERATION.md` and `docs/API.md` record one earlier line of thinking, nothing more.
+It therefore carries **no authority** in this document. Its own README and its privacy,
+moderation and API notes record one earlier line of thinking, nothing more. They live in
+that repository and not in this one, so nothing here links to them as a path.
 Concretely, this means:
 
 - Its stated architecture ("microservices") is not a decision, and does not constrain this
@@ -115,6 +116,32 @@ expensive to retrofit and cheap to keep open:
 Both are recorded here so that v1 avoids decisions that would foreclose them. Neither is a
 licence to build them now. The stated preference for a small app that genuinely works
 (CON-3, section 4.3) still governs what gets built first.
+
+### 1.05 Goals, in priority order
+
+Stated by François at the outset and unchanged since. They are in the specification
+rather than only in a contributor's local notes because the design notes score their
+options against them: `design/architecture-style.md` ranks four architectures in this
+order, and a reader cannot check that ranking against a list they cannot see.
+
+Ties are broken by the number, top first.
+
+1. **MEA: maintainable, evolvable, adaptable.** The primary design objective. Every
+   structural decision is judged against it, and several decisions in this document
+   cost performance or convenience to keep it.
+2. **A small application that genuinely works beats a large one that does not.** Fewer
+   features, finished and verified. When a feature is proposed, the default answer is
+   "not yet". Recorded again as CON-3.
+3. **DevSecOps.** Security is built into the pipeline rather than added at the end.
+   FR-B14 makes code review a security boundary rather than a quality practice, and the
+   gates in section 3.2 are the mechanism.
+4. **Verification and validation.** Verification: is it built right, through tests,
+   static analysis, review and CI gates. Validation: is it the right thing, against the
+   need in 1.1. Both are expected to show up as mechanisms rather than as vocabulary.
+
+Above all four sits the hard constraint of a **zero budget** (CON-1): no paid services
+and no trials that lapse into charges. A constraint is not a goal, and it overrides all
+four when they conflict.
 
 ### 1.1 Problem statement
 
@@ -371,7 +398,7 @@ otherwise.
 registration with free email providers means the quota (FR-C4) and per course uniqueness
 (FR-D9, FR-C13) are limits per **account**, not per person. Anyone willing to make accounts
 can exceed both. This is not an argument for closing registration; it is an argument for
-never describing either limit as an integrity guarantee. The honest description is a speed
+never describing either limit as an integrity guarantee. The accurate description is a speed
 bump that stops casual flooding, backed by moderation for anything determined. See
 **[OPEN-35]**.
 
@@ -440,7 +467,7 @@ FR-B7 and FR-B8 exist because of the vision in 1.0. Once outside contributors wr
 modules, **the module boundary stops being a tidiness concern and becomes a trust
 boundary.** A third party module is code you did not write, running next to student data,
 inside a session you authenticated. That is a materially different security problem from a
-module written by the core team, and the honest answers span a wide range:
+module written by the core team, and the defensible answers span a wide range:
 
 - **Trusted contributors.** Outsiders contribute by pull request, you review and merge,
   everything ships as one reviewed codebase. Cheap, and the module boundary stays internal.
@@ -478,7 +505,7 @@ module code is in this repository and reviewed before merge), and it does not kn
 course or a review is.
 
 Note what is deliberately still missing from it: authentication. FR-A exists but nothing is
-built, so the shell currently lets anyone in. That is honest for a catalogue that FR-D13 makes
+built, so the shell currently lets anyone in. That is right for a catalogue that FR-D13 makes
 public anyway, and it becomes load bearing the moment reviews exist, because FR-D13 also says
 reviews need a session to read.
 
@@ -547,7 +574,7 @@ scoped to the attributed path in public wording, and the anonymous path is never
 limited to one per course.
 
 This is an uncomfortable place to be. The guarantee partly rests on an enforcement gap rather
-than on a mechanism, which is weaker than the rest of FR-C and must be described honestly
+than on a mechanism, which is weaker than the rest of FR-C and must be described plainly
 under FR-C12. It is not a reason to add the marker: adding it would replace a probabilistic
 exposure with a certain one.
 
@@ -582,7 +609,7 @@ from a refinement to a decision that matters.
 | FR-C20 | MUST | Anonymous and attributed contributions live in separate tables with **no member column of any kind** on the anonymous one. This is FR-C6 made concrete: the guarantee is structural, not dependent on application code staying correct. |
 | FR-C21 | MUST | **Before** a contributor commits to anonymity, they are shown the counts that bear on their exposure: how many attributed and how many anonymous contributions the target already has. Where attributed participation is high and anonymous is zero, this is presented as a warning, not a statistic. Extends FR-C11. **[VERIFIED]** François, 2026-09-10. Part of the OPEN-19 resolution. |
 | FR-C22 | MUST | **No suppression threshold.** An anonymous contribution is displayed regardless of how many others exist. A count-based threshold would measure the wrong quantity, fail at launch, and break FR-C9 verification. See 3.3. |
-| FR-C24 | MUST | **The quota bounds accounts, not people, and the privacy statement says so.** Registration is open (FR-A6), so one person can hold several accounts and neither the quota (FR-C4) nor per-course uniqueness (FR-D9) is an integrity guarantee. No friction is added at account creation: a CAPTCHA is bypassed for a few cents at scale and an email loop circles a mailbox the provider already verified, so both cost the honest user a step and the attacker nothing. Holding contributions from unrecognised email domains was rejected outright: it penalises exactly the people anonymity exists for, and edges toward treating a domain as proof of enrolment (FR-A10). **[VERIFIED]** François, 2026-09-13, resolving OPEN-35. `design/account-integrity.md`. |
+| FR-C24 | MUST | **The quota bounds accounts, not people, and the privacy statement says so.** Registration is open (FR-A6), so one person can hold several accounts and neither the quota (FR-C4) nor per-course uniqueness (FR-D9) is an integrity guarantee. No friction is added at account creation: a CAPTCHA is bypassed for a few cents at scale and an email loop circles a mailbox the provider already verified, so both cost an ordinary user a step and the attacker nothing. Holding contributions from unrecognised email domains was rejected outright: it penalises exactly the people anonymity exists for, and edges toward treating a domain as proof of enrolment (FR-A10). **[VERIFIED]** François, 2026-09-13, resolving OPEN-35. `design/account-integrity.md`. |
 | FR-C25 | MUST | **Manipulation is detected on the target, never on the author.** A burst of contributions to one course in a short window is a fact about the course, so measuring it needs no link between a member and what they wrote, which is the only reason this control survives FR-C2. It holds the burst for a human (FR-E11) and stores nothing on the contribution. Cost accepted: a patient attacker spreading contributions over months is not detected. **[VERIFIED]** François, 2026-09-13. |
 | FR-C23 | MUST | **The path is chosen on a step of its own, never as a control on the content form,** and the anonymous branch carries one confirmation step that the attributed branch does not. FR-C9 makes the anonymous write permanent and unprovable, so it must not be reachable by a single press beside *Send*. The asymmetry is the point: only one of the two cannot be taken back. **[DERIVED]** 2026-09-10, while building the path. Enforced by `packages/ryc-ui/src/flow.ts` and `test/ui/review-flow.test.ts`, which assert that no step other than the confirmation can perform the anonymous write. Extended 2026-09-10 while polishing the screens: the step indicator shows **two** steps on the attributed branch and **three** on the anonymous one, so the asymmetry is visible before the choice rather than only felt after it, and the draft is re-readable on both of those screens, because deciding whether to put your name on text you cannot see is a decision made half blind. |
 
@@ -596,7 +623,7 @@ This is a reasonable proportionality judgement for this project, and it has one 
 attached: FR-C12. The privacy statement must say that the platform does not store the link,
 rather than implying that correlation is impossible for anyone under any circumstances.
 Overclaiming here would be worse than the weaker guarantee, because users would calibrate
-their honesty against a promise that does not hold. Stating the limit plainly is what makes
+their candour against a promise that does not hold. Stating the limit plainly is what makes
 the rest of the promise credible.
 
 FR-C6 is the load-bearing requirement here, and it is a schema decision rather than a
@@ -608,7 +635,7 @@ code being correct forever. Two separate paths, where the anonymous one has no c
 capable of holding an identifier, make the guarantee structural. The database then cannot
 express the leak, and FR-C3 stops depending on anybody's vigilance.
 
-FR-C3 is the honest form of the promise. "We choose not to look" is a policy; "we are
+FR-C3 is the stronger form of the promise. "We choose not to look" is a policy; "we are
 unable to look" is a property. Only the second survives a compromised administrator, and
 only the second is worth writing in a privacy policy. Choosing the weaker version is a
 legitimate decision, but it must be a deliberate one.
@@ -680,7 +707,7 @@ Three further reasons against a count threshold, in descending weight:
 
 **What is done instead** is FR-C21 and FR-D15: move the judgement to the person holding the
 missing number, and reduce what each anonymous record discloses. Neither is protection, and
-both are honest.
+both are accurate.
 
 **What stays broken, stated plainly.** On a small course with high named participation, a
 determined classmate can narrow authorship substantially and nothing here stops them. The
@@ -708,7 +735,7 @@ suppression by hand, which is a moderation action rather than a rule.
 **RESOLVED 2026-09-09, OPEN-20:** an anonymous contribution cannot be edited or deleted by
 its contributor. No client-held secret, no edit token, no recovery path. This is the strong
 answer and it keeps FR-C2 and FR-C3 intact, at a real cost in user convenience that the
-interface must be honest about (FR-C11).
+interface must state plainly (FR-C11).
 
 Two consequences follow and must not be confused with each other.
 
@@ -756,7 +783,7 @@ plainly to users before they contribute, not discovered at the first request. In
 with OPEN-10.
 
 Users must understand, at the moment of choosing, that anonymous means **permanent and
-irreversible**: no editing, no deletion, no proving it was theirs. That is the honest
+irreversible**: no editing, no deletion, no proving it was theirs. That is the accurate
 consequence of a guarantee worth having.
 
 ### 3.4 First module: RYC (FR-D)
@@ -780,8 +807,8 @@ below, including FR-D9.
 | FR-D3 | MUST | Each course has a page showing its identity, its aggregate ratings, and its reviews, newest first. |
 | FR-D4 | MUST | Every review displays the **academic year the reviewer took the course**, chosen by them, and the date it was submitted. These are different and often years apart: alumni review courses they took long ago. **Corrected 2026-09-10** from the earlier reading that the year was the submission year. This answers the contextual obsolescence failure in 1.1 and is not optional. |
 | FR-D5 | MUST | A review carries a **recommendation**, 1 to 5, phrased as "would you take this course again". **Reframed 2026-09-10** from a generic "overall rating", which conflated content, teaching and difficulty into one number meaning different things to different readers. A recommendation is actionable, which is what a PAE decision needs. |
-| FR-D6 | MUST | A review carries **workload against expectation** on a 5-point scale, from much lighter than its ECTS to much heavier. **Reframed 2026-09-10** from mandatory hours per week: absolute self-reported hours have poor construct validity, since the same course honestly yields 4 hours from one student and 15 from another, so the average measures the population rather than the course. Relative to ECTS is the native phrasing ("5 ECTS but feels like 10") and feeds the deferred workload index directly. |
-| FR-D6b | COULD | A review may carry **absolute hours per week**, optional. Keeps honest data from reviewers who actually track it without making everyone guess. |
+| FR-D6 | MUST | A review carries **workload against expectation** on a 5-point scale, from much lighter than its ECTS to much heavier. **Reframed 2026-09-10** from mandatory hours per week: absolute self-reported hours have poor construct validity, since the same course genuinely yields 4 hours from one student and 15 from another, so the average measures the population rather than the course. Relative to ECTS is the native phrasing ("5 ECTS but feels like 10") and feeds the deferred workload index directly. |
+| FR-D6b | COULD | A review may carry **absolute hours per week**, optional. Keeps precise data from reviewers who actually track it without making everyone guess. |
 | FR-D7 | MUST | A review carries **difficulty** on a **5-point categorical** scale. **Reframed 2026-09-10** from a 1-to-10 slider, which implies precision nobody has. A decade of use in the EPL document converged on categories, and its `FACILE - MOYEN` entries show people want to hedge, which a 5-point scale allows. |
 | FR-D8 | MUST | A review carries **review text**, with a minimum length of about **80 characters**, the same on both paths. Its purpose is to block non-reviews, not to mandate an essay. **[VERIFIED]** François, 2026-09-10. Resolves OPEN-37. Also bounded **above**, at 4,000 characters, on the body and the advice alike. Added 2026-09-10: the only ceiling was the API's 32 kB request cap, which is a transport limit, so an over-long review failed the whole request with no field named after the person had written all of it. A limit that produces a field error is a different thing from one that produces a 413. |
 | FR-D9 | MUST | **On the attributed path only:** one review per Member per course per academic year. Not enforceable on the anonymous path, see below and FR-C13. |
@@ -797,7 +824,7 @@ below, including FR-D9.
 | FR-D19 | MUST | **Assessment structure is scraped, never asked.** The catalogue publishes the evaluation method with weightings and the official contact hours, so a course page shows them from the reference module. Reviewers are asked only for what the catalogue cannot know. **[VERIFIED]** François, 2026-09-10. Verified against `cours-2025-lepl1503`. |
 | FR-D26 | MUST | **A scraped field keeps the structure the source gave it.** The long course-page fields are lists, not prose: measured across 546 pages, 4,040 list items, 3,988 line breaks, 818 `ul`, 81 `ol`, nesting three deep. They are stored and rendered as structured blocks, so a thirty item list reads as a list. Structure is **preserved, never invented**: a field written as one paragraph stays one paragraph. **[DERIVED]** 2026-09-10, after François reported the fields rendering as one unbroken blob. Model and measurements in `packages/ref/src/ingestion/parse/rich.ts`. |
 | FR-D27 | MUST | **No markup from a scraped page reaches the browser.** The parser converts the source's HTML into a closed set of block shapes and the client builds its own elements from them. No stored HTML, no sanitiser, no `dangerouslySetInnerHTML` anywhere in the path. Link destinations are dropped and the link text kept. **[DERIVED]** 2026-09-10. Tested in `test/ui/prose.test.ts`. |
-| FR-D28 | MUST | **The interface must not offer a capability that is not built as a reason to choose one publication path over the other.** The fork is where a permanent, unprovable choice (FR-C9) is made by comparing two lists, so an untrue claim on either list biases that choice, and it biases it toward the attributed branch. Editing (FR-C14) and "Mes avis" (FR-D12) are named once below both cards as planned, never inside either. **[DERIVED]** 2026-09-10, after the named card was found advertising all three. Held by `test/ui/path-honesty.test.ts`, which is to be updated in the same change that ships those features and not before. |
+| FR-D28 | MUST | **The interface must not offer a capability that is not built as a reason to choose one publication path over the other.** The fork is where a permanent, unprovable choice (FR-C9) is made by comparing two lists, so an untrue claim on either list biases that choice, and it biases it toward the attributed branch. Editing (FR-C14) and "Mes avis" (FR-D12) are named once below both cards as planned, never inside either. **[DERIVED]** 2026-09-10, after the named card was found advertising all three. Held by `test/ui/path-claims.test.ts`, which is to be updated in the same change that ships those features and not before. |
 | FR-D29 | MUST | **The submission limit is shown before the review is written, and worded as a count of reviews, never of which ones.** FR-C4 is per Member; learning at the point of sending that nothing can be sent is the worst moment to learn it. At zero the form does not open. The wording must not suggest the platform knows which reviews a Member wrote, since for the anonymous path it does not (`design/anonymous-rate-limiting.md`). **[DERIVED]** 2026-09-10. |
 | FR-D30 | MUST | **Whether a course belongs to another institution is read from the page, never inferred.** The pages state it: `Institution de référence` and `Code de l'UE dans l'institution de référence`. The previous heuristic guessed from having no teachers and no assessment, which is also what a sparse page looks like: measured on 2026-09-12, 66 of 546 offerings were flagged and **4 were wrong**, including `linfo1222`, which has themes, prerequisites, contact hours and a faculty. Both stated fields are parsed and stored. **[VERIFIED]** François, 2026-09-13, resolving the mechanics of OPEN-45. `design/catalogue-ingestion.md` 8.3. |
 | FR-D31 | MUST | **A course owned by another institution is contributable, and its tenant is that institution.** FR-C19 already derives an anonymous contribution's tenant from the target, so this is that rule applied rather than an exception to it: a Namur course belongs to Namur. Institutions are seeded as tenants for this purpose. **[VERIFIED]** François, 2026-09-13, resolving OPEN-45 **over a recommendation** to keep such courses read-only until their catalogue is ingested. The recorded reason for the decision: 1.5 lists tenancy as one of the few things cheap now and expensive later, so exercising it while the stakes are small is worth more than deferring it. The recorded costs: v1 was scoped to UCLouvain (OPEN-14) and this makes the tenant model live earlier; and the course record behind such a contribution is thin, since UCLouvain publishes only the reference, so FR-D19's promise that the catalogue answers what a reviewer is not asked holds much more weakly there. |
@@ -1009,11 +1036,11 @@ the costs, in `design/information-architecture.md`.
 | FR-F8 | MUST | Profile fields with **no consumer today** (studies, year of study, interests) are collected anyway. **[VERIFIED]** François, 2026-09-12, over a recommendation to defer them to the module that needs them. The recorded cost: under GDPR minimisation they are data we are accountable for holding and cannot justify by pointing at a use, and they enlarge the attribute set behind 3.3. FR-F6 and FR-F7 are what make it acceptable, and neither may be relaxed while FR-F8 stands. **Two amendments made while building it, 2026-09-13, both awaiting confirmation.** (1) **Notification preferences are struck from the list**: FR-A9 stores the email *domain* and never the address, so the platform cannot send mail to anybody, and a preference for something that cannot happen is not an unused field but a promise. The column was written and then removed before the change was proposed; restoring it means first deciding to store addresses, which is a separate decision with its own GDPR weight. (2) **"Programme" is named `studies`**: it is free text, it is matched against no catalogue row, and naming it after one would put the reference module's vocabulary inside the platform, which FR-B16's gate rejected outright. |
 | FR-F9 | MUST | A Member names their **institution**, and it is **self-declared**. Neither it nor the email domain may be presented as proof of enrolment (FR-A10). Where the declared institution disagrees with the email domain, the declaration wins and nothing is said: exchange students, alumni and personal accounts are all ordinary under FR-A6. |
 | FR-F10 | MUST | Institutions are **data, not code**: a seeded table, so adding one is a row. |
-| FR-F11 | MUST | An institution is shown by **name, city and colours, never by its mark**. Consistent with `design/frontend-design.tex` 2.3: the marks are trademarked whatever their copyright status, EPL's CC BY-SA fights our MIT licence, and a grid of university logos on a sign-up page is the sharpest possible implied endorsement. **[VERIFIED]** François, 2026-09-12. Revisit only with written permission. |
+| FR-F11 | MUST | An institution is shown by **name, city and colours, never by its mark**. Consistent with `docs/typeset/frontend-design.tex` 2.3: the marks are trademarked whatever their copyright status, EPL's CC BY-SA fights our MIT licence, and a grid of university logos on a sign-up page is the sharpest possible implied endorsement. **[VERIFIED]** François, 2026-09-12. Revisit only with written permission. |
 | FR-F12 | MUST | The picker shows **every listed institution** and allows only those whose catalogue is ingested to be chosen. Today that is UCLouvain alone. The unavailable ones must be labelled with the reason, since a grid of disabled cards otherwise reads as broken. **[VERIFIED]** François, 2026-09-12. |
 | FR-F13 | MUST | Choosing an institution **does not set a tenant**. FR-C19 derives an anonymous contribution's tenant from the target, never the author, and that is unchanged: this field is a preference. |
 | FR-F14 | MUST | The first-run sequence can be **replayed by anyone**, from the profile, and the development sign-in creates a Member with no progress so the sequence is what a developer lands on. An onboarding completed once is an onboarding nobody can test. |
-| FR-F15 | SHOULD | The app's home screen presents the modules as substance rather than as a menu: what a Member can do now, what changed since they last looked, what is coming. Deliberately unspecified further until it is drawn in `design/frontend-design.tex`. |
+| FR-F15 | SHOULD | The app's home screen presents the modules as substance rather than as a menu: what a Member can do now, what changed since they last looked, what is coming. Deliberately unspecified further until it is drawn in `docs/typeset/frontend-design.tex`. |
 ### 3.7 Languages (FR-G)
 
 Added 2026-09-12. Full reasoning in `design/internationalisation.md`.
@@ -1290,8 +1317,8 @@ been deferred.
 | ID | Question | Resolution |
 |---|---|---|
 | OPEN-45 | The catalogue contains courses taught at other institutions. | **Parsed from the page rather than inferred, kept, and contributable, with the tenant being that institution.** Decided over a recommendation to keep them read-only; 1.5 makes tenancy the thing to exercise early. FR-D30, FR-D31. Resolved 2026-09-13. |
-| OPEN-46 | What happens to a member's **attributed** contributions when they delete their account (FR-A15). | Three answers, all defensible, and the choice is François's. **Delete them**: cleanest reading of Article 17, and it removes reviews other students are relying on, which is content loss the platform exists to prevent. **Detach them**, keeping the text and dropping the name: Recital 26 makes properly anonymised data fall outside the GDPR, so this is lawful, and it quietly moves a contribution from the attributed path to something that looks anonymous without its author ever choosing that, which sharpens the complement problem in 3.3 against everyone else. **Keep them under the name**, on the ground that a signed public statement is not withdrawn by closing an account: honest, and the hardest to defend to a regulator. Not decided. Until it is, FR-A15 is built with deletion of the attributed rows, which is the reversible-by-decision option rather than the irreversible one. Raised 2026-09-13. |
-| OPEN-35 | Open registration means one person can hold many accounts. | **Accepted and disclosed, with detection on the target rather than the author.** No friction at sign-up: a CAPTCHA costs an attacker nothing and the honest user a step. FR-C24, FR-C25. Resolved 2026-09-13. |
+| OPEN-46 | What happens to a member's **attributed** contributions when they delete their account (FR-A15). | Three answers, all defensible, and the choice is François's. **Delete them**: cleanest reading of Article 17, and it removes reviews other students are relying on, which is content loss the platform exists to prevent. **Detach them**, keeping the text and dropping the name: Recital 26 makes properly anonymised data fall outside the GDPR, so this is lawful, and it quietly moves a contribution from the attributed path to something that looks anonymous without its author ever choosing that, which sharpens the complement problem in 3.3 against everyone else. **Keep them under the name**, on the ground that a signed public statement is not withdrawn by closing an account: defensible, and the hardest to argue to a regulator. Not decided. Until it is, FR-A15 is built with deletion of the attributed rows, which is the reversible-by-decision option rather than the irreversible one. Raised 2026-09-13. |
+| OPEN-35 | Open registration means one person can hold many accounts. | **Accepted and disclosed, with detection on the target rather than the author.** No friction at sign-up: a CAPTCHA costs an attacker nothing and an ordinary user a step. FR-C24, FR-C25. Resolved 2026-09-13. |
 | OPEN-24 | Threshold for automatic removal versus holding for a human? | **Nothing is ever removed automatically.** Holding is automatic, reversible and narrow: dull signals only, never sentiment. A single report does not hold; one alleging illegality or naming a third party holds at once. FR-E10 to FR-E12. Resolved 2026-09-13. |
 | OPEN-8 | How are Moderators appointed? | **An Administrator appoints, one at a time, recorded in the audit log.** No self-service, no election, no promotion by tenure or reputation. A Moderator cannot appoint a Moderator, and the powers are content powers only. FR-E14. Resolved 2026-09-13. |
 | OPEN-7 | Is the 24 hour moderation target sustainable? | **No. Nothing is published until it has been measured.** The legal standard is acting expeditiously once you have actual knowledge (DSA Article 6), which names no number, and naming one ourselves creates an obligation the law did not impose. FR-E13. Resolved 2026-09-13. |
@@ -1475,6 +1502,8 @@ do not translate the way they appear to.
   governance committee, and no launch date.
 - `design/anonymous-rate-limiting.md` (Accepted 2026-09-09) and
   `design/module-boundaries.md` (Proposed 2026-09-10). Design notes in this repository.
-- <https://github.com/Lord-Melflam/RYC>, README, `docs/PRIVACY.md`, `docs/MODERATION.md`,
-  `SECURITY.md`, read 2026-09-09. **Prior art only, not authoritative**, see 0.1.
-  `docs/API.md` exists and has not been read. Given its status, reading it is low priority.
+- <https://github.com/Lord-Melflam/RYC>: its README, and its privacy, moderation and
+  security notes, read 2026-09-09. **Prior art only, not authoritative**, see 0.1. Its API
+  note exists and has not been read; given its status, reading it is low priority. Those
+  are files in that repository, named here rather than linked, since a bare path would
+  read as one of ours.

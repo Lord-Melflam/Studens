@@ -26,8 +26,8 @@ export interface InstitutionSummary {
   /**
    * FR-F12: whether this institution can be chosen yet.
    *
-   * Unavailable ones are still listed. Showing the whole landscape and letting
-   * only one be picked says "this is coming" honestly; listing UCLouvain alone
+   * Unavailable ones are still listed. Showing every institution and letting
+   * only one be picked says "this is coming"; listing UCLouvain alone
    * would imply the platform is a UCLouvain product, which it is not.
    */
   available: boolean;

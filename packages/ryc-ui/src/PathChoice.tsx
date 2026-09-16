@@ -8,7 +8,7 @@
  *   - the anonymous card leads to one more screen
  *
  * Only one of the two cannot be undone, so only one of the two costs an extra
- * confirmation (docs/design/frontend-design.tex 6, FR-C23).
+ * confirmation (docs/typeset/frontend-design.tex 6, FR-C23).
  *
  * WHAT THE CARDS MAY SAY. This is the screen where a person makes a permanent
  * choice by comparing two lists, so a claim on either list that is not true
@@ -16,7 +16,7 @@
  * "Mes avis" (FR-D12) are specified and NOT BUILT, so the named card does not
  * offer them as reasons to choose it. They are named as planned, once, in the
  * one place where the difference between the branches is permanent anyway.
- * test/ui/path-honesty.test.ts holds this.
+ * test/ui/path-claims.test.ts holds this.
  *
  * IN THREE LANGUAGES since 2026-09-13. This screen more than any other: it is
  * where somebody accepts that something is permanent, and accepting that in a
