@@ -8,6 +8,7 @@
  * the path and hands the rest to the module without parsing it, so a module can
  * own its URLs while the shell stays ignorant of what they mean.
  */
+import { useEffect, useState } from "react";
 import { useT } from "@studens/i18n";
 import { Account } from "../Account.js";
 import { LanguageSwitcher } from "../LanguageSwitcher.js";
@@ -15,6 +16,8 @@ import { Settings } from "../Settings.js";
 import { activeModuleFor, liveModules } from "./registry.js";
 import { useSession } from "../session.js";
 import { FIRST_RUN } from "../firstrun/FirstRun.js";
+import { ModerationConsole } from "../moderation/Console.js";
+import { fetchPowers, type Powers } from "../moderation/api.js";
 import { APP_PREFIX, currentRoute, linkProps, moduleIdFrom, navigate, usePath } from "../router.js";
 
 /**
@@ -25,6 +28,16 @@ import { APP_PREFIX, currentRoute, linkProps, moduleIdFrom, navigate, usePath } 
  * id would simply never mount.
  */
 const SETTINGS = "moi";
+
+/**
+ * The moderator's console. Reserved like the account panel: no module may claim
+ * this id, and one declaring it would simply never mount.
+ *
+ * Moderation is the platform's rather than a module's, because it acts on any
+ * module's content through a kind and an id (FR-E8). A console inside RYC would
+ * have to be built again for the second module.
+ */
+const MODERATION = "moderation";
 
 function Home() {
   const t = useT();
@@ -83,6 +96,12 @@ function SetupPrompt() {
 export function Shell() {
   const t = useT();
   const path = usePath();
+  // Asked once per mount. The API answers for everybody, including members, so
+  // the shell can decide what to draw rather than making somebody guess a URL.
+  const [powers, setPowers] = useState<Powers | null>(null);
+  useEffect(() => {
+    void fetchPowers().then(setPowers);
+  }, []);
   const route = currentRoute(path);
   const routeId = moduleIdFrom(path);
   const active = activeModuleFor(path);
@@ -91,6 +110,7 @@ export function Shell() {
   // The shell's own screens sit alongside the modules and are not modules:
   // they are about the member, not about anything a module owns.
   const settings = routeId === SETTINGS;
+  const moderating = routeId === MODERATION;
 
   // Everything below /app/<id> belongs to the module. Sliced here, never read.
   const inside = active ? route.slice(`${APP_PREFIX}/${active.id}`.length) || "/" : "/";
@@ -110,15 +130,24 @@ export function Shell() {
           <button type="button" onClick={() => navigate(APP_PREFIX)}>
             {t("app.modules")}
           </button>
-          {(active || settings) && (
+          {(active || settings || moderating) && (
             <>
               <span aria-hidden="true">/</span>
-              <span className="here">{active ? active.name : t("settings.title")}</span>
+              <span className="here">
+                {active ? active.name : moderating ? t("mod.title") : t("settings.title")}
+              </span>
             </>
           )}
         </nav>
         <div className="app-bar-right">
           <LanguageSwitcher route={route} />
+          {/* Only where there is one. A link to a console somebody cannot open
+              is a link that teaches them the console exists. */}
+          {powers?.canModerate && (
+            <a className="settings-link" {...linkProps(`${APP_PREFIX}/${MODERATION}`)}>
+              {t("mod.title")}
+            </a>
+          )}
           <a className="settings-link" {...linkProps(`${APP_PREFIX}/${SETTINGS}`)}>
             {t("settings.title")}
           </a>
@@ -131,6 +160,15 @@ export function Shell() {
       <div className="app-body">
       {settings ? (
         <Settings />
+      ) : moderating ? (
+        // Rendered only where the power exists. Somebody typing the URL without
+        // it gets the unknown-screen message, and the API answers 404 to every
+        // request behind it anyway, so nothing here is the only guard.
+        powers?.canModerate ? (
+          <ModerationConsole canAppoint={powers.canAppoint} />
+        ) : (
+          <p className="error">{t("app.unknown", { id: MODERATION })}</p>
+        )
       ) : routeId && !active ? (
         <p className="error">
           {t("app.unknown", { id: routeId })}{" "}

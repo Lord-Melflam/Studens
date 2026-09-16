@@ -70,8 +70,25 @@ async function seed() {
 
 async function clean() {
   if (!reachable) return;
-  await prisma.report.deleteMany({ where: { targetKind: RYC_REVIEW_KIND } });
-  await prisma.auditLog.deleteMany({ where: { targetKind: RYC_REVIEW_KIND } });
+  // Scoped to THIS file's own course, not to every report of the kind.
+  //
+  // Both moderation test files use the same target kind, and deleting by kind
+  // alone meant whichever ran second wiped the other's rows mid-test. Exactly
+  // the failure the session count in callback.db.test.ts had: a cleanup that is
+  // really a statement about every other test file.
+  const mine = await prisma.reviewAttributed.findMany({
+    where: { courseId },
+    select: { id: true },
+  });
+  const anon = await prisma.reviewAnonymous.findMany({
+    where: { courseId },
+    select: { id: true },
+  });
+  const ids = [...mine, ...anon].map((r) => r.id);
+  if (ids.length > 0) {
+    await prisma.report.deleteMany({ where: { targetId: { in: ids } } });
+    await prisma.auditLog.deleteMany({ where: { targetId: { in: ids } } });
+  }
   await prisma.reviewAttributed.deleteMany({ where: { courseId } });
   await prisma.reviewAnonymous.deleteMany({ where: { courseId } });
   await prisma.member.deleteMany({ where: { provider: "report-test" } });

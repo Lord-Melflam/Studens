@@ -149,3 +149,118 @@ export async function holdReview(
         : await tx.reviewImported.updateMany({ where, data });
   return count > 0;
 }
+
+/**
+ * Put a held review back in public view. FR-E10.
+ *
+ * The counterpart to `holdReview`, and the reason holding is safe: nothing was
+ * deleted, so a moderator who decides a notice was wrong undoes it exactly.
+ */
+export async function releaseReview(
+  tx: Prisma.TransactionClient,
+  id: string,
+): Promise<boolean> {
+  const where = { id, status: "held" };
+  const data = { status: "published" };
+  const kind = await locate(tx, id);
+  if (kind === null) return false;
+  const { count } =
+    kind === "attributed"
+      ? await tx.reviewAttributed.updateMany({ where, data })
+      : kind === "anonymous"
+        ? await tx.reviewAnonymous.updateMany({ where, data })
+        : await tx.reviewImported.updateMany({ where, data });
+  return count > 0;
+}
+
+/**
+ * What a moderator reads before deciding.
+ *
+ * EXACTLY WHAT A READER WOULD SEE, and no more. An anonymous review arrives
+ * with no author because there is none to arrive with: nothing is filtered out
+ * here for politeness, there is simply nothing to filter, and that is the
+ * property FR-E14's "never reading authorship" rests on. A named review carries
+ * the username, which is already on the course page.
+ *
+ * It does not resolve a username through the platform the way `read.ts` does.
+ * The id is enough for a moderator to decide about content, and a moderation
+ * screen that pulled member records would be the second door into FR-C that the
+ * design note warns about.
+ *
+ * NULL RATHER THAN A THROW WHEN THE ROW IS GONE, at every step and not only at
+ * `locate`. A notice outlives the thing it is about: the content can disappear
+ * between the two reads, because a transaction here is READ COMMITTED and a
+ * concurrent delete is visible inside it. Throwing looks local and is not, since
+ * the queue describes its entries together: one vanished row would fail the
+ * whole request and no notice could be handled at all until it came back. The
+ * console draws "content not found" for a null and lets the notice be closed,
+ * which is the outcome a moderator needs in that case anyway.
+ */
+export async function describeReviewForModeration(
+  tx: Prisma.TransactionClient,
+  id: string,
+): Promise<{
+  targetId: string;
+  path: string;
+  author: string | null;
+  body: string;
+  advice: string | null;
+  /**
+   * The course this belongs to, as an ID.
+   *
+   * Not a code, and not joined: `courseId` is a plain id rather than a Prisma
+   * relation, because a relation would need a back-relation on the catalogue
+   * and invert FR-B10's dependency direction. Whoever composes this with the
+   * catalogue turns it into something a person can read.
+   */
+  courseId: string;
+  held: boolean;
+} | null> {
+  const kind = await locate(tx, id);
+  if (kind === null) return null;
+
+  if (kind === "imported") {
+    const row = await tx.reviewImported.findUnique({ where: { id } });
+    if (row === null) return null;
+    return {
+      targetId: id,
+      path: "imported",
+      author: null,
+      body: row.body,
+      advice: null,
+      courseId: row.courseId,
+      held: row.status !== "published",
+    };
+  }
+
+  if (kind === "anonymous") {
+    const row = await tx.reviewAnonymous.findUnique({ where: { id } });
+    if (row === null) return null;
+    return {
+      targetId: id,
+      path: "anonymous",
+      // There is no author column on this table. Not withheld: absent.
+      author: null,
+      body: row.body,
+      advice: row.advice,
+      courseId: row.courseId,
+      held: row.status !== "published",
+    };
+  }
+
+  const row = await tx.reviewAttributed.findUnique({ where: { id } });
+  if (row === null) return null;
+  return {
+    targetId: id,
+    // A detached review lost its member when its author deleted their account
+    // (FR-A15), so it is neither named nor anonymous, and says so.
+    path: row.memberId === null ? "detached" : "named",
+    // The member id is NOT returned. A moderator decides about content, and
+    // resolving it to a person is a capability this screen has no use for.
+    author: null,
+    body: row.body,
+    advice: row.advice,
+    courseId: row.courseId,
+    held: row.status !== "published",
+  };
+}

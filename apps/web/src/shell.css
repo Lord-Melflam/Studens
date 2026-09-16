@@ -416,3 +416,62 @@ main.app {
 .panel button.ghost.danger:hover:not(:disabled) { border-color: var(--danger); }
 .panel.danger > button.ghost { padding: 0.45rem 0.9rem; font: inherit; background: transparent;
   border: 1px solid var(--line); border-radius: 7px; cursor: pointer; }
+
+/* The moderator's console. Deliberately plain: it is a working screen for a
+   handful of people, and every hour spent styling it is an hour not spent on
+   the product. */
+.queue { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+.queue-entry {
+  padding: 0.9rem 1rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+/* Already out of public view. Marked so a moderator does not hide it twice. */
+.queue-entry.held { border-color: var(--warn); background: var(--warn-soft); }
+.queue-entry header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+.queue-context { font-weight: 700; font-variant-numeric: tabular-nums; }
+.queue-counts, .queue-age { font-size: 0.8rem; color: var(--muted); }
+.queue-age { margin-left: auto; }
+.queue-categories { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.6rem; }
+.chip-cat, .chip-held {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+.chip-cat { color: var(--danger); background: #f7ecea; }
+.chip-held { color: var(--warn); background: #fff; border: 1px solid var(--warn); }
+/* Which path it was published on, which is also a statement of what a
+   moderator can and cannot know about who wrote it. */
+.queue-path { margin: 0 0 0.4rem; font-size: 0.8rem; color: var(--muted); }
+.queue-body {
+  margin: 0 0 0.6rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.92rem;
+  white-space: pre-wrap;
+  background: var(--bg);
+  border-left: 3px solid var(--line);
+}
+.queue-advice { margin: 0 0 0.6rem; font-size: 0.88rem; color: var(--muted); }
+.queue-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+.queue-actions button {
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.queue-actions button:hover:not(:disabled) { border-color: var(--accent); }
+.queue-actions button.danger { color: var(--danger); border-color: #e6cdc9; }
+.queue-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+.queue-entry .field-note { margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--muted); }
+.panel h4.sub { margin: 1.2rem 0 0.4rem; font-size: 0.85rem; }
+.panel ul.plain.small { font-size: 0.8rem; color: var(--muted); }

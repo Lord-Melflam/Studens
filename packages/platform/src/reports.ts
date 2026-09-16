@@ -261,7 +261,12 @@ export async function openReportSummary(
 
   const byTarget = new Map<string, ReportSummary>();
   for (const r of rows) {
-    const key = `${r.targetKind} ${r.targetId}`;
+    // A separator no id can contain, so two targets cannot collide by
+    // concatenation. Written as an escape rather than as the character
+    // itself: a control byte sitting in source is invisible to a reviewer,
+    // makes grep treat the whole file as binary, and is exactly what
+    // packages/platform/src/text.ts refuses in anybody else's input.
+    const key = `${r.targetKind}\u0000${r.targetId}`;
     const found = byTarget.get(key) ?? {
       targetKind: r.targetKind,
       targetId: r.targetId,
