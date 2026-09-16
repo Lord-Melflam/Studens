@@ -69,6 +69,7 @@ export {
   writeProfile,
   usernamesFor,
   checkUsername,
+  usernameKeyFor,
   UsernameInvalid,
   USERNAME_MIN,
   USERNAME_MAX,

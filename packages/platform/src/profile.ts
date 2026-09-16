@@ -59,7 +59,27 @@ export function checkUsername(raw: string): string {
   if (name.length > USERNAME_MAX) throw new UsernameInvalid("long");
   if (!USERNAME_RE.test(name)) throw new UsernameInvalid("shape");
   if (RESERVED.has(name)) throw new UsernameInvalid("reserved");
+  // The reserved list applies to what a reader sees, or `m.o.d.e.r.a.t.o.r`
+  // would walk straight past it.
+  if (RESERVED.has(usernameKeyFor(name))) throw new UsernameInvalid("reserved");
   return name;
+}
+
+/**
+ * What decides whether a name is free: the name with its separators removed.
+ *
+ * `lou.martin`, `lou-martin`, `lou_martin` and `loumartin` are one name to a
+ * reader and were four accounts to the database. A username is displayed beside
+ * somebody's opinion of a named lecturer, so the uniqueness that matters is of
+ * what is read, not of what is stored. Case needs nothing here, since the name
+ * is lowercased before it ever reaches this.
+ *
+ * Separators only. Folding `1` into `l` and `0` into `o` would catch more
+ * impersonation and would also refuse legitimate names containing a digit, so
+ * that risk is left standing and stated rather than half-solved.
+ */
+export function usernameKeyFor(name: string): string {
+  return name.replace(/[._-]/g, "");
 }
 
 export interface Profile {
@@ -109,7 +129,12 @@ export async function writeProfile(
   const data: Record<string, unknown> = {};
 
   if (patch.username !== undefined) {
-    data["username"] = patch.username === null ? null : checkUsername(patch.username);
+    // Written together, always. The key is the column with the constraint that
+    // matters, so a path that set one without the other would be a path that
+    // skips the check.
+    const name = patch.username === null ? null : checkUsername(patch.username);
+    data["username"] = name;
+    data["usernameKey"] = name === null ? null : usernameKeyFor(name);
   }
   for (const key of ["locale", "institutionCode"] as const) {
     if (patch[key] !== undefined) data[key] = patch[key];

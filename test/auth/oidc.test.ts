@@ -149,6 +149,22 @@ describe("the authorization request", () => {
     expect(url.searchParams.get("code_challenge")).toBe(challengeFor(auth.codeVerifier));
   });
 
+  /**
+   * Without this the provider reuses whichever session the browser holds, and
+   * somebody with a personal and a university account signs in as whichever
+   * they used last with nothing on screen naming it. The account is what a
+   * review is published under, and a review is permanent and public, so the
+   * wrong one is the wrong name on an opinion about a named lecturer.
+   */
+  it("asks which account, rather than taking the one the browser holds", async () => {
+    const url = new URL((await beginAuthorization(fake(), REDIRECT)).url);
+    expect(url.searchParams.get("prompt")).toBe("select_account");
+    // Not `login`. The question is which account, not proving the password
+    // again, and a product that re-authenticates on every sign-in teaches
+    // people to type credentials whenever a page asks them to.
+    expect(url.searchParams.get("prompt")).not.toBe("login");
+  });
+
   it("is different every time", async () => {
     const a = await beginAuthorization(fake(), REDIRECT);
     const b = await beginAuthorization(fake(), REDIRECT);

@@ -179,7 +179,8 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.long": "Trop long : 24 caractères au maximum.",
     "firstrun.2.err.shape": "Caractères non autorisés, ou un séparateur au début ou à la fin.",
     "firstrun.2.err.reserved": "Ce nom est réservé.",
-    "firstrun.2.err.taken": "Ce pseudonyme est déjà pris.",
+    "firstrun.2.err.taken":
+      "Ce pseudonyme est déjà pris, y compris s'il ne diffère que par les points, tirets ou soulignés.",
     "firstrun.2.err.other": "L'enregistrement a échoué. Réessayez.",
     "firstrun.err.save":
       "L'enregistrement a échoué et rien n'a été perdu. Réessayez ; si cela recommence, rechargez la page.",
@@ -562,7 +563,8 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.shape":
       "Niet-toegelaten tekens, of een scheidingsteken aan het begin of het einde.",
     "firstrun.2.err.reserved": "Deze naam is voorbehouden.",
-    "firstrun.2.err.taken": "Deze gebruikersnaam is al bezet.",
+    "firstrun.2.err.taken":
+      "Deze gebruikersnaam is al bezet, ook als ze enkel verschilt door punten, streepjes of liggende streepjes.",
     "firstrun.2.err.other": "Opslaan is mislukt. Probeer opnieuw.",
     "firstrun.err.save":
       "Opslaan is mislukt en er is niets verloren. Probeer opnieuw; gebeurt het weer, herlaad dan de pagina.",
@@ -945,7 +947,8 @@ export const shellStrings: Bundle = {
     "firstrun.2.err.shape":
       "Characters that are not allowed, or a separator at the start or the end.",
     "firstrun.2.err.reserved": "That name is reserved.",
-    "firstrun.2.err.taken": "That username is already taken.",
+    "firstrun.2.err.taken":
+      "That username is already taken, including one differing only by dots, dashes or underscores.",
     "firstrun.2.err.other": "Saving failed. Try again.",
     "firstrun.err.save":
       "Saving failed and nothing was lost. Try again; if it happens again, reload the page.",
