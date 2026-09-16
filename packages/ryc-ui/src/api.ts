@@ -44,11 +44,16 @@ export interface ProgrammeSummary {
   code: string;
   title: string;
   faculty: string;
+  /** The faculty's own name, so a filter can be labelled with something readable. */
+  facultyName: string;
   courses: number;
-  /** Parsed from the title by the reference module. Null when it matched nothing. */
+  /** Stored by the reference module. Null when nothing known matched. */
   kind: string | null;
   credits: number | null;
+  /** Louvain-la-Neuve, Charleroi, and so on, as the institution publishes it. */
   site: string | null;
+  /** The decree's field of study. Null where the source that publishes it does not cover the programme. */
+  domain: string | null;
 }
 
 /**
@@ -193,6 +198,8 @@ export const api = {
     json<{ query: string; results: CourseSummary[] }>(`/api/courses?q=${encodeURIComponent(q)}`),
   course: (code: string) => json<CourseDetail>(`/api/courses/${encodeURIComponent(code)}`),
   faculties: () => json<{ faculties: FacultySummary[] }>("/api/faculties"),
+  /** Every programme of the year, across faculties. */
+  allProgrammes: () => json<{ programmes: ProgrammeSummary[] }>("/api/programmes"),
   programmes: (faculty: string) =>
     json<{ faculty: string; programmes: ProgrammeSummary[] }>(
       `/api/faculties/${encodeURIComponent(faculty)}/programmes`,

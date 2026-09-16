@@ -68,11 +68,15 @@ export interface Snapshot {
    *    re-derived from the title on every read, which meant the database could
    *    not be asked for the masters in Charleroi and the field of study was
    *    nowhere at all.
+   * 6: courses the university could not serve are listed instead of ending the
+   *    run. `cours-2025-mlsmm2219` answers 503 every time while its 2024
+   *    edition is fine, and a crawl of nine thousand pages meets several of
+   *    those. Recorded rather than silently dropped.
    *
    * The version field exists to be used, so an older snapshot is refused
    * rather than silently loaded with a field missing.
    */
-  version: 5;
+  version: 6;
   /** When the crawl finished. */
   takenAt: string;
   /** The academic year crawled. */
@@ -90,6 +94,16 @@ export interface Snapshot {
    * records what it saw and a person decides.
    */
   conflicts: SnapshotConflict[];
+  /**
+   * Courses the university would not serve, after the retries were spent.
+   *
+   * Listed rather than dropped, and listed rather than fatal. A page that
+   * answers 503 every time is not a catalogue with wrong data in it, it is a
+   * catalogue with a course missing, and refusing to update over one course
+   * means never updating at all once there are thousands. What would be wrong
+   * is losing it quietly, so it is written down and printed.
+   */
+  unavailable: string[];
   /**
    * How each offering was reached. Many-to-many on BOTH axes on purpose: a
    * course appears in several programmes, and those programmes can belong to
@@ -128,9 +142,9 @@ const COURSE_CODE = /^[a-z]{3,6}\d{3,4}[a-z]?$/;
  * Every check here is a failure the crawl could plausibly produce.
  */
 export function validate(s: Snapshot): void {
-  if (s.version !== 5) {
+  if (s.version !== 6) {
     throw new SnapshotInvalid(
-      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 5)`,
+      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 6)`,
     );
   }
   if (s.faculties.length === 0) throw new SnapshotInvalid("no faculties discovered");
@@ -153,6 +167,52 @@ export function validate(s: Snapshot): void {
   const codes = new Set(s.offerings.map((o) => o.code));
   if (codes.size !== s.offerings.length) {
     throw new SnapshotInvalid("duplicate course codes in the snapshot");
+  }
+
+  assertNothingWentBlank(s);
+}
+
+/**
+ * A field that is empty on EVERY offering, which means the layout changed.
+ *
+ * This is the guard the offering parser used to carry per page, moved to where
+ * the evidence actually is. A selector that stops matching does not blank one
+ * course, it blanks the same field on all of them, and that is a fact about the
+ * run. Per page it was wrong in both directions: it failed a whole crawl over
+ * one course UCLouvain publishes with an empty evaluation field, and it could
+ * say nothing at all about a field that had quietly vanished everywhere.
+ *
+ * THE THRESHOLD IS MEASURED, not chosen. In a real 546-course crawl of EPL the
+ * least populated of these fields is filled on 84%, and none is below it, so
+ * zero across a substantial run is not something a genuine catalogue produces.
+ * Below 25 offerings the check stays quiet, because a `--max` sample is allowed
+ * to miss anything.
+ */
+const NEVER_ALL_EMPTY = [
+  "assessment",
+  "content",
+  "themes",
+  "teachers",
+  "language",
+  "quarter",
+  "contactHours",
+] as const;
+
+const SAMPLE_FLOOR = 25;
+
+function assertNothingWentBlank(s: Snapshot): void {
+  if (s.offerings.length < SAMPLE_FLOOR) return;
+  for (const field of NEVER_ALL_EMPTY) {
+    const filled = s.offerings.filter((o) => {
+      const v = (o as unknown as Record<string, unknown>)[field];
+      return Array.isArray(v) ? v.length > 0 : v !== null && v !== undefined && v !== "";
+    }).length;
+    if (filled === 0) {
+      throw new SnapshotInvalid(
+        `every one of the ${s.offerings.length} offerings is missing "${field}". ` +
+          `A field empty everywhere is a layout change, not a catalogue.`,
+      );
+    }
   }
 }
 

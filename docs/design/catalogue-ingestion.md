@@ -723,3 +723,77 @@ entries was enough; `--no-cache` is the general answer. Confirmed afterwards: 20
 live, with 42 EPL programmes and 597 across the year.
 
 This is worth knowing every September, which is exactly when somebody will run this.
+
+## 12. Widening beyond one faculty
+
+Built 2026-09-16. Snapshot format **6**. Everything below was measured, and the
+three failures were found by running the crawl rather than by reading it.
+
+### 12.1 What a full crawl costs
+
+| | Requests | Wall clock at 700 ms |
+|---|---|---|
+| One faculty (EPL) | about 600 | 7 minutes |
+| Two (EPL and LSM), 969 courses | about 1,050 | 12 minutes |
+| All 21, about 692 programmes | **about 9,000** | **close to two hours** |
+
+Once per academic year, and cheap after that: the second run of the same two
+faculties made **42 requests and served 1,032 from cache**.
+
+Two guards make the difference deliberate rather than accidental.
+`--max-requests` is a ceiling that stops the run, because the way to find out a
+crawl is fifteen times larger than intended should not be a two-hour silence.
+And the run now says what the rest of it will cost, before spending it, and
+prints progress every 250 course pages.
+
+**The full 21-faculty crawl has not been run.** It is a real cost to somebody
+else's server, and it is a decision rather than a step.
+
+### 12.2 Three ways a crawl of one faculty lies about a crawl of twenty
+
+**A field UCLouvain publishes empty.** `cours-2025-lcems2066` carries the
+evaluation label with a literal `<div></div>` under it. The parser treated a
+label with an empty value as proof the layout had changed and failed the run, so
+the second faculty ever crawled could not be ingested at all. Published and
+empty is a third state, and it is an absence. What the rule was guarding, a
+selector that silently stops matching, is now checked where the evidence is: a
+field empty on EVERY offering fails the snapshot, and the threshold is measured,
+since the least populated field in a real 546-course crawl is filled on 84%.
+
+**A server having a bad minute.** `cours-2025-lcems2341` answered 503 three
+times and then 200, the first attempt taking ten seconds. Transient answers are
+retried now, with a growing wait and `Retry-After` honoured when sent, and every
+attempt counts against the budget because every attempt is work the university
+did. The first version of that retry looked only at HTTP statuses and let a
+`TimeoutError` straight through, which ended a run of 969 after 750 had been
+read: a timeout carries no status, and a failure with no status is a failure of
+the connection, which is the most retryable thing there is.
+
+**A page the university cannot serve at all.** `cours-2025-mlsmm2219` answered
+503 on every attempt for several minutes while its 2024 edition was served
+normally. A crawl of nine thousand pages meets several, so ending the run over
+one means the catalogue can never be updated again.
+
+The line drawn, and it is the important sentence in this section: **a page we
+could not GET is tolerated, a page we could not UNDERSTAND is not.** One is a
+course missing, the other is a course wrong, and section 6 refuses the second.
+Unavailable courses are listed in the snapshot and printed. Above 1% of the run,
+with a floor of 5, the run fails instead: a handful of broken pages is the
+catalogue, a wave of them is us being blocked.
+
+### 12.3 The faculty stops being a gate
+
+Browsing asked for a faculty before showing anything. That works with one and
+fails with twenty-one: somebody looking for a minor does not know which faculty
+owns it, and not knowing yet is what browsing is for. UCLouvain's own catalogue
+does not ask either.
+
+Every programme of the year is listed, and the faculty joins the kind, the site
+and the field of study as something to narrow by. A programme row states its
+site as a fact rather than leaving it inside its name, and the published title
+is de-duplicated against it: "Bachelier en sciences de gestion (Mons)" beside a
+Mons chip says the same word twice, so the exact match is dropped and nothing
+else ever is.
+
+Filters appear only when there is more than one value to choose between, so a
+single-faculty catalogue looks exactly as it did.

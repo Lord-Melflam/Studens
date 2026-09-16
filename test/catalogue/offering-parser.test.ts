@@ -121,12 +121,34 @@ describe("failing loudly rather than storing nulls", () => {
     expect(() => parseOffering(html, "x", 2025, url)).toThrow(/the layout changed/);
   });
 
-  it("distinguishes a present label with an empty value from an absent label", () => {
+  /**
+   * THIS ASSERTED THE OPPOSITE UNTIL 2026-09-16, and a real page settled it.
+   *
+   * The rule was that a label with an empty value means the layout changed, so
+   * the parser threw. Then `cours-2025-lcems2066` turned up on the second
+   * faculty ever crawled: UCLouvain publishes its evaluation label with a
+   * literal `<div></div>` under it, and a crawl of 969 courses died on that one
+   * page. Published-and-empty is a third state, and it is an absence.
+   *
+   * What the old rule was guarding has not been dropped, it has moved to
+   * `snapshot.ts`, which is the only place the evidence exists: a selector that
+   * stops matching empties a field on EVERY page, not on one.
+   */
+  it("treats a present label with an empty value as an absence, not a failure", () => {
     const html = '<html><body><div class="fa_cell_0">5.00 crédits</div><h1>X</h1>' +
       '<div class="fa_row"><div class="fa_cell_1">Langue d\'enseignement</div><div class="fa_cell_2"></div></div>' +
       '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';
-    // The language label is present and its value is empty: that is a broken parse,
-    // not a field the era lacks, so it must throw rather than store null.
-    expect(() => parseOffering(html, "x", 2025, url)).toThrow(/label present but value empty/);
+    const parsed = parseOffering(html, "x", 2025, url);
+    expect(parsed.language).toBeNull();
+    // And the page is still parsed: the rest of it was never in doubt.
+    expect(parsed.ects).toBe(5);
+    expect(parsed.content).not.toBeNull();
+  });
+
+  it("still refuses a page whose fields cannot be found at all", () => {
+    // The difference that matters: nothing labelled anywhere is a layout
+    // change, and that check is unchanged.
+    const html = '<html><body><div class="fa_cell_0">5.00 crédits</div><h1>X</h1></body></html>';
+    expect(() => parseOffering(html, "x", 2025, url)).toThrow(/the layout changed/);
   });
 });

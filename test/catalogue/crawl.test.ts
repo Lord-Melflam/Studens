@@ -6,10 +6,20 @@
  * present and numeric, and a broken run cannot corrupt the live catalogue.
  */
 import { describe, expect, it } from "vitest";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { crawl, PoliteFetcher, promote, load, SnapshotInvalid, type Snapshot, ParseError } from "@studens/ref";
+import {
+  crawl,
+  PoliteFetcher,
+  promote,
+  load,
+  SnapshotInvalid,
+  type Snapshot,
+  ParseError,
+  BudgetExceeded,
+  TooManyUnavailable,
+} from "@studens/ref";
 
 const YEAR = 2025;
 
@@ -59,6 +69,8 @@ function fakeSite(overrides: Record<string, string | number> = {}) {
 
   return {
     fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl }),
+    /** Exposed so a test can build a fetcher with its own budget or cache. */
+    fetchImpl,
     get calls() {
       return calls;
     },
@@ -344,5 +356,321 @@ describe("course code validation", () => {
 
   it.each(notCodes)("rejects %j, which is not a course code", async (code) => {
     await expect(promoteWithCode(code)).rejects.toThrow(/not a plausible course code/);
+  });
+});
+
+/**
+ * THE CEILING ON WHAT THE UNIVERSITY IS ASKED FOR.
+ *
+ * One faculty is about 600 requests and all 21 are roughly 9,000, so the
+ * difference between a scoped run and a full one is a factor of fifteen and the
+ * way to discover it should not be a two-hour crawl somebody started by
+ * forgetting a flag. robots.txt sets no crawl delay, so every restraint here is
+ * self-imposed (design note section 4).
+ */
+describe("the request budget", () => {
+  it("stops the run rather than quietly fetching less", async () => {
+    const site = fakeSite();
+    const fetcher = new PoliteFetcher({ delayMs: 0, fetchImpl: site.fetchImpl, maxRequests: 3 });
+    await expect(crawl({ year: YEAR, fetcher })).rejects.toBeInstanceOf(BudgetExceeded);
+    // Exactly the ceiling, never one more: the check runs before the request.
+    expect(fetcher.requestCount).toBe(3);
+  });
+
+  it("does not count pages the cache served, because they cost nothing", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "studens-budget-"));
+    try {
+      const warm = fakeSite();
+      // Fill the cache with a complete run, then allow almost no requests at
+      // all. A second run has to finish anyway, on the cache alone.
+      await crawl({
+        year: YEAR,
+        fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl: warm.fetchImpl, cacheDir: dir }),
+      });
+      const cold = fakeSite();
+      const fetcher = new PoliteFetcher({
+        delayMs: 0,
+        fetchImpl: cold.fetchImpl,
+        cacheDir: dir,
+        maxRequests: 1,
+      });
+      const snap = await crawl({ year: YEAR, fetcher });
+      expect(snap.offerings).toHaveLength(4);
+      // The one request is the search, which the warm run could not cache
+      // because the fake site answers it with a 404.
+      expect(fetcher.requestCount).toBeLessThanOrEqual(1);
+      expect(fetcher.cacheHits).toBeGreaterThan(10);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+/**
+ * THE GUARD THAT USED TO LIVE IN THE OFFERING PARSER.
+ *
+ * A selector that stops matching does not blank one course, it blanks the same
+ * field on every one, so the evidence is the run and not the page. Checking it
+ * per page failed a 969-course crawl over a single course UCLouvain publishes
+ * with an empty evaluation field, and could say nothing at all about a field
+ * that had quietly disappeared from all of them.
+ */
+describe("a field that went blank everywhere", () => {
+  /** A snapshot of `n` offerings, each one complete unless `blank` names it. */
+  function snapshotOf(n: number, blank?: string): Snapshot {
+    const offerings = Array.from({ length: n }, (_, i) => ({
+      code: `zzzz${1000 + i}`,
+      year: YEAR,
+      title: `Course ${i}`,
+      ects: 5,
+      era: "modern",
+      language: "fr",
+      quarter: "Q1",
+      contactHours: "30h",
+      owningFaculty: "ZZZ",
+      teachers: ["A Teacher"],
+      assessment: [{ kind: "text", text: "an exam" }],
+      themes: [{ kind: "text", text: "a theme" }],
+      content: [{ kind: "text", text: "some content" }],
+    })) as unknown as Snapshot["offerings"];
+    if (blank) {
+      for (const o of offerings) {
+        (o as unknown as Record<string, unknown>)[blank] = Array.isArray(
+          (o as unknown as Record<string, unknown>)[blank],
+        )
+          ? []
+          : null;
+      }
+    }
+    return {
+      version: 6,
+      takenAt: new Date().toISOString(),
+      year: YEAR,
+      faculties: [{ code: "zzz", name: "Zeta" }],
+      programmes: [
+        {
+          code: "zprog",
+          faculty: "zzz",
+          title: "Z",
+          kind: null,
+          credits: null,
+          site: null,
+          domain: null,
+          siteSource: null,
+        },
+      ],
+      offerings,
+      conflicts: [],
+      unavailable: [],
+      reachedVia: [],
+    };
+  }
+
+  it("is refused, naming the field", async () => {
+    const path = await mkdtemp(join(tmpdir(), "studens-blank-"));
+    try {
+      await expect(promote(snapshotOf(30, "assessment"), join(path, "live.json"))).rejects.toThrow(
+        /every one of the 30 offerings is missing "assessment"/,
+      );
+    } finally {
+      await rm(path, { recursive: true, force: true });
+    }
+  });
+
+  it("stays quiet on a small sample, which is allowed to miss anything", async () => {
+    // `--max 10` takes a spread of ten courses. Ten that all happen to lack a
+    // field is a sample, not a layout change, so the floor is 25.
+    const path = await mkdtemp(join(tmpdir(), "studens-blank-"));
+    try {
+      await promote(snapshotOf(10, "assessment"), join(path, "live.json"));
+    } finally {
+      await rm(path, { recursive: true, force: true });
+    }
+  });
+
+  it("accepts a real mixture, where a field is simply absent on some courses", async () => {
+    // The normal case, and the one the per-page rule got wrong: in a real EPL
+    // crawl the least populated field is filled on 84% of offerings.
+    const path = await mkdtemp(join(tmpdir(), "studens-blank-"));
+    try {
+      const snap = snapshotOf(30);
+      (snap.offerings[0] as unknown as Record<string, unknown>)["assessment"] = null;
+      await promote(snap, join(path, "live.json"));
+    } finally {
+      await rm(path, { recursive: true, force: true });
+    }
+  });
+});
+
+/**
+ * A SERVER HAVING A BAD MINUTE MUST NOT END A NINE-THOUSAND-PAGE CRAWL.
+ *
+ * `cours-2025-lcems2341` answered 503 three times and then 200, the first
+ * attempt taking ten seconds. Nothing was wrong with the page and nothing was
+ * wrong with us. Without a retry, one bad minute anywhere ends the run and the
+ * catalogue is not updated at all.
+ */
+describe("transient failures", () => {
+  /** Answers `fails` times with `status`, then serves the page. */
+  function flaky(status: number, fails: number) {
+    let seen = 0;
+    const target = `https://uclouvain.be/cours-${YEAR}-zaaa1000`;
+    const site = fakeSite();
+    const fetchImpl = (async (url: string | URL, init?: RequestInit) => {
+      if (String(url) === target) {
+        seen += 1;
+        if (seen <= fails) return new Response("later", { status });
+      }
+      return site.fetchImpl(url, init);
+    }) as unknown as typeof fetch;
+    return { fetchImpl, get attempts() { return seen; } };
+  }
+
+  it("asks again after a 503, and finishes", async () => {
+    const f = flaky(503, 2);
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl: f.fetchImpl, retries: 3 }),
+    });
+    expect(snap.offerings.map((o) => o.code)).toContain("zaaa1000");
+    expect(f.attempts).toBe(3);
+  });
+
+  it("gives up once the retries are spent, rather than looping", async () => {
+    const f = flaky(503, 99);
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl: f.fetchImpl, retries: 2 }),
+    });
+    // Three attempts and then it stops: the retry is bounded, not a loop.
+    expect(f.attempts).toBe(3);
+    // And the course is recorded as unavailable rather than ending the run,
+    // which is the other half of the same decision: a page we could not get is
+    // a course missing, not a catalogue wrong.
+    expect(snap.unavailable).toEqual(["zaaa1000"]);
+  });
+
+  /**
+   * A TIMEOUT CARRIES NO STATUS, and that gap cost a twelve-minute crawl.
+   *
+   * `AbortSignal.timeout` throws a `TimeoutError`, so the first version of the
+   * retry, which looked only at HTTP statuses, let it straight through: a run
+   * of 969 course pages died after 750 of them because one page was slow.
+   */
+  it("asks again after a timeout, which has no status at all", async () => {
+    let seen = 0;
+    const target = `https://uclouvain.be/cours-${YEAR}-zaaa1000`;
+    const site = fakeSite();
+    const fetchImpl = (async (url: string | URL, init?: RequestInit) => {
+      if (String(url) === target && seen++ < 2) {
+        throw Object.assign(new Error("The operation was aborted due to timeout"), {
+          name: "TimeoutError",
+        });
+      }
+      return site.fetchImpl(url, init);
+    }) as unknown as typeof fetch;
+
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl, retries: 3 }),
+    });
+    expect(snap.offerings.map((o) => o.code)).toContain("zaaa1000");
+    expect(seen).toBe(3);
+  });
+
+  it("does not ask again about a 404, which is an answer", async () => {
+    // Asking twice about a page that is not there is noise, and the crawl
+    // already treats a missing programme listing as ordinary.
+    const f = flaky(404, 99);
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl: f.fetchImpl, retries: 3 }),
+    });
+    expect(f.attempts).toBe(1);
+    expect(snap.unavailable).toEqual(["zaaa1000"]);
+  });
+
+  it("counts every attempt against the request budget", async () => {
+    // A retry is work the university did, so it is spent from the same purse.
+    const f = flaky(503, 1);
+    const fetcher = new PoliteFetcher({ delayMs: 0, fetchImpl: f.fetchImpl, retries: 3 });
+    await crawl({ year: YEAR, fetcher });
+    expect(fetcher.retryCount).toBe(1);
+    expect(fetcher.requestCount).toBe(14);
+  });
+});
+
+/**
+ * A PAGE WE COULD NOT GET, AGAINST A PAGE WE COULD NOT UNDERSTAND.
+ *
+ * `cours-2025-mlsmm2219` answers 503 on every attempt while its 2024 edition is
+ * served fine. A crawl of nine thousand pages meets several of those, so ending
+ * the run over one means the catalogue can never be updated again. A course
+ * missing is not a course wrong, which is what the strict rule is protecting.
+ */
+describe("courses the university will not serve", () => {
+  /** A site where `dead` always answers 503, whatever the retries. */
+  function withDead(dead: string[]) {
+    const site = fakeSite();
+    const fetchImpl = (async (url: string | URL, init?: RequestInit) => {
+      if (dead.some((code) => String(url).endsWith(code))) {
+        return new Response("gone", { status: 503 });
+      }
+      return site.fetchImpl(url, init);
+    }) as unknown as typeof fetch;
+    return fetchImpl;
+  }
+
+  it("skips one, records it, and finishes the rest", async () => {
+    const said: string[] = [];
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl: withDead(["zaaa1000"]), retries: 1 }),
+      onProgress: (m) => said.push(m),
+    });
+    expect(snap.unavailable).toEqual(["zaaa1000"]);
+    expect(snap.offerings.map((o) => o.code)).not.toContain("zaaa1000");
+    // The other three are still there: one broken page is not a broken run.
+    expect(snap.offerings).toHaveLength(3);
+    // Written down AND said out loud. A loss nobody mentions is a loss nobody
+    // notices.
+    expect(said.some((m) => m.includes("would not serve"))).toBe(true);
+  });
+
+  it("fails when they are a pattern rather than a few", async () => {
+    // Being blocked or rate limited fails everything at once, and a catalogue
+    // quietly missing most of its courses is the wrong data the rules refuse.
+    // Twenty courses, so the tolerance is a real number rather than the floor.
+    const codes = Array.from({ length: 20 }, (_, i) => `zccc${2000 + i}`);
+    const site = fakeSite({
+      [`https://uclouvain.be/prog-${YEAR}-zprog-programme`]: codes
+        .map((c) => `<a href="cours-${YEAR}-${c}">x</a>`)
+        .join(""),
+      ...Object.fromEntries(
+        codes.map((c) => [`https://uclouvain.be/cours-${YEAR}-${c}`, coursePage(`Course ${c}`)]),
+      ),
+    });
+    const dead = new Set(codes.slice(0, 8));
+    const fetchImpl = (async (url: string | URL, init?: RequestInit) => {
+      if ([...dead].some((c) => String(url).endsWith(c))) {
+        return new Response("gone", { status: 503 });
+      }
+      return site.fetchImpl(url, init);
+    }) as unknown as typeof fetch;
+
+    await expect(
+      crawl({ year: YEAR, fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl, retries: 0 }) }),
+    ).rejects.toBeInstanceOf(TooManyUnavailable);
+  });
+
+  it("still refuses a page it fetched and could not read", async () => {
+    // The line that matters: a page we could not GET is tolerated, a page we
+    // could not UNDERSTAND is not, because that is how wrong data gets in.
+    const site = fakeSite({
+      [`https://uclouvain.be/cours-${YEAR}-zaaa1000`]: "<html><body>nothing at all</body></html>",
+    });
+    await expect(crawl({ year: YEAR, fetcher: site.fetcher })).rejects.toThrow(
+      /unrecognised course page layout/,
+    );
   });
 });

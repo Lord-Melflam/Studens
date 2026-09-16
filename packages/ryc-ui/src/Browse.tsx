@@ -5,14 +5,22 @@
  * and 1.1's problem is choosing electives blind, which is a discovery problem.
  * See docs/requirements.md 3.4.
  *
- * Two lists, each filtered: 43 programmes, and then up to a few hundred courses
+ * Two lists, each filtered: the programmes, and then up to a few hundred courses
  * inside one. Both were unfiltered scrolls, which is fine for a demonstration
  * and useless for the thing it is for: nobody reads 200 courses looking for the
  * Q2 ones worth five credits that somebody has written about.
+ *
+ * THE FACULTY IS A FILTER, NOT A GATE. It used to be a choice made before
+ * anything appeared, which is fine while the catalogue is one faculty and wrong
+ * the moment it is twenty-one: somebody looking for a minor does not know which
+ * faculty owns it, and not knowing yet is what browsing is. UCLouvain's own
+ * catalogue does not ask either. So every programme of the year is listed, and
+ * the faculty joins the kind, the site and the field of study as something to
+ * narrow by.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useT } from "@studens/i18n";
-import { api, type CourseSummary, type FacultySummary, type ProgrammeSummary } from "./api.js";
+import { api, type CourseSummary, type ProgrammeSummary } from "./api.js";
 import { CourseFilters } from "./CourseFilters.js";
 import { FilterBar, FilterGroup, FilterText, kindLabel } from "./Filters.js";
 import {
@@ -20,6 +28,7 @@ import {
   applyProgrammeFilter,
   programmeFacets,
   programmeFilterIsEmpty,
+  titleWithoutSite,
   toggle,
   type ProgrammeFilter,
 } from "./filters.js";
@@ -32,26 +41,14 @@ export function Browse({
   reviewCounts: Record<string, number>;
 }) {
   const t = useT();
-  const [faculties, setFaculties] = useState<FacultySummary[]>([]);
-  const [faculty, setFaculty] = useState<string | null>(null);
   const [programmes, setProgrammes] = useState<ProgrammeSummary[]>([]);
   const [programme, setProgramme] = useState<ProgrammeSummary | null>(null);
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [filter, setFilter] = useState<ProgrammeFilter>(NO_PROGRAMME_FILTER);
 
   useEffect(() => {
-    api.faculties().then((r) => {
-      setFaculties(r.faculties);
-      // One faculty is the normal case for now: v1 serves UCLouvain and the
-      // module launches scoped to EPL, so skip a choice with one option.
-      if (r.faculties.length === 1) setFaculty(r.faculties[0]!.code);
-    });
+    api.allProgrammes().then((r) => setProgrammes(r.programmes));
   }, []);
-
-  useEffect(() => {
-    if (!faculty) return;
-    api.programmes(faculty).then((r) => setProgrammes(r.programmes));
-  }, [faculty]);
 
   useEffect(() => {
     if (!programme) {
@@ -83,20 +80,6 @@ export function Browse({
 
   return (
     <section>
-      {faculties.length > 1 && (
-        <label className="picker">
-          {t("ryc.browse.faculty")}
-          <select value={faculty ?? ""} onChange={(e) => setFaculty(e.target.value || null)}>
-            <option value="">{t("ryc.browse.choose")}</option>
-            {faculties.map((f) => (
-              <option key={f.code} value={f.code}>
-                {f.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-
       {programmes.length === 0 ? (
         <p className="meta">{t("ryc.browse.noProgrammes")}</p>
       ) : (
@@ -126,6 +109,25 @@ export function Browse({
               chosen={filter.sites}
               onToggle={(v) => setFilter({ ...filter, sites: toggle(filter.sites, v) })}
             />
+            {/* Both only appear once there is more than one to choose between:
+                a filter with a single option filters nothing and costs a line
+                of a screen somebody is trying to read. */}
+            {facets.faculties.length > 1 && (
+              <FilterGroup
+                legend={t("ryc.filter.faculty")}
+                facets={facets.faculties}
+                chosen={filter.faculties}
+                onToggle={(v) => setFilter({ ...filter, faculties: toggle(filter.faculties, v) })}
+              />
+            )}
+            {facets.domains.length > 1 && (
+              <FilterGroup
+                legend={t("ryc.filter.domain")}
+                facets={facets.domains}
+                chosen={filter.domains}
+                onToggle={(v) => setFilter({ ...filter, domains: toggle(filter.domains, v) })}
+              />
+            )}
           </FilterBar>
 
           {shown.length === 0 ? (
@@ -136,11 +138,19 @@ export function Browse({
                 <li key={p.code}>
                   <button type="button" onClick={() => setProgramme(p)}>
                     <span className="code">{p.code.toUpperCase()}</span>
-                    <span className="title">{p.title}</span>
+                    <span className="title">{titleWithoutSite(p.title, p.site)}</span>
                     <span className="facts">
                       {kindLabel(t, p.kind)}
                       {p.credits ? ` [${p.credits}]` : ""}
+                      {/* The site is a fact about the programme now, not a
+                          parenthesis inside its name. Shown because two
+                          programmes can carry the same title in two cities. */}
+                      {p.site ? ` · ${p.site}` : ""}
                       {` · ${t("ryc.browse.courses", { count: p.courses })}`}
+                    </span>
+                    <span className="facts faint">
+                      {p.facultyName}
+                      {p.domain ? ` · ${p.domain}` : ""}
                     </span>
                   </button>
                 </li>

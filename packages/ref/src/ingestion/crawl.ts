@@ -22,6 +22,7 @@ import {
 import { extractLinks } from "./parse/links.js";
 import { parseOffering, type ParsedOffering } from "./parse/offering.js";
 import { parseSearchRows } from "./parse/search.js";
+import { BudgetExceeded, TooManyUnavailable } from "./errors.js";
 import { programmeShape } from "./parse/programme.js";
 import { assertPlausibleYear, candidateYears } from "./year.js";
 import { BASE } from "./urls.js";
@@ -214,23 +215,68 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   const limit = opts.maxOfferings ?? codes.length;
   const step = limit >= codes.length ? 1 : Math.floor(codes.length / limit);
   const sampled = step > 1 ? codes.filter((_, i) => i % step === 0).slice(0, limit) : codes.slice(0, limit);
-  for (const code of sampled) {
+  // WHAT THE REST OF THE RUN WILL COST, said before it is spent rather than
+  // discovered an hour into it. One faculty is about 600 requests and all 21
+  // are roughly 9,000, so somebody who forgot `--faculty` needs to find that
+  // out here and not from a two-hour silence. Cache hits are excluded, because
+  // they cost the university nothing.
+  say(
+    `about to read ${sampled.length} course pages` +
+      (fetcher.plannedDelayMs > 0
+        ? `, roughly ${Math.ceil((sampled.length * fetcher.plannedDelayMs) / 60000)} minutes` +
+          ` at ${fetcher.plannedDelayMs} ms apart if none are cached`
+        : ""),
+  );
+
+  // A page we could not GET is tolerated; a page we could not UNDERSTAND is not.
+  // The line is the difference between a course missing and a course wrong:
+  // `cours-2025-mlsmm2219` answers 503 on every attempt while its 2024 edition
+  // is served fine, so a crawl of nine thousand pages will meet several, and
+  // ending the run over one means the catalogue can never be updated again.
+  const unavailable: string[] = [];
+  for (const [i, code] of sampled.entries()) {
     const url = courseUrl(year, code);
-    const page = await fetcher.get(url);
+    let page;
+    try {
+      page = await fetcher.get(url);
+    } catch (err) {
+      if (err instanceof BudgetExceeded) throw err;
+      unavailable.push(code);
+      continue;
+    }
     // Deliberately NOT caught: a parse failure fails the run. A catalogue with
     // wrong data is worse than one that refused to update (section 6).
     offerings.push(parseOffering(page.html, code, year, page.finalUrl));
+    // A long run has to say it is alive. At one faculty this prints twice; at
+    // twenty-one it is the difference between a crawl and a hang.
+    if (sampled.length > 200 && (i + 1) % 250 === 0) {
+      say(`  ${i + 1} of ${sampled.length} course pages`);
+    }
   }
   say(`${offerings.length} offerings parsed`);
 
+  // A handful of broken pages is the catalogue; a wave of them is us. Being
+  // blocked or rate limited fails everything at once, and that must stop the
+  // run rather than quietly produce a catalogue with a tenth of its courses
+  // missing. One per cent, with a floor so a small sample is not judged by a
+  // percentage of itself.
+  if (unavailable.length > 0) {
+    say(`${unavailable.length} courses the university would not serve: ${unavailable.join(", ")}`);
+  }
+  const tolerated = Math.max(5, Math.floor(sampled.length * 0.01));
+  if (unavailable.length > tolerated) {
+    throw new TooManyUnavailable(unavailable, tolerated);
+  }
+
   return {
-    version: 5,
+    version: 6,
     takenAt: new Date().toISOString(),
     year,
     faculties,
     programmes: described,
     offerings,
     conflicts,
+    unavailable,
     reachedVia: reachedVia.filter((r) => offerings.some((o) => o.code === r.code)),
   };
 }
