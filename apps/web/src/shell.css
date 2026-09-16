@@ -12,7 +12,7 @@
 
    Splitting them now costs nothing. Shipping one flat set and splitting later
    means auditing every theme that already exists.
-   See docs/design/frontend-design.tex, section on themes. */
+   See docs/typeset/frontend-design.tex, section on themes. */
 
 /* --- GROUP 1: chrome. A theme MAY override any of these. ---------------- */
 :root {

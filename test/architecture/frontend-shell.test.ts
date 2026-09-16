@@ -86,7 +86,7 @@ describe("the shell knows nothing about any module's domain", () => {
       .toBeGreaterThan(0);
 
     const offenders = sources
-      .filter((s) => !s.file.endsWith("shell/registry.ts"))
+      .filter((s) => !s.file.endsWith("apps/web/src/shell/registry.ts"))
       .filter((s) => featurePackages.some((name) => s.text.includes(`from "${name}"`)))
       .map((s) => s.file);
 

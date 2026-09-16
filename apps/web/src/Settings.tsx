@@ -8,7 +8,7 @@
  * The username is editable here and the rest of the profile is not. That is not
  * laziness: FR-F14 makes the first run replayable by anyone, so the screens that
  * collect studies and institution already exist and already explain themselves.
- * Rebuilding those questions here would mean two places to keep honest, and the
+ * Rebuilding those questions here would mean two places to keep true, and the
  * second one always drifts.
  *
  * What is listed as missing is listed in words, not mocked up as a disabled

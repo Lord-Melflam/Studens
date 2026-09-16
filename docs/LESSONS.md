@@ -279,7 +279,7 @@ my case" but "what else does it touch, and would I notice".
 
 ### Copy taken from a design document describes a product that does not exist
 
-The fork screen's two cards were written from `design/frontend-design.tex`,
+The fork screen's two cards were written from `docs/typeset/frontend-design.tex`,
 which draws the **target** product. So the named card offered three reasons to
 choose it: the review stays editable, it appears in "Mes avis", and its
 deletion can be requested.
@@ -295,7 +295,7 @@ the mechanism FR-C exists to protect.
 
 Caught by François asking for polish, not by any gate.
 
-**Rule now in force.** FR-D28 and `test/ui/path-honesty.test.ts`: the two cards
+**Rule now in force.** FR-D28 and `test/ui/path-claims.test.ts`: the two cards
 may not name a capability that is not built, and the planned edit is mentioned
 once, below both cards, in the quietest type on the screen. The test is to be
 updated in the same change that ships FR-C14 and FR-D12, never before. The
@@ -476,14 +476,14 @@ the stated one.
   One of the two was not public anywhere. Section 3 is about exactly that kind
   of inconsistency, and it turns out to be easy to commit while writing about
   it.)
-- **`CLAUDE.md` content was edited three times** when the instruction was to
-  exclude the file in `.gitignore`. The mechanism asked for was not the mechanism
+- **The local notes file was edited three times** when the instruction was to
+  exclude it in `.gitignore`. The mechanism asked for was not the mechanism
   attempted.
 - **A private repository was created** after "I'm following your suggestion",
   which referred to tracking and not to visibility. Agreement on one axis is not
   a decision on another.
 
-**Rule now in force.** Rule 3 of `CLAUDE.md`: never assume, always check. Where a
+**Rule now in force.** Never assume, always check. Where a
 plausible reading and a stated one differ, the stated one wins, and where the
 statement is ambiguous across two axes, ask which one.
 
@@ -491,8 +491,8 @@ statement is ambiguous across two axes, ask which one.
 
 ## 8. Style rules need a mechanical check
 
-Em dashes appeared in fourteen places in memory files and fourteen in
-`CLAUDE.md` **after** the rule forbidding them was set. Three more survived a
+Em dashes appeared in fourteen places in memory files and fourteen more in the
+local notes **after** the rule forbidding them was set. Three more survived a
 first cleanup: two had wrapped to the start of a line, and one was an en dash
 rather than an em dash, sitting inside a numeric range where it looked
 typographically reasonable.

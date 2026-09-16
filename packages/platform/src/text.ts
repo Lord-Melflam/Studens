@@ -8,7 +8,7 @@
  * somebody their input is fine and then the save fails anyway.
  *
  * IT REJECTS, IT DOES NOT SILENTLY STRIP. Quietly removing characters is its own
- * dishonesty: somebody types their name with an invisible character pasted in
+ * failure: somebody types their name with an invisible character pasted in
  * from a web page, we drop it, and what they see saved is not what they wrote.
  * The one exception is ordinary whitespace, which is collapsed, because nobody
  * means the difference between one space and three.

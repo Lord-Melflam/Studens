@@ -49,6 +49,13 @@ jobs:
       - name: Validate the database schema
         run: npm run schema:validate
 
+      # Every path a tracked file mentions must exist and be tracked. Catches a
+      # moved document leaving dangling references, and a public document
+      # citing one of the deliberately untracked local files. Neither is
+      # something typecheck or lint can see.
+      - name: Documentation links
+        run: npm run docs:links
+
   # A separate job because it needs a database. The gates above deliberately
   # need no infrastructure and no secrets, so they stay fast and can never be
   # skipped for want of a service.

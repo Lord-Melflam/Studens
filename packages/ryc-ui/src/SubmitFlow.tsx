@@ -124,7 +124,7 @@ export function SubmitFlow({
   // the form does not open. The wording says what the limit counts, because a
   // limit that appears to know WHICH reviews you wrote would read as a link
   // between your account and an anonymous row, which is the thing that does
-  // not exist (design/anonymous-rate-limiting.md).
+  // not exist (docs/design/anonymous-rate-limiting.md).
   if (ctx.quotaRemaining === 0 && step !== "sent") {
     return (
       <section className="notice">

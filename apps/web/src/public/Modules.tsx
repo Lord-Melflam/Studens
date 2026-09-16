@@ -29,7 +29,7 @@ export function Modules() {
           <p className="mc-note">{m.presentation.statusNote}</p>
 
           {/* A planned module has a name, a line and a status, and nothing
-              else. There is nothing honest to render here for one. */}
+              else. There is nothing true to render here for one. */}
           {m.presentation.problem && (
             <>
               <h3>{m.presentation.problem.title}</h3>

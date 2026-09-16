@@ -2,7 +2,7 @@
  * The course page parser, against real captured pages from both eras.
  *
  * Fixtures are committed on purpose: the tests must be deterministic and must
- * run offline, and a captured page is the only honest record of what the
+ * run offline, and a captured page is the only true record of what the
  * layout was on the day it was read.
  *
  *   modern-era.html  modern era, fetched 2026-09-10

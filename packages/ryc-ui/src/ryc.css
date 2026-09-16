@@ -409,7 +409,7 @@ button.ghost {
 }
 
 /* ---------------------------------------------------------------------------
-   The public showcase: this module's own screen, mocked for people with no
+   The public preview: this module's own screen, mocked for people with no
    account. Owned here rather than in the shell, because FR-B16 means the shell
    cannot know what this draws. It reuses the real classes above, so it cannot
    drift into advertising a product that does not exist.
@@ -589,7 +589,7 @@ button.ghost {
 /* A review whose author deleted their account (FR-A15, OPEN-46).
    Its own colour, borrowed from neither path: --named and --anon carry the
    meaning of a CHOICE somebody made, and this is not one of them. Grey is the
-   honest answer, and the design-tokens gate keeps the two real ones out of the
+   right answer, and the design-tokens gate keeps the two real ones out of the
    themeable palette so this can never be made to look like either. */
 .chip-detached {
   display: inline-block;

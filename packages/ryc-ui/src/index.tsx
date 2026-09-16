@@ -181,7 +181,7 @@ export { next, EVENTS, STEPS, type Event, type Step, type Transition } from "./f
 export { Blocks, ProseField, type Block, type Span } from "./Prose.js";
 
 /**
- * The fork and its confirmation. Exported for test/ui/path-honesty.test.ts,
+ * The fork and its confirmation. Exported for test/ui/path-claims.test.ts,
  * which holds the rule that the two cards may not advertise a capability that
  * is not built: this is the screen where a permanent choice is made by
  * comparing them.

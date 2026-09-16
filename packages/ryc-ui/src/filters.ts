@@ -14,7 +14,7 @@
  * is built under, and it would offer options that match nothing.
  *
  * EACH FACET IS COUNTED AGAINST THE OTHER FILTERS, NOT AGAINST THE WHOLE LIST.
- * Standard faceted search, and the reason is honesty: if "Q1" said 23 while the
+ * Standard faceted search, and the reason is accuracy: if "Q1" said 23 while the
  * language filter had already excluded all 23, clicking it would empty the
  * screen. A count here is what you get if you click it.
  */

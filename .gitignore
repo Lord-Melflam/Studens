@@ -53,14 +53,27 @@ data/
 # Institution logos and the built design PDFs. Fetched with
 # scripts/fetch-logos.sh, never committed: the EPL mark is CC BY-SA 4.0, and a
 # logo is a trademark whatever the copyright status of the file.
-docs/design/frontend/logos/
-docs/design/*.pdf
-docs/design/*.aux
-docs/design/*.log
-docs/design/*.out
-docs/design/*.toc
+#
+# These live under docs/typeset/ since 2026-09-16, when the LaTeX sources and
+# their build output were separated from the markdown decision notes they had
+# been sharing a folder with.
+docs/typeset/frontend/logos/
+docs/typeset/*.pdf
+docs/typeset/*.aux
+docs/typeset/*.log
+docs/typeset/*.out
+docs/typeset/*.toc
 
 # Logs and local scratch
 *.log
 tmp/
 .cache/
+
+# Merge and patch leftovers. Not currently produced here; ignored so that a
+# conflict resolved in a hurry cannot commit its own debris.
+*.orig
+*.rej
+
+# Per-machine agent and tool configuration, the same reasoning as CLAUDE.md:
+# it is local working context with no place in a public repository.
+.claude/

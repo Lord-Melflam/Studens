@@ -132,7 +132,7 @@ automatic threshold looks like the obvious way to keep the queue small.
 Coordinating five accounts is trivial under open registration (FR-A6, and see
 OPEN-35), and the content it would remove is precisely the content this platform
 exists to protect: an argued negative review of a course that a group would
-rather was not there. `requirements.md` already records that removing honest
+rather was not there. `requirements.md` already records that removing argued
 negative reviews is the one thing a course review platform must not do.
 
 **Proposed instead, two mechanisms that are not the same thing:**
