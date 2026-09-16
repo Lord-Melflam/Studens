@@ -37,7 +37,12 @@ const tracked = new Set(
 
 /** Only text worth scanning. A lockfile mentions thousands of paths it does not own. */
 const SCANNED = /\.(md|tex|ts|tsx|css|sql|sh|yml|js|mjs)$/;
-const SKIP = /^(package-lock\.json|.*\.min\..*)$/;
+/**
+ * `scripts/check-links.mjs` excludes itself: its self-test holds strings that
+ * are deliberately shaped like broken references, and they are the fixtures
+ * that prove this works. Scanning them would report the proof as the problem.
+ */
+const SKIP = /^(package-lock\.json|scripts\/check-links\.mjs|.*\.min\..*)$/;
 
 /** Extensions treated as naming a file in this repository. */
 const EXT = "md|tex|tsx|ts|css|sql|sh|yml|json|prisma|mjs";
@@ -86,16 +91,31 @@ const ASSERTED_ABSENT = /toBe\(false\)|\bnot\.|must not|no longer|was removed|do
  *
  * Tries it as written from the root and as written relative to the mentioning
  * file, because both spellings appear and both are correct in their place.
+ *
+ * TAKES ITS WORLD AS AN ARGUMENT. The set of tracked files and the existence
+ * check are passed in, so the self-test below can hand it a synthetic
+ * repository instead of depending on what happens to be on this disk. The
+ * first version probed the real filesystem, passed here, and failed in CI: a
+ * fresh clone has no local notes file, so the probe that was meant to prove
+ * "exists but untracked" proved "missing" instead. A self-test that only works
+ * on the author's machine is the thing it exists to prevent.
  */
-function verdict(file, ref) {
+function verdict(file, ref, world) {
+  const { isTracked, exists } = world;
   const candidates = [normalize(ref), normalize(relative(root, join(root, dirname(file), ref)))];
   for (const c of candidates) if (GENERATED.some((g) => g.test(c))) return null;
-  for (const c of candidates) if (tracked.has(c)) return null;
+  for (const c of candidates) if (isTracked(c)) return null;
   // Exists but is not tracked: the dangerous case, since it resolves here and
   // not for anybody reading the published repository.
-  for (const c of candidates) if (existsSync(join(root, c))) return `UNTRACKED ${c}`;
+  for (const c of candidates) if (exists(c)) return `UNTRACKED ${c}`;
   return `MISSING ${normalize(ref)}`;
 }
+
+/** The real repository. */
+const REAL = {
+  isTracked: (p) => tracked.has(p),
+  exists: (p) => existsSync(join(root, p)),
+};
 
 function scan(files) {
   const problems = [];
@@ -115,7 +135,7 @@ function scan(files) {
       for (const m of line.matchAll(BARE_PATH)) refs.add(m[1]);
 
       for (const ref of refs) {
-        const bad = verdict(file, ref);
+        const bad = verdict(file, ref, REAL);
         if (!bad) continue;
         const excused = FORWARD_LOOKING.test(context) || ASSERTED_ABSENT.test(context);
         if (bad.startsWith("MISSING") && excused) continue;
@@ -127,22 +147,29 @@ function scan(files) {
 }
 
 /**
- * The check has to be able to fail.
+ * The check has to be able to fail, on any machine.
  *
- * One reference to a file that is nowhere, one to a file that exists and is
- * deliberately untracked. If either stops being reported, this says so and
- * exits non-zero rather than going quiet.
+ * A synthetic repository with exactly one tracked file and one untracked file
+ * on disk, so the three verdicts are exercised without touching the real one.
+ * If any of them stops being reached, this says so and exits non-zero rather
+ * than going quiet.
  */
 function selfTest() {
+  const world = {
+    isTracked: (p) => p === "docs/design/real.md",
+    exists: (p) => p === "docs/design/real.md" || p === "local-notes.md",
+  };
+  const cases = [
+    ["design/real.md", null, "a tracked sibling resolves"],
+    ["design/gone.md", "MISSING", "a path that is nowhere"],
+    ["../local-notes.md", "UNTRACKED", "a file on disk that git does not have"],
+    ["../data/catalogue.json", null, "a generated file is allowed"],
+  ];
   const failures = [];
-  for (const [ref, want] of [
-    ["design/does-not-exist.md", "MISSING"],
-    ["../CLAUDE.md", "UNTRACKED"],
-  ]) {
-    const got = verdict("docs/README.md", ref);
-    if (!got || !got.startsWith(want)) {
-      failures.push(`expected ${want} for ${ref}, got ${got ?? "no problem"}`);
-    }
+  for (const [ref, want, what] of cases) {
+    const got = verdict("docs/README.md", ref, world);
+    const ok = want === null ? got === null : got !== null && got.startsWith(want);
+    if (!ok) failures.push(`${what}: expected ${want ?? "no problem"} for ${ref}, got ${got ?? "no problem"}`);
   }
   return failures;
 }
