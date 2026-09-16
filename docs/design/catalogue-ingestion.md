@@ -8,7 +8,8 @@
 | Resolves | `requirements.md` OPEN-33 |
 | Implements | FR-B9 (the catalogue is a reference module), supports FR-D1 to FR-D4 |
 | Raises | OPEN-38, OPEN-45 |
-| Explored | 2026-09-16, section 10: the search application, the eight sites, and the taxonomy. Nothing in that section is built. |
+| Explored | 2026-09-16, section 10: the search application, the eight sites, and the taxonomy. |
+| Extended | 2026-09-16, section 11: the second source is read, reconciled and stored. Snapshot format 5. |
 
 ## 0. Decision
 
@@ -548,7 +549,7 @@ it should cost one migration and no rethinking.
 
 Explored 2026-09-16, after François pointed out that the product was calling UCLouvain a
 Louvain-la-Neuve institution. Everything in this section was fetched and counted on that
-date, against the 2025-2026 year. Nothing here is built yet.
+date, against the 2025-2026 year. **Section 11 is what was then built from it.**
 
 ### 10.1 UCLouvain is eight campuses, and the numbers are not marginal
 
@@ -658,3 +659,67 @@ Today: 1 faculty, 43 programmes, 550 courses. The catalogue: 21 faculties, 692 p
 411 courses in EPL alone. Widening beyond EPL is not the same crawl with a bigger number, it
 is roughly an order of magnitude more requests, so section 4's politeness rules and the page
 cache stop being a courtesy and become the thing that makes the run possible at all.
+
+## 11. Two sources, reconciled
+
+Built 2026-09-16, from section 10. Snapshot format **5**.
+
+### 11.1 Which source decides what
+
+**The index decides which programmes exist.** It lists the 62 minors and the doctorates the
+search drops, and a minor is exactly the thing somebody is choosing at PAE time.
+
+**The search decides what they are.** It publishes as fields what the index only implies
+inside a title: the site, and the field of study that appears nowhere else at all.
+
+One request covers a whole year, so the search is fetched once per crawl and not once per
+faculty. The COURSE search would have to be split by faculty, because unfiltered it answers
+HTTP 504; that is not built, since courses are still reached through programmes.
+
+`crawl.ts` carries the budget in a test: 1 index + 1 search + one page per faculty + the
+programme listings + the courses. The number is asserted so that growth is deliberate.
+
+### 11.2 What happens when they disagree
+
+The site is taken from the search, because a published field beats a parse of a name. The
+losing value is **kept, not discarded**: every disagreement is recorded in the snapshot with
+both values, the same rule this document already applies to a field missing from an archived
+year. Averaging them away would destroy the evidence that UCLouvain states one fact in two
+places.
+
+Measured on EPL 2025-2026: **27 of 43 programmes matched the search, 16 were not covered,
+and zero disagreed**. So the title heuristic and the published field agree everywhere both
+exist, today. `siteSource` records which one each programme's site came from, so a later
+reader can see how much of the catalogue rests on the weaker source rather than guessing.
+
+The 16 are the minors, the tracks and the specialisation paths. They keep a site from their
+title and have **no field of study at all**, because the only source that publishes one does
+not cover them. That is a null meaning "not stated", never "none".
+
+### 11.3 Stored, not re-derived
+
+Site, kind and credits used to be parsed out of the title on every read. They are columns
+now, written once at ingestion, and `read.ts` no longer derives them. Two places computing
+one fact is how the two come to disagree, and the database could not be asked for "the
+masters taught in Charleroi" while the answer lived inside a string.
+
+`ref.Site` belongs to an institution. `ref.Domain` does not: the French Community's decree
+defines the vocabulary, so the same 24 appear across its universities, and a copy per
+institution would make "every law programme in Belgium" a join across duplicated rows. Both
+are upserted on a slug of the published name, so a re-crawl lands on the same row.
+
+### 11.4 The cache can hold a page from before the catalogue was published
+
+Found by running the ingestion, not by reasoning about it.
+
+A run with no `--year` resolved to 2026 and failed with "no matching links found" on the EPL
+faculty page. The live page had 42 programme links at that moment. The cached copy, fetched
+at 16:07 the same day, had none: UCLouvain published the 2026-2027 programmes during the
+day, and the cache was correctly serving what it had fetched that morning.
+
+So a cache entry is only as fresh as the moment the catalogue was published, and the 30-day
+default is far longer than the window in which a year goes live. Dropping the four stale
+entries was enough; `--no-cache` is the general answer. Confirmed afterwards: 2026-2027 is
+live, with 42 EPL programmes and 597 across the year.
+
+This is worth knowing every September, which is exactly when somebody will run this.

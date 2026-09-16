@@ -133,9 +133,116 @@ describe("the chain is discovered, not configured", () => {
   it("is serial, never parallel", async () => {
     const site = fakeSite();
     await crawl({ year: YEAR, fetcher: site.fetcher });
-    // 1 index + 3 faculties + 4 programme listing attempts (xprog needs two)
-    // + 4 courses
-    expect(site.fetcher.requestCount).toBe(12);
+    // 1 index + 1 search + 3 faculties + 4 programme listing attempts (xprog
+    // needs two) + 4 courses.
+    //
+    // The search costs ONE request for the whole year, not one per faculty:
+    // every programme of a year fits in a single response, so asking per
+    // faculty would be 21 requests for the same answer. This number is the
+    // politeness budget and it is asserted so that growth is deliberate.
+    expect(site.fetcher.requestCount).toBe(13);
+  });
+});
+
+/**
+ * THE SECOND SOURCE, and what happens when the two disagree.
+ *
+ * The index says which programmes exist, because it lists the minors the search
+ * drops. The search says what they are, because it publishes as fields what the
+ * index only implies inside a title.
+ */
+describe("reconciling the index with the search application", () => {
+  /** One search result row, in the markup the real application emits. */
+  function row(code: string, title: string, site: string, domain: string): string {
+    return `
+      <div class="formation-item">
+        <div class="formation-item__left">
+          <h2 class="formation-item__title">
+            <a href="https://uclouvain.be/prog-${YEAR}-${code}">${title}</a>
+          </h2>
+          <ul class="formation-item__list">
+            <li><i class="bi bi-signpost-split-fill"></i>&nbsp;${site}</li>
+            <li><i class="bi bi-mortarboard"></i> ${domain}</li>
+          </ul>
+        </div>
+        <div class="formation-item__right">
+          <p class="formation-item__school">Organisé par <strong>ZZZ</strong></p>
+        </div>
+      </div>`;
+  }
+
+  const SEARCH = `https://catalogue-formations.uclouvain.be/fr/search?form%5Bdocument_type%5D=Training&form%5Bacademic_year%5D=${YEAR}&form%5Bsubmit%5D=`;
+
+  it("takes the site and the field of study from the search", async () => {
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: fakeSite({
+        [SEARCH]: row("zprog", "Bachelier en Z", "Charleroi", "Sciences"),
+      }).fetcher,
+    });
+    const z = snap.programmes.find((p) => p.code === "zprog");
+    expect(z?.site).toBe("Charleroi");
+    expect(z?.domain).toBe("Sciences");
+    expect(z?.siteSource).toBe("search");
+  });
+
+  it("records a disagreement instead of silently picking a winner", async () => {
+    // The fake index titles a programme "Z" with no site; give the search one
+    // and a title that states a different one, which is the real shape of the
+    // conflict: two UCLouvain pages stating the same fact differently.
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: fakeSite({
+        [`https://uclouvain.be/fr/catalogue-formations/faculte-${YEAR}-zzz`]:
+          `<a href="/prog-${YEAR}-zprog">Bachelier en Z (Mons)</a>`,
+        [SEARCH]: row("zprog", "Bachelier en Z", "Charleroi", "Sciences"),
+      }).fetcher,
+    });
+    expect(snap.conflicts).toEqual([
+      { code: "zprog", field: "site", fromIndex: "Mons", fromSearch: "Charleroi" },
+    ]);
+    // The search still wins, because it publishes a field and the other is a
+    // parse of a name. The losing value is kept rather than thrown away.
+    expect(snap.programmes.find((p) => p.code === "zprog")?.site).toBe("Charleroi");
+  });
+
+  it("falls back to the title for a programme the search does not cover", async () => {
+    // Every minor and every doctorate is in this position: the index lists it
+    // and the search does not return it at all.
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: fakeSite({
+        [`https://uclouvain.be/fr/catalogue-formations/faculte-${YEAR}-yyy`]:
+          `<a href="/prog-${YEAR}-yprog">Mineure en Y (Tournai)</a>`,
+        [SEARCH]: row("zprog", "Bachelier en Z", "Charleroi", "Sciences"),
+      }).fetcher,
+    });
+    const y = snap.programmes.find((p) => p.code === "yprog");
+    expect(y?.site).toBe("Tournai");
+    expect(y?.siteSource).toBe("title");
+    // Nothing invents a field of study for it: the only source that publishes
+    // one did not cover this programme.
+    expect(y?.domain).toBeNull();
+    expect(y?.kind).toBe("mineure");
+  });
+
+  /**
+   * The search is a separate application on a separate host and can be down on
+   * its own. Losing the whole catalogue over the field of study would be the
+   * wrong trade, so the crawl continues on the titles alone, which is what it
+   * did before the second source existed.
+   */
+  it("survives the search being unavailable, and says so", async () => {
+    const said: string[] = [];
+    // fakeSite 404s anything it does not know, and it does not know the search.
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: fakeSite().fetcher,
+      onProgress: (m) => said.push(m),
+    });
+    expect(snap.programmes).toHaveLength(3);
+    expect(snap.programmes.every((p) => p.domain === null)).toBe(true);
+    expect(said.some((m) => m.includes("search application could not be read"))).toBe(true);
   });
 });
 

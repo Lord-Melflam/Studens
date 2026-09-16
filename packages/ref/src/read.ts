@@ -22,7 +22,7 @@ import type { Block } from "./ingestion/parse/rich.js";
 import { load } from "./ingestion/snapshot.js";
 import { courseUrl } from "./ingestion/urls.js";
 import { mainLanguage } from "./ingestion/parse/offering.js";
-import { programmeShape, type ProgrammeKind } from "./ingestion/parse/programme.js";
+import type { ProgrammeKind } from "./ingestion/parse/programme.js";
 
 /**
  * A Json column back into a block tree.
@@ -157,18 +157,26 @@ export interface ProgrammeSummary {
   faculty: string;
   courses: number;
   /**
-   * What kind of programme it is, parsed from the title (FR-D24).
+   * What kind of programme it is (FR-D24), null when nothing known matched.
    *
-   * Derived on read rather than stored, because the title is already stored and
-   * a column would need a migration plus a backfill to hold something the title
-   * already says. Null when the title matches nothing known, which the
-   * interface groups as "autre" rather than guessing.
+   * STORED NOW, not derived on read. It used to be parsed out of the title
+   * every time a programme was read, which meant the database could not be
+   * asked for the masters in Charleroi and the parse ran on every request. It
+   * runs once, at ingestion, and this reads the column. Two places deriving one
+   * fact is how they come to disagree.
    */
   kind: ProgrammeKind | null;
   /** 120 or 60 for a master that states it, null otherwise. */
   credits: number | null;
-  /** Louvain-la-Neuve, Charleroi, and so on. From the trailing parenthesis. */
+  /** Louvain-la-Neuve, Charleroi, "Autre site". As the institution publishes it. */
   site: string | null;
+  /**
+   * The decree's field of study, for instance "Sciences juridiques".
+   *
+   * Only the search application publishes it, so it is null for a programme
+   * that source does not cover, which is every minor and every doctorate.
+   */
+  domain: string | null;
 }
 
 /** What a consumer may ask the catalogue. Storage does not appear in it. */
@@ -242,7 +250,10 @@ export class SnapshotCatalogue implements Catalogue {
             .filter((r) => r.programme === p.code && known.has(r.code))
             .map((r) => r.code),
         ).size,
-        ...programmeShape(p.title),
+        kind: p.kind as ProgrammeKind | null,
+        credits: p.credits,
+        site: p.site,
+        domain: p.domain,
       }))
       .filter((p) => p.courses > 0)
       .sort((a, b) => a.title.localeCompare(b.title));
@@ -372,7 +383,12 @@ export class DatabaseCatalogue implements Catalogue {
   async programmes(facultyCode: string): Promise<ProgrammeSummary[]> {
     const rows = await this.prisma.programme.findMany({
       where: { year: this.year, faculty: { code: facultyCode.toLowerCase() } },
-      include: { faculty: true, _count: { select: { offerings: true } } },
+      include: {
+        faculty: true,
+        site: true,
+        domain: true,
+        _count: { select: { offerings: true } },
+      },
       orderBy: { title: "asc" },
     });
     return rows
@@ -382,7 +398,10 @@ export class DatabaseCatalogue implements Catalogue {
         title: p.title,
         faculty: p.faculty.code,
         courses: p._count.offerings,
-        ...programmeShape(p.title),
+        kind: p.kind as ProgrammeKind | null,
+        credits: p.credits,
+        site: p.site?.name ?? null,
+        domain: p.domain?.name ?? null,
       }));
   }
 

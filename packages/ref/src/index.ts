@@ -46,3 +46,4 @@ export {
   type ProgrammeKind,
   type ProgrammeShape,
 } from "./ingestion/parse/programme.js";
+export { parseSearchRows, slug, type SearchRow } from "./ingestion/parse/search.js";
