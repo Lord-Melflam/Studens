@@ -19,9 +19,11 @@ import {
   ModerationRefused,
   NotPermitted,
   appointmentHistory,
+  OPERATOR,
   canAppoint,
   canModerate,
   decide,
+  grantFirstAdmin,
   listAppointments,
   moderationHistory,
   moderationQueue,
@@ -108,6 +110,20 @@ async function clean() {
   }
   await prisma.reviewAttributed.deleteMany({ where: { courseId } });
   await prisma.reviewAnonymous.deleteMany({ where: { courseId } });
+
+  // The appointment entries too, before the members they name are gone.
+  // Appointments are audited against a member rather than against a review, so
+  // the sweep above cannot see them: they survived every run and the console's
+  // history filled with promotions of accounts that no longer exist.
+  const mods = await prisma.member.findMany({
+    where: { provider: "mod-test" },
+    select: { id: true },
+  });
+  if (mods.length > 0) {
+    await prisma.auditLog.deleteMany({
+      where: { targetKind: "member", targetId: { in: mods.map((m) => m.id) } },
+    });
+  }
   await prisma.member.deleteMany({ where: { provider: "mod-test" } });
 }
 
@@ -550,5 +566,85 @@ describe("what a moderator cannot learn (FR-E14, FR-C2)", () => {
     );
     expect(entry?.fromMembers).toBe(1);
     expect(JSON.stringify(entry)).not.toContain(reporter.memberId);
+  });
+});
+
+/**
+ * THE ONE APPOINTMENT NO ADMINISTRATOR MAKES.
+ *
+ * Every other appointment is refused unless an administrator makes it, which
+ * leaves a fresh install with nobody able to appoint anybody and a console
+ * nobody can open. The command closes that, and the single condition below is
+ * the whole of what stops it being a way around FR-E14 forever.
+ */
+describe("the first administrator (FR-E14)", () => {
+  /**
+   * Runs `fn` with no administrator in the database, and puts the existing ones
+   * back afterwards.
+   *
+   * The count is deliberately global, because the question the function asks is
+   * global, so this cannot be scoped to the test's own rows the way the rest of
+   * this file is. A development database has a real administrator in it, so the
+   * roles are saved and restored rather than assumed absent.
+   */
+  async function withNoAdmins<T>(fn: () => Promise<T>): Promise<T> {
+    const admins = await prisma.member.findMany({
+      where: { role: "admin" },
+      select: { id: true },
+    });
+    const ids = admins.map((a) => a.id);
+    if (ids.length > 0) {
+      await prisma.member.updateMany({ where: { id: { in: ids } }, data: { role: "member" } });
+    }
+    try {
+      return await fn();
+    } finally {
+      if (ids.length > 0) {
+        await prisma.member.updateMany({ where: { id: { in: ids } }, data: { role: "admin" } });
+      }
+    }
+  }
+
+  dbit("appoints by username, and records the operator rather than a member", async () => {
+    const target = await member("firstadmin");
+    const appointed = await withNoAdmins(() => grantFirstAdmin(prisma, "ztst.firstadmin"));
+    expect(appointed.role).toBe("admin");
+    expect(appointed.memberId).toBe(target.memberId);
+
+    const entry = await prisma.auditLog.findFirst({
+      where: { targetId: target.memberId, targetKind: "member" },
+      orderBy: { at: "desc" },
+    });
+    expect(entry?.action).toBe("role:member->admin");
+    // Not the promoted member's own id. That would record somebody appointing
+    // themselves, which is the one thing `setRole` refuses, so the log would
+    // state something the rules forbid.
+    expect(entry?.actorMemberId).toBe(OPERATOR);
+    expect(entry?.actorMemberId).not.toBe(target.memberId);
+  });
+
+  dbit("refuses once there is an administrator, so it cannot appoint a second", async () => {
+    await member("secondadmin");
+    await member("sitting", "admin");
+    await expect(grantFirstAdmin(prisma, "ztst.secondadmin")).rejects.toMatchObject({
+      reason: "admin-exists",
+    });
+    const still = await prisma.member.findFirst({ where: { username: "ztst.secondadmin" } });
+    expect(still?.role).toBe("member");
+  });
+
+  dbit("refuses a username nobody has, without creating one", async () => {
+    await withNoAdmins(async () => {
+      await expect(grantFirstAdmin(prisma, "ztst.nobody.at.all")).rejects.toMatchObject({
+        reason: "unknown-member",
+      });
+    });
+    expect(await prisma.member.findFirst({ where: { username: "ztst.nobody.at.all" } })).toBeNull();
+  });
+
+  dbit("matches the username as it is stored, whatever case it is typed in", async () => {
+    const target = await member("casedadmin");
+    const appointed = await withNoAdmins(() => grantFirstAdmin(prisma, "  ZTST.CasedAdmin  "));
+    expect(appointed.memberId).toBe(target.memberId);
   });
 });

@@ -33,6 +33,7 @@
     "dev:api:anon": "npm run build:api && node apps/api/dist/index.js",
     "test:db": "STUDENS_REQUIRE_DB=1 vitest run",
     "mail": "npm run --silent build:worker && node apps/worker/dist/send-mail.js",
+    "admin": "npm run --silent build:worker && node apps/worker/dist/grant-admin.js",
     "docs:links": "node scripts/check-links.mjs"
   },
   "devDependencies": {

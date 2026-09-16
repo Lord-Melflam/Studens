@@ -110,6 +110,42 @@ describe("the app renders for a signed-in member", () => {
     at("/fr/app");
     expect(draw(createElement(Shell), settled)).toContain("lou.martin");
   });
+
+  /**
+   * Signing out does not empty the app, it changes who is looking at it, and
+   * the header has to follow. It did not: François signed out of the console
+   * and the page kept offering an account screen that can only fail, while the
+   * console's own URL answered with the message meant for a stranger guessing
+   * it. What is drawn comes from the session now, so the header is right the
+   * moment the session changes rather than the next time the page is loaded.
+   */
+  it("offers the account screen to somebody signed in, and not to somebody signed out", () => {
+    at("/fr/app/ryc");
+    const signedOut: SessionState = { signedIn: false, devSignInAvailable: true };
+    expect(draw(createElement(Shell), settled)).toContain("/fr/app/moi");
+    expect(draw(createElement(Shell), signedOut)).not.toContain("/fr/app/moi");
+  });
+
+  /**
+   * The console's segment answers exactly as any unknown one does to anybody
+   * without the power. That sameness is the point: the API answers 404 rather
+   * than 403 so the console cannot be confirmed to exist, and a screen that
+   * said something different here would hand back what the API withholds.
+   */
+  it("says nothing about the console to somebody who cannot open it", () => {
+    at("/fr/app/moderation");
+    const html = draw(createElement(Shell), settled);
+    at("/fr/app/pas-un-module");
+    const unknown = draw(createElement(Shell), settled);
+    // The same answer, and nothing else on the page that names the console.
+    // The language switcher does carry the current path, so this asserts on the
+    // link and the breadcrumb rather than on the string appearing at all.
+    expect(html).toContain('class="error"');
+    expect(unknown).toContain('class="error"');
+    expect(html).not.toContain('class="settings-link" href="/fr/app/moderation"');
+    expect(html).not.toContain('class="here"');
+    expect(html.replace(/<nav class="lang".*?<\/nav>/s, "")).not.toContain("Modération");
+  });
 });
 
 describe("the first run renders at every step", () => {

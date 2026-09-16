@@ -8,7 +8,7 @@
  * the path and hands the rest to the module without parsing it, so a module can
  * own its URLs while the shell stays ignorant of what they mean.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useT } from "@studens/i18n";
 import { Account } from "../Account.js";
 import { LanguageSwitcher } from "../LanguageSwitcher.js";
@@ -96,12 +96,20 @@ function SetupPrompt() {
 export function Shell() {
   const t = useT();
   const path = usePath();
-  // Asked once per mount. The API answers for everybody, including members, so
-  // the shell can decide what to draw rather than making somebody guess a URL.
+  const { session } = useSession();
+  // Asked again whenever the session changes, not once per mount. The answer is
+  // about who is signed in, so it stops being true the moment that does: asking
+  // once meant signing in did not reveal the console until a reload, and
+  // signing out left the link to it on screen.
   const [powers, setPowers] = useState<Powers | null>(null);
   useEffect(() => {
+    if (session === null) return;
+    if (!session.signedIn) {
+      setPowers({ canModerate: false, canAppoint: false });
+      return;
+    }
     void fetchPowers().then(setPowers);
-  }, []);
+  }, [session]);
   const route = currentRoute(path);
   const routeId = moduleIdFrom(path);
   const active = activeModuleFor(path);
@@ -111,6 +119,33 @@ export function Shell() {
   // they are about the member, not about anything a module owns.
   const settings = routeId === SETTINGS;
   const moderating = routeId === MODERATION;
+  // Whether the console is actually being shown, which is not the same as being
+  // on its URL. The breadcrumb used the second and so printed "Moderation" over
+  // a body saying the id was unknown: two answers to the same question, and the
+  // pair tells somebody without the power that the segment is reserved.
+  const console_ = moderating && powers?.canModerate === true;
+
+  // Signing out of a screen that only exists for somebody signed in leaves you
+  // standing on it. Before this, signing out of the console kept the URL and
+  // answered "Unknown module: moderation", which is the message meant for a
+  // stranger guessing the address, shown to the person who had just been using
+  // it. Leaving is the only sensible reading of signing out from there.
+  //
+  // ON THE TRANSITION, never on arrival. Somebody who simply opens the console's
+  // URL without the power has to get exactly what any unknown id gets, or the
+  // difference between the two answers tells them the segment is reserved and
+  // undoes the reason the API answers 404 rather than 403.
+  const wasSignedIn = useRef(false);
+  useEffect(() => {
+    if (session?.signedIn) {
+      wasSignedIn.current = true;
+      return;
+    }
+    if (session && !session.signedIn && wasSignedIn.current && (moderating || settings)) {
+      wasSignedIn.current = false;
+      navigate(APP_PREFIX);
+    }
+  }, [session, moderating, settings]);
 
   // Everything below /app/<id> belongs to the module. Sliced here, never read.
   const inside = active ? route.slice(`${APP_PREFIX}/${active.id}`.length) || "/" : "/";
@@ -130,11 +165,11 @@ export function Shell() {
           <button type="button" onClick={() => navigate(APP_PREFIX)}>
             {t("app.modules")}
           </button>
-          {(active || settings || moderating) && (
+          {(active || settings || console_) && (
             <>
               <span aria-hidden="true">/</span>
               <span className="here">
-                {active ? active.name : moderating ? t("mod.title") : t("settings.title")}
+                {active ? active.name : console_ ? t("mod.title") : t("settings.title")}
               </span>
             </>
           )}
@@ -148,9 +183,13 @@ export function Shell() {
               {t("mod.title")}
             </a>
           )}
-          <a className="settings-link" {...linkProps(`${APP_PREFIX}/${SETTINGS}`)}>
-            {t("settings.title")}
-          </a>
+          {/* An account screen is no use without an account, and offering it to
+              somebody signed out sends them to a page that can only fail. */}
+          {session?.signedIn && (
+            <a className="settings-link" {...linkProps(`${APP_PREFIX}/${SETTINGS}`)}>
+              {t("settings.title")}
+            </a>
+          )}
           <Account />
         </div>
       </header>

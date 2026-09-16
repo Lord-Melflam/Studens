@@ -136,10 +136,12 @@ export {
 export {
   AppointmentRefused,
   NotPermitted,
+  OPERATOR,
   ROLES,
   appointmentHistory,
   canAppoint,
   canModerate,
+  grantFirstAdmin,
   isRole,
   listAppointments,
   requireModerator,

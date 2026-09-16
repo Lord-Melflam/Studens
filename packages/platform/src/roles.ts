@@ -51,11 +51,25 @@ export class NotPermitted extends Error {
 }
 
 export class AppointmentRefused extends Error {
-  constructor(readonly reason: "unknown-member" | "bad-role" | "self" | "last-admin") {
+  constructor(
+    readonly reason: "unknown-member" | "bad-role" | "self" | "last-admin" | "admin-exists",
+  ) {
     super(`appointment: ${reason}`);
     this.name = "AppointmentRefused";
   }
 }
+
+/**
+ * The actor on the one appointment no member made.
+ *
+ * `AuditLog.actorMemberId` holds a member id everywhere else. The first
+ * administrator is appointed by whoever holds the server, who is not a member
+ * acting in the product and may not even have an account. Writing the promoted
+ * member's own id there would record that they appointed themselves, which is
+ * the one thing `setRole` refuses, so the log would state something the rules
+ * forbid. A value no uuid can collide with says what actually happened.
+ */
+export const OPERATOR = "operator:cli";
 
 export interface Appointment {
   memberId: string;
@@ -113,6 +127,64 @@ export async function setRole(
         action: `role:${member.role}->${role}`,
         targetKind: "member",
         targetId: targetMemberId,
+        at: now,
+      },
+    });
+
+    return { memberId: updated.id, username: updated.username, role: updated.role as Role };
+  });
+}
+
+/**
+ * Appoint the first administrator. FR-E14, and the bootstrap it left open.
+ *
+ * WHY THIS EXISTS AT ALL. Every appointment needs an administrator to make it,
+ * so the first one cannot be made in the product: an empty install has nobody
+ * who can appoint anybody, and the console is unreachable forever. The gap was
+ * closed by hand in SQL once, which is the worst version of this: unrecorded,
+ * unrepeatable, and it invites an `UPDATE` on a table nobody should be editing
+ * by hand.
+ *
+ * WHY IT REFUSES ONCE AN ADMINISTRATOR EXISTS. That single condition is what
+ * makes it a bootstrap rather than a way around FR-E14. With one in place,
+ * appointment goes back through `setRole`, where an administrator is named,
+ * self demotion is refused and the last administrator cannot be removed. This
+ * cannot be used to appoint a second one, to take a role away, or to escalate
+ * quietly: it only fills a hole that would otherwise stay empty.
+ *
+ * WHO MAY RUN IT is decided outside this function, by who can reach the
+ * database. That is a real limit and the reason it lives in a command rather
+ * than behind a route: an HTTP endpoint that promotes somebody when no
+ * administrator exists is reachable by whoever finds it first, and on a public
+ * registration platform (FR-A6) that is a stranger.
+ */
+export async function grantFirstAdmin(
+  prisma: PrismaClient,
+  username: string,
+  now: Date = new Date(),
+): Promise<Appointment> {
+  return await prisma.$transaction(async (tx) => {
+    const admins = await tx.member.count({ where: { role: "admin" } });
+    if (admins > 0) throw new AppointmentRefused("admin-exists");
+
+    const member = await tx.member.findUnique({
+      where: { username: username.trim().toLowerCase() },
+      select: { id: true, username: true, role: true },
+    });
+    if (!member) throw new AppointmentRefused("unknown-member");
+
+    const updated = await tx.member.update({
+      where: { id: member.id },
+      data: { role: "admin" },
+      select: { id: true, username: true, role: true },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        actorMemberId: OPERATOR,
+        action: `role:${member.role}->admin`,
+        targetKind: "member",
+        targetId: member.id,
         at: now,
       },
     });

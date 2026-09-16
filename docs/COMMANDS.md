@@ -283,6 +283,29 @@ applications is walked through in `design/authentication.md`, Appendix A.
 
 ---
 
+## The first administrator
+
+Every appointment needs an administrator to make it, so the first one cannot be
+made in the product: a fresh database has nobody who can appoint anybody and the
+moderation console stays unreachable.
+
+Sign in, finish the first run so the account has a username, then:
+
+```bash
+npm run admin -- <username>        # the username, not an email address
+```
+
+It works once. With an administrator in place it refuses, and everybody else is
+appointed from the console, where the appointment is recorded against the
+administrator who made it. The bootstrap is recorded too, with the operator as
+the actor, because no member made it.
+
+There is no route that does this, on purpose. An endpoint that promotes somebody
+while no administrator exists is open to whoever reaches it first, and
+registration is public (FR-A6). Reaching the database is the check.
+
+---
+
 ## Mail
 
 Nothing is sent inside a request (FR-H5). The app writes a row into
