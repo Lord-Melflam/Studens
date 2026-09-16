@@ -878,3 +878,45 @@ each time the parser treated something UCLouvain actually publishes as proof
 that the parser was broken. **The place to notice a broken parser is across the
 whole run, never on one page**, because a real catalogue is full of individually
 surprising entries and a broken parser is uniform.
+
+### 12.7 Two things a full year contains that two faculties did not
+
+Both found on 2026-09-16 by checking the whole discovered set from the page
+cache, rather than by waiting for the crawl to reach them.
+
+**Ten course codes have five digits.** The validator allowed three or four, so
+the snapshot would have been refused at promote time, after the entire run.
+Measured across all 6,654 codes of 2026-2027:
+
+| Shape | Count | | Shape | Count |
+|---|---|---|---|---|
+| `AAAAA9999` | 5408 | | `AAAAA9999A` | 164 |
+| `AAAA9999` | 978 | | `AAAA9999A` | 85 |
+| `AAAAA99999` | **10** | | `AAA9999` | 8 |
+
+The ten are the `wbcmm21021` family of clinical biology seminars. The pattern
+now allows five digits and stays strict otherwise, because it is the only guard
+against reading something that is not a course code at all.
+
+**Ten courses publish no credits at all.** The same family: `cours-2026-wbcmm21021`,
+"Séminaires de biologie clinique", is a real post-graduate seminar whose page
+carries the word "crédit" nowhere. The page is understood perfectly, so this is
+not a parse failure and must not be reported as one.
+
+It is also not storable. RYC measures workload against credits (FR-D6), so a
+course with none cannot carry the dimension the module exists to collect, and an
+invented zero would be a different claim from the truthful zero on
+`bmeta1000`. So there are now **three outcomes for a course**, and only the
+middle one ends a run:
+
+| | Meaning | What happens |
+|---|---|---|
+| served and understood | a course | stored |
+| served, understood, no credits | a course RYC cannot measure | recorded, reported as a gap |
+| served and not understood | the parser is broken | the run fails |
+| not served | the university would not give it | recorded, reported as a gap |
+
+The coverage report lists the no-credit courses as a **gap**, because somebody
+looking for one will not find it. The decision that follows is whether credits
+should be optional in the model, not whether to guess them, and that is a
+product question rather than a parsing one.

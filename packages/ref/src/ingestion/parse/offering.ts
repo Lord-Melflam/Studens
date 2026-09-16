@@ -21,7 +21,7 @@
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
 import type { AnyNode } from "domhandler";
-import { ParseError } from "../errors.js";
+import { EctsMissing, ParseError } from "../errors.js";
 import { richBlocks, type Block } from "./rich.js";
 
 export type Era = "modern" | "archive";
@@ -203,7 +203,9 @@ function parseEcts(headerCells: string[], url: string): number {
       return n;
     }
   }
-  throw new ParseError(url, "ects", "no credits cell found; ECTS is required in every era");
+  // Not a ParseError: a page that states no credits is understood, not broken.
+  // The caller decides what to do with such a course, and `crawl.ts` records it.
+  throw new EctsMissing(url);
 }
 
 export function parseOffering(

@@ -16,7 +16,6 @@ import {
   load,
   SnapshotInvalid,
   type Snapshot,
-  ParseError,
   BudgetExceeded,
   TooManyUnavailable,
 } from "@studens/ref";
@@ -260,12 +259,16 @@ describe("reconciling the index with the search application", () => {
 
 describe("failures are loud", () => {
   it("fails the run when a course page cannot be parsed", async () => {
+    // A page whose layout is unrecognisable. NOT a page that merely states no
+    // credits: that is understood, and is recorded rather than fatal, which is
+    // asserted separately below.
     const site = fakeSite({
       [`https://uclouvain.be/cours-${YEAR}-zaaa1000`]:
-        '<html><body><h1>No credits here</h1><div class="fa_cell_0">Q1</div>' +
-        '<div class="row fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">x</div></div></body></html>',
+        "<html><body><h1>Something else entirely</h1><p>no fields here</p></body></html>",
     });
-    await expect(crawl({ year: YEAR, fetcher: site.fetcher })).rejects.toThrow(ParseError);
+    await expect(crawl({ year: YEAR, fetcher: site.fetcher })).rejects.toThrow(
+      /unrecognised course page layout/,
+    );
   });
 
   it("fails when the faculty index yields nothing", async () => {
@@ -443,7 +446,7 @@ describe("a field that went blank everywhere", () => {
       }
     }
     return {
-      version: 7,
+      version: 8,
       takenAt: new Date().toISOString(),
       year: YEAR,
       faculties: [{ code: "zzz", name: "Zeta" }],
@@ -464,6 +467,7 @@ describe("a field that went blank everywhere", () => {
       offerings,
       conflicts: [],
       unavailable: [],
+      withoutEcts: [],
       reachedVia: [],
     };
   }
@@ -754,5 +758,65 @@ describe("what happened to a programme's course list", () => {
     // Said out loud as well as written down: a loss nobody mentions is a loss
     // nobody notices until a student does.
     expect(said.some((m) => m.includes("could not be read"))).toBe(true);
+  });
+});
+
+/**
+ * A COURSE THE CATALOGUE PUBLISHES WITH NO CREDITS AT ALL.
+ *
+ * `cours-2026-wbcmm21021`, "Séminaires de biologie clinique", is a real
+ * post-graduate seminar whose page carries the word "crédit" nowhere. Ten of
+ * the 6,654 courses in 2026-2027 are that family. The page is understood
+ * perfectly, so this is not a parse failure, and RYC measures workload against
+ * credits (FR-D6), so the course cannot carry the dimension the module exists
+ * to collect. Skipped and recorded rather than stored with an invented zero.
+ */
+describe("courses published without credits", () => {
+  function withoutCredits(codes: string[]) {
+    const site = fakeSite();
+    const fetchImpl = (async (url: string | URL, init?: RequestInit) => {
+      if (codes.some((c) => String(url).endsWith(c))) {
+        return new Response(
+          '<html><body><div class="fa_cell_0">18.0 h</div><h1>A seminar</h1>' +
+            '<div class="fa_row"><div class="fa_cell_1">Contenu</div>' +
+            '<div class="fa_cell_2">y</div></div></body></html>',
+          { status: 200, headers: { "content-type": "text/html" } },
+        );
+      }
+      return site.fetchImpl(url, init);
+    }) as unknown as typeof fetch;
+    return fetchImpl;
+  }
+
+  it("records the course and finishes the run", async () => {
+    const said: string[] = [];
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl: withoutCredits(["zaaa1000"]) }),
+      onProgress: (m) => said.push(m),
+    });
+    expect(snap.withoutEcts).toEqual(["zaaa1000"]);
+    expect(snap.offerings.map((o) => o.code)).not.toContain("zaaa1000");
+    expect(snap.offerings).toHaveLength(3);
+    expect(said.some((m) => m.includes("without credits"))).toBe(true);
+  });
+
+  it("is not the same thing as a page that could not be served", async () => {
+    // Three categories, deliberately: served and understood, served and not
+    // understood, and not served at all. Only the middle one is fatal.
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl: withoutCredits(["zaaa1000"]) }),
+    });
+    expect(snap.unavailable).toEqual([]);
+  });
+
+  it("still fails on a page it fetched and could not read", async () => {
+    const site = fakeSite({
+      [`https://uclouvain.be/cours-${YEAR}-zaaa1000`]: "<html><body>nothing at all</body></html>",
+    });
+    await expect(crawl({ year: YEAR, fetcher: site.fetcher })).rejects.toThrow(
+      /unrecognised course page layout/,
+    );
   });
 });

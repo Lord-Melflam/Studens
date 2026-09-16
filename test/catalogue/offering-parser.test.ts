@@ -12,7 +12,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { blocksToText, detectEra, parseOffering, ParseError } from "@studens/ref";
+import { blocksToText, detectEra, parseOffering, ParseError, EctsMissing } from "@studens/ref";
 
 const dir = join(new URL("../..", import.meta.url).pathname, "test/fixtures/catalogue");
 const modern = readFileSync(join(dir, "modern-era.html"), "utf8");
@@ -103,11 +103,22 @@ describe("archive era: cours-2012-lfsa2995", () => {
 describe("failing loudly rather than storing nulls", () => {
   const url = "https://example.invalid/cours-2025-test";
 
-  it("refuses a page with no credits cell", () => {
+  /**
+   * A page with no credits is REFUSED, and refused distinguishably.
+   *
+   * It used to be an ordinary ParseError, which made it indistinguishable from
+   * a layout that had changed. `cours-2026-wbcmm21021` is a real post-graduate
+   * seminar whose page carries no credits at all, one of a family of ten, so
+   * the caller needs to tell "this course has no ECTS" from "this parser is
+   * broken". `EctsMissing` is still a ParseError, so nothing that catches the
+   * general case stops working.
+   */
+  it("refuses a page with no credits cell, distinguishably", () => {
     const html = '<html><body><div class="fa_cell_0">Q1</div><h1>X</h1>' +
       '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';
     expect(() => parseOffering(html, "x", 2025, url)).toThrow(ParseError);
-    expect(() => parseOffering(html, "x", 2025, url)).toThrow(/ECTS is required in every era/);
+    expect(() => parseOffering(html, "x", 2025, url)).toThrow(EctsMissing);
+    expect(() => parseOffering(html, "x", 2025, url)).toThrow(/states no credits at all/);
   });
 
   /**
@@ -125,10 +136,10 @@ describe("failing loudly rather than storing nulls", () => {
 
   it("still refuses a page with no credits cell at all", () => {
     // The guard that matters: allowing zero must not let a MISSING value
-    // through disguised as one. This is what catches a layout change.
+    // through disguised as one. A stated 0.00 is a number; no cell is not.
     const html = '<html><body><div class="fa_cell_0">18.0 h</div><h1>X</h1>' +
       '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';
-    expect(() => parseOffering(html, "x", 2025, url)).toThrow(/no credits cell found/);
+    expect(() => parseOffering(html, "x", 2025, url)).toThrow(EctsMissing);
   });
 
   it("refuses an implausible ECTS value", () => {

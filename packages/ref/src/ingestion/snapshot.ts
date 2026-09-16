@@ -93,11 +93,16 @@ export interface Snapshot {
    *    79 programmes had no courses and nothing said whether that was a joint
    *    programme with none to list or a page that failed to load. Answering it
    *    took opening the site by hand, which does not scale to 692.
+   * 8: courses the catalogue publishes WITHOUT credits are listed. Ten of the
+   *    6,654 in 2026-2027 are post-graduate clinical biology seminars whose
+   *    pages carry no ECTS at all. They are understood, not broken, and they
+   *    cannot carry FR-D6's workload-against-credits, so they are recorded
+   *    rather than stored with an invented zero.
    *
    * The version field exists to be used, so an older snapshot is refused
    * rather than silently loaded with a field missing.
    */
-  version: 7;
+  version: 8;
   /** When the crawl finished. */
   takenAt: string;
   /** The academic year crawled. */
@@ -125,6 +130,19 @@ export interface Snapshot {
    * is losing it quietly, so it is written down and printed.
    */
   unavailable: string[];
+  /**
+   * Courses whose page states no credits at all, so they are not stored.
+   *
+   * Understood, not broken: `cours-2026-wbcmm21021` is a real post-graduate
+   * seminar whose page carries the word "crédit" nowhere. RYC measures workload
+   * against credits (FR-D6), so a course with none cannot carry the dimension
+   * the module exists to collect, and inventing a zero for it would be a
+   * different lie from the one the zero on `bmeta1000` tells truthfully.
+   *
+   * Listed so the coverage report can call it a gap, because a student looking
+   * for one of these will not find it.
+   */
+  withoutEcts: string[];
   /**
    * How each offering was reached. Many-to-many on BOTH axes on purpose: a
    * course appears in several programmes, and those programmes can belong to
@@ -156,16 +174,16 @@ export class SnapshotInvalid extends Error {}
  * a parser reading something that is not a course code at all, so widening it
  * to `.+` would remove the only guard against that.
  */
-const COURSE_CODE = /^[a-z]{3,6}\d{3,4}[a-z]?$/;
+const COURSE_CODE = /^[a-z]{3,6}\d{3,5}[a-z]?$/;
 
 /**
  * Refuse to promote a snapshot that would make the catalogue worse.
  * Every check here is a failure the crawl could plausibly produce.
  */
 export function validate(s: Snapshot): void {
-  if (s.version !== 7) {
+  if (s.version !== 8) {
     throw new SnapshotInvalid(
-      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 7)`,
+      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 8)`,
     );
   }
   if (s.faculties.length === 0) throw new SnapshotInvalid("no faculties discovered");

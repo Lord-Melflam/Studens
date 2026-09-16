@@ -87,6 +87,7 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
   out.push(line("distinct courses reached", new Set(snapshot.reachedVia.map((r) => r.code)).size));
   out.push(line("course pages parsed", snapshot.offerings.length));
   out.push(line("course pages the server would not give", snapshot.unavailable.length));
+  out.push(line("courses published with no credits", snapshot.withoutEcts.length));
   out.push("");
 
   if (unreachable.length > 0) {
@@ -108,6 +109,18 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
       explain:
         "Reached from a programme and then not served, after the retries. Some are\n" +
         "  broken upstream for days; check one by hand before re-running.",
+    });
+  }
+  if (snapshot.withoutEcts.length > 0) {
+    findings.push({
+      severity: "gap",
+      title: `${snapshot.withoutEcts.length} courses the catalogue publishes with no credits`,
+      codes: snapshot.withoutEcts,
+      explain:
+        "Real courses whose page states no ECTS at all, so they are not stored: RYC\n" +
+        "  measures workload against credits and they cannot carry it. Nobody will find\n" +
+        "  these by searching. Storing an invented zero would be worse, so the decision\n" +
+        "  to make is whether credits should be optional, not whether to guess them.",
     });
   }
   if (empty.length > 0) {
