@@ -110,6 +110,27 @@ describe("failing loudly rather than storing nulls", () => {
     expect(() => parseOffering(html, "x", 2025, url)).toThrow(/ECTS is required in every era/);
   });
 
+  /**
+   * ZERO IS A REAL ANSWER, and refusing it ended a crawl of 6,654 pages after
+   * 250. `cours-2026-bmeta1000` publishes "0.00 crédits" beside "18.0 h" and
+   * "Q2": a taught course whose credits are counted somewhere other than on it.
+   * A student takes it, so a student would look for it.
+   */
+  it("accepts 0 credits, which the university does publish", () => {
+    const html = '<html><body><div class="fa_cell_0">0.00 crédits</div>' +
+      '<div class="fa_cell_0">18.0 h</div><h1>X</h1>' +
+      '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';
+    expect(parseOffering(html, "x", 2025, url).ects).toBe(0);
+  });
+
+  it("still refuses a page with no credits cell at all", () => {
+    // The guard that matters: allowing zero must not let a MISSING value
+    // through disguised as one. This is what catches a layout change.
+    const html = '<html><body><div class="fa_cell_0">18.0 h</div><h1>X</h1>' +
+      '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';
+    expect(() => parseOffering(html, "x", 2025, url)).toThrow(/no credits cell found/);
+  });
+
   it("refuses an implausible ECTS value", () => {
     const html = '<html><body><div class="fa_cell_0">999 crédits</div><h1>X</h1>' +
       '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';

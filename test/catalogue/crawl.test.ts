@@ -479,6 +479,32 @@ describe("a field that went blank everywhere", () => {
     }
   });
 
+  it("refuses a snapshot where every offering is worth zero credits", async () => {
+    // One zero is a real course. All of them is a parser that has stopped
+    // reading the header, and a catalogue of courses apparently worth nothing.
+    const path = await mkdtemp(join(tmpdir(), "studens-blank-"));
+    try {
+      const snap = snapshotOf(30);
+      for (const o of snap.offerings) (o as unknown as Record<string, unknown>)["ects"] = 0;
+      await expect(promote(snap, join(path, "live.json"))).rejects.toThrow(
+        /every one of the 30 offerings has 0 ECTS/,
+      );
+    } finally {
+      await rm(path, { recursive: true, force: true });
+    }
+  });
+
+  it("accepts a snapshot where one offering is worth zero credits", async () => {
+    const path = await mkdtemp(join(tmpdir(), "studens-blank-"));
+    try {
+      const snap = snapshotOf(30);
+      (snap.offerings[0] as unknown as Record<string, unknown>)["ects"] = 0;
+      await promote(snap, join(path, "live.json"));
+    } finally {
+      await rm(path, { recursive: true, force: true });
+    }
+  });
+
   it("stays quiet on a small sample, which is allowed to miss anything", async () => {
     // `--max 10` takes a spread of ten courses. Ten that all happen to lack a
     // field is a sample, not a layout change, so the floor is 25.
