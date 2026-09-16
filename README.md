@@ -4,7 +4,7 @@ A modular web platform for students in higher education. People log in securely,
 **modules**: self-contained tools covering the things that make student life better.
 
 **Status: working software, one module, nothing deployed.** The specification came first
-and still leads: 154 requirements, each with the reasoning that produced it, and 8
+and still leads: 135 requirements, each with the reasoning that produced it, and 8
 questions still open rather than guessed.
 
 ## What runs today
@@ -14,13 +14,24 @@ Google followed by a five screen **first run**, and the **app** itself, where mo
 mounted. Three languages throughout, with the language in the URL, and a gate that fails
 the build if a sentence is hardcoded in a component.
 
-**RYC**, Rate Your Courses, is the first module. Against the real UCLouvain catalogue: 546
-courses reached through 43 Ecole polytechnique de Louvain programmes, scraped rather than
-hand-listed, with the faculty and programme structure discovered at runtime.
+**RYC**, Rate Your Courses, is the first module. Against the real UCLouvain catalogue: 969
+courses reached through 79 programmes of two faculties, scraped rather than hand-listed,
+with the faculty and programme structure discovered at runtime. Two of UCLouvain's 21
+faculties are ingested today, and widening is a crawl rather than a code change: about
+9,000 requests and two hours, after which `npm run catalogue:report` says whether anything
+was lost.
+
+The catalogue is read from **two sources that are reconciled rather than trusted in turn**.
+The per-faculty index decides which programmes exist, because it lists the minors the
+search application drops; the search decides what they are, because it publishes the site
+and the field of study as fields where the index only implies them inside a title. Where
+the two disagree, both values are kept.
 
 - **Browse** a programme, or **search** a course by code or title. Both lists
-  filter: programmes by kind, site and text; courses by term, credits, teaching
-  language, the entity in charge, and whether anybody has written about them.
+  filter: programmes by kind, site, faculty, field of study and text; courses by
+  term, credits, teaching language, the entity in charge, and whether anybody
+  has written about them. The faculty is a filter and not a gate, because
+  somebody looking for a minor does not know which faculty owns it.
   Every filter offers only values that are actually present, and every count is
   what choosing it would leave. There is deliberately **no filter on a
   lecturer's name** (FR-D34).
@@ -49,14 +60,33 @@ contributions are untouched and untouchable, because nothing joins them to anybo
 setting five `STUDENS_SMTP_*` variables turns that into delivery. The account screen says
 so rather than claiming a message is on its way.
 
-Not built, and deliberately not faked: **moderation** (the queue has a schema and no
-consumer, and the notice and action mechanism the DSA requires does not exist yet),
-**editing a review**, and **deployment**. Microsoft sign-in is registered and untried.
-Nothing on screen offers any of it.
+**Moderation exists end to end.** Anyone, signed in or not, can report a contribution,
+which is what DSA Article 16 requires of every host whatever its size. Two categories hold
+the content on arrival, illegality and naming a third party, because the cost of holding a
+good contribution for a day is far below the cost of knowingly hosting a defamatory one.
+Nothing is ever removed automatically.
+
+A **moderator's console** reads the queue oldest first and never most-reported, since
+sorting by the count puts at the top whatever a group decided to target. A decision is one
+transaction: act on the content, close every notice about it, record who decided and why.
+What a moderator sees is what a reader sees: an anonymous contribution arrives with no
+author, because there is none to arrive with.
+
+Three roles in a straight line, member, moderator and administrator, each holding
+everything the one before it holds plus one thing. Only an administrator appoints, and a
+moderator cannot appoint a moderator. The first administrator cannot be appointed from
+inside the product, so a command does it once and refuses afterwards.
+
+Not built, and deliberately not faked: **automatic screening** of submissions, **removal
+with a published statement of reasons** (DSA Article 17 collides with the promise that an
+anonymous contribution is unprovable, and that reading needs a qualified reader before a
+line of it is written, so the console can hide and restore and cannot delete), **editing a
+review**, and **deployment**. Microsoft sign-in is registered and untried. Nothing on
+screen offers any of it.
 
 ```bash
 npm install
-npm run gates              # typecheck, lint, 469 tests, schema validation. No database needed
+npm run gates              # typecheck, lint, 590 tests, schema validation. No database needed
 ```
 
 `docs/COMMANDS.md` is the command reference: setup, running it, the database, the
@@ -111,7 +141,7 @@ Specifications live in `docs/`, and they are the authoritative description of th
 | `docs/design/architecture-style.md` | Accepted: modular monolith plus a worker, with the six candidates compared and microservices excluded on two independent grounds |
 | `docs/design/module-boundaries.md` | How modules share without coupling. Rejects a global shared module, and explains why |
 | `docs/design/anonymous-rate-limiting.md` | Accepted: enforcing contribution limits without linking a contribution to a person |
-| `docs/design/catalogue-ingestion.md` | Accepted: scraping the course catalogue, with the structure discovered rather than hardcoded |
+| `docs/design/catalogue-ingestion.md` | Accepted: scraping the course catalogue, with the structure discovered rather than hardcoded. Also what a full crawl costs, the three ways widening beyond one faculty breaks a crawl that worked on one, and how to tell afterwards whether anything was lost |
 | `docs/typeset/backend-design.tex` | How the server is put together, and where each boundary is actually enforced. Data model, grant matrix, the anonymity kernel, ingestion, failure modes. Mostly built |
 | `docs/typeset/frontend-design.tex` | Proposed: how the end product should look and behave. Architecture, user scenarios, use cases and screens |
 | `docs/typeset/studens-preamble.tex` | Shared LaTeX preamble: the palette, the callout boxes and the width-aware diagram styles, defined once for both documents |
