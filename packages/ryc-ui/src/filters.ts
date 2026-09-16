@@ -35,7 +35,8 @@ export interface CourseFilter {
   text: string;
   quarters: string[];
   languages: string[];
-  ects: number[];
+  /** `null` means "the page does not state it", which is its own group. */
+  ects: Array<number | null>;
   entities: string[];
   /** FR-D24 is discovery: at launch 10 courses of 547 have anything to read. */
   reviewedOnly: boolean;
@@ -131,7 +132,7 @@ function facetsOf<T extends string | number>(
 export interface CourseFacets {
   quarters: Array<Facet<string>>;
   languages: Array<Facet<string>>;
-  ects: Array<Facet<number>>;
+  ects: Array<Facet<number | null>>;
   entities: Array<Facet<string>>;
   /** How many of the currently matching courses have anything to read. */
   reviewed: number;

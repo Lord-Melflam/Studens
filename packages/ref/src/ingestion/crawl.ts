@@ -22,7 +22,7 @@ import {
 import { extractLinks } from "./parse/links.js";
 import { parseOffering, type ParsedOffering } from "./parse/offering.js";
 import { parseSearchRows } from "./parse/search.js";
-import { BudgetExceeded, EctsMissing, TooManyUnavailable } from "./errors.js";
+import { BudgetExceeded, TooManyUnavailable } from "./errors.js";
 import { programmeShape } from "./parse/programme.js";
 import { assertPlausibleYear, candidateYears } from "./year.js";
 import { BASE } from "./urls.js";
@@ -262,12 +262,6 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   // is served fine, so a crawl of nine thousand pages will meet several, and
   // ending the run over one means the catalogue can never be updated again.
   const unavailable: string[] = [];
-  // Courses the catalogue publishes with no credits at all. A third category,
-  // and deliberately not one of the other two: the page was served and it was
-  // understood, it simply carries no ECTS, and RYC measures workload against
-  // credits (FR-D6). Storing an invented zero would be a lie; failing the run
-  // would lose 6,654 courses over ten seminars.
-  const withoutEcts: string[] = [];
   for (const [i, code] of sampled.entries()) {
     const url = courseUrl(year, code);
     let page;
@@ -278,16 +272,12 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
       unavailable.push(code);
       continue;
     }
-    // Every OTHER parse failure is still fatal. A catalogue with wrong data is
-    // worse than one that refused to update (section 6), and a page we could
-    // not understand is exactly that.
-    try {
-      offerings.push(parseOffering(page.html, code, year, page.finalUrl));
-    } catch (err) {
-      if (!(err instanceof EctsMissing)) throw err;
-      withoutEcts.push(code);
-      continue;
-    }
+    // A parse failure is still fatal. A catalogue with wrong data is worse than
+    // one that refused to update (section 6), and a page we could not
+    // understand is exactly that. A page missing a FIELD is a different thing
+    // and is not a failure: the parser returns null for it and the course is
+    // kept, because the other thirty fields are what a student came to read.
+    offerings.push(parseOffering(page.html, code, year, page.finalUrl));
     // A long run has to say it is alive. At one faculty this prints twice; at
     // twenty-one it is the difference between a crawl and a hang.
     if (sampled.length > 200 && (i + 1) % 250 === 0) {
@@ -308,15 +298,6 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   if (unavailable.length > tolerated) {
     throw new TooManyUnavailable(unavailable, tolerated);
   }
-  if (withoutEcts.length > 0) {
-    say(`${withoutEcts.length} courses the catalogue publishes without credits: ${withoutEcts.join(", ")}`);
-  }
-  // Bounded on the same reasoning: ten seminars out of 6,654 is the catalogue,
-  // and a tenth of the year without credits would be the header stopping being
-  // read rather than a family of odd courses.
-  if (withoutEcts.length > tolerated) {
-    throw new TooManyUnavailable(withoutEcts, tolerated);
-  }
 
   for (const p of described) {
     const outcome = listing.get(p.code);
@@ -335,7 +316,6 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
     offerings,
     conflicts,
     unavailable,
-    withoutEcts,
     reachedVia: reachedVia.filter((r) => offerings.some((o) => o.code === r.code)),
   };
 }

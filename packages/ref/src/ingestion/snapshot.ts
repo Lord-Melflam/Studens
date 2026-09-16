@@ -93,11 +93,11 @@ export interface Snapshot {
    *    79 programmes had no courses and nothing said whether that was a joint
    *    programme with none to list or a page that failed to load. Answering it
    *    took opening the site by hand, which does not scale to 692.
-   * 8: courses the catalogue publishes WITHOUT credits are listed. Ten of the
-   *    6,654 in 2026-2027 are post-graduate clinical biology seminars whose
-   *    pages carry no ECTS at all. They are understood, not broken, and they
-   *    cannot carry FR-D6's workload-against-credits, so they are recorded
-   *    rather than stored with an invented zero.
+   * 8: `ects` became nullable, because the official page does not always state
+   *    it. Ten of the 6,654 courses in 2026-2027 publish none. The first
+   *    attempt skipped those courses, which lost every other field the
+   *    catalogue does publish about them over the one it does not. A scraped
+   *    source omitting a field is an ordinary state to record and say plainly.
    *
    * The version field exists to be used, so an older snapshot is refused
    * rather than silently loaded with a field missing.
@@ -130,19 +130,6 @@ export interface Snapshot {
    * is losing it quietly, so it is written down and printed.
    */
   unavailable: string[];
-  /**
-   * Courses whose page states no credits at all, so they are not stored.
-   *
-   * Understood, not broken: `cours-2026-wbcmm21021` is a real post-graduate
-   * seminar whose page carries the word "crédit" nowhere. RYC measures workload
-   * against credits (FR-D6), so a course with none cannot carry the dimension
-   * the module exists to collect, and inventing a zero for it would be a
-   * different lie from the one the zero on `bmeta1000` tells truthfully.
-   *
-   * Listed so the coverage report can call it a gap, because a student looking
-   * for one of these will not find it.
-   */
-  withoutEcts: string[];
   /**
    * How each offering was reached. Many-to-many on BOTH axes on purpose: a
    * course appears in several programmes, and those programmes can belong to
@@ -191,11 +178,12 @@ export function validate(s: Snapshot): void {
   if (s.offerings.length === 0) throw new SnapshotInvalid("no course offerings parsed");
 
   for (const o of s.offerings) {
-    // Zero is permitted because UCLouvain publishes it: `cours-2026-bmeta1000`
-    // states "0.00 crédits" beside 18 hours of teaching. Negative is not, and
-    // neither is a missing cell, which the parser refuses before this.
-    if (!Number.isFinite(o.ects) || o.ects < 0) {
-      throw new SnapshotInvalid(`${o.code}: ECTS is required in every era, got ${o.ects}`);
+    // Null is permitted: the official page does not always state credits, and
+    // ten courses of 6,654 in 2026-2027 do not. Zero is permitted too, because
+    // UCLouvain publishes it on `cours-2026-bmeta1000`. A negative number is
+    // not, and neither is anything that is not a number at all.
+    if (o.ects !== null && (!Number.isFinite(o.ects) || o.ects < 0)) {
+      throw new SnapshotInvalid(`${o.code}: implausible ECTS, got ${o.ects}`);
     }
     if (!COURSE_CODE.test(o.code)) {
       throw new SnapshotInvalid(`${o.code}: not a plausible course code`);
@@ -267,6 +255,16 @@ function assertNothingWentBlank(s: Snapshot): void {
     throw new SnapshotInvalid(
       `every one of the ${s.offerings.length} offerings has 0 ECTS. ` +
         `One zero is a real course; all of them is a layout change.`,
+    );
+  }
+  // The same rule for an absent value, and this is where the guard that used to
+  // live in the parser now sits. One course without credits is a course the
+  // official page does not describe fully; every course without credits is a
+  // parser that stopped reading the header.
+  if (s.offerings.every((o) => o.ects === null)) {
+    throw new SnapshotInvalid(
+      `not one of the ${s.offerings.length} offerings states its ECTS. ` +
+        `A few is the catalogue; all of them is a layout change.`,
     );
   }
 }

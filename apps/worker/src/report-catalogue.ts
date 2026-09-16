@@ -74,6 +74,9 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
   out.push("");
 
   // --- what the crawl found -------------------------------------------------
+  // Derived rather than stored: a course with no credits is kept like any
+  // other, so the snapshot has nothing extra to carry.
+  const noEcts = snapshot.offerings.filter((o) => o.ects === null).map((o) => o.code);
   const listed = snapshot.programmes.filter((p) => p.listing === "listed");
   const empty = snapshot.programmes.filter((p) => p.listing === "empty");
   const unreachable = snapshot.programmes.filter((p) => p.listing === "unreachable");
@@ -87,7 +90,7 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
   out.push(line("distinct courses reached", new Set(snapshot.reachedVia.map((r) => r.code)).size));
   out.push(line("course pages parsed", snapshot.offerings.length));
   out.push(line("course pages the server would not give", snapshot.unavailable.length));
-  out.push(line("courses published with no credits", snapshot.withoutEcts.length));
+  out.push(line("courses whose page states no credits", noEcts.length));
   out.push("");
 
   if (unreachable.length > 0) {
@@ -111,16 +114,15 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
         "  broken upstream for days; check one by hand before re-running.",
     });
   }
-  if (snapshot.withoutEcts.length > 0) {
+  if (noEcts.length > 0) {
     findings.push({
-      severity: "gap",
-      title: `${snapshot.withoutEcts.length} courses the catalogue publishes with no credits`,
-      codes: snapshot.withoutEcts,
+      severity: "note",
+      title: `${noEcts.length} courses whose official page states no credits`,
+      codes: noEcts,
       explain:
-        "Real courses whose page states no ECTS at all, so they are not stored: RYC\n" +
-        "  measures workload against credits and they cannot carry it. Nobody will find\n" +
-        "  these by searching. Storing an invented zero would be worse, so the decision\n" +
-        "  to make is whether credits should be optional, not whether to guess them.",
+        "Stored and findable like any other course, with the interface saying the\n" +
+        "  credits are not stated rather than showing a zero. A note and not a gap:\n" +
+        "  nothing is missing from Studens that the source publishes.",
     });
   }
   if (empty.length > 0) {

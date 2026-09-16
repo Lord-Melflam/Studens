@@ -440,7 +440,19 @@ model CourseOffering {
   course       Course  @relation(fields: [courseId], references: [id])
   year         Int
   title        String
-  ects         Decimal @db.Decimal(4, 2)
+  /// NULLABLE, because the official page does not always state it.
+  ///
+  /// Ten courses of the 6,654 in 2026-2027 publish no credits at all: the
+  /// `wbcmm21021` family of post-graduate clinical biology seminars, whose
+  /// pages carry the word "crédit" nowhere. They are real courses a student
+  /// takes, and dropping them would lose every other field the catalogue does
+  /// publish about them, which is thirty or so.
+  ///
+  /// This is a catalogue scraped from a source we do not control, so a field
+  /// the source omits is an ordinary state to record and say plainly, never a
+  /// reason to lose the course. Null means "not stated on the official page",
+  /// and the interface says exactly that rather than showing a zero.
+  ects         Decimal? @db.Decimal(4, 2)
   language     String?
   quarter      String?
   /// FR-D19: scraped, never asked. The catalogue publishes the evaluation

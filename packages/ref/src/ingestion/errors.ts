@@ -25,28 +25,6 @@ export class ParseError extends Error {
   }
 }
 
-/**
- * The page is a course page and states no credits at all.
- *
- * Its own class because it is not a parse failure and must not be treated as
- * one. `cours-2026-wbcmm21021`, "Séminaires de biologie clinique", is a real
- * course whose page carries the word "crédit" nowhere: a post-graduate medical
- * seminar, one of a family of ten. The page is understood perfectly; it simply
- * has no ECTS.
- *
- * That matters because RYC's whole point is workload against credits (FR-D6),
- * so a course with no credits cannot carry the dimension the module exists to
- * collect. It is therefore SKIPPED AND RECORDED rather than stored with an
- * invented zero, and the coverage report lists it as a gap, because a student
- * looking for it will not find it.
- */
-export class EctsMissing extends ParseError {
-  constructor(url: string) {
-    super(url, "ects", "the page states no credits at all");
-    this.name = "EctsMissing";
-  }
-}
-
 export class FetchError extends Error {
   constructor(
     readonly url: string,

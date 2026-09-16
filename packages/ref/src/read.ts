@@ -48,7 +48,8 @@ export interface CourseSummary {
   code: string;
   title: string;
   year: number;
-  ects: number;
+  /** Null when the official page does not state it, never 0 as a stand-in. */
+  ects: number | null;
   quarter: string | null;
   /** Present only when UCLouvain owns the course. See OPEN-45. */
   teachers: string[];
@@ -136,7 +137,7 @@ function summariseRow(row: {
     code: row.course.code,
     title: row.title,
     year: row.year,
-    ects: Number(row.ects),
+    ects: row.ects === null || row.ects === undefined ? null : Number(row.ects),
     quarter: row.quarter,
     teachers: row.teachers.map((t) => t.teacherName),
     external: row.teachers.length === 0 && row.assessment === null,

@@ -418,60 +418,60 @@ describe("the request budget", () => {
  * with an empty evaluation field, and could say nothing at all about a field
  * that had quietly disappeared from all of them.
  */
-describe("a field that went blank everywhere", () => {
-  /** A snapshot of `n` offerings, each one complete unless `blank` names it. */
-  function snapshotOf(n: number, blank?: string): Snapshot {
-    const offerings = Array.from({ length: n }, (_, i) => ({
-      code: `zzzz${1000 + i}`,
-      year: YEAR,
-      title: `Course ${i}`,
-      ects: 5,
-      era: "modern",
-      language: "fr",
-      quarter: "Q1",
-      contactHours: "30h",
-      owningFaculty: "ZZZ",
-      teachers: ["A Teacher"],
-      assessment: [{ kind: "text", text: "an exam" }],
-      themes: [{ kind: "text", text: "a theme" }],
-      content: [{ kind: "text", text: "some content" }],
-    })) as unknown as Snapshot["offerings"];
-    if (blank) {
-      for (const o of offerings) {
-        (o as unknown as Record<string, unknown>)[blank] = Array.isArray(
-          (o as unknown as Record<string, unknown>)[blank],
-        )
-          ? []
-          : null;
-      }
+/** A snapshot of `n` offerings, each one complete unless `blank` names it. */
+function snapshotOf(n: number, blank?: string): Snapshot {
+  const offerings = Array.from({ length: n }, (_, i) => ({
+    code: `zzzz${1000 + i}`,
+    year: YEAR,
+    title: `Course ${i}`,
+    ects: 5,
+    era: "modern",
+    language: "fr",
+    quarter: "Q1",
+    contactHours: "30h",
+    owningFaculty: "ZZZ",
+    teachers: ["A Teacher"],
+    assessment: [{ kind: "text", text: "an exam" }],
+    themes: [{ kind: "text", text: "a theme" }],
+    content: [{ kind: "text", text: "some content" }],
+  })) as unknown as Snapshot["offerings"];
+  if (blank) {
+    for (const o of offerings) {
+      (o as unknown as Record<string, unknown>)[blank] = Array.isArray(
+        (o as unknown as Record<string, unknown>)[blank],
+      )
+        ? []
+        : null;
     }
-    return {
-      version: 8,
-      takenAt: new Date().toISOString(),
-      year: YEAR,
-      faculties: [{ code: "zzz", name: "Zeta" }],
-      programmes: [
-        {
-          code: "zprog",
-          faculty: "zzz",
-          title: "Z",
-          kind: null,
-          credits: null,
-          site: null,
-          domain: null,
-          siteSource: null,
-          listing: "listed",
-          courses: 1,
-        },
-      ],
-      offerings,
-      conflicts: [],
-      unavailable: [],
-      withoutEcts: [],
-      reachedVia: [],
-    };
   }
+  return {
+    version: 8,
+    takenAt: new Date().toISOString(),
+    year: YEAR,
+    faculties: [{ code: "zzz", name: "Zeta" }],
+    programmes: [
+      {
+        code: "zprog",
+        faculty: "zzz",
+        title: "Z",
+        kind: null,
+        credits: null,
+        site: null,
+        domain: null,
+        siteSource: null,
+        listing: "listed",
+        courses: 1,
+      },
+    ],
+    offerings,
+    conflicts: [],
+    unavailable: [],
+    reachedVia: [],
+  };
+}
 
+
+describe("a field that went blank everywhere", () => {
   it("is refused, naming the field", async () => {
     const path = await mkdtemp(join(tmpdir(), "studens-blank-"));
     try {
@@ -766,10 +766,13 @@ describe("what happened to a programme's course list", () => {
  *
  * `cours-2026-wbcmm21021`, "Séminaires de biologie clinique", is a real
  * post-graduate seminar whose page carries the word "crédit" nowhere. Ten of
- * the 6,654 courses in 2026-2027 are that family. The page is understood
- * perfectly, so this is not a parse failure, and RYC measures workload against
- * credits (FR-D6), so the course cannot carry the dimension the module exists
- * to collect. Skipped and recorded rather than stored with an invented zero.
+ * the 6,654 courses in 2026-2027 are that family.
+ *
+ * The first two attempts both got this wrong: one refused the page and ended
+ * the crawl, the next skipped the course so the run could finish. Skipping
+ * throws away the title, the faculty, the quarter, the contact hours and
+ * everything else the page does publish, over the one thing it does not. We
+ * scrape a source we do not control; a field it omits is a fact to record.
  */
 describe("courses published without credits", () => {
   function withoutCredits(codes: string[]) {
@@ -788,35 +791,43 @@ describe("courses published without credits", () => {
     return fetchImpl;
   }
 
-  it("records the course and finishes the run", async () => {
-    const said: string[] = [];
-    const snap = await crawl({
-      year: YEAR,
-      fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl: withoutCredits(["zaaa1000"]) }),
-      onProgress: (m) => said.push(m),
-    });
-    expect(snap.withoutEcts).toEqual(["zaaa1000"]);
-    expect(snap.offerings.map((o) => o.code)).not.toContain("zaaa1000");
-    expect(snap.offerings).toHaveLength(3);
-    expect(said.some((m) => m.includes("without credits"))).toBe(true);
-  });
-
-  it("is not the same thing as a page that could not be served", async () => {
-    // Three categories, deliberately: served and understood, served and not
-    // understood, and not served at all. Only the middle one is fatal.
+  it("keeps the course, with its credits recorded as not stated", async () => {
     const snap = await crawl({
       year: YEAR,
       fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl: withoutCredits(["zaaa1000"]) }),
     });
+    const kept = snap.offerings.find((o) => o.code === "zaaa1000");
+    expect(kept).toBeDefined();
+    expect(kept?.ects).toBeNull();
+    // Nothing else about the course was lost with it.
+    expect(kept?.title).toBe("A seminar");
+    expect(snap.offerings).toHaveLength(4);
     expect(snap.unavailable).toEqual([]);
   });
 
   it("still fails on a page it fetched and could not read", async () => {
+    // The line that has not moved: a page missing a FIELD is kept, a page whose
+    // layout is unrecognisable fails the run.
     const site = fakeSite({
       [`https://uclouvain.be/cours-${YEAR}-zaaa1000`]: "<html><body>nothing at all</body></html>",
     });
     await expect(crawl({ year: YEAR, fetcher: site.fetcher })).rejects.toThrow(
       /unrecognised course page layout/,
     );
+  });
+
+  it("refuses a run where not one course states its credits", async () => {
+    // A few is the catalogue. All of them is a parser that stopped reading the
+    // header, and that is only visible across the whole run.
+    const path = await mkdtemp(join(tmpdir(), "studens-ects-"));
+    try {
+      const snap = snapshotOf(30);
+      for (const o of snap.offerings) (o as unknown as Record<string, unknown>)["ects"] = null;
+      await expect(promote(snap, join(path, "live.json"))).rejects.toThrow(
+        /not one of the 30 offerings states its ECTS/,
+      );
+    } finally {
+      await rm(path, { recursive: true, force: true });
+    }
   });
 });

@@ -31,7 +31,6 @@ export { academicYearFor, candidateYears, ROLLOVER } from "./ingestion/year.js";
 export { courseUrl } from "./ingestion/urls.js";
 export {
   ParseError,
-  EctsMissing,
   FetchError,
   BudgetExceeded,
   TooManyUnavailable,

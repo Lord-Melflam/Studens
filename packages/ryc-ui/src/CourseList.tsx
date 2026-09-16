@@ -22,7 +22,7 @@ export function CourseList({
               <span className="code">{c.code.toUpperCase()}</span>
               <span className="title">{c.title}</span>
               <span className="facts">
-                {t("ryc.course.ects", { n: c.ects })}
+                {c.ects === null ? t("ryc.course.ects.unstated") : t("ryc.course.ects", { n: c.ects })}
                 {c.quarter ? ` · ${c.quarter}` : ""}
                 {c.mainLanguage ? ` · ${c.mainLanguage}` : ""}
                 {c.external ? ` · ${t("ryc.course.external")}` : ""}
