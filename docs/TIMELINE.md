@@ -612,7 +612,8 @@ would have been expensive to find in code:
 2. The institution picker was asked for with logos. `frontend-design.tex` 2.3
    had already recorded that the marks are trademarked whatever their copyright
    status. Name, city and colours instead, which still feeds the
-   per-institution theme.
+   per-institution theme. (The city was struck on 2026-09-16: an institution
+   does not have one, see FR-F11.)
 3. A declared institution is weaker evidence than the email domain, and FR-A10
    already forbids presenting that as proof of enrolment.
 4. Choosing an institution must not set a tenant, because FR-C19 derives an

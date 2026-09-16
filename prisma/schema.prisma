@@ -296,8 +296,11 @@ model Institution {
   /// Stable, lowercase, used in Member.institutionCode and in URLs.
   code       String    @unique
   name       String
-  city       String?
-  /// FR-F11: name, city and colours, never the mark. Trademark is the blocker
+  /// NO CITY. An institution is not in a city: 268 of UCLouvain's 692
+  /// programmes for 2025-2026 are taught outside Louvain-la-Neuve, across
+  /// eight campuses. The site is a fact about a PROGRAMME and is modelled in
+  /// the catalogue, not averaged into one word here.
+  /// FR-F11: name and colours, never the mark. Trademark is the blocker
   /// whatever the copyright status of a logo file. Null where the colour has
   /// not been verified: an approximation of an institution's colour is still
   /// an invented fact about it.
