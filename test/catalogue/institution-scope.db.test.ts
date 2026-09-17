@@ -46,18 +46,37 @@ let ulb = "";
 /** Distinctive, so a failed run leaves rows that are obviously this file's. */
 const CODE = "ztst-scope-01";
 const PROG = "ztst-scope-prog";
+const FAC = "ztst-scope-fac";
+
+/**
+ * This file builds its own faculty instead of finding one.
+ *
+ * CI migrates an empty database and never loads a catalogue, so the first
+ * version of this looked for "any UCLouvain faculty", passed here and failed
+ * there. A test that only works on a developer's machine is worse than no
+ * test: it is a gate that will not catch the thing it was written for on the
+ * day somebody else runs it.
+ */
+let facultyId = "";
 
 beforeAll(async () => {
   if (!reachable) return;
   uclouvain = await institutionId(prisma, "uclouvain");
   ulb = await institutionId(prisma, "ulb");
   await clean();
+  const faculty = await prisma.faculty.upsert({
+    where: { institutionId_code: { institutionId: uclouvain, code: FAC } },
+    update: {},
+    create: { institutionId: uclouvain, code: FAC, name: "A faculty this test owns" },
+  });
+  facultyId = faculty.id;
 });
 
 async function clean() {
   if (!reachable) return;
   await prisma.programme.deleteMany({ where: { code: PROG } });
   await prisma.course.deleteMany({ where: { code: CODE } });
+  await prisma.faculty.deleteMany({ where: { code: FAC } });
 }
 
 afterAll(async () => {
@@ -87,18 +106,13 @@ describe("a programme cannot be filed under the wrong institution", () => {
     // The composite foreign key, and the reason the denormalised column is
     // safe to keep. Programme.institutionId duplicates what Faculty already
     // knows, and two copies of one fact drift; here they cannot.
-    const faculty = await prisma.faculty.findFirst({
-      where: { institutionId: uclouvain },
-      select: { id: true },
-    });
-    expect(faculty, "the catalogue should hold at least one UCLouvain faculty").not.toBeNull();
     await expect(
       prisma.programme.create({
         data: {
           code: PROG,
           year: 2026,
           title: "A programme filed under the wrong university",
-          facultyId: faculty!.id,
+          facultyId,
           institutionId: ulb,
         },
       }),
@@ -106,16 +120,12 @@ describe("a programme cannot be filed under the wrong institution", () => {
   });
 
   dbit("accepts it when the two agree", async () => {
-    const faculty = await prisma.faculty.findFirst({
-      where: { institutionId: uclouvain },
-      select: { id: true },
-    });
     const row = await prisma.programme.create({
       data: {
         code: PROG,
         year: 2026,
         title: "A programme filed correctly",
-        facultyId: faculty!.id,
+        facultyId,
         institutionId: uclouvain,
       },
     });
@@ -123,12 +133,14 @@ describe("a programme cannot be filed under the wrong institution", () => {
   });
 });
 
-describe("what the backfill left behind", () => {
-  dbit("gave every existing row an institution", async () => {
-    // The migration refuses to finish otherwise, so this is checking that the
-    // database in front of us is one the migration actually ran on.
-    const courses = await prisma.course.count();
-    const scoped = await prisma.course.count({ where: { institutionId: { not: "" } } });
-    expect(courses).toBe(scoped);
+describe("the column is required, not optional", () => {
+  dbit("refuses a course with no institution at all", async () => {
+    // Counting existing rows would pass vacuously on the empty database CI
+    // migrates, which is exactly the shape of test this file already got
+    // wrong once. This asks the constraint instead, so it means the same
+    // thing on both machines.
+    await expect(
+      prisma.$executeRaw`INSERT INTO ref."Course"(id, code) VALUES ('ztst-scope-null', ${CODE})`,
+    ).rejects.toThrow();
   });
 });
