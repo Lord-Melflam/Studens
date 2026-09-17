@@ -1032,3 +1032,28 @@ rather than ownership, and that course to faculty is many to many; the same is
 evidently true of programmes, and the schema does not model it. One programme in
 692 is not a reason to change a foreign key today, and it is a reason to write
 down that the value is arbitrary rather than let somebody trust it.
+
+### 12.12 A programme with no course list is still a programme
+
+The full crawl put 690 programmes in the database and the screen showed 443.
+`read.ts` dropped every programme with no courses, on both the snapshot and the
+database path, and had done since browsing was built.
+
+That is 247 programmes, 218 of them continuing education certificates, the rest
+joint programmes whose courses are hosted by a partner institution. A student
+searching for one concluded it did not exist, and the catalogue was quietly
+smaller than the one it copies.
+
+**They are listed now**, marked "no course list", and opening one says what the
+institution publishes and does not, and links to its official page. The filter
+that was hiding them is gone; the `kind` facet is what keeps 218 certificates
+out of view for somebody browsing for a bachelor, and that is a choice the
+reader makes rather than one made for them.
+
+The reason is NOT guessed per programme. We know the course list is absent and
+we do not know which of the two causes applies to a given one, so the text names
+both and claims neither.
+
+**Why the filter existed, and what replaced it.** Clicking such a programme used
+to give an empty list, which is a dead end. The answer to a dead end is to say
+where the information is, not to hide the door.

@@ -174,6 +174,7 @@ const programme = (over: Partial<ProgrammeSummary>): ProgrammeSummary => ({
   credits: null,
   site: "Louvain-la-Neuve",
   domain: "Sciences",
+  officialUrl: "https://uclouvain.be/prog-2026-sinf1ba",
   ...over,
 });
 
@@ -472,5 +473,38 @@ describe("the published title, de-duplicated against the site", () => {
     expect(titleWithoutSite("Master (120) en gestion (Mons)", "Mons")).toBe(
       "Master (120) en gestion",
     );
+  });
+});
+
+/**
+ * A PROGRAMME WITH NO COURSE LIST IS STILL A PROGRAMME.
+ *
+ * 247 of 690 publish none: continuing education certificates, and joint
+ * programmes whose courses are hosted by the partner institution. They were
+ * dropped before they reached the screen, which made the catalogue quietly
+ * smaller than the one it copies, and made a student searching for a
+ * certificate conclude it does not exist.
+ */
+describe("programmes that publish no course list", () => {
+  const withNone = programme({ code: "geni2fc", kind: "certificat", courses: 0 });
+  const all = [...programmes, withNone];
+
+  it("is listed like any other", () => {
+    expect(applyProgrammeFilter(all, NO_PROGRAMME_FILTER).map((p) => p.code)).toContain("geni2fc");
+  });
+
+  it("is counted in its facets, so the numbers add up", () => {
+    const facets = programmeFacets(all, NO_PROGRAMME_FILTER);
+    const certs = facets.kinds.find((k) => k.value === "certificat");
+    expect(certs?.count).toBe(1);
+  });
+
+  it("can be narrowed to and away like anything else", () => {
+    const onlyCerts = applyProgrammeFilter(all, { ...NO_PROGRAMME_FILTER, kinds: ["certificat"] });
+    expect(onlyCerts.map((p) => p.code)).toEqual(["geni2fc"]);
+    // And excluded by choosing any other kind, which is how somebody browsing
+    // for a bachelor keeps 218 continuing education certificates out of view.
+    const onlyBachelors = applyProgrammeFilter(all, { ...NO_PROGRAMME_FILTER, kinds: ["bachelier"] });
+    expect(onlyBachelors.map((p) => p.code)).not.toContain("geni2fc");
   });
 });

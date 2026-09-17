@@ -68,12 +68,36 @@ export function Browse({
           {t("ryc.browse.back")}
         </button>
         <h2 className="browse-title">{programme.title}</h2>
-        <CourseFilters
-          courses={courses}
-          reviewCounts={reviewCounts}
-          onOpen={onOpen}
-          emptyLabel={t("ryc.browse.noneInProgramme")}
-        />
+        {/*
+          A programme with no course list is not a dead end and not a failure of
+          ours: 247 of 690 publish none, mostly continuing education and joint
+          programmes whose courses are hosted by a partner institution. They
+          used to be hidden from the list entirely, which made the catalogue
+          quietly smaller than the one it copies. So they are listed, and here
+          the screen says what the institution does and does not publish, and
+          points at the page that does.
+        */}
+        {programme.courses === 0 ? (
+          <div className="programme-empty">
+            <p>{t("ryc.browse.noCourseList")}</p>
+            <p className="hint">{t("ryc.browse.noCourseList.why")}</p>
+            <a
+              className="official"
+              href={programme.officialUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              {t("ryc.browse.officialProgramme")}
+            </a>
+          </div>
+        ) : (
+          <CourseFilters
+            courses={courses}
+            reviewCounts={reviewCounts}
+            onOpen={onOpen}
+            emptyLabel={t("ryc.browse.noneInProgramme")}
+          />
+        )}
       </section>
     );
   }
@@ -146,7 +170,9 @@ export function Browse({
                           parenthesis inside its name. Shown because two
                           programmes can carry the same title in two cities. */}
                       {p.site ? ` · ${p.site}` : ""}
-                      {` · ${t("ryc.browse.courses", { count: p.courses })}`}
+                      {p.courses === 0
+                        ? ` · ${t("ryc.browse.noCourseList.flag")}`
+                        : ` · ${t("ryc.browse.courses", { count: p.courses })}`}
                     </span>
                     <span className="facts faint">
                       {p.facultyName}

@@ -94,6 +94,11 @@ export const rycStrings: Bundle = {
     "ryc.browse.courses.other": "{count} cours",
     "ryc.browse.searchPlaceholder": "informatique, mineure, sinf…",
     "ryc.browse.noMatch": "Aucun programme ne correspond.",
+    "ryc.browse.noCourseList.flag": "pas de liste de cours",
+    "ryc.browse.noCourseList": "L'UCLouvain ne publie pas de liste de cours pour ce programme.",
+    "ryc.browse.noCourseList.why":
+      "C'est le cas de la formation continue et des programmes organisés avec une autre institution, dont les cours sont hébergés chez elle. Le programme existe : ce qui manque ici manque aussi à la source.",
+    "ryc.browse.officialProgramme": "Voir le programme sur uclouvain.be",
     "ryc.browse.noneInProgramme": "Aucun cours chargé pour ce programme.",
 
     "ryc.filter.search": "Filtrer",
@@ -395,6 +400,11 @@ export const rycStrings: Bundle = {
     "ryc.browse.courses.other": "{count} cursussen",
     "ryc.browse.searchPlaceholder": "informatica, minor, sinf…",
     "ryc.browse.noMatch": "Geen enkele opleiding komt overeen.",
+    "ryc.browse.noCourseList.flag": "geen cursuslijst",
+    "ryc.browse.noCourseList": "UCLouvain publiceert geen cursuslijst voor dit programma.",
+    "ryc.browse.noCourseList.why":
+      "Dat is zo voor permanente vorming en voor programma's die samen met een andere instelling georganiseerd worden, waar de cursussen bij die instelling staan. Het programma bestaat: wat hier ontbreekt, ontbreekt ook bij de bron.",
+    "ryc.browse.officialProgramme": "Het programma op uclouvain.be bekijken",
     "ryc.browse.noneInProgramme": "Geen cursus geladen voor deze opleiding.",
 
     "ryc.filter.search": "Filteren",
@@ -696,6 +706,11 @@ export const rycStrings: Bundle = {
     "ryc.browse.courses.other": "{count} courses",
     "ryc.browse.searchPlaceholder": "computer science, minor, sinf…",
     "ryc.browse.noMatch": "No programme matches.",
+    "ryc.browse.noCourseList.flag": "no course list",
+    "ryc.browse.noCourseList": "UCLouvain publishes no course list for this programme.",
+    "ryc.browse.noCourseList.why":
+      "That is the case for continuing education and for programmes run with another institution, whose courses are hosted there. The programme exists: what is missing here is missing from the source too.",
+    "ryc.browse.officialProgramme": "See the programme on uclouvain.be",
     "ryc.browse.noneInProgramme": "No course loaded for this programme.",
 
     "ryc.filter.search": "Filter",

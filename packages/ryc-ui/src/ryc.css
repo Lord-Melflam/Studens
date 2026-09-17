@@ -656,3 +656,16 @@ button.ghost {
 .report-cat input { margin-top: 0.25rem; flex: none; }
 .report-cat strong { display: block; font-size: 0.88rem; }
 .report-cat .hint { display: block; margin: 0.1rem 0 0; font-size: 0.78rem; }
+
+/* A programme the institution publishes without a course list. Stated rather
+   than hidden: 247 of 690 are in this position, and hiding them made the
+   catalogue quietly smaller than the one it copies. */
+.programme-empty {
+  padding: 1.1rem 1.2rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.programme-empty p { margin: 0 0 0.5rem; }
+.programme-empty .hint { font-size: 0.88rem; color: var(--muted); }
+.programme-empty .official { font-size: 0.9rem; color: var(--accent); }
