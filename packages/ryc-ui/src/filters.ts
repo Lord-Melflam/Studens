@@ -158,6 +158,28 @@ export function courseFacets(
 // Programmes
 // --------------------------------------------------------------------------
 
+/**
+ * A fixed order for the kinds, because alphabetical would put "certificat"
+ * above "bachelier" and the list reads as a progression: what you study first,
+ * then what you add to it, then what comes after.
+ *
+ * Used by BOTH the facets and the grouped list, so the filter and the sections
+ * below it cannot disagree about what order the kinds come in.
+ */
+const KIND_ORDER = [
+  "bachelier",
+  "master",
+  "specialisation",
+  "mineure",
+  "filiere",
+  "approfondissement",
+  "certificat",
+];
+
+function rankKind(k: string | null): number {
+  return k === null ? KIND_ORDER.length : KIND_ORDER.indexOf(k);
+}
+
 export interface ProgrammeFilter {
   text: string;
   /** `null` in the list means "kind we could not parse", shown as its own group. */
@@ -265,21 +287,7 @@ export function programmeFacets(
     domains.set(p.domain, (domains.get(p.domain) ?? 0) + 1);
   }
 
-  /**
-   * A fixed order for the kinds, because alphabetical would put "certificat"
-   * above "bachelier" and the list reads as a progression: what you study
-   * first, then what you add to it, then what comes after.
-   */
-  const order = [
-    "bachelier",
-    "master",
-    "specialisation",
-    "mineure",
-    "filiere",
-    "approfondissement",
-    "certificat",
-  ];
-  const rank = (k: string | null) => (k === null ? order.length : order.indexOf(k));
+  const rank = rankKind;
 
   return {
     kinds: [...kinds.entries()]
@@ -320,6 +328,48 @@ export function titleWithoutSite(title: string, site: string | null): string {
   if (!trimmed.endsWith(suffix)) return title;
   return trimmed.slice(0, -suffix.length).trimEnd();
 }
+
+/**
+ * The programmes, split into sections by kind, in the order the filter uses.
+ *
+ * 690 rows in one alphabetical run is a wall. The order is shared with
+ * `programmeFacets` deliberately: a list ordered one way and a filter ordered
+ * another is two answers to "what kinds are there".
+ */
+export function groupByKind(
+  programmes: ProgrammeSummary[],
+): Array<[string | null, ProgrammeSummary[]]> {
+  const by = new Map<string | null, ProgrammeSummary[]>();
+  for (const p of programmes) by.set(p.kind, [...(by.get(p.kind) ?? []), p]);
+  return [...by.entries()].sort((a, b) => rankKind(a[0]) - rankKind(b[0]));
+}
+
+/**
+ * The courses, split into sections by term.
+ *
+ * 114 programmes hold more than 60 courses and the largest holds 173, which as
+ * one list is unreadable. At PAE time the question is nearly always "what can I
+ * take in Q1", so the term is the split that matches how somebody is already
+ * thinking, and it is a field the catalogue publishes rather than one we infer.
+ *
+ * Courses with no term stated come last, under their own heading, never folded
+ * into Q1: an unknown is not a first quadrimester.
+ *
+ * Below a threshold there is nothing to organise and headings are just noise,
+ * so a short list stays flat.
+ */
+export const GROUP_COURSES_ABOVE = 12;
+
+export function groupByTerm(courses: CourseSummary[]): Array<[string | null, CourseSummary[]]> {
+  if (courses.length <= GROUP_COURSES_ABOVE) return [[null, courses]];
+  const by = new Map<string | null, CourseSummary[]>();
+  for (const c of courses) by.set(c.quarter, [...(by.get(c.quarter) ?? []), c]);
+  const rank = (q: string | null) => (q === null ? 99 : (QUARTER_ORDER.indexOf(q) + 1 || 98));
+  return [...by.entries()].sort((a, b) => rank(a[0]) - rank(b[0]));
+}
+
+/** The order UCLouvain publishes, not alphabetical: Q1 comes before Q2. */
+const QUARTER_ORDER = ["Q1", "Q2", "Q1 et Q2", "Q1 and Q2", "Q1 of Q2", "Q1 ou Q2", "Q3"];
 
 /** Toggle a value in a multi-select list. */
 export function toggle<T>(list: T[], value: T): T[] {

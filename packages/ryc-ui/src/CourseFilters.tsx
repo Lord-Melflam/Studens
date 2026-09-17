@@ -21,6 +21,7 @@ import {
   applyCourseFilter,
   courseFacets,
   courseFilterIsEmpty,
+  groupByTerm,
   toggle,
   type CourseFilter,
 } from "./filters.js";
@@ -117,7 +118,21 @@ export function CourseFilters({
       {shown.length === 0 ? (
         <p className="empty">{t("ryc.filter.noMatch")}</p>
       ) : (
-        <CourseList courses={shown} onOpen={onOpen} reviewCounts={reviewCounts} />
+        groupByTerm(shown).map(([term, rows]) => (
+          <section className="term-group" key={String(term)}>
+            {term !== null && (
+              <h3 className="term-group-title">
+                {term} <span className="n">{rows.length}</span>
+              </h3>
+            )}
+            {term === null && rows.length !== shown.length && (
+              <h3 className="term-group-title">
+                {t("ryc.filter.noTerm")} <span className="n">{rows.length}</span>
+              </h3>
+            )}
+            <CourseList courses={rows} onOpen={onOpen} reviewCounts={reviewCounts} />
+          </section>
+        ))
       )}
     </>
   );

@@ -4,7 +4,8 @@
  * The module owns everything below `/app/ryc`. The shell hands it the rest of
  * the path and a navigate function and never parses either, which is FR-B18.
  *
- *   /              browse a programme
+ *   /              browse the programmes
+ *   /p/:code       one programme, and its courses
  *   /recherche     search
  *   /c/:code       one course
  *   /c/:code/avis  writing a review of it
@@ -25,12 +26,14 @@ import { Browse } from "./Browse.js";
 /** What the path inside the module means. Parsed in one place. */
 export type RycView =
   | { kind: "browse" }
+  | { kind: "programme"; code: string }
   | { kind: "search" }
   | { kind: "course"; code: string; writing: boolean };
 
 export function parseView(path: string): RycView {
   const parts = path.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
   if (parts[0] === "recherche") return { kind: "search" };
+  if (parts[0] === "p" && parts[1]) return { kind: "programme", code: parts[1].toLowerCase() };
   if (parts[0] === "c" && parts[1]) {
     return { kind: "course", code: parts[1].toLowerCase(), writing: parts[2] === "avis" };
   }
@@ -127,7 +130,7 @@ export function Ryc({ path, navigate }: ModuleProps) {
       <nav className="tabs">
         <button
           type="button"
-          className={view.kind === "browse" ? "on" : ""}
+          className={view.kind === "browse" || view.kind === "programme" ? "on" : ""}
           onClick={() => navigate("/")}
         >
           {t("ryc.tab.browse")}
@@ -175,7 +178,12 @@ export function Ryc({ path, navigate }: ModuleProps) {
           )}
         </>
       ) : (
-        <Browse onOpen={(c) => navigate(`/c/${c}`)} reviewCounts={reviewCounts} />
+        <Browse
+          programme={view.kind === "programme" ? view.code : null}
+          onOpenProgramme={(p) => navigate(p === null ? "/" : `/p/${p}`)}
+          onOpen={(c) => navigate(`/c/${c}`)}
+          reviewCounts={reviewCounts}
+        />
       )}
     </>
   );

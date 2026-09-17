@@ -16,6 +16,7 @@
  * catalogue into a tool for that. It is a separate feature with a separate
  * legal footing, and this is not it.
  */
+import { useState } from "react";
 import { useT, type Translate } from "@studens/i18n";
 import type { Facet } from "./filters.js";
 
@@ -57,19 +58,55 @@ export function FilterGroup<T extends string | number | null>({
   chosen,
   onToggle,
   labelFor,
+  collapsed = false,
 }: {
   legend: string;
   facets: Array<Facet<T>>;
   chosen: T[];
   onToggle: (v: T) => void;
   labelFor?: (f: Facet<T>) => string;
+  /**
+   * Start folded, showing the legend and what is chosen.
+   *
+   * For the long dimensions. The catalogue grew from two faculties to twenty,
+   * and the browse screen went to 57 chips before a single programme appeared:
+   * 20 faculties and 22 fields of study, five rows of them, above the thing
+   * somebody came to read. Folding those two leaves 15 chips and removes
+   * nothing, since a fold that hides a chosen value would be worse than the
+   * crowding it fixes, and this one says what it is holding.
+   */
+  collapsed?: boolean;
 }) {
+  const t = useT();
+  const [open, setOpen] = useState(!collapsed);
   // Nothing to choose between is not a filter. One option can only ever be
   // "everything" or "nothing", and it takes up the same room as a useful one.
   if (facets.length < 2) return null;
+
+  if (!open) {
+    const picked = facets.filter((f) => chosen.includes(f.value));
+    return (
+      <fieldset className="filter-group folded">
+        <legend>{legend}</legend>
+        <button type="button" className="fold" onClick={() => setOpen(true)}>
+          {picked.length === 0
+            ? t("ryc.filter.choose", { n: facets.length })
+            : picked.map((f) => (labelFor ? labelFor(f) : f.label)).join(", ")}
+        </button>
+      </fieldset>
+    );
+  }
+
   return (
     <fieldset className="filter-group">
-      <legend>{legend}</legend>
+      <legend>
+        {legend}
+        {collapsed && (
+          <button type="button" className="fold-away" onClick={() => setOpen(false)}>
+            {t("ryc.filter.fold")}
+          </button>
+        )}
+      </legend>
       <Chips facets={facets} chosen={chosen} onToggle={onToggle} labelFor={labelFor} />
     </fieldset>
   );

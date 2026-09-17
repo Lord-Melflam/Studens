@@ -99,6 +99,7 @@ export const rycStrings: Bundle = {
     "ryc.browse.noCourseList.why":
       "C'est le cas de la formation continue et des programmes organisés avec une autre institution, dont les cours sont hébergés chez elle. Le programme existe : ce qui manque ici manque aussi à la source.",
     "ryc.browse.officialProgramme": "Voir le programme sur uclouvain.be",
+    "ryc.browse.noSuchProgramme": "Aucun programme ne porte le code {code}.",
     "ryc.browse.noneInProgramme": "Aucun cours chargé pour ce programme.",
 
     "ryc.filter.search": "Filtrer",
@@ -110,6 +111,9 @@ export const rycStrings: Bundle = {
     "ryc.filter.site": "Site",
     "ryc.filter.faculty": "Faculté",
     "ryc.filter.domain": "Domaine",
+    "ryc.filter.noTerm": "Quadrimestre non précisé",
+    "ryc.filter.choose": "choisir parmi {n}",
+    "ryc.filter.fold": "replier",
     "ryc.filter.quarter": "Quadrimestre",
     "ryc.filter.ects": "Crédits",
     "ryc.filter.language": "Langue",
@@ -408,6 +412,7 @@ export const rycStrings: Bundle = {
     "ryc.browse.noCourseList.why":
       "Dat is zo voor permanente vorming en voor programma's die samen met een andere instelling georganiseerd worden, waar de cursussen bij die instelling staan. Het programma bestaat: wat hier ontbreekt, ontbreekt ook bij de bron.",
     "ryc.browse.officialProgramme": "Het programma op uclouvain.be bekijken",
+    "ryc.browse.noSuchProgramme": "Geen programma met de code {code}.",
     "ryc.browse.noneInProgramme": "Geen cursus geladen voor deze opleiding.",
 
     "ryc.filter.search": "Filteren",
@@ -419,6 +424,9 @@ export const rycStrings: Bundle = {
     "ryc.filter.site": "Campus",
     "ryc.filter.faculty": "Faculteit",
     "ryc.filter.domain": "Vakgebied",
+    "ryc.filter.noTerm": "Semester niet vermeld",
+    "ryc.filter.choose": "kies uit {n}",
+    "ryc.filter.fold": "dichtklappen",
     "ryc.filter.quarter": "Semester",
     "ryc.filter.ects": "Studiepunten",
     "ryc.filter.language": "Taal",
@@ -717,6 +725,7 @@ export const rycStrings: Bundle = {
     "ryc.browse.noCourseList.why":
       "That is the case for continuing education and for programmes run with another institution, whose courses are hosted there. The programme exists: what is missing here is missing from the source too.",
     "ryc.browse.officialProgramme": "See the programme on uclouvain.be",
+    "ryc.browse.noSuchProgramme": "No programme has the code {code}.",
     "ryc.browse.noneInProgramme": "No course loaded for this programme.",
 
     "ryc.filter.search": "Filter",
@@ -728,6 +737,9 @@ export const rycStrings: Bundle = {
     "ryc.filter.site": "Site",
     "ryc.filter.faculty": "Faculty",
     "ryc.filter.domain": "Field of study",
+    "ryc.filter.noTerm": "Term not stated",
+    "ryc.filter.choose": "choose from {n}",
+    "ryc.filter.fold": "fold away",
     "ryc.filter.quarter": "Term",
     "ryc.filter.ects": "Credits",
     "ryc.filter.language": "Language",
