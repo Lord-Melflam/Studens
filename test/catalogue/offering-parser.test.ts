@@ -151,7 +151,25 @@ describe("failing loudly rather than storing nulls", () => {
     expect(parseOffering(withNone, "x", 2025, url).ects).toBeNull();
   });
 
+  /**
+   * THE COURSE NAMESPACE ALSO HOLDS BUNDLES, and one stopped a crawl at 5,000
+   * pages of 6,654. `cours-2026-mcomu1000` is titled "Cours du bachelier en
+   * technologies numériques..." and is worth 180 credits: a whole three year
+   * bachelor, published as one entry.
+   *
+   * Measured over 6,028 cached pages of the year: 5,885 are 15 credits or
+   * fewer, 142 are 16 to 30, none is between 31 and 120, and exactly one is
+   * 180. The old ceiling of 120 protected nothing in the range it covered.
+   */
+  it("accepts a bundle entry worth a whole programme", () => {
+    const html = '<html><body><div class="fa_cell_0">180.00 crédits</div><h1>X</h1>' +
+      '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';
+    expect(parseOffering(html, "x", 2025, url).ects).toBe(180);
+  });
+
   it("refuses an implausible ECTS value", () => {
+    // 999 is still nonsense: above a six year medicine programme, which is the
+    // largest thing the bundle entries could stand for.
     const html = '<html><body><div class="fa_cell_0">999 crédits</div><h1>X</h1>' +
       '<div class="fa_row"><div class="fa_cell_1">Contenu</div><div class="fa_cell_2">y</div></div></body></html>';
     expect(() => parseOffering(html, "x", 2025, url)).toThrow(/implausible value/);

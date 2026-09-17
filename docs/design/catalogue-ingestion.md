@@ -949,3 +949,45 @@ The guard that used to justify refusing such a page now lives in the snapshot,
 where the evidence is: a run in which NOT ONE offering states its credits is a
 parser that stopped reading the header, and that is only visible across a whole
 run.
+
+### 12.9 The course namespace also holds bundles
+
+Found on the fourth attempt at the full crawl, which stopped at 5,000 pages of
+6,654.
+
+`cours-2026-mcomu1000` is titled **"Cours du bachelier en technologies
+numériques pour l'information et la communication"** and is worth **180
+credits**. It is not a course, it is a whole three year bachelor published as one
+entry in the course namespace, organised by SESP.
+
+The ceiling was 120, on the reasoning that a master's year is 120 credits and a
+course cannot be more. Measured instead of reasoned, over 6,028 cached pages of
+2026-2027:
+
+| Credits | Entries |
+|---|---|
+| 0 to 15 | 5,885 |
+| 16 to 30 | 142 |
+| 31 to 120 | **0** |
+| 180 | 1 |
+
+So the old ceiling protected nothing in the range it covered. It is 360 now, the
+size of a six year medicine programme, which is the largest a bundle could
+plausibly stand for. The real guard against reading the wrong number was never
+the ceiling: the pattern requires `cr` immediately after the digits, so a year
+or a room number cannot be read as credits.
+
+**What this means for the product, and it is not a parsing question.** A bundle
+entry will appear in RYC as a course worth 180 credits that somebody could
+review. It is harmless today and it is not what a student is looking for when
+they browse a programme. Whether such entries should be hidden, labelled, or
+left alone is a decision for when somebody sees one on screen.
+
+**Four stops, one cause.** Every one of the four failures of the full crawl was
+the parser calling something real impossible: an evaluation field published
+empty, a course worth zero credits, a page the university could not serve, and
+now an entry too large to be a course. A catalogue of 6,654 entries maintained
+by hundreds of people contains more shapes than anybody designing a parser
+imagines, and the cost of each discovery was roughly twelve minutes of crawl.
+The bounds that survived are the ones measured against the whole set rather than
+argued from what a course ought to be.

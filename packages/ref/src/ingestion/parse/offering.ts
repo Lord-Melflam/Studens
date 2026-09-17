@@ -12,11 +12,17 @@
  *           fields:  table tr > td (label) + td (value)
  *           no quarter field at all: the era lacks it, which is not an error
  *
- * docs/design/catalogue-ingestion.md section 3.1 requires ECTS in every era and
- * requires "absent because the era lacks the field" to be distinguishable from
- * "absent because the parse broke". The rule that separates them is in
- * errors.ts: a missing LABEL is absent by era, a present label with no value is
- * a ParseError.
+ * docs/design/catalogue-ingestion.md section 3.1 requires "absent because the
+ * era lacks the field" to stay distinguishable from "absent because the parse
+ * broke". Three states, and only the last one fails a run:
+ *
+ *   label absent, or present with no value  ->  null, the source does not say
+ *   a value outside any plausible range     ->  ParseError, we misread it
+ *   no labelled fields at all on the page   ->  ParseError, the layout changed
+ *
+ * The evidence for a broken parser is the RUN, not the page: one odd course is
+ * a catalogue, the same field empty on every course is a selector that stopped
+ * matching. snapshot.ts holds those checks.
  */
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
@@ -34,10 +40,10 @@ export interface ParsedOffering {
   /**
    * ECTS, or null when the official page does not state it.
    *
-   * Ten courses of 6,654 in 2026-2027 publish none. Null is "not stated on the
-   * official page", which the interface says in those words: this is a
-   * catalogue scraped from a source we do not control, so a field the source
-   * omits is a fact to record rather than a course to lose.
+   * No course in 2026-2027 has needed the null: all 6,028 checked state their
+   * credits. It exists because the catalogue is scraped from a source nobody
+   * here controls, so a field the source omits has to be a fact we record
+   * rather than a course we lose. See design/catalogue-ingestion.md 12.8.
    */
   ects: number | null;
   /** Official TEACHING hours, not student effort. A different measurement from FR-D6. */
@@ -194,8 +200,21 @@ function richField(
  * that ECTS is required in every era, and the cost of that reading was the whole
  * course: `cours-2026-wbcmm21021` is a real seminar with a title, a faculty, a
  * quarter and contact hours, and it was being dropped over the one field its
- * page omits. The upper bound stays: 120 credits is a master's year, not a
- * course.
+ * page omits.
+ *
+ * THE UPPER BOUND IS 360, AND 120 WAS WRONG. The course namespace also holds
+ * BUNDLE entries standing for a whole programme: `cours-2026-mcomu1000` is
+ * titled "Cours du bachelier en technologies numériques pour l'information et
+ * la communication" and is worth 180 credits, which is a three year bachelor.
+ * It stopped a crawl at 5,000 pages of 6,654.
+ *
+ * Measured across 6,028 cached pages of 2026-2027, nearly the whole year: 5,885
+ * are 15 credits or fewer, 142 are between 16 and 30, NONE is between 31 and
+ * 120, and exactly one is 180. So the old ceiling protected nothing in the
+ * range it covered, and 360 is the largest a bundle could plausibly be, a six
+ * year medicine programme. The real guard against reading the wrong number is
+ * the pattern, which requires "cr" immediately after it, so a year or a room
+ * number cannot be read as credits.
  *
  * The guard against a layout change moved to the snapshot, where it belongs: a
  * run in which EVERY offering lost its credits is a parser that stopped reading
@@ -210,7 +229,7 @@ function parseEcts(headerCells: string[], url: string): number | null {
     const m = /([\d]+(?:[.,][\d]+)?)\s*cr/i.exec(cell);
     if (m?.[1]) {
       const n = Number(m[1].replace(",", "."));
-      if (!Number.isFinite(n) || n < 0 || n > 120) {
+      if (!Number.isFinite(n) || n < 0 || n > 360) {
         throw new ParseError(url, "ects", `implausible value ${m[1]}`);
       }
       return n;
