@@ -20,6 +20,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { withQuota, QuotaExceeded, windowStartFor } from "@studens/platform";
 import { PASS_BAND_FLOOR, reviewsFor, submitAnonymous, submitAttributed, type ReviewInput } from "@studens/ryc";
+import { upsertCourse } from "../fixtures/catalogue.js";
 
 const prisma = new PrismaClient();
 let reachable = false;
@@ -63,11 +64,7 @@ async function seed(): Promise<void> {
     },
   });
   memberId = m.id;
-  const c = await prisma.course.upsert({
-    where: { code: "ztst0001" },
-    update: {},
-    create: { code: "ztst0001" },
-  });
+  const c = await upsertCourse(prisma, "ztst0001");
   courseId = c.id;
 }
 

@@ -115,11 +115,17 @@ SELECT pg_temp.expect_denied('studens_platform',
 -- The catalogue is readable by feature modules and writable only by ingestion.
 SELECT pg_temp.expect_allowed('studens_ryc', 'SELECT 1 FROM ref."Course" LIMIT 1',
   'read the catalogue');
+-- `institutionId` is required since 20260918_codes_belong_to_an_institution: a
+-- course code is only unique inside one catalogue. Taken by subselect rather
+-- than as a literal because institutions are seeded by migration with generated
+-- uuids, so the code is the only stable handle.
 SELECT pg_temp.expect_denied('studens_ryc',
-  $$INSERT INTO ref."Course"(id,code) VALUES ('probe','zzzz9999')$$,
+  $$INSERT INTO ref."Course"(id,code,"institutionId")
+    VALUES ('probe','zzzz9999',(SELECT id FROM ref."Institution" WHERE code='uclouvain'))$$,
   'write the catalogue');
 SELECT pg_temp.expect_allowed('studens_ref',
-  $$INSERT INTO ref."Course"(id,code) VALUES ('probe','zzzz9999')$$,
+  $$INSERT INTO ref."Course"(id,code,"institutionId")
+    VALUES ('probe','zzzz9999',(SELECT id FROM ref."Institution" WHERE code='uclouvain'))$$,
   'ingest a course');
 
 -- The two tables added with the programme dimensions. Probed by name rather

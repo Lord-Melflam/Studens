@@ -12,6 +12,7 @@ import { exportJWK, generateKeyPair, SignJWT, type JWK, type KeyLike } from "jos
 import { PrismaClient } from "@prisma/client";
 import { clearExtraProviders, clearOidcCaches, registerProvider } from "@studens/platform";
 import { createApp } from "@studens/api";
+import { upsertCourse } from "../fixtures/catalogue.js";
 
 const prisma = new PrismaClient();
 let reachable = false;
@@ -114,7 +115,7 @@ beforeAll(async () => {
   // enough; this test is about sign-in, not the catalogue.
   await prisma.courseOffering.deleteMany({ where: { course: { code: CATALOGUE_CODE } } });
   await prisma.course.deleteMany({ where: { code: CATALOGUE_CODE } });
-  const course = await prisma.course.create({ data: { code: CATALOGUE_CODE } });
+  const course = await upsertCourse(prisma, CATALOGUE_CODE);
   await prisma.courseOffering.create({
     data: {
       courseId: course.id,

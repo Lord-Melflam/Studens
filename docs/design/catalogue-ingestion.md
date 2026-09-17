@@ -1147,3 +1147,102 @@ So the shape of the work is not "crawl English instead". It is:
 **Deferred, on François's call, 2026-09-17.** The cost is a second full crawl and
 a second snapshot per year for a partial gain, and the note now on screen is
 what makes the current state honest rather than broken. Recorded as OPEN-47.
+
+## 13. A second institution: ULB
+
+Decided 2026-09-18. François: "For now I want to fetch also ULB stuffs. These
+are the 2 univs I want to start with (they are potential tester candidates with
+huge added values)."
+
+### 13.1 What ULB publishes, measured
+
+All of this was read off the live site on 2026-09-17, not inferred.
+
+- **`robots.txt` permits a crawl.** It disallows `/adminsite/`, `/fcktoolbox/`,
+  `/extensions/`, `/META_INF/`, `/WEB_INF/` and `/action/*`, and publishes a
+  sitemap. Nothing needed is under those paths.
+- **The sitemap lists the programmes.** 4,166 URLs, of which 572 match
+  `/{fr,en}/programme/2025-…`, so roughly 286 per language. The kinds in the
+  codes are `ba`, `ma`, `ma60`, `ms`, `m`, `poli4` and `capaes`.
+- **The programme page carries no course list.** It is a marketing page. The
+  list is fetched by the page's own JavaScript from
+  `GET /api/formation?path=/ksup/programme?gen=prod&anet=<CODE>&lang=fr&`,
+  which returns JSON wrapping rendered HTML. For `BA-TECN` that yielded 34
+  course codes with links.
+- **Course pages need no JavaScript.** `/fr/programme/2025-comm-b1010` carries,
+  in the HTML: the code, the title, `Titulaire(s) du cours`, `Crédits ECTS`,
+  `Langue(s) d'enseignement`, `Contenu du cours`, objectives, teaching methods,
+  bibliography, the campus, and `Méthode(s) d'évaluation` with weightings. Both
+  2025-2026 and 2026-2027 are offered, as at UCLouvain.
+
+Two differences from UCLouvain that the parser must expect rather than discover.
+
+**No quadrimester.** The word appears nowhere on the course page. `quarter` is
+already nullable and the filter facets are derived from the data, so the Term
+filter will simply not be offered for ULB courses. This is section 12.8's rule
+working as intended: a field the source omits is a state to record, never a
+reason to lose the course.
+
+**Lecturer email addresses are published**, in a `Contacts` block next to the
+teacher's name, in the form `prenom.nom@ulb.be`. We store names and never
+addresses. Requirements 5.1 makes the lecturers the GDPR exposure rather than
+the students, and the address is the part that makes a named person
+contactable.
+
+The pattern is written here and the real one is not, on purpose. This
+repository is public and permanently cloneable, so an address quoted as an
+example would be republished by us just as surely as one in a column.
+
+### 13.2 A code belongs to a catalogue, not to the world
+
+`Course.code` was globally unique and `Programme` was unique on `(code, year)`.
+Both were right with one institution. With two they were an accident of naming:
+UCLouvain writes `lepl1503`, ULB writes `comm-b1010` and `ba-tecn`, so nothing
+collides today and nothing said it had to keep not colliding.
+
+**The cost of finding out the hard way is not a duplicate row.** A load is one
+transaction, so one colliding code fails a whole catalogue after the crawl that
+produced it has spent over an hour. Section 12.10 is that same failure from a
+numeric column.
+
+Requirements 1.5 lists tenancy in the data model as one of the few things cheap
+now and expensive later, and this is exactly that: while the only rows are one
+institution's and can be rebuilt from the snapshot it is a backfill, and once
+reviews point at a second institution's courses it is a migration with user data
+hanging off it.
+
+So `Course` and `Programme` both carry `institutionId`, unique on
+`(institutionId, code)` and `(institutionId, code, year)`.
+
+**What the column means is narrower than it looks.** It answers "which code
+space was this string drawn from", not "who teaches this". FR-D31's tenant is
+the second question, its answer is sometimes another institution entirely, and
+answering it needs FR-D30's two stated fields, which are **specified and not yet
+parsed**. `read.ts` still derives `external` from having no teachers and no
+assessment, which is the heuristic FR-D30 measured as wrong on 4 of 66 flagged
+offerings. Putting the tenant in this column would have made a guess look like
+a fact.
+
+**Programme's copy is enforced, not trusted.** `institutionId` there duplicates
+what the faculty already knows, and two copies of one fact drift. The foreign
+key is composite, `(facultyId, institutionId)` referencing `Faculty(id,
+institutionId)`, so a programme filed under an institution its own faculty does
+not belong to cannot be written, whatever the loader does. A trigger would have
+achieved the same and would have been code nobody reads.
+
+### 13.3 What is not yet decided
+
+A code in a URL does not say which university it belongs to. `/app/ryc/c/lepl1503`
+resolves against the whole catalogue, which is unambiguous with one institution
+and ambiguous with two. That is **OPEN-48**, and it blocks loading ULB's
+catalogue rather than the schema change: the database can hold two catalogues
+today, and the read path cannot yet address them apart.
+
+The crawler also needs a source adapter before ULB can be ingested: the current
+one is UCLouvain-shaped throughout, walking faculty indexes and the search
+application, while ULB's shape is sitemap, then the programme endpoint, then
+course pages.
+
+Rough size, extrapolated from one bachelor and therefore an estimate rather
+than a measurement: around 286 French-language programmes and somewhere near
+5,000 to 8,000 courses, so perhaps 6,000 requests.

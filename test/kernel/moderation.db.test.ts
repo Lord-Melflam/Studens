@@ -39,6 +39,7 @@ import {
   releaseReview,
   reviewExists,
 } from "@studens/ryc";
+import { upsertCourse } from "../fixtures/catalogue.js";
 
 const prisma = new PrismaClient();
 let reachable = false;
@@ -80,11 +81,7 @@ async function seed() {
     create: { id: "00000000-0000-0000-0000-0000000000t5", name: "test" },
   });
   tenantId = tenant.id;
-  const course = await prisma.course.upsert({
-    where: { code: "ztst0004" },
-    update: {},
-    create: { code: "ztst0004" },
-  });
+  const course = await upsertCourse(prisma, "ztst0004");
   courseId = course.id;
 }
 

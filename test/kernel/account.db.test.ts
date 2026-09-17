@@ -26,6 +26,7 @@ import {
   type MemberErasure,
 } from "@studens/platform";
 import { RYC_MODULE, detachMemberReviews, exportMemberReviews } from "@studens/ryc";
+import { upsertCourse } from "../fixtures/catalogue.js";
 
 const prisma = new PrismaClient();
 let reachable = false;
@@ -77,11 +78,7 @@ async function seed() {
     create: { id: "00000000-0000-0000-0000-0000000000t3", name: "test" },
   });
   tenantId = tenant.id;
-  const course = await prisma.course.upsert({
-    where: { code: "ztst0002" },
-    update: {},
-    create: { code: "ztst0002" },
-  });
+  const course = await upsertCourse(prisma, "ztst0002");
   courseId = course.id;
 }
 
