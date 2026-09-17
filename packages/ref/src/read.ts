@@ -20,7 +20,7 @@ import type { Prisma } from "@prisma/client";
 import type { ParsedOffering, Snapshot } from "./index.js";
 import type { Block } from "./ingestion/parse/rich.js";
 import { load } from "./ingestion/snapshot.js";
-import { courseUrl } from "./ingestion/urls.js";
+import { courseUrl, programmeUrl } from "./ingestion/urls.js";
 import { mainLanguage } from "./ingestion/parse/offering.js";
 import type { ProgrammeKind } from "./ingestion/parse/programme.js";
 
@@ -181,6 +181,15 @@ export interface ProgrammeSummary {
   /** Louvain-la-Neuve, Charleroi, "Autre site". As the institution publishes it. */
   site: string | null;
   /**
+   * The programme's page on the institution's own site.
+   *
+   * Carried because a programme with no courses has to lead somewhere. 247 of
+   * 690 publish no course list, mostly continuing education certificates and
+   * joint programmes hosted by a partner, and they used to be hidden entirely
+   * rather than shown with somewhere to go.
+   */
+  officialUrl: string;
+  /**
    * The decree's field of study, for instance "Sciences juridiques".
    *
    * Only the search application publishes it, so it is null for a programme
@@ -268,8 +277,8 @@ export class SnapshotCatalogue implements Catalogue {
         credits: p.credits,
         site: p.site,
         domain: p.domain,
+        officialUrl: programmeUrl(this.snapshot.year, p.code),
       }))
-      .filter((p) => p.courses > 0)
       .sort((a, b) => a.title.localeCompare(b.title));
   }
 
@@ -408,9 +417,7 @@ export class DatabaseCatalogue implements Catalogue {
       },
       orderBy: { title: "asc" },
     });
-    return rows
-      .filter((p) => p._count.offerings > 0)
-      .map((p) => ({
+    return rows.map((p) => ({
         code: p.code,
         title: p.title,
         faculty: p.faculty.code,
@@ -420,6 +427,7 @@ export class DatabaseCatalogue implements Catalogue {
         credits: p.credits,
         site: p.site?.name ?? null,
         domain: p.domain?.name ?? null,
+        officialUrl: programmeUrl(p.year, p.code),
       }));
   }
 
