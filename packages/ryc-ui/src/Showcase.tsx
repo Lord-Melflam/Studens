@@ -9,9 +9,9 @@
  * WHAT IS REAL AND WHAT IS NOT, because the first version of this file got it
  * wrong and invented both.
  *
- *   REAL, read out of the loaded catalogue on 2026-09-12: the code, the title
- *   "Projet 3", 5 credits, Q2, French, the contact hours, and the assessment
- *   text with its weightings and its second-session rule, verbatim.
+ *   REAL, re-read out of the loaded catalogue on 2026-09-17: the code, the
+ *   title "Projet 3", 5 credits, Q2, French, the contact hours, and the opening
+ *   of the assessment text with its first weighting, verbatim and in French.
  *
  *   NOT REAL: the reviews and the averages. Nobody has written a review yet,
  *   so there is nothing real to show, and the alternative to an example is an
@@ -25,9 +25,38 @@
  * something as real because it reads better.
  */
 import { useT } from "@studens/i18n";
-import { Blocks, type Block } from "./Prose.js";
+import { Blocks, CATALOGUE_LANG, CatalogueLanguageNote, type Block } from "./Prose.js";
 
-/** Verbatim from ref.CourseOffering for lepl1503, trimmed to what fits. */
+/**
+ * VERBATIM FROM THE CATALOGUE, and French on purpose.
+ *
+ * `ref.CourseOffering` for lepl1503, trimmed to what fits. It is a quotation of
+ * what UCLouvain published, not copy written here, which is why it is not in
+ * the three catalogues with everything else: translating it would make the one
+ * real thing on this mock the one invented thing on it.
+ *
+ * It is also the whole product's situation in miniature. Every course page in
+ * RYC shows French blocks under labels in the visitor's language, because the
+ * crawl fetched the French edition. The mock showing exactly that is correct;
+ * the mock showing it without saying so was the bug. `CatalogueLanguageNote`
+ * says it, here and on the real page, in the visitor's language.
+ *
+ * Re-read from the loaded catalogue on 2026-09-17 and updated: the 2026
+ * edition weights the written exam at 40%, the 2025 edition at 35%, and this
+ * mock still carried the 2025 figure. It links to a page serving 2026, so the
+ * two disagreed about the same course. A mock that quotes the catalogue has
+ * to be re-read whenever the catalogue is.
+ *
+ * TRIMMED TO THE OPENING LINE AND THE FIRST ITEM. The stored field runs to
+ * three items, a weighting paragraph with a list of its own, a paragraph on
+ * generative AI and one on the second session.
+ *
+ * The hero clips this mock and fades it, deliberately, so that it reads as a
+ * window rather than a diagram. The full field filled the whole frame and the
+ * two reviews below it never appeared, which left the hero showing only the
+ * part of a course page RYC did not write. A quotation may be cut short; it
+ * may not be altered, and nothing here is.
+ */
 const ASSESSMENT: Block[] = [
   {
     kind: "p",
@@ -43,44 +72,10 @@ const ASSESSMENT: Block[] = [
           lines: [
             [
               {
-                t: "Examen écrit en session sur la maitrise de la programmation en langage C (35%)",
+                t: "Examen écrit en session sur la maitrise de la programmation en langage C (40%)",
               },
             ],
           ],
-        },
-      ],
-      [
-        {
-          kind: "p",
-          lines: [
-            [
-              {
-                t: "Evaluation du travail de groupe sur base du projet rendu et de sa documentation (55%).",
-              },
-            ],
-          ],
-        },
-      ],
-      [
-        {
-          kind: "p",
-          lines: [[{ t: "Participation aux séances de travail de groupe (5%)" }]],
-        },
-      ],
-      [
-        {
-          kind: "p",
-          lines: [[{ t: "Peer-review de projets d'autres groupes d'étudiants (5%)" }]],
-        },
-      ],
-    ],
-  },
-  {
-    kind: "p",
-    lines: [
-      [
-        {
-          t: "En seconde session, seul l'examen peut être refait. Les résultats du travail de groupe et des peer-reviews ne peuvent pas être modifiés.",
         },
       ],
     ],
@@ -103,14 +98,16 @@ export function Showcase() {
           <span className="code">LEPL1503</span> Projet 3
         </h3>
         {/* Real values from the real LEPL1503 page; only the labels around
-            them are translated. The scraped assessment below stays French,
-            because information published by an institution stays in the
-            language it was published in. */}
+            them are translated. */}
         <p className="ribbon">{t("ryc.mock.ribbon")}</p>
 
+        <CatalogueLanguageNote />
         <div className="field">
           <dt>{t("ryc.course.assessment")}</dt>
-          <dd className="prose">
+          {/* `lang` for the same reason as on the real page: without it a
+              screen reader on the English home page reads this French
+              paragraph with English phonemes. */}
+          <dd className="prose" lang={CATALOGUE_LANG}>
             <Blocks blocks={ASSESSMENT} />
           </dd>
         </div>

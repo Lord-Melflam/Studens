@@ -1299,6 +1299,52 @@ third of the catalogue was missing. Written down in the design note for the
 person who will do exactly that.
 
 
+### Phase 31: the home page was showing French to everybody
+
+François, on the English home page: the assessment text in the mock "is still
+hardcoded". It was. Behind it sat a larger fact that nothing on screen admitted.
+
+**The catalogue is French, because the crawl fetches the French edition.** Every
+block in `ref.CourseOffering` comes from `uclouvain.be/cours-<year>-<code>`, so
+an English or Dutch visitor reads their own labels around a French record, on the
+home page and on all 6,654 course pages. The mock was not the bug, it was the
+only place the bug was visible to somebody not signed in.
+
+Marked rather than fixed, and the difference is deliberate. One line in the
+visitor's language above the fields that are in French, and `lang="fr"` on the
+blocks so a screen reader stops pronouncing French with English phonemes. It
+states a fact and promises nothing, because whether a translation ever arrives
+is now OPEN-47.
+
+**What the fix would cost, measured before deferring it.** UCLouvain publishes an
+English edition at `en-cours-...`, and no Dutch one at all: `nl-cours-...` is 404.
+On 80 random courses, 53 publish an assessment in French and 38 in English, with
+18 in French only and 3 in English only. So an English crawl cannot replace the
+French one, it has to sit beside it with a per-field fallback, and that is a
+second 78-minute run and a second snapshot per year. Deferred on François's call.
+`design/catalogue-ingestion.md` 12.15.
+
+**Three things found by looking at the screen while fixing it.**
+
+The mock quoted the **2025** edition of lepl1503, weighting the written exam at
+35%, while the loaded catalogue is 2026 and says 40%. The home page and the page
+it links to disagreed about the same course. A mock built from the catalogue has
+to be re-read whenever the catalogue is.
+
+`main { max-width: 46rem }` in `shell.css` is an element selector, and it reached
+the public site's `main` too. Every section there asks for 68rem and none could
+ever have it, so **the public site had been rendering a third narrower than it
+was written for**: a five-line headline and a 225px mock in which the two reviews,
+the thing the product adds to a course page, never came into frame at all.
+`main.app` already carried the override; the public layout never did.
+
+And the prose gate, widened three days ago to read fields as well as markup,
+could not have caught the sentence François pointed at: it sits in a `Span`,
+under a field called `t`. It reads that now. The one file allowed to hold a
+quotation is listed by name, and a second test charges it for the privilege by
+requiring both the `lang` attribute and the note.
+
+
 ---
 
 ## Next
@@ -1322,11 +1368,13 @@ person who will do exactly that.
    domain. François's to supply, and it blocks nothing else.
 6. **Deployment.** Nothing deploys. The API does not serve the single-page
    application, so path routing would 404 in production on any refresh.
-7. **The rest of RYC in three languages.** The course page, the review form and
-   the fork are still hardcoded French. Phase 26 did the browse and search path.
-   The catalogue's own text is French too: a programme's title, its site and its
-   field of study are stored as crawled, so an English interface shows French
-   facts. The search application serves both languages, so the data exists.
+7. **The catalogue's own text is French**, in every language of the interface:
+   a programme's title, its site, its field of study and the three long course
+   fields are all stored as crawled. Since phase 31 the screen says so rather
+   than leaving it to be read as a half-finished translation. Fixing it is
+   OPEN-47 and is measured in `design/catalogue-ingestion.md` 12.15: a second
+   crawl of the English edition, a language per field, a per-field fallback,
+   and no Dutch source at all.
 7b. **The full catalogue.** Two faculties of 21 are ingested. The full crawl is
    about 10,000 requests and two hours, and `npm run catalogue:report` says
    afterwards whether anything was lost.

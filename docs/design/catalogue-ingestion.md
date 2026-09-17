@@ -1099,3 +1099,51 @@ testing it deliberately rather than waiting to meet it. And the crash that
 exposed it came from a dev server holding a stale catalogue, not from a real
 missing key: the bug was real, the trigger was not, and telling those apart took
 restarting the server rather than reading the code.
+
+### 12.15 The catalogue is in French, and the interface is not
+
+The crawl fetches `uclouvain.be/cours-<year>-<code>`. That is the French edition
+of a course page, so every block stored in `ref.CourseOffering` is French. The
+interface is in three languages, so a visitor with `en` or `nl` selected reads
+English or Dutch labels around a French record, and until 2026-09-17 nothing on
+the screen said so.
+
+The visible cost was on the public home page, whose mock is built from a real
+course record: the English home page carried a paragraph of French with no
+explanation, and read as a product that had been translated halfway. The same
+thing is true 6,654 times over on the course pages themselves.
+
+**What was done now.** The language is stated once, above the fields that are in
+it, in the visitor's language (`CatalogueLanguageNote`), and the blocks carry
+`lang="fr"` so a screen reader does not read French with English phonemes. That
+is an explanation, not a fix: the record is still French.
+
+**What a fix would cost, measured 2026-09-17.** UCLouvain publishes an English
+edition at `en-cours-<year>-<code>`. There is no Dutch one: `nl-cours-2025-lepl1503`
+answers 404, so a Dutch course record is not obtainable from this source at all.
+
+On a random sample of 80 courses from the loaded catalogue:
+
+| | French page | English page |
+|---|---|---|
+| publishes an assessment section | 53 | 38 |
+
+Eighteen of the 80 publish it in French and not in English, three the other way
+round. So an English crawl **replacing** the French one would lose the assessment
+text for roughly a fifth of courses. The English edition is a genuine translation
+where it exists (spot-checked on a dozen courses), but it is also allowed to
+defer: `en-cours-2025-lepl1503`, the course this repository uses as its example
+everywhere, answers "See French document" under Evaluation methods.
+
+So the shape of the work is not "crawl English instead". It is:
+
+1. crawl both editions, which doubles a run that already takes 78 minutes,
+2. store a language per field rather than per course, since the two editions
+   disagree about which fields exist,
+3. fall back to French per field, and say on screen which language each field
+   ended up in,
+4. accept that Dutch has no source and will fall back to French always.
+
+**Deferred, on François's call, 2026-09-17.** The cost is a second full crawl and
+a second snapshot per year for a partial gain, and the note now on screen is
+what makes the current state honest rather than broken. Recorded as OPEN-47.

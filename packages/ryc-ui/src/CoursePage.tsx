@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useT } from "@studens/i18n";
 import { api, type Aggregate, type CourseDetail, type PublishedReview } from "./api.js";
-import { ProseField } from "./Prose.js";
+import { CatalogueLanguageNote, ProseField } from "./Prose.js";
 import { Reviews } from "./Reviews.js";
 import { SubmitFlow } from "./SubmitFlow.js";
 
@@ -112,6 +112,12 @@ export function CoursePage({
           value={course.reachedVia.length ? course.reachedVia.join(", ").toUpperCase() : null}
         />
         <Field label={t("ryc.course.hours")} value={course.contactHours} />
+        {/* Before the three long fields, not after: it is the answer to the
+            question the first French paragraph raises, and an answer under it
+            arrives too late to stop somebody deciding the page is broken.
+            Only where there is something for it to be about: on a course that
+            publishes none of the three, it would be describing an empty page. */}
+        {(course.assessment || course.themes || course.content) && <CatalogueLanguageNote />}
         <ProseField label={t("ryc.course.assessment")} blocks={course.assessment} />
         <ProseField label={t("ryc.course.themes")} blocks={course.themes} />
         <ProseField label={t("ryc.course.content")} blocks={course.content} />

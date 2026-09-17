@@ -58,7 +58,13 @@ a.cta:hover { background: #16407c; }
 .big { font-size: 0.98rem !important; padding: 0.7rem 1.5rem !important; }
 
 /* --- main --------------------------------------------------------------- */
-.site-main { flex: 1; }
+/* `max-width: none` because shell.css sets `main { max-width: 46rem }` as the
+   app's base, and that element selector reaches this main too. Every section
+   below asks for 68rem and none of them could ever have it: the public site
+   has been rendering a third narrower than it was written for, which is why
+   the hero headline broke over five lines and the mock beside it was 225px
+   wide. main.app carries the same override for the same reason. */
+.site-main { flex: 1; max-width: none; }
 .site-main > section {
   max-width: 68rem;
   margin: 0 auto;
@@ -108,9 +114,14 @@ a.cta:hover { background: #16407c; }
 .hero-fine { margin: 1.6rem 0 0; font-size: 0.85rem; color: var(--muted); }
 .hero .kicker, .hero h1 { text-align: left; }
 
-/* The mock leans and is clipped at the fold: a browser window, not a diagram. */
+/* The mock is clipped at the fold: a browser window, not a diagram.
+   30rem was measured against a mock that had no note on it saying the course
+   record is published in French. Adding that note pushed the two reviews out
+   of frame, which left the hero showing a course page and none of what
+   Studens adds to one. The height is the thing that gives way, not the note:
+   the reviews are the product. */
 .hero-mock {
-  max-height: 30rem;
+  max-height: 40rem;
   overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 24px 60px rgba(22, 25, 29, 0.14), 0 2px 8px rgba(22, 25, 29, 0.06);
