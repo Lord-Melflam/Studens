@@ -226,20 +226,32 @@ export function Browse({
                       <button type="button" onClick={() => onOpenProgramme(p.code)}>
                         <span className="code">{p.code.toUpperCase()}</span>
                         <span className="title">{titleWithoutSite(p.title, p.site)}</span>
+                        {/*
+                          ONE LINE, AND FOUR FACTS FEWER THAN IT HAD.
+
+                          At 690 rows every word is paid for 690 times. What
+                          went, and why each one was safe to lose:
+
+                          the KIND, because the row now sits under a heading
+                          that says it; the CREDITS, because all 179 programmes
+                          that state them state them in the title as well, so
+                          "[120]" appeared twice on one row; the FACULTY'S FULL
+                          NAME, replaced by the code it already ends with, which
+                          is what students say out loud; and the FIELD OF STUDY,
+                          which is a filter beside the list and was the longest
+                          string on the row.
+
+                          What stayed is what tells two rows apart: the site,
+                          because two programmes carry the same title in two
+                          cities, and the number of courses, because it is the
+                          only clue about whether there is anything to read.
+                        */}
                         <span className="facts">
-                          {kindLabel(t, p.kind)}
-                          {p.credits ? ` [${p.credits}]` : ""}
-                          {/* The site is a fact about the programme now, not a
-                              parenthesis inside its name. Shown because two
-                              programmes can carry the same title in two cities. */}
-                          {p.site ? ` · ${p.site}` : ""}
+                          {p.site ?? ""}
                           {p.courses === 0
-                            ? ` · ${t("ryc.browse.noCourseList.flag")}`
-                            : ` · ${t("ryc.browse.courses", { count: p.courses })}`}
-                        </span>
-                        <span className="facts faint">
-                          {p.facultyName}
-                          {p.domain ? ` · ${p.domain}` : ""}
+                            ? `${p.site ? " · " : ""}${t("ryc.browse.noCourseList.flag")}`
+                            : `${p.site ? " · " : ""}${t("ryc.browse.courses", { count: p.courses })}`}
+                          {` · ${p.faculty.toUpperCase()}`}
                         </span>
                       </button>
                     </li>
