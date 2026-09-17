@@ -41,6 +41,22 @@ const root = new URL("../..", import.meta.url).pathname;
 const EXEMPT = new Set(["apps/web/src/ErrorBoundary.tsx"]);
 
 /**
+ * QUOTATIONS, which are a different thing from copy.
+ *
+ * `Showcase.tsx` holds the assessment text of lepl1503 exactly as UCLouvain
+ * published it, so that the mock on the home page shows a real course record
+ * rather than an invented one. Putting it through the translator would make
+ * the one real thing on that mock the one invented thing on it.
+ *
+ * What a quotation owes instead is a `lang` attribute and a line in the
+ * visitor's language saying what it is, and `CatalogueLanguageNote` is that
+ * line. A second test below checks both, so this exemption buys silence from
+ * one gate and pays for it to another. The list is short on purpose: a file
+ * added here is a file nobody is checking the wording of.
+ */
+const QUOTATIONS = new Set(["packages/ryc-ui/src/Showcase.tsx"]);
+
+/**
  * The catalogues. Every sentence in the product is in one of these, so scanning
  * them for sentences would report the entire vocabulary as a breach.
  *
@@ -149,10 +165,14 @@ describe("every sentence on screen comes from the translator", () => {
    * identifiers and are none of this gate's business.
    */
   it("no prose is stored in a field that reaches the screen", () => {
-    const FIELDS = ["summary", "label", "legend", "note", "statusNote", "heading", "caption"];
+    // `t` is the text of a Prose span, which is how the catalogue's blocks
+    // reach the screen. A sentence pasted into one is prose sitting in a
+    // component by any reading, and the field check is the only thing that
+    // can see it: a Span is an object, not markup.
+    const FIELDS = ["summary", "label", "legend", "note", "statusNote", "heading", "caption", "t"];
     const offences: string[] = [];
     for (const { file, text } of allFiles) {
-      if (isCatalogue(file)) continue;
+      if (isCatalogue(file) || QUOTATIONS.has(file)) continue;
       const stripped = stripComments(text);
       stripped.split("\n").forEach((line, i) => {
         for (const field of FIELDS) {
@@ -169,6 +189,44 @@ describe("every sentence on screen comes from the translator", () => {
         "whatever the visitor chose. Put them in the catalogue and resolve them " +
         "with t() where they are used.",
     ).toEqual([]);
+  });
+
+  /**
+   * The price of the QUOTATIONS exemption, charged here.
+   *
+   * A file allowed to hold foreign-language prose has to say which language it
+   * is in, twice: once to the browser, so a screen reader does not pronounce
+   * French with English phonemes, and once to the reader, so a French
+   * paragraph under English labels reads as a property of the source rather
+   * than as a half-finished product.
+   *
+   * Checked as text rather than by rendering, because the point is that a file
+   * cannot be added to the exemption list without carrying both.
+   */
+  it("a file allowed to quote says what language it is quoting", () => {
+    for (const rel of QUOTATIONS) {
+      const text = readFileSync(join(root, rel), "utf8");
+      expect(text, `${rel} must mark the quotation's language for the browser`).toMatch(
+        /lang=\{CATALOGUE_LANG\}/,
+      );
+      expect(text, `${rel} must tell the reader which language it is in`).toContain(
+        "<CatalogueLanguageNote />",
+      );
+    }
+  });
+
+  /**
+   * And the same two things on the real course page, which has the same
+   * problem 6,654 times over: every block in the catalogue is French, because
+   * the crawl fetches uclouvain.be/cours-<year>-<code>.
+   */
+  it("the real course page marks the catalogue's language too", () => {
+    const prose = readFileSync(join(root, "packages/ryc-ui/src/Prose.tsx"), "utf8");
+    expect(prose, "ProseField renders catalogue blocks and must mark them").toMatch(
+      /className="prose" lang=\{CATALOGUE_LANG\}/,
+    );
+    const page = readFileSync(join(root, "packages/ryc-ui/src/CoursePage.tsx"), "utf8");
+    expect(page).toContain("<CatalogueLanguageNote />");
   });
 
   it("no prose is passed as a user-visible attribute", () => {

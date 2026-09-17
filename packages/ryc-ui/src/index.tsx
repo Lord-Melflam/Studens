@@ -197,7 +197,14 @@ export { next, EVENTS, STEPS, type Event, type Step, type Transition } from "./f
  * for test/ui: the parser and the renderer are tested separately, and blocks
  * that arrive nested but render flat are the same bug to a reader.
  */
-export { Blocks, ProseField, type Block, type Span } from "./Prose.js";
+export {
+  Blocks,
+  ProseField,
+  CatalogueLanguageNote,
+  CATALOGUE_LANG,
+  type Block,
+  type Span,
+} from "./Prose.js";
 
 /**
  * The fork and its confirmation. Exported for test/ui/path-claims.test.ts,
