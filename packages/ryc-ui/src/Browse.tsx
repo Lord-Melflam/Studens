@@ -25,20 +25,27 @@ import { CourseFilters } from "./CourseFilters.js";
 import { FilterBar, FilterGroup, FilterText, kindLabel } from "./Filters.js";
 import {
   NO_PROGRAMME_FILTER,
+  PROGRAMME_FILTER_KEYS,
   applyProgrammeFilter,
   groupByKind,
   programmeFacets,
+  programmeFilterFromQuery,
   programmeFilterIsEmpty,
+  programmeFilterToQuery,
+  pruneProgrammeFilter,
   titleWithoutSite,
   toggle,
   type ProgrammeFilter,
 } from "./filters.js";
+import { queryOf, settingsRoute } from "./urlstate.js";
 
 export function Browse({
   programme: openCode,
   onOpenProgramme,
   onOpen,
   reviewCounts,
+  search,
+  navigate,
 }: {
   /**
    * The programme in the URL, or null for the list.
@@ -51,11 +58,31 @@ export function Browse({
   onOpenProgramme: (code: string | null) => void;
   onOpen: (code: string) => void;
   reviewCounts: Record<string, number>;
+  /** The query string, carried down unread from the shell. */
+  search: string;
+  navigate: (to: string, opts?: { replace?: boolean }) => void;
 }) {
   const t = useT();
   const [programmes, setProgrammes] = useState<ProgrammeSummary[]>([]);
   const [courses, setCourses] = useState<CourseSummary[]>([]);
-  const [filter, setFilter] = useState<ProgrammeFilter>(NO_PROGRAMME_FILTER);
+  /**
+   * The filter, in the URL for the same reason the programme is: it is part of
+   * what you are looking at. Held here, opening a course and pressing Back
+   * came back to an unfiltered list of 692 programmes.
+   *
+   * Derived, never copied into state. Pruned against the programmes actually
+   * loaded, so a link kept across a crawl drops the faculty that was renamed
+   * rather than showing nothing with nothing to unclick.
+   */
+  const filter = useMemo(
+    () => pruneProgrammeFilter(programmeFilterFromQuery(queryOf(search)), programmes),
+    [search, programmes],
+  );
+  const setFilter = (next: ProgrammeFilter): void => {
+    navigate(settingsRoute("/", search, PROGRAMME_FILTER_KEYS, programmeFilterToQuery(next)), {
+      replace: true,
+    });
+  };
 
   useEffect(() => {
     api.allProgrammes().then((r) => setProgrammes(r.programmes));
@@ -136,6 +163,9 @@ export function Browse({
               reviewCounts={reviewCounts}
               onOpen={onOpen}
               emptyLabel={t("ryc.browse.noneInProgramme")}
+              search={search}
+              here={`/p/${openCode}`}
+              navigate={navigate}
             />
           </div>
         )}
