@@ -14,12 +14,15 @@ Google followed by a five screen **first run**, and the **app** itself, where mo
 mounted. Three languages throughout, with the language in the URL, and a gate that fails
 the build if a sentence is hardcoded in a component.
 
-**RYC**, Rate Your Courses, is the first module. Against the real UCLouvain catalogue: 969
-courses reached through 79 programmes of two faculties, scraped rather than hand-listed,
-with the faculty and programme structure discovered at runtime. Two of UCLouvain's 21
-faculties are ingested today, and widening is a crawl rather than a code change: about
-9,000 requests and two hours, after which `npm run catalogue:report` says whether anything
-was lost.
+**RYC**, Rate Your Courses, is the first module, and it holds **the whole UCLouvain
+catalogue for 2026-2027**: 6,654 courses through 690 programmes of 20 faculties, across 8
+campuses and 22 fields of study. All of it scraped, with the faculty, programme and course
+structure discovered at runtime rather than listed anywhere in the source.
+
+A full crawl is about 10,000 requests and an hour and a quarter, run once a year.
+Afterwards `npm run catalogue:report` compares the crawl against the database and ends with
+one line saying whether anything was lost, because the things that go wrong in a run that
+size are individually small and each one is a student who cannot find their course.
 
 The catalogue is read from **two sources that are reconciled rather than trusted in turn**.
 The per-faculty index decides which programmes exist, because it lists the minors the
@@ -86,7 +89,7 @@ screen offers any of it.
 
 ```bash
 npm install
-npm run gates              # typecheck, lint, 590 tests, schema validation. No database needed
+npm run gates              # typecheck, lint, 598 tests, schema validation. No database needed
 ```
 
 `docs/COMMANDS.md` is the command reference: setup, running it, the database, the

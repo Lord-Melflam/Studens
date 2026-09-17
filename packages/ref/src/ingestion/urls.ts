@@ -50,6 +50,11 @@ export function courseUrl(year: number, code: string): string {
   return `${BASE}/cours-${year}-${code.toLowerCase()}`;
 }
 
+/** A programme's own page on the institution's site. */
+export function programmeUrl(year: number, code: string): string {
+  return `${BASE}/prog-${year}-${code.toLowerCase()}`;
+}
+
 /**
  * A programme's landing page links to sub-pages and carries no course list of
  * its own (verified 2026-09-10: `prog-2025-sinf1ba` yields zero course links).

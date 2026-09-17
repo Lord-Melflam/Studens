@@ -58,6 +58,8 @@ export interface ProgrammeSummary {
   site: string | null;
   /** The decree's field of study. Null where the source that publishes it does not cover the programme. */
   domain: string | null;
+  /** The programme's page on the institution's site, so an empty one leads somewhere. */
+  officialUrl: string;
 }
 
 /**
