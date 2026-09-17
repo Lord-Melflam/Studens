@@ -22,12 +22,25 @@ import { moderationRoutes } from "./routes/moderation.js";
 import { authRoutes } from "./routes/auth.js";
 import { configuredProviders } from "@studens/platform";
 import { devIdentityEnabled } from "./identity.js";
+import { mountWebApp, webRoot } from "./web.js";
 
 export const process_role = "web" as const;
+
+/**
+ * Serving the built application, exported for test/api/web-app.test.ts. The
+ * ordering rule these depend on is checked there too, against this file.
+ */
+export { looksLikeAFile, mountWebApp, webRoot } from "./web.js";
 
 export interface AppSource {
   /** Set to read a snapshot file instead of the database. */
   snapshotPath?: string;
+  /**
+   * Where the built single-page application is. Left out, it is looked for
+   * beside this package and skipped when it is not there, which is the
+   * development and test case.
+   */
+  webRoot?: string;
 }
 
 export async function createApp(source: AppSource = {}) {
@@ -57,6 +70,14 @@ export async function createApp(source: AppSource = {}) {
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "not found" });
   });
+
+  // AFTER the line above, always. The single-page application's fallback
+  // answers any path it is given, so mounted first it would answer a mistyped
+  // API path with HTML and status 200. See web.ts.
+  //
+  // Does nothing when the application has not been built, which is every run in
+  // development and under the tests: there, Vite serves it on another port.
+  mountWebApp(app, source.webRoot);
 
   return app;
 }
@@ -88,6 +109,13 @@ if (isEntry) {
         console.log(
           `  .env: ${envFile}  |  sign-in providers: ` +
             (providers.length > 0 ? providers.join(", ") : "none configured"),
+        );
+        // Same reason as the line above: a process serving the API and not the
+        // application looks identical to one serving both until somebody opens
+        // a page. Say which it is.
+        const root = webRoot();
+        console.log(
+          `  web app: ${root ?? "not built, API only (npm run build:web)"}`,
         );
         if (devIdentityEnabled()) {
           // Loud on purpose. This is the one thing standing between the review

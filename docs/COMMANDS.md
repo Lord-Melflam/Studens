@@ -72,9 +72,12 @@ should be called.
 | `npm run ingest` | Scrape into `data/catalogue.json`. Takes `-- --faculty epl,lsm`, `-- --year 2025`, `-- --max 40` (sample), `-- --max-requests 1500` (ceiling), `-- --no-cache` |
 | `npm run db:load` | Load that snapshot into PostgreSQL, in one transaction |
 | `npm run catalogue:report` | **After any crawl:** what the crawl lost and whether the database holds it. Writes `data/catalogue-report.txt`. Exit 1 when something is missing |
-| **Build** | |
+| **Build and run for real** | |
+| `npm run build` | Everything a server needs: the API, the worker, and the application |
 | `npm run build:api` | Compile the API. Run for you by `dev:api` |
 | `npm run build:worker` | Compile the worker. Run for you by `ingest`, `db:load` and `mail` |
+| `npm run build:web` | Vite's production build, into `apps/web/dist` |
+| `npm start` | Run the built artefact: one process serving the API **and** the application. See "Deploying" |
 
 Two of those behave differently from how they read, and both have cost time:
 
@@ -490,8 +493,62 @@ into a chat or a pull request.**
 | `STUDENS_PUBLIC_ORIGIN` | Where the provider redirects back. Must match what you registered |
 | `STUDENS_APP_ORIGIN` | Where a visitor lands after signing in |
 | `STUDENS_SECURE_COOKIES` | `1` when served over HTTPS: adds `Secure` and the `__Host-` prefix |
+| `STUDENS_WEB_ROOT` | Where the built application is. Defaults to `apps/web/dist` beside the API, and is skipped when it is not there |
 | `CATALOGUE_SNAPSHOT` | Read the catalogue from a file instead of the database |
 | `STUDENS_REQUIRE_DB` | Tests only. `1` makes an unreachable database a failure rather than a skip |
+
+---
+
+## Deploying
+
+One process serves both the API and the application. In development Vite serves
+the app on 5173 and proxies `/api` to 3001; in production there is no Vite, so
+the web process serves the built files itself and answers any unknown path with
+`index.html`. Without that, a refresh on any page but the root is a 404.
+
+```bash
+npm run build          # the API, the worker, and the application
+npm run db:migrate     # on the target database
+npm start              # node apps/api/dist/index.js
+```
+
+`npm start` prints what it found, and reading that line is the check:
+
+```
+api listening on http://localhost:3001 (catalogue: database)
+  .env: absent  |  sign-in providers: Microsoft, Google
+  web app: /srv/studens/apps/web/dist
+```
+
+`web app: not built` means the process is serving the API only, and every page
+will 404. `sign-in providers: none configured` means nobody can sign in. Both
+look identical to a healthy process until somebody opens a page, which is why
+they are printed.
+
+**Try it locally before trusting it anywhere.** `npm run build && npm start`
+runs the exact artefact a server would run, with no proxy involved, so the thing
+being deployed is the thing that was tested.
+
+### What a host needs beyond this
+
+Not yet done, and **none of the following has been run**, so treat it as a plan
+rather than a procedure:
+
+- A reverse proxy in front, for TLS. Let's Encrypt needs a hostname, so the
+  domain comes first. The proxy terminates TLS and forwards everything to this
+  process; it does **not** serve the static files, deliberately, so that only one
+  place knows which paths belong to the application.
+- `STUDENS_SECURE_COOKIES=1`, or the session cookie keeps the development
+  settings over HTTPS.
+- `STUDENS_PUBLIC_ORIGIN` and `STUDENS_APP_ORIGIN` both set to the real origin,
+  and that origin's callback URLs added to the Microsoft and Google
+  registrations. A redirect URI is compared character for character.
+- `STUDENS_SESSION_SECRET`, or the process refuses to start.
+- No `.env` on the server. Values come from the environment, and `loadDotEnv`
+  already lets the real environment win.
+- Something to keep the process up across a reboot, and a periodic request to
+  `/api/health`, because the hosting decision in requirements 5.2 accepts idle
+  reclamation as a risk and a health check is what answers it.
 
 ---
 
