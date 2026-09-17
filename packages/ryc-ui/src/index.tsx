@@ -79,8 +79,32 @@ export interface ModuleRegistration {
 export interface ModuleProps {
   /** The path inside the module. "/" at its root, "/c/lepl1503" deeper. */
   path: string;
-  /** Go somewhere inside this module. Takes a module-relative path. */
-  navigate: (to: string) => void;
+  /**
+   * The query string, `?` and all, or "" when there is none.
+   *
+   * WHERE A SCREEN'S OWN SETTINGS LIVE: which filters are on, what is typed in
+   * a search box. They are part of what you are looking at, so Back has to
+   * restore them, a refresh has to keep them, and a link has to carry them to
+   * somebody else. Held in component state instead, all three fail, and the
+   * third fails silently: the link works and shows a different screen.
+   *
+   * The shell hands this over without reading it, exactly as it does the path.
+   * The names of the parameters are the module's vocabulary (FR-B16).
+   *
+   * NOT for anything unpublished, above all the text of a review being written.
+   * A URL is read by browser history, by bookmark sync and by anyone looking
+   * over a shoulder, and FR-C9 cannot reach any of them.
+   */
+  search: string;
+  /**
+   * Go somewhere inside this module. Takes a module-relative path, which may
+   * carry a query string.
+   *
+   * `replace` for a change of settings, the default push for a change of
+   * screen. Six filter chips must not be six history entries, or Back walks
+   * back through your own filtering instead of leaving the screen.
+   */
+  navigate: (to: string, opts?: { replace?: boolean }) => void;
 }
 
 export interface ModulePresentation {
@@ -184,6 +208,24 @@ export {
   type ProgrammeFacets,
   type ProgrammeFilter,
 } from "./filters.js";
+
+/**
+ * A screen's settings, read out of the URL and written back into it. Exported
+ * because test/ui checks the whole round trip without a browser: a filter that
+ * encodes and decodes to something else is a link that shows the wrong list.
+ */
+export {
+  COURSE_FILTER_KEYS,
+  PROGRAMME_FILTER_KEYS,
+  UNSTATED,
+  courseFilterFromQuery,
+  courseFilterToQuery,
+  programmeFilterFromQuery,
+  programmeFilterToQuery,
+  pruneCourseFilter,
+  pruneProgrammeFilter,
+} from "./filters.js";
+export { queryOf, replaceKeys, settingsRoute, withQuery } from "./urlstate.js";
 
 /**
  * The review path's state machine, exported because it is checked from

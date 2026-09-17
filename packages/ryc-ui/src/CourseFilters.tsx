@@ -6,40 +6,74 @@
  * the summary object these read was built three times in the reference module
  * and adding a field to two of the three would have produced exactly that.
  *
- * The filter state lives here rather than in the URL. A filter is a refinement
- * of a screen, not a screen, and the programme being browsed is itself not yet
- * in the URL (see Ryc.tsx). Putting filters in the URL before the programme is
- * would produce a link that restores the filter and not what it filtered.
+ * THE FILTER LIVES IN THE URL, and this component holds no state at all.
+ *
+ * It used to hold it here, on the ground that a filter is a refinement of a
+ * screen rather than a screen, and that the programme being browsed was itself
+ * not yet in the URL. The second half stopped being true when the programme
+ * moved into the path, and the first half was answered by François pressing
+ * Back after opening a course and finding his filters gone. A refinement of a
+ * screen is still part of what you are looking at.
+ *
+ * Derived on every render rather than copied into state, because a copy is
+ * exactly the thing that falls out of step with the address bar.
  */
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useT } from "@studens/i18n";
 import type { CourseSummary } from "./api.js";
 import { CourseList } from "./CourseList.js";
 import { FilterBar, FilterGroup, FilterText } from "./Filters.js";
 import {
+  COURSE_FILTER_KEYS,
   NO_COURSE_FILTER,
   applyCourseFilter,
   courseFacets,
+  courseFilterFromQuery,
   courseFilterIsEmpty,
+  courseFilterToQuery,
   groupByTerm,
+  pruneCourseFilter,
   toggle,
   type CourseFilter,
 } from "./filters.js";
+import { queryOf, settingsRoute } from "./urlstate.js";
 
 export function CourseFilters({
   courses,
   reviewCounts,
   onOpen,
   emptyLabel,
+  search,
+  here,
+  navigate,
 }: {
   courses: CourseSummary[];
   reviewCounts: Record<string, number>;
   onOpen: (code: string) => void;
   /** What to say when the list itself is empty, before any filter is applied. */
   emptyLabel: string;
+  /** The query string the shell handed the module. */
+  search: string;
+  /** The module-relative path of the screen this list is on, which the filter
+      is written back onto. */
+  here: string;
+  navigate: (to: string, opts?: { replace?: boolean }) => void;
 }) {
   const t = useT();
-  const [filter, setFilter] = useState<CourseFilter>(NO_COURSE_FILTER);
+  const filter = useMemo(
+    // Pruned against the courses actually here, so a link kept from before the
+    // last crawl loses the options that no longer exist instead of emptying
+    // the list with no chip left to unclick.
+    () => pruneCourseFilter(courseFilterFromQuery(queryOf(search)), courses),
+    [search, courses],
+  );
+  const setFilter = (next: CourseFilter): void => {
+    // `replace`: pressing a chip is not going somewhere. Six chips must not be
+    // six history entries, or Back walks back through your own filtering.
+    navigate(settingsRoute(here, search, COURSE_FILTER_KEYS, courseFilterToQuery(next)), {
+      replace: true,
+    });
+  };
 
   const shown = useMemo(
     () => applyCourseFilter(courses, filter, reviewCounts),

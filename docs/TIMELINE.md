@@ -1344,6 +1344,61 @@ under a field called `t`. It reads that now. The one file allowed to hold a
 quotation is listed by name, and a second test charges it for the privilege by
 requiring both the `lang` attribute and the note.
 
+### Phase 32: what is on screen goes in the address
+
+François: "when I select filters then go to a course, when I go back I lose the
+filters I've selected... Isn't it better to save the steps so that a back won't
+lose already saved fields?" And then the part that made it a phase rather than a
+fix: "I don't think it's only a matter of filters. Maybe we should adopt that way
+of working."
+
+**It was on purpose, and the reason had expired.** `CourseFilters.tsx` said so at
+the top: filters stayed in component state because a filter is a refinement of a
+screen rather than a screen, and because the programme being browsed was itself
+not in the URL, so a link would restore the filter and not what it filtered. The
+second half stopped being true in phase 30, when the programme moved into the
+path. Nobody came back to the first half, and the first half was wrong anyway: a
+refinement of a screen is still part of what you are looking at.
+
+**Three failures, and only one of them is the one reported.** Back cannot restore
+what was never written down. A refresh cannot either. And a link to a filtered
+list shows its reader a different list, which fails silently, because the link
+works.
+
+Written up as FR-B21 rather than as a bug fix, because François asked for the
+rule and not the patch. The rule has a second half that is not decoration:
+**nothing unpublished goes in a URL**, and the text of a review being written
+above all. History, bookmark sync and anybody looking at the screen all read an
+address bar, and FR-C9's promise about an anonymous contribution reaches none of
+them. A draft lives in memory and dies there.
+
+**What it cost to build.** The router carried only `window.location.pathname`, so
+a query string was dropped on the next navigation. It carries one now, unread:
+the shell hands the module a `search` string the same way it hands over a path,
+and the parameter names are the module's vocabulary (FR-B16). Three things had to
+be decided rather than typed.
+
+`replace` and not `push`, for a settings change. Six filter chips as six history
+entries turns Back into a walk backwards through your own filtering, which is
+worse than the bug being fixed. Navigation pushes and scrolls to the top;
+settings replace and do not scroll, because a chip pressed halfway down 173
+courses should not jump.
+
+The query string is split off before the language prefix is applied.
+`localePath` and `splitLocale` both work on paths and both trim the end of what
+they are given, so handing either a whole URL puts the prefix in the wrong place
+and trims the wrong thing.
+
+And a chosen value that the catalogue no longer has is dropped on arrival. The
+point of a link that can be sent is that it is opened later, and later the
+catalogue has been crawled again. Kept, a renamed faculty would empty the list
+and leave nothing to unclick, because a chip is only drawn for a value the data
+has.
+
+`?f=` narrows what is on screen and `?q=` asks the server a question. They are
+deliberately not the same letter: the search screen shows both at once, and
+writing one as a whole new query string would erase the other.
+
 
 ---
 
@@ -1375,10 +1430,12 @@ requiring both the `lang` attribute and the note.
    OPEN-47 and is measured in `design/catalogue-ingestion.md` 12.15: a second
    crawl of the English edition, a language per field, a per-field fallback,
    and no Dutch source at all.
-7b. **The full catalogue.** Two faculties of 21 are ingested. The full crawl is
-   about 10,000 requests and two hours, and `npm run catalogue:report` says
-   afterwards whether anything was lost.
-8. **A programme is not in the URL.** `Browse` holds the chosen programme in
-   component state, so it cannot be linked or refreshed, which is the same bug
-   phase 20 fixed for courses. The filters sit on top of that and inherit it.
+7b. ~~The full catalogue~~ done, phase 30. 20 faculties, 769 programmes and
+   6,715 courses are loaded, counted in the database on 2026-09-17.
+   `npm run catalogue:report` compares the snapshot against the database in
+   both directions and exits 1 on a gap.
+8. ~~A programme is not in the URL~~ done, phase 30, and the filters and the
+   search box followed in phase 32 (FR-B21). What is still held in component
+   state and should not be: nothing known. What is held there deliberately: the
+   text of a review being written, which must never reach an address bar.
 9. ~~Branch protection~~ done 2026-09-11, see phase 17.

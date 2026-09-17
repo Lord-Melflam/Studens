@@ -375,3 +375,158 @@ const QUARTER_ORDER = ["Q1", "Q2", "Q1 et Q2", "Q1 and Q2", "Q1 of Q2", "Q1 ou Q
 export function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
+
+// --------------------------------------------------------------------------
+// Filters in the URL
+// --------------------------------------------------------------------------
+
+/**
+ * A FILTER IS PART OF THE SCREEN, SO IT BELONGS IN THE ADDRESS.
+ *
+ * This file used to say the opposite, at the top of CourseFilters.tsx: filters
+ * stayed in component state because "the programme being browsed is itself not
+ * yet in the URL", and a link restoring a filter but not what it filtered would
+ * be worse than no link. That was true when it was written. The programme went
+ * into the URL in phase 30, and nobody came back to this.
+ *
+ * What it cost, reported by François: select filters, open a course, press
+ * Back, and the filters are gone. The same three failures the module already
+ * fixed for courses and programmes, one screen lower down. Back cannot restore
+ * what was never written down, a refresh cannot either, and the third failure
+ * is the quiet one: a link to a filtered list is a link that shows the reader
+ * something else.
+ *
+ * THE PARAMETER NAMES ARE FRENCH, like the routes around them (`/recherche`,
+ * `/p/`, `/c/`, `/avis`). French is the source language (packages/i18n), and a
+ * URL is not translated: the same link has to work for the person it is sent
+ * to, whatever language they read the page in.
+ *
+ * `f` is what is typed into the filter box and `q` is what is typed into the
+ * search box, and they are deliberately not the same letter. One narrows a list
+ * already on screen, the other asks the server a question, and the search
+ * screen shows both at once.
+ */
+
+/**
+ * What stands for "the page does not state it", which is a real group in three
+ * of these dimensions and not the absence of a filter.
+ *
+ * A single hyphen, because no kind, site, faculty, domain or credit value is
+ * one, and because it survives URL encoding unchanged.
+ */
+export const UNSTATED = "-";
+
+/** Read a repeated parameter. `?quad=Q1&quad=Q2`, not a comma-joined list: a
+    value may contain a comma and none of them may contain a `&`. */
+function list(params: URLSearchParams, key: string): string[] {
+  return params.getAll(key).filter((v) => v !== "");
+}
+
+function put(params: URLSearchParams, key: string, values: readonly string[]): void {
+  for (const v of values) params.append(key, v);
+}
+
+/** The parameters the course filter owns, so writing it leaves the rest alone. */
+export const COURSE_FILTER_KEYS = ["f", "quad", "langue", "credits", "entite", "avis"] as const;
+
+export function courseFilterToQuery(f: CourseFilter): URLSearchParams {
+  const p = new URLSearchParams();
+  if (f.text.trim() !== "") p.set("f", f.text.trim());
+  put(p, "quad", f.quarters);
+  put(p, "langue", f.languages);
+  put(p, "credits", f.ects.map((e) => (e === null ? UNSTATED : String(e))));
+  put(p, "entite", f.entities);
+  if (f.reviewedOnly) p.set("avis", "1");
+  return p;
+}
+
+export function courseFilterFromQuery(params: URLSearchParams): CourseFilter {
+  return {
+    text: params.get("f") ?? "",
+    quarters: list(params, "quad"),
+    languages: list(params, "langue"),
+    // A credit value that is not a number is dropped rather than kept as NaN,
+    // which would match nothing and could not be unclicked.
+    ects: list(params, "credits")
+      .map((v) => (v === UNSTATED ? null : Number(v)))
+      .filter((v) => v === null || Number.isFinite(v)),
+    entities: list(params, "entite"),
+    reviewedOnly: params.get("avis") === "1",
+  };
+}
+
+/** The parameters the programme filter owns. */
+export const PROGRAMME_FILTER_KEYS = ["f", "type", "site", "fac", "domaine"] as const;
+
+export function programmeFilterToQuery(f: ProgrammeFilter): URLSearchParams {
+  const p = new URLSearchParams();
+  if (f.text.trim() !== "") p.set("f", f.text.trim());
+  put(p, "type", f.kinds.map((k) => k ?? UNSTATED));
+  put(p, "site", f.sites);
+  put(p, "fac", f.faculties);
+  put(p, "domaine", f.domains);
+  return p;
+}
+
+export function programmeFilterFromQuery(params: URLSearchParams): ProgrammeFilter {
+  return {
+    text: params.get("f") ?? "",
+    kinds: list(params, "type").map((v) => (v === UNSTATED ? null : v)),
+    sites: list(params, "site"),
+    faculties: list(params, "fac"),
+    domains: list(params, "domaine"),
+  };
+}
+
+/**
+ * Drop chosen values that nothing in the list has.
+ *
+ * The point of a link that survives is that it is opened later, and later the
+ * catalogue has been crawled again: a faculty is renamed, a site closes, a
+ * programme kind stops being used. Kept as-is, such a filter empties the list
+ * and cannot even be unclicked, because a chip is only drawn for a value the
+ * data has. The visitor sees nothing, with nothing to press.
+ *
+ * Pruned against the raw list rather than against the facets, which are
+ * computed from the filter and would make this circular. Applied where the
+ * filter is derived, so there is no state to fall out of step and no effect
+ * that could write back into its own input.
+ */
+export function pruneCourseFilter(f: CourseFilter, courses: CourseSummary[]): CourseFilter {
+  if (courses.length === 0) return f;
+  const has = <T,>(values: Set<T>, chosen: T[]): T[] => chosen.filter((v) => values.has(v));
+  return {
+    ...f,
+    quarters: has(new Set(courses.map((c) => c.quarter).filter((q): q is string => q !== null)), f.quarters),
+    languages: has(
+      new Set(courses.map((c) => c.mainLanguage).filter((l): l is string => l !== null)),
+      f.languages,
+    ),
+    ects: has(new Set(courses.map((c) => c.ects)), f.ects),
+    entities: has(
+      new Set(courses.map((c) => c.owningEntity).filter((e): e is string => e !== null)),
+      f.entities,
+    ),
+  };
+}
+
+export function pruneProgrammeFilter(
+  f: ProgrammeFilter,
+  programmes: ProgrammeSummary[],
+): ProgrammeFilter {
+  if (programmes.length === 0) return f;
+  const has = <T,>(values: Set<T>, chosen: T[]): T[] => chosen.filter((v) => values.has(v));
+  return {
+    ...f,
+    kinds: has(new Set(programmes.map((p) => p.kind)), f.kinds),
+    sites: has(
+      new Set(programmes.map((p) => p.site).filter((s): s is string => s !== null)),
+      f.sites,
+    ),
+    faculties: has(new Set(programmes.map((p) => p.faculty)), f.faculties),
+    domains: has(
+      new Set(programmes.map((p) => p.domain).filter((d): d is string => d !== null)),
+      f.domains,
+    ),
+  };
+}

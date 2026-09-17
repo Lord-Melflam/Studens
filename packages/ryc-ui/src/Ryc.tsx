@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import { useT } from "@studens/i18n";
 import type { ModuleProps } from "./index.js";
 import { api, type CourseDetail, type CourseSummary } from "./api.js";
+import { queryOf, settingsRoute } from "./urlstate.js";
 import { CoursePage } from "./CoursePage.js";
 import { CourseFilters } from "./CourseFilters.js";
 import { Browse } from "./Browse.js";
@@ -40,7 +41,7 @@ export function parseView(path: string): RycView {
   return { kind: "browse" };
 }
 
-export function Ryc({ path, navigate }: ModuleProps) {
+export function Ryc({ path, search, navigate }: ModuleProps) {
   const t = useT();
   const view = parseView(path);
   const [meta, setMeta] = useState<{ year: number; courses: number } | null>(null);
@@ -53,7 +54,22 @@ export function Ryc({ path, navigate }: ModuleProps) {
    * appear, which is correct on a fresh installation.
    */
   const [reviewCounts, setReviewCounts] = useState<Record<string, number>>({});
-  const [query, setQuery] = useState("");
+  /**
+   * What was typed in the search box, in the URL like everything else on screen.
+   *
+   * `q` and not `f`: this is the question put to the server, and `f` narrows
+   * what came back. The search screen shows both at once, so they cannot share
+   * a letter.
+   *
+   * Written with `replace` on every keystroke, so typing leaves one history
+   * entry rather than one per letter, and Back from a course lands on the
+   * search you actually ran.
+   */
+  const query = queryOf(search).get("q") ?? "";
+  const setQuery = (next: string): void => {
+    const asked = new URLSearchParams(next === "" ? [] : [["q", next]]);
+    navigate(settingsRoute("/recherche", search, ["q"], asked), { replace: true });
+  };
   const [results, setResults] = useState<CourseSummary[]>([]);
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -174,6 +190,9 @@ export function Ryc({ path, navigate }: ModuleProps) {
               reviewCounts={reviewCounts}
               onOpen={(c) => navigate(`/c/${c}`)}
               emptyLabel={t("ryc.search.none", { query })}
+              search={search}
+              here="/recherche"
+              navigate={navigate}
             />
           )}
         </>
@@ -183,6 +202,8 @@ export function Ryc({ path, navigate }: ModuleProps) {
           onOpenProgramme={(p) => navigate(p === null ? "/" : `/p/${p}`)}
           onOpen={(c) => navigate(`/c/${c}`)}
           reviewCounts={reviewCounts}
+          search={search}
+          navigate={navigate}
         />
       )}
     </>

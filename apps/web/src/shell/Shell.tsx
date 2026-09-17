@@ -24,8 +24,10 @@ import {
   currentRoute,
   linkProps,
   moduleIdFrom,
+  moduleRoute,
   navigate,
   usePath,
+  useSearch,
 } from "../router.js";
 
 /**
@@ -159,6 +161,8 @@ function SetupPrompt() {
 export function Shell() {
   const t = useT();
   const path = usePath();
+  // Carried, never read. What the parameters mean is the module's business.
+  const search = useSearch();
   const { session } = useSession();
   // Asked again whenever the session changes, not once per mount. The answer is
   // about who is signed in, so it stops being true the moment that does: asking
@@ -284,7 +288,8 @@ export function Shell() {
       ) : Module ? (
         <Module
           path={inside}
-          navigate={(to) => navigate(`${APP_PREFIX}/${active!.id}${to === "/" ? "" : to}`)}
+          search={search}
+          navigate={(to, opts) => navigate(moduleRoute(`${APP_PREFIX}/${active!.id}`, to), opts)}
         />
       ) : (
         <Home />
