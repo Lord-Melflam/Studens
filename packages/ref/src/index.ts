@@ -52,3 +52,14 @@ export {
   type ProgrammeShape,
 } from "./ingestion/parse/programme.js";
 export { parseSearchRows, slug, type SearchRow } from "./ingestion/parse/search.js";
+
+/**
+ * SOURCES: one institution's catalogue, and how to read it.
+ *
+ * UCLouvain's crawler is not moved into this seam, it is wrapped by it, on
+ * François's instruction: it is the only crawler here that has completed a full
+ * run and every defect it has met is written into it. See sources/index.ts.
+ */
+export { uclouvain } from "./sources/uclouvain.js";
+export type { CatalogueSource, SourceCrawlOptions } from "./sources/index.js";
+export { parseListing, parseCredits, type ListedCourse } from "./sources/ulb/listing.js";
