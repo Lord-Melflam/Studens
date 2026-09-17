@@ -33,6 +33,7 @@ const course = (over: Partial<CourseSummary>): CourseSummary => ({
   quarter: "Q1",
   teachers: ["Quelqu'un"],
   external: false,
+  offeredThisYear: true,
   mainLanguage: "Français",
   owningEntity: "EPL",
   ...over,

@@ -47,7 +47,20 @@ function blocksFrom(value: Prisma.JsonValue): Block[] | null {
 export interface CourseSummary {
   code: string;
   title: string;
+  /** The year this description comes from, which is not always the current one. */
   year: number;
+  /**
+   * False when the institution no longer offers the course in the catalogue's
+   * current year, and this description is the most recent one it published.
+   *
+   * A course identity outlives a yearly offering, which is why they are two
+   * tables: `LINGI` became `LINFO`, codes appear and vanish. Before this, a
+   * course with no offering for the current year could not be opened at all,
+   * so 61 of them were unreachable and any review written about one would have
+   * become invisible with it. FR-D16 says a review survives a missing offering,
+   * and it cannot if the page it lives on has gone.
+   */
+  offeredThisYear: boolean;
   /** Null when the official page does not state it, never 0 as a stand-in. */
   ects: number | null;
   quarter: string | null;
@@ -102,6 +115,8 @@ function summarise(o: ParsedOffering): CourseSummary {
     code: o.code,
     title: o.title,
     year: o.year,
+    // A snapshot holds exactly one year, so everything in it is that year's.
+    offeredThisYear: true,
     ects: o.ects,
     quarter: o.quarter,
     teachers: o.teachers,
@@ -122,21 +137,26 @@ function summarise(o: ParsedOffering): CourseSummary {
  * three is the kind of thing that produces a filter which works when you
  * browse and is empty when you search.
  */
-function summariseRow(row: {
-  course: { code: string };
-  title: string;
-  year: number;
-  ects: unknown;
-  quarter: string | null;
-  language: string | null;
-  owningFaculty: string | null;
-  assessment: unknown;
-  teachers: Array<{ teacherName: string }>;
-}): CourseSummary {
+function summariseRow(
+  row: {
+    course: { code: string };
+    title: string;
+    year: number;
+    ects: unknown;
+    quarter: string | null;
+    language: string | null;
+    owningFaculty: string | null;
+    assessment: unknown;
+    teachers: Array<{ teacherName: string }>;
+  },
+  /** The catalogue's current year, so a stale offering can say it is stale. */
+  currentYear: number,
+): CourseSummary {
   return {
     code: row.course.code,
     title: row.title,
     year: row.year,
+    offeredThisYear: row.year === currentYear,
     ects: row.ects === null || row.ects === undefined ? null : Number(row.ects),
     quarter: row.quarter,
     teachers: row.teachers.map((t) => t.teacherName),
@@ -351,37 +371,56 @@ export class DatabaseCatalogue implements Catalogue {
     const q = query.trim().toLowerCase();
     if (!q) return [];
 
+    // Not restricted to the current year, and then reduced to one row per
+    // course, the most recent. A course the institution stopped offering is
+    // exactly the one somebody searches for after taking it, and a review of it
+    // is still worth reading. Excluding it made 61 courses unfindable and their
+    // reviews unreachable with them.
     const rows = await this.prisma.courseOffering.findMany({
       where: {
-        year: this.year,
         OR: [
           { course: { code: { startsWith: q } } },
           { title: { contains: q, mode: "insensitive" } },
         ],
       },
       include: { course: true, teachers: true },
-      take: limit,
+      orderBy: { year: "desc" },
+      // Room for older editions of the same course before they are collapsed.
+      take: limit * 4,
     });
+
+    const newest = new Map<string, (typeof rows)[number]>();
+    for (const r of rows) if (!newest.has(r.course.code)) newest.set(r.course.code, r);
+    const unique = [...newest.values()].slice(0, limit);
 
     // Code matches first: someone typing LEPL1503 wants that course, not one
     // whose title happens to contain the string.
-    const scored = rows.map((r) => ({
+    const scored = unique.map((r) => ({
       row: r,
       code: r.course.code.startsWith(q) ? 0 : 1,
     }));
     scored.sort((a, b) => a.code - b.code || a.row.course.code.localeCompare(b.row.course.code));
 
-    return scored.map(({ row }) => summariseRow(row));
+    return scored.map(({ row }) => summariseRow(row, this.year));
   }
 
   async get(code: string): Promise<CourseDetail | null> {
-    const row = await this.prisma.courseOffering.findFirst({
-      where: { year: this.year, course: { code: code.toLowerCase() } },
-      include: { course: true, teachers: true, faculties: { include: { faculty: true } } },
-    });
+    // The current year first, then the most recent there is. A course the
+    // institution has stopped offering still has readers: somebody who took it
+    // last year, and anybody reading the reviews they wrote about it.
+    const row =
+      (await this.prisma.courseOffering.findFirst({
+        where: { year: this.year, course: { code: code.toLowerCase() } },
+        include: { course: true, teachers: true, faculties: { include: { faculty: true } } },
+      })) ??
+      (await this.prisma.courseOffering.findFirst({
+        where: { course: { code: code.toLowerCase() } },
+        orderBy: { year: "desc" },
+        include: { course: true, teachers: true, faculties: { include: { faculty: true } } },
+      }));
     if (!row) return null;
     return {
-      ...summariseRow(row),
+      ...summariseRow(row, this.year),
       officialUrl: courseUrl(row.year, row.course.code),
       language: row.language,
       contactHours: row.contactHours,
@@ -441,7 +480,7 @@ export class DatabaseCatalogue implements Catalogue {
       include: { offering: { include: { course: true, teachers: true } } },
     });
     return rows
-      .map(({ offering }) => summariseRow(offering))
+      .map(({ offering }) => summariseRow(offering, this.year))
       .sort((a, b) => a.code.localeCompare(b.code));
   }
 }

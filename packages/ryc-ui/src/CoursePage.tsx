@@ -90,6 +90,13 @@ export function CoursePage({
         {` · ${course.year}-${course.year + 1}`}
       </p>
 
+      {/* Said before any of the facts below it, because all of them are last
+          year's. A course the institution stopped offering keeps its reviews,
+          and hiding the page took those with it (FR-D16). */}
+      {!course.offeredThisYear && (
+        <p className="notice">{t("ryc.course.notOffered", { year: course.year, next: course.year + 1 })}</p>
+      )}
+
       {course.external && (
         <p className="notice">{t("ryc.course.external.note")}</p>
       )}

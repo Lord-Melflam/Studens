@@ -11,7 +11,10 @@ import type { Block } from "./Prose.js";
 export interface CourseSummary {
   code: string;
   title: string;
+  /** The year this description comes from, which is not always the current one. */
   year: number;
+  /** False when the institution no longer offers it, and this is its last description. */
+  offeredThisYear: boolean;
   /** Null when the official page does not state it. Never 0 as a stand-in. */
   ects: number | null;
   quarter: string | null;

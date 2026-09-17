@@ -37,7 +37,18 @@ export function I18nProvider({
           // Loud where it can be fixed, silent where it cannot. In production
           // a reader gets the French and no console noise; in development the
           // person who forgot the Dutch hears about it immediately.
-          if (process.env["NODE_ENV"] !== "production") {
+          //
+          // GUARDED, BECAUSE `process` DOES NOT EXIST IN A BROWSER. This ran
+          // only when a key was missing, so the one path meant to soften a
+          // missing string was the path that threw: the translator raised
+          // `ReferenceError: process is not defined` and the error boundary
+          // replaced the whole page. A missing word became a blank screen.
+          //
+          // Vite does replace `process.env.NODE_ENV` at build time, but only in
+          // that exact spelling; the bracket form here survived into the bundle
+          // untouched. A `typeof` check needs no bundler cooperation and is
+          // right in Node too, where these strings are also rendered by tests.
+          if (typeof process === "undefined" || process.env["NODE_ENV"] !== "production") {
             console.warn(`i18n: missing "${key}" in ${missingIn}`);
           }
         },

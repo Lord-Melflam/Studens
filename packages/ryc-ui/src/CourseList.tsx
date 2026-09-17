@@ -26,6 +26,7 @@ export function CourseList({
                 {c.quarter ? ` · ${c.quarter}` : ""}
                 {c.mainLanguage ? ` · ${c.mainLanguage}` : ""}
                 {c.external ? ` · ${t("ryc.course.external")}` : ""}
+                {c.offeredThisYear ? "" : ` · ${t("ryc.course.notOffered.flag")}`}
               </span>
               {/*
                 A count, never a rating. Ten courses of 547 have anything at
