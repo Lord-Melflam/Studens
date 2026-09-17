@@ -19,6 +19,7 @@
  * screen. A count here is what you get if you click it.
  */
 import type { CourseSummary, ProgrammeSummary } from "./api.js";
+import { courseKey } from "./Ryc.js";
 
 /** One option in a facet, with what choosing it would leave. */
 export interface Facet<T> {
@@ -91,7 +92,10 @@ function matchesCourse(
     if (!c.owningEntity || !f.entities.includes(c.owningEntity)) return false;
   }
   if (ignore !== "reviewedOnly" && f.reviewedOnly) {
-    if ((counts[c.code] ?? 0) === 0) return false;
+    // Keyed by institution AND code (OPEN-48). Keyed by code alone, one
+    // university's review count would answer for another's course, and the
+    // "only those with reviews" filter would quietly show the wrong list.
+    if ((counts[courseKey(c)] ?? 0) === 0) return false;
   }
   return true;
 }
@@ -149,7 +153,7 @@ export function courseFacets(
     ects: facetsOf(courses, f, counts, "ects", (c) => c.ects),
     entities: facetsOf(courses, f, counts, "entities", (c) => c.owningEntity),
     reviewed: courses.filter(
-      (c) => matchesCourse(c, f, counts, "reviewedOnly") && (counts[c.code] ?? 0) > 0,
+      (c) => matchesCourse(c, f, counts, "reviewedOnly") && (counts[courseKey(c)] ?? 0) > 0,
     ).length,
   };
 }
@@ -196,6 +200,16 @@ export interface ProgrammeFilter {
   faculties: string[];
   /** The decree's field of study. */
   domains: string[];
+  /**
+   * WHICH UNIVERSITY, and a filter rather than a gate.
+   *
+   * Same argument as the faculty above it: somebody looking for a course does
+   * not necessarily know which institution owns it, and asking first is a wall
+   * in front of the thing browsing is for. It is also self-effacing: a
+   * dimension with one option is not shown, so with one catalogue loaded this
+   * control does not appear at all.
+   */
+  institutions: string[];
 }
 
 export const NO_PROGRAMME_FILTER: ProgrammeFilter = {
@@ -204,6 +218,7 @@ export const NO_PROGRAMME_FILTER: ProgrammeFilter = {
   sites: [],
   faculties: [],
   domains: [],
+  institutions: [],
 };
 
 export function programmeFilterIsEmpty(f: ProgrammeFilter): boolean {
@@ -212,11 +227,18 @@ export function programmeFilterIsEmpty(f: ProgrammeFilter): boolean {
     f.kinds.length === 0 &&
     f.sites.length === 0 &&
     f.faculties.length === 0 &&
-    f.domains.length === 0
+    f.domains.length === 0 &&
+    f.institutions.length === 0
   );
 }
 
-type ProgrammeDimension = "text" | "kinds" | "sites" | "faculties" | "domains";
+type ProgrammeDimension =
+  | "text"
+  | "kinds"
+  | "sites"
+  | "faculties"
+  | "domains"
+  | "institutions";
 
 function matchesProgramme(
   p: ProgrammeSummary,
@@ -239,6 +261,9 @@ function matchesProgramme(
   if (ignore !== "domains" && f.domains.length > 0) {
     if (!p.domain || !f.domains.includes(p.domain)) return false;
   }
+  if (ignore !== "institutions" && f.institutions.length > 0) {
+    if (!f.institutions.includes(p.institution)) return false;
+  }
   return true;
 }
 
@@ -254,6 +279,7 @@ export interface ProgrammeFacets {
   sites: Array<Facet<string>>;
   faculties: Array<Facet<string>>;
   domains: Array<Facet<string>>;
+  institutions: Array<Facet<string>>;
 }
 
 export function programmeFacets(
@@ -286,6 +312,11 @@ export function programmeFacets(
     if (!matchesProgramme(p, f, "domains") || !p.domain) continue;
     domains.set(p.domain, (domains.get(p.domain) ?? 0) + 1);
   }
+  const institutions = new Map<string, number>();
+  for (const p of programmes) {
+    if (!matchesProgramme(p, f, "institutions")) continue;
+    institutions.set(p.institution, (institutions.get(p.institution) ?? 0) + 1);
+  }
 
   const rank = rankKind;
 
@@ -304,6 +335,11 @@ export function programmeFacets(
       .sort((a, b) => a.label.localeCompare(b.label)),
     domains: [...domains.entries()]
       .map(([value, count]) => ({ value, label: value, count }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+    // By name, like the two above. Uppercased because an institution code is
+    // an acronym a reader knows in that form, not a word.
+    institutions: [...institutions.entries()]
+      .map(([value, count]) => ({ value, label: value.toUpperCase(), count }))
       .sort((a, b) => a.label.localeCompare(b.label)),
   };
 }
@@ -456,7 +492,7 @@ export function courseFilterFromQuery(params: URLSearchParams): CourseFilter {
 }
 
 /** The parameters the programme filter owns. */
-export const PROGRAMME_FILTER_KEYS = ["f", "type", "site", "fac", "domaine"] as const;
+export const PROGRAMME_FILTER_KEYS = ["f", "type", "site", "fac", "domaine", "univ"] as const;
 
 export function programmeFilterToQuery(f: ProgrammeFilter): URLSearchParams {
   const p = new URLSearchParams();
@@ -465,6 +501,7 @@ export function programmeFilterToQuery(f: ProgrammeFilter): URLSearchParams {
   put(p, "site", f.sites);
   put(p, "fac", f.faculties);
   put(p, "domaine", f.domains);
+  put(p, "univ", f.institutions);
   return p;
 }
 
@@ -475,6 +512,7 @@ export function programmeFilterFromQuery(params: URLSearchParams): ProgrammeFilt
     sites: list(params, "site"),
     faculties: list(params, "fac"),
     domains: list(params, "domaine"),
+    institutions: list(params, "univ"),
   };
 }
 
@@ -524,6 +562,7 @@ export function pruneProgrammeFilter(
       f.sites,
     ),
     faculties: has(new Set(programmes.map((p) => p.faculty)), f.faculties),
+    institutions: has(new Set(programmes.map((p) => p.institution)), f.institutions),
     domains: has(
       new Set(programmes.map((p) => p.domain).filter((d): d is string => d !== null)),
       f.domains,

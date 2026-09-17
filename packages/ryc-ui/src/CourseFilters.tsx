@@ -49,7 +49,7 @@ export function CourseFilters({
 }: {
   courses: CourseSummary[];
   reviewCounts: Record<string, number>;
-  onOpen: (code: string) => void;
+  onOpen: (course: CourseSummary) => void;
   /** What to say when the list itself is empty, before any filter is applied. */
   emptyLabel: string;
   /** The query string the shell handed the module. */

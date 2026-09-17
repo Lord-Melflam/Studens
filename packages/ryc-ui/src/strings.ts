@@ -76,6 +76,9 @@ export const rycStrings: Bundle = {
     "ryc.loading": "chargement…",
     "ryc.err.catalogue": "le catalogue n'est pas chargé",
     "ryc.err.course": "impossible de charger {code}",
+    "ryc.legacy.ambiguous":
+      "Ce lien ne dit pas de quelle université vient {code}, et plusieurs le publient. Choisissez :",
+    "ryc.filter.institution": "Université",
     "ryc.err.search": "la recherche a échoué",
     "ryc.search.label": "Code ou mot du titre",
     "ryc.search.placeholder": "LEPL1503, ou « mécanique »",
@@ -390,6 +393,9 @@ export const rycStrings: Bundle = {
     "ryc.loading": "laden…",
     "ryc.err.catalogue": "de catalogus is niet geladen",
     "ryc.err.course": "{code} kan niet geladen worden",
+    "ryc.legacy.ambiguous":
+      "Deze link zegt niet van welke universiteit {code} komt, en meerdere publiceren die. Kies:",
+    "ryc.filter.institution": "Universiteit",
     "ryc.err.search": "het zoeken is mislukt",
     "ryc.search.label": "Code of woord uit de titel",
     "ryc.search.placeholder": "LEPL1503, of \u201cmechanica\u201d",
@@ -704,6 +710,9 @@ export const rycStrings: Bundle = {
     "ryc.loading": "loading…",
     "ryc.err.catalogue": "the catalogue is not loaded",
     "ryc.err.course": "could not load {code}",
+    "ryc.legacy.ambiguous":
+      "This link does not say which university {code} comes from, and more than one publishes it. Pick one:",
+    "ryc.filter.institution": "University",
     "ryc.err.search": "the search failed",
     "ryc.search.label": "Code or a word of the title",
     "ryc.search.placeholder": "LEPL1503, or \u201cmechanics\u201d",

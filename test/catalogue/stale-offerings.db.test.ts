@@ -16,7 +16,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { DatabaseCatalogue } from "@studens/ref";
-import { upsertCourse } from "../fixtures/catalogue.js";
+import { FIXTURE_INSTITUTION, upsertCourse } from "../fixtures/catalogue.js";
 
 const prisma = new PrismaClient();
 let reachable = false;
@@ -70,7 +70,7 @@ afterAll(async () => {
 describe("a course with no offering this year", () => {
   dbit("can still be opened, from its most recent description", async () => {
     const catalogue = await DatabaseCatalogue.open({ client: prisma, year: THIS_YEAR });
-    const course = await catalogue.get("ztst9001");
+    const course = await catalogue.get(FIXTURE_INSTITUTION, "ztst9001");
     expect(course).not.toBeNull();
     expect(course?.title).toBe("A course that is no longer given");
     // The year it is actually describing, not the year that was asked for.
@@ -89,7 +89,7 @@ describe("a course with no offering this year", () => {
     // The whole page is last year's facts: credits, term, lecturers. Saying so
     // is the difference between a record and a lie.
     const catalogue = await DatabaseCatalogue.open({ client: prisma, year: THIS_YEAR });
-    const current = await catalogue.get("ztst9002");
+    const current = await catalogue.get(FIXTURE_INSTITUTION, "ztst9002");
     expect(current?.offeredThisYear).toBe(true);
     expect(current?.year).toBe(THIS_YEAR);
   });

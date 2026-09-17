@@ -1,6 +1,7 @@
 /** A list of courses, used by both search results and programme browsing. */
 import { useT } from "@studens/i18n";
 import type { CourseSummary } from "./api.js";
+import { courseKey } from "./Ryc.js";
 
 export function CourseList({
   courses,
@@ -8,17 +9,18 @@ export function CourseList({
   reviewCounts = {},
 }: {
   courses: CourseSummary[];
-  onOpen: (code: string) => void;
+  /** Given the whole summary, because an address needs the institution too. */
+  onOpen: (course: CourseSummary) => void;
   reviewCounts?: Record<string, number>;
 }) {
   const t = useT();
   return (
     <ul className="results">
       {courses.map((c) => {
-        const reviews = reviewCounts[c.code] ?? 0;
+        const reviews = reviewCounts[courseKey(c)] ?? 0;
         return (
           <li key={c.code}>
-            <button type="button" onClick={() => onOpen(c.code)}>
+            <button type="button" onClick={() => onOpen(c)}>
               <span className="code">{c.code.toUpperCase()}</span>
               <span className="title">{c.title}</span>
               <span className="facts">

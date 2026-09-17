@@ -45,6 +45,7 @@ import {
 import { bundle, moduleRoute, navigationTarget, splitQuery } from "@studens/web";
 
 const course = (o: Partial<CourseSummary>): CourseSummary => ({
+  institution: "uclouvain",
   code: "lepl1503",
   title: "Projet 3",
   year: 2026,
@@ -59,6 +60,7 @@ const course = (o: Partial<CourseSummary>): CourseSummary => ({
 });
 
 const programme = (o: Partial<ProgrammeSummary>): ProgrammeSummary => ({
+  institution: "uclouvain",
   code: "sinf1ba",
   title: "Bachelier en sciences informatiques",
   faculty: "epl",
@@ -100,6 +102,7 @@ describe("a filter survives the address bar", () => {
       sites: ["Louvain-la-Neuve"],
       faculties: ["epl"],
       domains: ["Sciences"],
+      institutions: ["uclouvain"],
     };
     expect(programmeFilterFromQuery(programmeFilterToQuery(f))).toEqual(f);
   });
@@ -227,10 +230,19 @@ describe("changing a setting is not going somewhere", () => {
       "packages/ryc-ui/src/Ryc.tsx",
     ]) {
       const text = readFileSync(new URL(`../../${file}`, import.meta.url).pathname, "utf8");
-      const writes = text.split("settingsRoute(").length - 1;
-      expect(writes, `${file} should write settings through settingsRoute`).toBeGreaterThan(0);
-      const replaces = text.split("replace: true").length - 1;
-      expect(replaces, `${file}: every settingsRoute call needs replace`).toBe(writes);
+      const calls = text.split("settingsRoute(").slice(1);
+      expect(calls.length, `${file} should write settings through settingsRoute`).toBeGreaterThan(0);
+      // PAIRED, not counted. It used to compare the number of `settingsRoute`
+      // calls against the number of `replace: true` occurrences, which says
+      // the right thing only while every replace in the file is a settings
+      // write. A legacy link forwarding itself replaces too, and is not a
+      // setting, so the count went to two and an honest file failed.
+      for (const [i, after] of calls.entries()) {
+        expect(
+          after.slice(0, 200),
+          `${file}: settingsRoute call ${i + 1} is not paired with replace: true`,
+        ).toContain("replace: true");
+      }
     }
   });
 });

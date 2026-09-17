@@ -68,24 +68,50 @@ export async function catalogueRoutes(source: {
     });
   });
 
-  router.get("/programmes/:code/courses", (req, res) => {
-    void Promise.resolve(catalogue.coursesOfProgramme(req.params.code)).then((courses) => {
+  /**
+   * INSTITUTION FIRST, THEN CODE, on both of these (OPEN-48).
+   *
+   * A code is unique inside one catalogue and nothing more. `/courses/lepl1503`
+   * had exactly one answer while one catalogue was loaded and would have had
+   * two the day a second arrived, with no way for the caller to say which it
+   * meant, and no way to tell from the answer which it got.
+   */
+  router.get("/programmes/:institution/:code/courses", (req, res) => {
+    void Promise.resolve(
+      catalogue.coursesOfProgramme(req.params.institution, req.params.code),
+    ).then((courses) => {
       if (!courses) {
         res.status(404).json({ error: "no such programme in this catalogue year" });
         return;
       }
-      res.json({ programme: req.params.code, courses });
+      res.json({ institution: req.params.institution, programme: req.params.code, courses });
     });
   });
 
   /** FR-D3: the course page. */
-  router.get("/courses/:code", (req, res) => {
-    void Promise.resolve(catalogue.get(req.params.code)).then((course) => {
+  router.get("/courses/:institution/:code", (req, res) => {
+    void Promise.resolve(catalogue.get(req.params.institution, req.params.code)).then((course) => {
       if (!course) {
         res.status(404).json({ error: "no such course in this catalogue year" });
         return;
       }
       res.json(course);
+    });
+  });
+
+  /**
+   * Where a bare code lives, for links made before OPEN-48 was answered.
+   *
+   * Not a second way to fetch a course: it returns the institutions holding
+   * that code and nothing else, so the caller has to go to the real address.
+   * One answer means an old link can be forwarded; several mean it was always
+   * ambiguous and nobody can say which was meant; none means it never existed.
+   *
+   * Kept deliberately thin so it cannot quietly become the address again.
+   */
+  router.get("/locate/:code", (req, res) => {
+    void Promise.resolve(catalogue.locate(req.params.code)).then((institutions) => {
+      res.json({ code: req.params.code.toLowerCase(), institutions });
     });
   });
 

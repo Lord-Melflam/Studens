@@ -1471,14 +1471,65 @@ the whole catalogue. That is OPEN-48, and it blocks the second catalogue rather
 than the schema.
 
 
+### Phase 34: the institution goes in the path
+
+OPEN-48, answered by François: `/app/ryc/c/uclouvain/lepl1503`. The alternative
+was keeping bare codes and disambiguating only when two catalogues collide,
+which would have let one URL mean different things as the catalogue grew, and a
+link is a promise about what the reader will see.
+
+**The cost is every link written before today**, and it is paid here rather than
+passed to whoever sent one. A bare code parses as its own kind, is looked up
+through a `/api/locate/:code` endpoint that answers with institutions and
+nothing else, and is forwarded to its real address. One match forwards; several
+is a genuinely ambiguous link and the screen offers the choice, because guessing
+sends a reader to a university they never asked about. The forward carries the
+query string: settings live in the URL since phase 32, so dropping it would
+answer a shared filtered link with a different list.
+
+**The institution is a browse filter, not a gate**, on the same ground as the
+faculty in `design/catalogue-ingestion.md` 12.3. A dimension with one option is
+not drawn, so the control does not appear at all until a second catalogue
+exists, and no screen had to learn that two universities are coming.
+
+**Three places were keyed by a bare code and would have merged two universities
+silently.** The review counts the server sends, the "only those with reviews"
+filter that reads them, and the search result collapsing that keeps the newest
+edition of each course. None of the three would have failed; each would have
+shown a plausible wrong number, which is the failure this whole change is about.
+
+**Two bugs the tests did not catch, found by opening the page.**
+
+`ProgrammeSummary` is declared twice, in `packages/ref/src/read.ts` and again in
+`packages/ryc-ui/src/api.ts`, and the values cross as JSON. Adding the field to
+the frontend's copy and not the reference module's typechecked cleanly on both
+sides, sent programmes with no institution, and crashed browse on
+`undefined.toUpperCase()`. There is a gate now that compares the field names of
+both declarations; it reproduces that exact failure when the field is removed
+again.
+
+And the first version of the legacy forward dropped the query string, so a link
+to a filtered programme list arrived unfiltered. Found by looking at the screen
+rather than by a test, which is twice in one phase.
+
+**One gate was wrong, not merely strict.** The FR-B21 check counted
+`settingsRoute` calls against `replace: true` occurrences and required them
+equal, which says the right thing only while every replace in a file is a
+settings write. The legacy forward replaces too and is not a setting, so an
+honest file failed. It pairs each call with its own option now.
+
+
 ---
 
 ## Next
 
-0. **ULB, the second catalogue.** The database can hold two since phase 33; the
-   read path cannot yet address them apart (OPEN-48), and the crawler needs a
-   source adapter because the current one is UCLouvain-shaped throughout. The
-   reconnaissance is done and measured in `design/catalogue-ingestion.md` 13.
+0. **ULB, the second catalogue.** The database can hold two since phase 33 and
+   the read path addresses them apart since phase 34. What is left is the
+   crawler: the current one is UCLouvain-shaped throughout and needs a source
+   adapter, and `officialUrl` is still built from a UCLouvain URL grammar for
+   every course whatever its institution, which must move to the adapter before
+   ULB data lands. The reconnaissance is done and measured in
+   `design/catalogue-ingestion.md` 13.
 1. ~~Authentication~~ done, phases 19 and 25. Google works end to end. Microsoft
    is registered and untried: UCLouvain's tenant turns an outside account into
    an `#EXT#` guest, so it needs testing from the `procyo.be` tenant instead.

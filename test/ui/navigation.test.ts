@@ -33,27 +33,65 @@ describe("a module owns the path below its own segment", () => {
     // A programme is an address now. It was component state, so it could not be
     // linked to, a refresh lost it, and Back left the app instead of stepping
     // out of the programme.
-    expect(parseView("/p/gest2m")).toEqual({ kind: "programme", code: "gest2m" });
-    expect(parseView("/c/lepl1503")).toEqual({
+    // Institution first, then code (OPEN-48): a code is unique inside one
+    // catalogue and nothing more.
+    expect(parseView("/p/uclouvain/gest2m")).toEqual({
+      kind: "programme",
+      institution: "uclouvain",
+      code: "gest2m",
+    });
+    expect(parseView("/c/uclouvain/lepl1503")).toEqual({
       kind: "course",
+      institution: "uclouvain",
       code: "lepl1503",
       writing: false,
     });
-    expect(parseView("/c/lepl1503/avis")).toEqual({
+    expect(parseView("/c/uclouvain/lepl1503/avis")).toEqual({
       kind: "course",
+      institution: "uclouvain",
       code: "lepl1503",
       writing: true,
     });
   });
 
+  it("a link written before the institution was in the path is not thrown away", () => {
+    // Nobody who sent `/c/lepl1503` did anything wrong, and telling them the
+    // URL is invalid would be blaming a reader for the day we changed our
+    // minds. It parses as its own kind, and the screen forwards it.
+    expect(parseView("/c/lepl1503")).toEqual({
+      kind: "legacyCourse",
+      code: "lepl1503",
+      writing: false,
+    });
+    expect(parseView("/c/lepl1503/avis")).toEqual({
+      kind: "legacyCourse",
+      code: "lepl1503",
+      writing: true,
+    });
+    expect(parseView("/p/gest2m")).toEqual({ kind: "legacyProgramme", code: "gest2m" });
+  });
+
   it("a course code is case insensitive and a trailing slash is harmless", () => {
     // Because these arrive from links people paste, not only from our own code.
-    expect(parseView("/c/LEPL1503")).toMatchObject({ code: "lepl1503" });
-    expect(parseView("/p/GEST2M")).toMatchObject({ kind: "programme", code: "gest2m" });
-    expect(parseView("/p/gest2m/")).toMatchObject({ kind: "programme", code: "gest2m" });
+    expect(parseView("/c/UCLouvain/LEPL1503")).toMatchObject({
+      institution: "uclouvain",
+      code: "lepl1503",
+    });
+    expect(parseView("/p/UCLouvain/GEST2M")).toMatchObject({
+      kind: "programme",
+      institution: "uclouvain",
+      code: "gest2m",
+    });
+    expect(parseView("/p/uclouvain/gest2m/")).toMatchObject({
+      kind: "programme",
+      code: "gest2m",
+    });
     // `/p` with nothing after it is the list, not a programme with no code.
     expect(parseView("/p")).toEqual({ kind: "browse" });
-    expect(parseView("/c/lepl1503/")).toMatchObject({ code: "lepl1503", writing: false });
+    expect(parseView("/c/uclouvain/lepl1503/")).toMatchObject({
+      code: "lepl1503",
+      writing: false,
+    });
   });
 
   it("nonsense below the module falls back to its root rather than breaking", () => {
@@ -67,11 +105,12 @@ describe("a module owns the path below its own segment", () => {
    * review survives a refresh of the page it sits on.
    */
   it("writing a review is a place, not a flag", () => {
-    const at = parseView("/c/lepl1503/avis");
+    const at = parseView("/c/uclouvain/lepl1503/avis");
     expect(at.kind === "course" && at.writing).toBe(true);
     // And the course underneath it is the same course, so Back has somewhere
     // to land that is not the module root.
     expect(at.kind === "course" && at.code).toBe("lepl1503");
+    expect(at.kind === "course" && at.institution).toBe("uclouvain");
   });
 });
 

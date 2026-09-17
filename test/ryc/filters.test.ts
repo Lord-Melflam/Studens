@@ -29,6 +29,7 @@ import { I18nProvider } from "@studens/i18n";
 import { DEFAULT_LOCALE, LOCALES, createTranslator } from "@studens/i18n";
 
 const course = (over: Partial<CourseSummary>): CourseSummary => ({
+  institution: "uclouvain",
   code: "lepl1000",
   title: "Un cours",
   year: 2025,
@@ -51,7 +52,10 @@ const catalogue: CourseSummary[] = [
   course({ code: "lelec2990", title: "Mémoire", ects: 25, quarter: null, mainLanguage: null }),
 ];
 
-const counts = { lepl1503: 1, linfo2145: 2 };
+// Keyed `<institution>/<code>`, the way the server sends them and the way
+// `courseKey` builds them. Keyed by code alone, two universities sharing a
+// string would have one count answer for the other's course.
+const counts = { "uclouvain/lepl1503": 1, "uclouvain/linfo2145": 2 };
 
 describe("filtering courses", () => {
   it("with nothing chosen, changes nothing", () => {
@@ -169,6 +173,7 @@ describe("the facets are the data, not a list somebody wrote", () => {
 });
 
 const programme = (over: Partial<ProgrammeSummary>): ProgrammeSummary => ({
+  institution: "uclouvain",
   code: "sinf1ba",
   title: "Bachelier en sciences informatiques (Louvain-la-Neuve)",
   faculty: "epl",

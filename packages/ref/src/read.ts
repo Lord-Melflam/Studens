@@ -86,6 +86,15 @@ export interface CourseSummary {
    * schools and institutes, not faculties.
    */
   owningEntity: string | null;
+  /**
+   * WHICH CATALOGUE THIS CAME FROM, as an institution code.
+   *
+   * On the summary rather than only on the detail because every link to a
+   * course is built from a summary, and since OPEN-48 a link needs it: a code
+   * alone does not say which university it belongs to, and `lepl1503` and
+   * `comm-b1010` only look distinct by accident of naming.
+   */
+  institution: string;
 }
 
 export interface CourseDetail extends CourseSummary {
@@ -110,8 +119,9 @@ export interface CourseDetail extends CourseSummary {
   reachedVia: string[];
 }
 
-function summarise(o: ParsedOffering): CourseSummary {
+function summarise(o: ParsedOffering, institution: string): CourseSummary {
   return {
+    institution,
     code: o.code,
     title: o.title,
     year: o.year,
@@ -139,7 +149,7 @@ function summarise(o: ParsedOffering): CourseSummary {
  */
 function summariseRow(
   row: {
-    course: { code: string };
+    course: { code: string; institution: { code: string } };
     title: string;
     year: number;
     ects: unknown;
@@ -153,6 +163,7 @@ function summariseRow(
   currentYear: number,
 ): CourseSummary {
   return {
+    institution: row.course.institution.code,
     code: row.course.code,
     title: row.title,
     year: row.year,
@@ -173,6 +184,13 @@ export interface FacultySummary {
 }
 
 export interface ProgrammeSummary {
+  /**
+   * Which catalogue this came from, as an institution code (OPEN-48).
+   *
+   * Same reason as on a course: every link to a programme is built from a
+   * summary, and a code is unique inside one catalogue and nothing more.
+   */
+  institution: string;
   code: string;
   title: string;
   faculty: string;
@@ -218,26 +236,60 @@ export interface ProgrammeSummary {
   domain: string | null;
 }
 
-/** What a consumer may ask the catalogue. Storage does not appear in it. */
+/**
+ * What a consumer may ask the catalogue. Storage does not appear in it.
+ *
+ * A COURSE IS ADDRESSED BY INSTITUTION AND CODE, not by code alone (OPEN-48,
+ * decided 2026-09-18). A code is unique inside one catalogue and nothing more:
+ * `lepl1503` and `comm-b1010` look distinct by accident of naming, and the day
+ * two universities publish the same string, a reader asking by code alone gets
+ * one of them and cannot tell which.
+ */
 export interface Catalogue {
   readonly year: number;
   readonly size: number;
   search(query: string, limit?: number): CourseSummary[] | Promise<CourseSummary[]>;
-  get(code: string): (CourseDetail | null) | Promise<CourseDetail | null>;
+  get(institution: string, code: string): (CourseDetail | null) | Promise<CourseDetail | null>;
+  /**
+   * Which catalogues hold a course with this code.
+   *
+   * For links made before OPEN-48 was answered, which carry a bare code. One
+   * answer means the old link can be sent to its new address; more than one
+   * means it is genuinely ambiguous and nobody can guess which was meant.
+   * Empty means no such code anywhere.
+   */
+  locate(code: string): string[] | Promise<string[]>;
   /** FR-D24 and FR-D25: browsing, not only searching. */
   faculties(): FacultySummary[] | Promise<FacultySummary[]>;
   /** Every programme of the year, or only one faculty's. */
   programmes(facultyCode?: string): ProgrammeSummary[] | Promise<ProgrammeSummary[]>;
   coursesOfProgramme(
+    institution: string,
     programmeCode: string,
   ): (CourseSummary[] | null) | Promise<CourseSummary[] | null>;
 }
 
 export class SnapshotCatalogue implements Catalogue {
-  private constructor(private readonly snapshot: Snapshot) {}
+  private constructor(
+    private readonly snapshot: Snapshot,
+    /**
+     * A snapshot is ONE institution's crawl, and the file does not yet say
+     * which. `load.ts` has taken the institution as an option since before
+     * this, for the same reason, and defaults the same way. It becomes a field
+     * of the file at snapshot version 9, which is the adapter's change to make:
+     * bumping the version here would refuse the snapshot on disk and cost a
+     * re-crawl for a field nothing yet varies.
+     */
+    readonly institution: string,
+  ) {}
 
-  static async open(path: string): Promise<SnapshotCatalogue> {
-    return new SnapshotCatalogue(await load(path));
+  static async open(path: string, institution = "uclouvain"): Promise<SnapshotCatalogue> {
+    return new SnapshotCatalogue(await load(path), institution);
+  }
+
+  locate(code: string): string[] {
+    const found = this.snapshot.offerings.some((o) => o.code === code.toLowerCase());
+    return found ? [this.institution] : [];
   }
 
   get year(): number {
@@ -264,7 +316,8 @@ export class SnapshotCatalogue implements Catalogue {
     }
     // Code matches first: someone typing LEPL1503 wants that course, not a
     // course whose description mentions it.
-    return [...byCode, ...byTitle].slice(0, limit).map(summarise);
+    return [...byCode, ...byTitle].slice(0, limit)
+      .map((o) => summarise(o, this.institution));
   }
 
   faculties(): FacultySummary[] {
@@ -282,6 +335,7 @@ export class SnapshotCatalogue implements Catalogue {
     return this.snapshot.programmes
       .filter((p) => want === undefined || p.faculty === want)
       .map((p) => ({
+        institution: this.institution,
         code: p.code,
         title: p.title,
         faculty: p.faculty,
@@ -302,8 +356,9 @@ export class SnapshotCatalogue implements Catalogue {
       .sort((a, b) => a.title.localeCompare(b.title));
   }
 
-  coursesOfProgramme(programmeCode: string): CourseSummary[] | null {
+  coursesOfProgramme(institution: string, programmeCode: string): CourseSummary[] | null {
     const code = programmeCode.toLowerCase();
+    if (institution.toLowerCase() !== this.institution) return null;
     if (!this.snapshot.programmes.some((p) => p.code === code)) return null;
     const codes = new Set(
       this.snapshot.reachedVia.filter((r) => r.programme === code).map((r) => r.code),
@@ -311,14 +366,15 @@ export class SnapshotCatalogue implements Catalogue {
     return this.snapshot.offerings
       .filter((o) => codes.has(o.code))
       .sort((a, b) => a.code.localeCompare(b.code))
-      .map(summarise);
+      .map((o) => summarise(o, this.institution));
   }
 
-  get(code: string): CourseDetail | null {
+  get(institution: string, code: string): CourseDetail | null {
+    if (institution.toLowerCase() !== this.institution) return null;
     const o = this.snapshot.offerings.find((x) => x.code === code.toLowerCase());
     if (!o) return null;
     return {
-      ...summarise(o),
+      ...summarise(o, this.institution),
       officialUrl: courseUrl(o.year, o.code),
       language: o.language,
       contactHours: o.contactHours,
@@ -383,14 +439,20 @@ export class DatabaseCatalogue implements Catalogue {
           { title: { contains: q, mode: "insensitive" } },
         ],
       },
-      include: { course: true, teachers: true },
+      include: { course: { include: { institution: true } }, teachers: true },
       orderBy: { year: "desc" },
       // Room for older editions of the same course before they are collapsed.
       take: limit * 4,
     });
 
+    // Keyed by institution AND code, not by code: collapsing older editions of
+    // one course must not also collapse two universities' courses that happen
+    // to share a string into one result.
     const newest = new Map<string, (typeof rows)[number]>();
-    for (const r of rows) if (!newest.has(r.course.code)) newest.set(r.course.code, r);
+    for (const r of rows) {
+      const key = `${r.course.institution.code}/${r.course.code}`;
+      if (!newest.has(key)) newest.set(key, r);
+    }
     const unique = [...newest.values()].slice(0, limit);
 
     // Code matches first: someone typing LEPL1503 wants that course, not one
@@ -404,24 +466,53 @@ export class DatabaseCatalogue implements Catalogue {
     return scored.map(({ row }) => summariseRow(row, this.year));
   }
 
-  async get(code: string): Promise<CourseDetail | null> {
+  /**
+   * An institution's id from its code, or a sentinel that matches nothing.
+   *
+   * An unknown institution in a URL is a 404, not an error: somebody typing
+   * `/c/oxford/x` has asked for something that does not exist, which is the
+   * same answer as an unknown code. Returning a sentinel keeps that in the
+   * query rather than needing a branch at every call site.
+   */
+  private async institutionIdOf(code: string): Promise<string> {
+    const row = await this.prisma.institution.findUnique({
+      where: { code: code.toLowerCase() },
+      select: { id: true },
+    });
+    return row?.id ?? "no-such-institution";
+  }
+
+  async locate(code: string): Promise<string[]> {
+    const rows = await this.prisma.course.findMany({
+      where: { code: code.toLowerCase() },
+      select: { institution: { select: { code: true } } },
+      orderBy: { institution: { code: "asc" } },
+    });
+    return rows.map((r) => r.institution.code);
+  }
+
+  async get(institution: string, code: string): Promise<CourseDetail | null> {
     // The current year first, then the most recent there is. A course the
     // institution has stopped offering still has readers: somebody who took it
     // last year, and anybody reading the reviews they wrote about it.
     //
-    // A code alone no longer identifies a course once a second catalogue is
-    // loaded. See coursesOfProgramme and OPEN-48; the ordering below keeps this
-    // deterministic in the meantime rather than leaving it to the planner.
+    // Both halves are scoped to the institution. Before OPEN-48 this took a
+    // code alone and ordered the ambiguity away, which was stable and still a
+    // guess; now the caller says which catalogue it means.
+    const where = {
+      course: { code: code.toLowerCase(), institution: { code: institution.toLowerCase() } },
+    };
+    const include = {
+      course: { include: { institution: true } },
+      teachers: true,
+      faculties: { include: { faculty: true } },
+    };
     const row =
+      (await this.prisma.courseOffering.findFirst({ where: { ...where, year: this.year }, include })) ??
       (await this.prisma.courseOffering.findFirst({
-        where: { year: this.year, course: { code: code.toLowerCase() } },
-        orderBy: { course: { institutionId: "asc" } },
-        include: { course: true, teachers: true, faculties: { include: { faculty: true } } },
-      })) ??
-      (await this.prisma.courseOffering.findFirst({
-        where: { course: { code: code.toLowerCase() } },
-        orderBy: [{ year: "desc" }, { course: { institutionId: "asc" } }],
-        include: { course: true, teachers: true, faculties: { include: { faculty: true } } },
+        where,
+        orderBy: { year: "desc" as const },
+        include,
       }));
     if (!row) return null;
     return {
@@ -454,7 +545,7 @@ export class DatabaseCatalogue implements Catalogue {
         ...(facultyCode ? { faculty: { code: facultyCode.toLowerCase() } } : {}),
       },
       include: {
-        faculty: true,
+        faculty: { include: { institution: true } },
         site: true,
         domain: true,
         _count: { select: { offerings: true } },
@@ -462,6 +553,7 @@ export class DatabaseCatalogue implements Catalogue {
       orderBy: { title: "asc" },
     });
     return rows.map((p) => ({
+        institution: p.faculty.institution.code,
         code: p.code,
         title: p.title,
         faculty: p.faculty.code,
@@ -475,24 +567,30 @@ export class DatabaseCatalogue implements Catalogue {
       }));
   }
 
-  async coursesOfProgramme(programmeCode: string): Promise<CourseSummary[] | null> {
+  async coursesOfProgramme(
+    institution: string,
+    programmeCode: string,
+  ): Promise<CourseSummary[] | null> {
     // `findFirst`, not `findUnique`, because the unique key is now
     // (institution, code, year) and this reader has no institution.
-    //
-    // IDENTICAL WHILE ONE CATALOGUE IS LOADED, and not a decision about what
-    // happens when two are. A code in a URL does not say which university it
-    // belongs to, and `/app/ryc/c/lepl1503` cannot start meaning two things.
-    // That is a product question, it is recorded as OPEN-48, and loading ULB
-    // cannot ship before it is answered. Ordered so that today's answer is at
-    // least stable rather than whatever the planner returns first.
-    const programme = await this.prisma.programme.findFirst({
-      where: { code: programmeCode.toLowerCase(), year: this.year },
-      orderBy: { institutionId: "asc" },
+    // Scoped to the institution the caller named (OPEN-48). Before this it
+    // took a code alone and ordered the ambiguity away, which was stable and
+    // was still a guess.
+    const programme = await this.prisma.programme.findUnique({
+      where: {
+        institutionId_code_year: {
+          institutionId: await this.institutionIdOf(institution),
+          code: programmeCode.toLowerCase(),
+          year: this.year,
+        },
+      },
     });
     if (!programme) return null;
     const rows = await this.prisma.programmeOffering.findMany({
       where: { programmeId: programme.id },
-      include: { offering: { include: { course: true, teachers: true } } },
+      include: {
+        offering: { include: { course: { include: { institution: true } }, teachers: true } },
+      },
     });
     return rows
       .map(({ offering }) => summariseRow(offering, this.year))
@@ -510,5 +608,5 @@ export class DatabaseCatalogue implements Catalogue {
 export interface BrowseQueries {
   faculties(): Promise<FacultySummary[]>;
   programmes(facultyCode?: string): Promise<ProgrammeSummary[]>;
-  coursesOfProgramme(programmeCode: string): Promise<CourseSummary[] | null>;
+  coursesOfProgramme(institution: string, programmeCode: string): Promise<CourseSummary[] | null>;
 }

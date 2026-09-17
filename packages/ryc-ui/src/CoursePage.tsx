@@ -46,13 +46,13 @@ export function CoursePage({
 
   const load = useCallback(() => {
     api
-      .reviews(course.code)
+      .reviews(course.institution, course.code)
       .then((r) => {
         setReviews(r);
         setFailed(false);
       })
       .catch(() => setFailed(true));
-  }, [course.code]);
+  }, [course.institution, course.code]);
 
   useEffect(load, [load]);
 
@@ -65,7 +65,12 @@ export function CoursePage({
         <h2>
           <span className="code">{course.code.toUpperCase()}</span> {course.title}
         </h2>
-        <SubmitFlow courseCode={course.code} onClose={onCloseWriting} onSubmitted={load} />
+        <SubmitFlow
+          courseInstitution={course.institution}
+          courseCode={course.code}
+          onClose={onCloseWriting}
+          onSubmitted={load}
+        />
       </article>
     );
   }
