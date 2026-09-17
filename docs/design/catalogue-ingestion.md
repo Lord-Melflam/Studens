@@ -991,3 +991,44 @@ by hundreds of people contains more shapes than anybody designing a parser
 imagines, and the cost of each discovery was roughly twelve minutes of crawl.
 The bounds that survived are the ones measured against the whole set rather than
 argued from what a course ought to be.
+
+### 12.10 The load failed on the same entry, one layer down
+
+The crawl finished: 20 faculties, 692 programme rows, 6,654 courses, nothing
+unavailable, no disagreement between the sources. Then `db:load` refused all of
+it with `numeric field overflow`.
+
+`ects` was `numeric(4, 2)`, which holds at most 99.99, and
+`cours-2026-mcomu1000` is the 180 credit bundle from 12.9. The column accepted
+6,653 courses and rejected one, and a load is a single transaction, so 78
+minutes of crawling landed nowhere.
+
+The column is `numeric(5, 2)` now, sized to the parser's own ceiling of 360.
+**The lesson is that a bound has to be widened everywhere it exists**, and this
+one existed in two places written months apart: a regular expression in the
+parser and a column type in a migration. Fixing the first left the second to be
+discovered by the only thing that exercises it, which is a real load of real
+data.
+
+### 12.11 One programme belongs to three faculties
+
+The report printed "692 programmes found" above "690 in the database" and said
+nothing about the difference, which is precisely the silent gap it exists to
+refuse.
+
+Nothing was lost. `baba1ba`, the bachelor in biology, anthropology and
+archaeology, is listed under **espo, fial and sc**. The snapshot holds one row
+per faculty a programme was discovered under, and the database keys programmes
+by code, so three rows become one.
+
+The report now says so, and names the programme. It also flags the real version
+of that difference as a gap: a programme in the snapshot and absent from the
+database means every course reachable only through it cannot be browsed to.
+
+**What is left undecided, and deliberately.** `Programme.facultyId` is singular,
+so the stored faculty for `baba1ba` is whichever was written last, which is
+arbitrary. Section 2 of this document already says faculty is a discovery path
+rather than ownership, and that course to faculty is many to many; the same is
+evidently true of programmes, and the schema does not model it. One programme in
+692 is not a reason to change a foreign key today, and it is a reason to write
+down that the value is arbitrary rather than let somebody trust it.
