@@ -213,7 +213,16 @@ export function Browse({
               One group draws no heading, because a heading over the whole list
               says nothing.
             */
-            grouped.map(([kind, rows]) => (
+            /*
+              ONE CHILD, not one per kind. `.browse-wide` is a two column grid
+              and a grid places children in order, so eight kind sections became
+              eight grid items and the even ones were laid out in the filter
+              column: programmes 272px wide, under the filters. Grouping the
+              list changed how many children this returns, and the grid was
+              written when it returned one.
+            */
+            <div className="browse-list">
+              {grouped.map(([kind, rows]) => (
               <section className="prog-group" key={String(kind)}>
                 {grouped.length > 1 && (
                   <h3 className="prog-group-title">
@@ -257,8 +266,9 @@ export function Browse({
                     </li>
                   ))}
                 </ul>
-              </section>
-            ))
+                </section>
+              ))}
+            </div>
           )}
         </div>
       )}
