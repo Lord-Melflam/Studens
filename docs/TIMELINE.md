@@ -1430,9 +1430,10 @@ writing one as a whole new query string would erase the other.
    OPEN-47 and is measured in `design/catalogue-ingestion.md` 12.15: a second
    crawl of the English edition, a language per field, a per-field fallback,
    and no Dutch source at all.
-7b. **The full catalogue.** Two faculties of 21 are ingested. The full crawl is
-   about 10,000 requests and two hours, and `npm run catalogue:report` says
-   afterwards whether anything was lost.
+7b. ~~The full catalogue~~ done, phase 30. 20 faculties, 769 programmes and
+   6,715 courses are loaded, counted in the database on 2026-09-17.
+   `npm run catalogue:report` compares the snapshot against the database in
+   both directions and exits 1 on a gap.
 8. ~~A programme is not in the URL~~ done, phase 30, and the filters and the
    search box followed in phase 32 (FR-B21). What is still held in component
    state and should not be: nothing known. What is held there deliberately: the
