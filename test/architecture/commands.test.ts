@@ -25,8 +25,20 @@ describe("docs/COMMANDS.md lists what exists", () => {
     expect(scripts.length).toBeGreaterThan(10);
   });
 
+  /**
+   * npm's own lifecycle names, which are run without `run`.
+   *
+   * `npm start` is what a person types and what a service file holds, so
+   * requiring the documentation to say `npm run start` would make the gate
+   * force a spelling nobody uses. `npm run test` is also valid and is the form
+   * already in the table, so both are accepted for both.
+   */
+  const LIFECYCLE = ["start", "test", "stop", "restart"];
+  const documented = (s: string): boolean =>
+    commands.includes(`npm run ${s}`) || (LIFECYCLE.includes(s) && commands.includes(`npm ${s}`));
+
   it("documents every script in package.json", () => {
-    const undocumented = scripts.filter((s) => !commands.includes(`npm run ${s}`));
+    const undocumented = scripts.filter((s) => !documented(s));
     expect(
       undocumented,
       "these can be run and are written down nowhere. Add a row to the table in " +

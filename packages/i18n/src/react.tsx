@@ -4,7 +4,14 @@
  * Kept apart from the core so the core stays framework free and testable
  * without a renderer. React is a peer dependency here, as it is in ryc-ui.
  */
-import { createContext, createElement, useContext, useMemo, type ReactNode } from "react";
+import {
+  createContext,
+  createElement,
+  useContext,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { DEFAULT_LOCALE, type Locale } from "./locale.js";
 import { createTranslator, type Bundle, type Translate } from "./translate.js";
 
@@ -56,6 +63,25 @@ export function I18nProvider({
     }),
     [locale, bundle],
   );
+  /**
+   * `<html lang>` says which language the document is in, and it was wrong on
+   * two pages in three.
+   *
+   * `index.html` is one file for all three languages and ships `lang="fr"`
+   * hardcoded, because that is what Vite's template had. Nothing ever changed
+   * it, so an English page told every screen reader to pronounce it as French,
+   * and told every translation tool it did not need translating.
+   *
+   * Here because this is the one component that knows the active language, and
+   * the attribute is the document-level statement of exactly that. In an effect
+   * because it touches the document: nothing runs during a static render, which
+   * is how the tests draw these components.
+   */
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   return createElement(Ctx.Provider, { value }, children);
 }
 
