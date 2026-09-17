@@ -148,6 +148,47 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
   out.push(line("courses, all years", dbCourses));
   out.push("");
 
+  // PROGRAMMES, BOTH WAYS. The snapshot counts one row per programme PER
+  // FACULTY it was discovered under, and the database keys them by code, so the
+  // two numbers differ legitimately whenever a programme is interfaculty. That
+  // difference was silently printed as "692" above "690" and left for a reader
+  // to notice, which is exactly the kind of quiet gap this report exists to
+  // refuse.
+  const snapshotCodes = new Set(snapshot.programmes.map((p) => p.code));
+  const storedProgrammes = new Set(
+    (
+      await prisma.programme.findMany({ where: { year }, select: { code: true } })
+    ).map((p) => p.code),
+  );
+  const missingProgrammes = [...snapshotCodes].filter((c) => !storedProgrammes.has(c));
+  if (missingProgrammes.length > 0) {
+    findings.push({
+      severity: "gap",
+      title: `${missingProgrammes.length} programmes are in the snapshot and not in the database`,
+      codes: missingProgrammes,
+      explain: "Every course reached only through these is unreachable by browsing. Re-run `npm run db:load`.",
+    });
+  }
+
+  const perFaculty = snapshot.programmes.length - snapshotCodes.size;
+  if (perFaculty > 0) {
+    const counts = new Map<string, string[]>();
+    for (const p of snapshot.programmes) {
+      counts.set(p.code, [...(counts.get(p.code) ?? []), p.faculty]);
+    }
+    const shared = [...counts.entries()].filter(([, f]) => f.length > 1);
+    findings.push({
+      severity: "note",
+      title: `${shared.length} programmes are listed under more than one faculty`,
+      codes: shared.map(([code, f]) => `${code}: ${f.join(", ")}`),
+      explain:
+        "Why the two programme counts above differ, and not a loss: the snapshot has\n" +
+        "  a row per faculty a programme was found under, the database keys them by\n" +
+        "  code. The stored faculty is whichever was written last, which is arbitrary\n" +
+        "  and worth deciding on if these ever matter to browsing.",
+    });
+  }
+
   // The comparison that matters: everything parsed should have been stored.
   const stored = new Set(
     (

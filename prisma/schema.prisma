@@ -452,7 +452,19 @@ model CourseOffering {
   /// the source omits is an ordinary state to record and say plainly, never a
   /// reason to lose the course. Null means "not stated on the official page",
   /// and the interface says exactly that rather than showing a zero.
-  ects         Decimal? @db.Decimal(4, 2)
+  /// `(5, 2)` and not `(4, 2)`, which held at most 99.99.
+  ///
+  /// The course namespace holds BUNDLE entries standing for a whole programme:
+  /// `cours-2026-mcomu1000` is a three year bachelor published as one entry,
+  /// worth 180 credits. The narrower column accepted every one of the 6,653
+  /// other courses and rejected that one, after the crawl had spent 78 minutes
+  /// collecting them, because a load is one transaction and one row it cannot
+  /// store fails all of it.
+  ///
+  /// Sized to match the parser's own ceiling of 360, which is a six year
+  /// medicine programme. Both were chosen from the measured distribution rather
+  /// than from what a course ought to weigh.
+  ects         Decimal? @db.Decimal(5, 2)
   language     String?
   quarter      String?
   /// FR-D19: scraped, never asked. The catalogue publishes the evaluation
