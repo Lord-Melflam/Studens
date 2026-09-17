@@ -13,7 +13,7 @@ import { localePath, useT, type Locale } from "@studens/i18n";
 import { Account } from "../Account.js";
 import { LanguageSwitcher } from "../LanguageSwitcher.js";
 import { Settings } from "../Settings.js";
-import { activeModuleFor, liveModules } from "./registry.js";
+import { activeModuleFor, presentModules } from "./registry.js";
 import { useSession } from "../session.js";
 import { FIRST_RUN } from "../firstrun/FirstRun.js";
 import { ModerationConsole } from "../moderation/Console.js";
@@ -70,6 +70,15 @@ export function signOutDestination(routeId: string | null, locale: Locale): stri
 
 function Home() {
   const t = useT();
+  // Presented, not raw. The registration carries a French summary as its
+  // fallback and this screen was printing it verbatim, so an English page said
+  // "Ce que valent vraiment les cours". `presentModules` resolves each module's
+  // own strings in the active language, which is what the public zone already
+  // did and what this screen should have done from the start.
+  const shown = presentModules(t);
+  const live = shown.filter((m) => m.presentation.status === "live");
+  const planned = shown.filter((m) => m.presentation.status !== "live");
+
   return (
     <>
       <header className="page-intro">
@@ -83,7 +92,7 @@ function Home() {
         one is for comes from the module (FR-B16), as everywhere else.
       */}
       <ul className="modules">
-        {liveModules.map((m) => (
+        {live.map((m) => (
           <li key={m.id}>
             <button type="button" onClick={() => navigate(`${APP_PREFIX}/${m.id}`)}>
               <span className="name">{m.name}</span>
@@ -95,7 +104,32 @@ function Home() {
           </li>
         ))}
       </ul>
-      <p className="footnote">{t("app.home.more")}</p>
+
+      {/*
+        What is announced but not built, kept visibly apart from what can be
+        opened. NOT a greyed-out card: a card you cannot press is the thing the
+        design note's first principle refuses. It is a different shape, it says
+        what it is and why it is listed, and it offers nothing to click.
+
+        The public site already announces this module, so leaving it out here
+        would mean the two pages disagree about what Studens is.
+      */}
+      {planned.length > 0 && (
+        <section className="planned">
+          <h3>{t("app.home.planned")}</h3>
+          <ul>
+            {planned.map((m) => (
+              <li key={m.id}>
+                <span className="name">{m.name}</span>
+                <span className="summary">{m.summary}</span>
+                {m.presentation.statusNote && (
+                  <span className="note">{m.presentation.statusNote}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   );
 }

@@ -40,13 +40,25 @@ const root = new URL("../..", import.meta.url).pathname;
  */
 const EXEMPT = new Set(["apps/web/src/ErrorBoundary.tsx"]);
 
+/**
+ * The catalogues. Every sentence in the product is in one of these, so scanning
+ * them for sentences would report the entire vocabulary as a breach.
+ *
+ * Matched on the path rather than listed one by one, because a module added
+ * later brings its own catalogue and a list nobody updates is a gate that stops
+ * covering the thing it was written for.
+ */
+function isCatalogue(rel: string): boolean {
+  return /strings(\/index)?\.ts$/.test(rel) || rel.endsWith("registry.ts");
+}
+
 function sources(): Array<{ file: string; text: string }> {
   const out: Array<{ file: string; text: string }> = [];
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const p = join(dir, entry.name);
       if (entry.isDirectory()) walk(p);
-      else if (entry.name.endsWith(".tsx")) {
+      else if (entry.name.endsWith(".tsx") || entry.name.endsWith(".ts")) {
         const rel = p.slice(root.length);
         if (EXEMPT.has(rel)) continue;
         out.push({ file: rel, text: readFileSync(p, "utf8") });
@@ -80,10 +92,23 @@ function isProse(s: string): boolean {
 }
 
 describe("every sentence on screen comes from the translator", () => {
-  const files = sources();
+  /**
+   * The markup checks read .tsx ONLY, and that is not an oversight.
+   *
+   * Their pattern for a JSX text node is "between > and <", which in a plain
+   * .ts file matches TypeScript's own syntax: `(url: string): Promise<Fetched>`
+   * reads as a text node running into a generic. Widening the scan produced
+   * exactly that, from `api.ts`. The field check below has no such problem, so
+   * it reads both.
+   */
+  const files = sources().filter((f) => f.file.endsWith(".tsx"));
+  const allFiles = sources();
 
   it("has sources to check, so the gate is not vacuous", () => {
     expect(files.length).toBeGreaterThan(15);
+    // And the field check reads more than the markup checks do, which is the
+    // whole point of having added it.
+    expect(allFiles.length).toBeGreaterThan(files.length);
   });
 
   it("no prose sits directly in the markup", () => {
@@ -108,6 +133,41 @@ describe("every sentence on screen comes from the translator", () => {
       offences,
       "these sentences are hardcoded and will stay in one language whatever the " +
         "visitor chose. Move them into the strings catalogue and call t().",
+    ).toEqual([]);
+  });
+
+  /**
+   * A SENTENCE STORED AS DATA, which is how the last one got through.
+   *
+   * `ModuleRegistration` carried `summary: "Ce que valent vraiment les cours"`,
+   * and the shell's home screen printed it verbatim on an English page. The two
+   * checks above look at markup, and an object property is not markup, so
+   * nothing was watching. The field is gone now; this is what stops the next
+   * one being added.
+   *
+   * Only fields whose contents reach a screen. `id`, `code` and `kind` hold
+   * identifiers and are none of this gate's business.
+   */
+  it("no prose is stored in a field that reaches the screen", () => {
+    const FIELDS = ["summary", "label", "legend", "note", "statusNote", "heading", "caption"];
+    const offences: string[] = [];
+    for (const { file, text } of allFiles) {
+      if (isCatalogue(file)) continue;
+      const stripped = stripComments(text);
+      stripped.split("\n").forEach((line, i) => {
+        for (const field of FIELDS) {
+          const m = new RegExp(`\\b${field}\\s*:\\s*"([^"]+)"`).exec(line);
+          if (m?.[1] && isProse(m[1])) {
+            offences.push(`${file}:${i + 1}  ${field}: ${m[1].slice(0, 60)}`);
+          }
+        }
+      });
+    }
+    expect(
+      offences,
+      "these sentences are stored in one language and will be shown in it " +
+        "whatever the visitor chose. Put them in the catalogue and resolve them " +
+        "with t() where they are used.",
     ).toEqual([]);
   });
 

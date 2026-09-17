@@ -106,10 +106,24 @@ describe("the shell knows nothing about any module's domain", () => {
     ).toBe(false);
   });
 
-  it("a module declares a name, a route id, a summary and a component", () => {
+  it("a module declares a name, a route id and a component", () => {
     const reg = readFileSync(join(root, "packages/ryc-ui/src/index.tsx"), "utf8");
-    for (const field of ["id:", "name:", "summary:", "component:"]) {
+    for (const field of ["id:", "name:", "component:"]) {
       expect(reg, `a module registration needs ${field}`).toContain(field);
     }
+  });
+
+  it("a registration carries no summary, because a summary is a sentence", () => {
+    // This test used to require the opposite. A `summary` field holds one
+    // language's prose in a TypeScript literal, and the app home printed it
+    // verbatim, so an English page read "Ce que valent vraiment les cours".
+    // The line about a module now comes from the module's own catalogue under
+    // `<id>.summary`, where all three languages sit together. Removing the
+    // field removes the place an untranslated sentence can sit at all.
+    const reg = readFileSync(join(root, "packages/ryc-ui/src/index.tsx"), "utf8");
+    const declares = reg
+      .split("\n")
+      .filter((l) => /^\s*summary[?]?\s*:/.test(l) && !l.trimStart().startsWith("*"));
+    expect(declares, "a module's one line belongs in its catalogue, not here").toEqual([]);
   });
 });
