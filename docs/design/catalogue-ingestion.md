@@ -1032,3 +1032,24 @@ rather than ownership, and that course to faculty is many to many; the same is
 evidently true of programmes, and the schema does not model it. One programme in
 692 is not a reason to change a foreign key today, and it is a reason to write
 down that the value is arbitrary rather than let somebody trust it.
+
+### 12.13 A course the institution stopped offering
+
+The reader looked for an offering in the CURRENT year only. After the 2026-2027
+crawl that left **61 courses unreachable**: they exist, they carry the
+description UCLouvain last published, and neither the page nor search would open
+them.
+
+FR-D16 says a review states its own year and survives a missing offering. It
+cannot, if the page it lives on has gone: the review sits in the database and
+nobody can read it. Course identity outliving a yearly offering is the whole
+reason those are two tables, and `LINGI` becoming `LINFO` is the case the
+project instructions already warn about.
+
+A course now falls back to its most recent offering, carries `offeredThisYear`,
+and says so on screen before any of the facts below it, because all of them are
+last year's. Search includes such courses, collapsed to one row each so a course
+offered for ten years does not fill the results with itself.
+
+No review is orphaned today: all 11 in the database are on courses still offered
+in 2026-2027. That is luck. Next September's crawl will retire another set.

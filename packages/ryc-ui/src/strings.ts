@@ -149,6 +149,9 @@ export const rycStrings: Bundle = {
     "ryc.course.themes": "Thèmes abordés",
     "ryc.course.content": "Contenu",
     "ryc.course.official": "Fiche officielle",
+    "ryc.course.notOffered.flag": "plus au programme",
+    "ryc.course.notOffered":
+      "L'UCLouvain ne propose plus ce cours cette année. Ce qui suit est sa dernière description publiée, celle de {year}-{next}. Les avis le concernant restent lisibles, et vous pouvez toujours en écrire un si vous l'avez suivi.",
     "ryc.course.external.note":
       "Ce cours est donné dans une autre institution. UCLouvain n'en publie que la référence, donc les détails ci-dessous sont incomplets.",
 
@@ -450,6 +453,9 @@ export const rycStrings: Bundle = {
     "ryc.course.themes": "Behandelde thema's",
     "ryc.course.content": "Inhoud",
     "ryc.course.official": "Officiële fiche",
+    "ryc.course.notOffered.flag": "niet meer aangeboden",
+    "ryc.course.notOffered":
+      "UCLouvain biedt deze cursus dit jaar niet meer aan. Hieronder staat de laatste gepubliceerde beschrijving, die van {year}-{next}. De beoordelingen blijven leesbaar en u kunt er nog een schrijven als u de cursus gevolgd hebt.",
     "ryc.course.external.note":
       "Deze cursus wordt aan een andere instelling gegeven. UCLouvain publiceert er enkel de verwijzing van, dus de details hieronder zijn onvolledig.",
 
@@ -751,6 +757,9 @@ export const rycStrings: Bundle = {
     "ryc.course.themes": "Themes covered",
     "ryc.course.content": "Content",
     "ryc.course.official": "Official page",
+    "ryc.course.notOffered.flag": "no longer offered",
+    "ryc.course.notOffered":
+      "UCLouvain no longer offers this course. What follows is its last published description, from {year}-{next}. Reviews of it stay readable, and you can still write one if you took it.",
     "ryc.course.external.note":
       "This course is taught at another institution. UCLouvain publishes only the reference, so the details below are incomplete.",
 
