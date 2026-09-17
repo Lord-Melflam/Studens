@@ -30,6 +30,10 @@ describe("a module owns the path below its own segment", () => {
     expect(parseView("/")).toEqual({ kind: "browse" });
     expect(parseView("")).toEqual({ kind: "browse" });
     expect(parseView("/recherche")).toEqual({ kind: "search" });
+    // A programme is an address now. It was component state, so it could not be
+    // linked to, a refresh lost it, and Back left the app instead of stepping
+    // out of the programme.
+    expect(parseView("/p/gest2m")).toEqual({ kind: "programme", code: "gest2m" });
     expect(parseView("/c/lepl1503")).toEqual({
       kind: "course",
       code: "lepl1503",
@@ -45,6 +49,10 @@ describe("a module owns the path below its own segment", () => {
   it("a course code is case insensitive and a trailing slash is harmless", () => {
     // Because these arrive from links people paste, not only from our own code.
     expect(parseView("/c/LEPL1503")).toMatchObject({ code: "lepl1503" });
+    expect(parseView("/p/GEST2M")).toMatchObject({ kind: "programme", code: "gest2m" });
+    expect(parseView("/p/gest2m/")).toMatchObject({ kind: "programme", code: "gest2m" });
+    // `/p` with nothing after it is the list, not a programme with no code.
+    expect(parseView("/p")).toEqual({ kind: "browse" });
     expect(parseView("/c/lepl1503/")).toMatchObject({ code: "lepl1503", writing: false });
   });
 

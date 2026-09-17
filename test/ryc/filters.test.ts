@@ -15,6 +15,9 @@ import {
   courseFacets,
   courseFilterIsEmpty,
   programmeFacets,
+  groupByKind,
+  groupByTerm,
+  GROUP_COURSES_ABOVE,
   titleWithoutSite,
   toggle,
 } from "@studens/ryc-ui";
@@ -507,5 +510,63 @@ describe("programmes that publish no course list", () => {
     // for a bachelor keeps 218 continuing education certificates out of view.
     const onlyBachelors = applyProgrammeFilter(all, { ...NO_PROGRAMME_FILTER, kinds: ["bachelier"] });
     expect(onlyBachelors.map((p) => p.code)).not.toContain("geni2fc");
+  });
+});
+
+/**
+ * STRUCTURE, after the catalogue grew fifteen times.
+ *
+ * 690 programmes in one alphabetical run, and up to 173 courses in one of them.
+ * Both were built when there were 43 programmes and 546 courses, where a flat
+ * list is fine and a heading would be noise.
+ */
+describe("grouping a long list", () => {
+  it("splits programmes by kind, strongest first, matching the filter's order", () => {
+    const list = [
+      programme({ code: "c1", kind: "certificat" }),
+      programme({ code: "m1", kind: "master" }),
+      programme({ code: "b1", kind: "bachelier" }),
+      programme({ code: "m2", kind: "master" }),
+    ];
+    const groups = groupByKind(list);
+    expect(groups.map(([kind]) => kind)).toEqual(["bachelier", "master", "certificat"]);
+    expect(groups.map(([, rows]) => rows.length)).toEqual([1, 2, 1]);
+    // The same order the kind facets use, so the list and the filter agree.
+    const facetOrder = programmeFacets(list, NO_PROGRAMME_FILTER).kinds.map((k) => k.value);
+    expect(groups.map(([kind]) => kind)).toEqual(facetOrder);
+  });
+
+  it("puts a kind it does not recognise last, never folded into a real one", () => {
+    const groups = groupByKind([programme({ code: "x", kind: null }), programme({ code: "b" })]);
+    expect(groups.map(([kind]) => kind)).toEqual(["bachelier", null]);
+  });
+
+  it("leaves a short course list flat, because a heading over ten rows is noise", () => {
+    const short = Array.from({ length: GROUP_COURSES_ABOVE }, (_, i) =>
+      course({ code: `c${i}`, quarter: i % 2 ? "Q1" : "Q2" }),
+    );
+    const groups = groupByTerm(short);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.[0]).toBeNull();
+    expect(groups[0]?.[1]).toHaveLength(GROUP_COURSES_ABOVE);
+  });
+
+  it("splits a long course list by term, Q1 before Q2", () => {
+    const long = Array.from({ length: GROUP_COURSES_ABOVE + 1 }, (_, i) =>
+      course({ code: `c${i}`, quarter: i === 0 ? "Q2" : "Q1" }),
+    );
+    const groups = groupByTerm(long);
+    expect(groups.map(([q]) => q)).toEqual(["Q1", "Q2"]);
+  });
+
+  it("gives courses with no term their own group, at the end", () => {
+    // An unknown term is not a first quadrimester, and folding it into Q1 would
+    // put a course in a list somebody is using to plan a semester.
+    const long = Array.from({ length: GROUP_COURSES_ABOVE + 1 }, (_, i) =>
+      course({ code: `c${i}`, quarter: i === 0 ? null : "Q1" }),
+    );
+    const groups = groupByTerm(long);
+    expect(groups.map(([q]) => q)).toEqual(["Q1", null]);
+    expect(groups.at(-1)?.[1]).toHaveLength(1);
   });
 });

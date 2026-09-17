@@ -26,6 +26,7 @@ import { FilterBar, FilterGroup, FilterText, kindLabel } from "./Filters.js";
 import {
   NO_PROGRAMME_FILTER,
   applyProgrammeFilter,
+  groupByKind,
   programmeFacets,
   programmeFilterIsEmpty,
   titleWithoutSite,
@@ -34,15 +35,25 @@ import {
 } from "./filters.js";
 
 export function Browse({
+  programme: openCode,
+  onOpenProgramme,
   onOpen,
   reviewCounts,
 }: {
+  /**
+   * The programme in the URL, or null for the list.
+   *
+   * It used to be component state, so a programme could not be linked to, a
+   * refresh lost it, and Back left the app instead of stepping out of it.
+   * Navigation that does not touch the URL is not navigation.
+   */
+  programme: string | null;
+  onOpenProgramme: (code: string | null) => void;
   onOpen: (code: string) => void;
   reviewCounts: Record<string, number>;
 }) {
   const t = useT();
   const [programmes, setProgrammes] = useState<ProgrammeSummary[]>([]);
-  const [programme, setProgramme] = useState<ProgrammeSummary | null>(null);
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [filter, setFilter] = useState<ProgrammeFilter>(NO_PROGRAMME_FILTER);
 
@@ -50,21 +61,46 @@ export function Browse({
     api.allProgrammes().then((r) => setProgrammes(r.programmes));
   }, []);
 
+  // Derived from the URL rather than held beside it, so there is one answer to
+  // "which programme am I looking at" and a refresh gives the same one.
+  const programme = openCode ? (programmes.find((p) => p.code === openCode) ?? null) : null;
+
   useEffect(() => {
-    if (!programme) {
+    if (!openCode) {
       setCourses([]);
       return;
     }
-    api.coursesOfProgramme(programme.code).then((r) => setCourses(r.courses));
-  }, [programme]);
+    let live = true;
+    setCourses([]);
+    api.coursesOfProgramme(openCode).then((r) => live && setCourses(r.courses));
+    return () => {
+      live = false;
+    };
+  }, [openCode]);
 
   const shown = useMemo(() => applyProgrammeFilter(programmes, filter), [programmes, filter]);
+  const grouped = useMemo(() => groupByKind(shown), [shown]);
   const facets = useMemo(() => programmeFacets(programmes, filter), [programmes, filter]);
+
+  // The list has arrived and the code in the URL is not in it. Said rather than
+  // silently showing the whole list again, which would look like a lost click.
+  if (openCode && programmes.length > 0 && !programme) {
+    return (
+      <section>
+        <button type="button" className="back" onClick={() => onOpenProgramme(null)}>
+          {t("ryc.browse.back")}
+        </button>
+        <p className="empty">{t("ryc.browse.noSuchProgramme", { code: openCode.toUpperCase() })}</p>
+      </section>
+    );
+  }
+
+  if (openCode && !programme) return <p className="meta">{t("ryc.loading")}</p>;
 
   if (programme) {
     return (
       <section>
-        <button type="button" className="back" onClick={() => setProgramme(null)}>
+        <button type="button" className="back" onClick={() => onOpenProgramme(null)}>
           {t("ryc.browse.back")}
         </button>
         <h2 className="browse-title">{programme.title}</h2>
@@ -91,12 +127,17 @@ export function Browse({
             </a>
           </div>
         ) : (
-          <CourseFilters
-            courses={courses}
-            reviewCounts={reviewCounts}
-            onOpen={onOpen}
-            emptyLabel={t("ryc.browse.noneInProgramme")}
-          />
+          // The same column as the programme list, and for the same reason: the
+          // biggest programme holds 173 courses, so five filter groups stacked
+          // above them push the list itself off the screen.
+          <div className="browse-wide">
+            <CourseFilters
+              courses={courses}
+              reviewCounts={reviewCounts}
+              onOpen={onOpen}
+              emptyLabel={t("ryc.browse.noneInProgramme")}
+            />
+          </div>
         )}
       </section>
     );
@@ -107,7 +148,7 @@ export function Browse({
       {programmes.length === 0 ? (
         <p className="meta">{t("ryc.browse.noProgrammes")}</p>
       ) : (
-        <>
+        <div className="browse-wide">
           <FilterBar
             active={!programmeFilterIsEmpty(filter)}
             onClear={() => setFilter(NO_PROGRAMME_FILTER)}
@@ -138,6 +179,7 @@ export function Browse({
                 of a screen somebody is trying to read. */}
             {facets.faculties.length > 1 && (
               <FilterGroup
+                collapsed
                 legend={t("ryc.filter.faculty")}
                 facets={facets.faculties}
                 chosen={filter.faculties}
@@ -146,6 +188,7 @@ export function Browse({
             )}
             {facets.domains.length > 1 && (
               <FilterGroup
+                collapsed
                 legend={t("ryc.filter.domain")}
                 facets={facets.domains}
                 chosen={filter.domains}
@@ -157,33 +200,55 @@ export function Browse({
           {shown.length === 0 ? (
             <p className="empty">{t("ryc.browse.noMatch")}</p>
           ) : (
-            <ul className="results">
-              {shown.map((p) => (
-                <li key={p.code}>
-                  <button type="button" onClick={() => setProgramme(p)}>
-                    <span className="code">{p.code.toUpperCase()}</span>
-                    <span className="title">{titleWithoutSite(p.title, p.site)}</span>
-                    <span className="facts">
-                      {kindLabel(t, p.kind)}
-                      {p.credits ? ` [${p.credits}]` : ""}
-                      {/* The site is a fact about the programme now, not a
-                          parenthesis inside its name. Shown because two
-                          programmes can carry the same title in two cities. */}
-                      {p.site ? ` · ${p.site}` : ""}
-                      {p.courses === 0
-                        ? ` · ${t("ryc.browse.noCourseList.flag")}`
-                        : ` · ${t("ryc.browse.courses", { count: p.courses })}`}
-                    </span>
-                    <span className="facts faint">
-                      {p.facultyName}
-                      {p.domain ? ` · ${p.domain}` : ""}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            /*
+              GROUPED BY KIND, not one alphabetical run of 690.
+
+              A flat list of that length is a wall: bachelors, masters, minors
+              and 263 certificates interleaved by title, so finding "the
+              masters" means reading past everything else. UCLouvain's own
+              catalogue renders these as sections, and it is the shape somebody
+              already has in their head. The order is the one the kind filter
+              uses, so the two agree.
+
+              One group draws no heading, because a heading over the whole list
+              says nothing.
+            */
+            grouped.map(([kind, rows]) => (
+              <section className="prog-group" key={String(kind)}>
+                {grouped.length > 1 && (
+                  <h3 className="prog-group-title">
+                    {kindLabel(t, kind)} <span className="n">{rows.length}</span>
+                  </h3>
+                )}
+                <ul className="results">
+                  {rows.map((p) => (
+                    <li key={p.code}>
+                      <button type="button" onClick={() => onOpenProgramme(p.code)}>
+                        <span className="code">{p.code.toUpperCase()}</span>
+                        <span className="title">{titleWithoutSite(p.title, p.site)}</span>
+                        <span className="facts">
+                          {kindLabel(t, p.kind)}
+                          {p.credits ? ` [${p.credits}]` : ""}
+                          {/* The site is a fact about the programme now, not a
+                              parenthesis inside its name. Shown because two
+                              programmes can carry the same title in two cities. */}
+                          {p.site ? ` · ${p.site}` : ""}
+                          {p.courses === 0
+                            ? ` · ${t("ryc.browse.noCourseList.flag")}`
+                            : ` · ${t("ryc.browse.courses", { count: p.courses })}`}
+                        </span>
+                        <span className="facts faint">
+                          {p.facultyName}
+                          {p.domain ? ` · ${p.domain}` : ""}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))
           )}
-        </>
+        </div>
       )}
     </section>
   );

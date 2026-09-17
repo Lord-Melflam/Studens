@@ -669,3 +669,85 @@ button.ghost {
 .programme-empty p { margin: 0 0 0.5rem; }
 .programme-empty .hint { font-size: 0.88rem; color: var(--muted); }
 .programme-empty .official { font-size: 0.9rem; color: var(--accent); }
+
+/* ===========================================================================
+   DENSITY AND STRUCTURE, after the catalogue grew fifteen times.
+
+   690 programmes and up to 173 courses in one of them. The rows were built for
+   43 programmes: three lines tall, a wide gap, one flat list. None of that is
+   wrong at 43 and all of it is at 690.
+   =========================================================================== */
+
+/* Sections, for the kinds and the terms. The heading carries its own count, so
+   the shape of the list is readable without counting rows. */
+.prog-group + .prog-group,
+.term-group + .term-group { margin-top: 1.4rem; }
+.prog-group-title,
+.term-group-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.prog-group-title .n,
+.term-group-title .n {
+  margin-left: 0.4rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+.prog-group .results,
+.term-group .results { margin-top: 0; }
+
+/* Tighter rows. The same information, about a third less height, so roughly
+   half again as many rows fit before scrolling. */
+.results button { padding: 0.5rem 0.75rem; gap: 0.1rem 0.75rem; }
+.results li + li { margin-top: 0.3rem; }
+.results .facts { font-size: 0.8rem; line-height: 1.35; }
+.results .facts.faint { color: var(--muted); opacity: 0.8; }
+
+/* A folded filter group: the legend, and what it is holding. */
+.filter-group.folded { display: flex; align-items: baseline; gap: 0.5rem; }
+.filter-group .fold,
+.filter-group .fold-away {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.filter-group .fold-away { margin-left: 0.5rem; font-size: 0.72rem; color: var(--muted); }
+.filter-group .fold:hover,
+.filter-group .fold-away:hover { text-decoration: underline; }
+
+/* On a wide screen the filters sit beside the list rather than above it, so
+   the list starts at the top of the page instead of below 57 chips. Below that
+   width nothing changes, because a narrow column for filters is worse than a
+   row of them. */
+@media (min-width: 60rem) {
+  .browse-wide {
+    display: grid;
+    grid-template-columns: 17rem minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .browse-wide .filters { margin-top: 0; position: sticky; top: 4.5rem; }
+  .browse-wide .results { margin-top: 0; }
+  .browse-wide .prog-group:first-child .prog-group-title { margin-top: 0; }
+}
+
+/* In the side column the chips have to pack, or a filter that was one row
+   across the top becomes eight rows down the side and nothing is gained. */
+@media (min-width: 60rem) {
+  .browse-wide .filters { padding: 0.8rem 0.85rem 0.65rem; }
+  .browse-wide .chips { gap: 0.3rem; }
+  .browse-wide .chip { padding: 0.2rem 0.5rem; font-size: 0.78rem; }
+  .browse-wide .chip .n { margin-left: 0.3rem; font-size: 0.7rem; }
+  .browse-wide .filter-group legend { font-size: 0.72rem; }
+}
