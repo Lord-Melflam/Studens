@@ -1057,3 +1057,45 @@ both and claims neither.
 **Why the filter existed, and what replaced it.** Clicking such a programme used
 to give an empty list, which is a dead end. The answer to a dead end is to say
 where the information is, not to hide the door.
+### 12.13 A course the institution stopped offering
+
+The reader looked for an offering in the CURRENT year only. After the 2026-2027
+crawl that left **61 courses unreachable**: they exist, they carry the
+description UCLouvain last published, and neither the page nor search would open
+them.
+
+FR-D16 says a review states its own year and survives a missing offering. It
+cannot, if the page it lives on has gone: the review sits in the database and
+nobody can read it. Course identity outliving a yearly offering is the whole
+reason those are two tables, and `LINGI` becoming `LINFO` is the case the
+project instructions already warn about.
+
+A course now falls back to its most recent offering, carries `offeredThisYear`,
+and says so on screen before any of the facts below it, because all of them are
+last year's. Search includes such courses, collapsed to one row each so a course
+offered for ten years does not fill the results with itself.
+
+No review is orphaned today: all 11 in the database are on courses still offered
+in 2026-2027. That is luck. Next September's crawl will retire another set.
+
+### 12.14 What the browser crash under 12.13 was really about
+
+Chasing 12.13 on screen, the search box crashed the whole page with
+`ReferenceError: process is not defined`.
+
+`packages/i18n` warned about a missing translation key by reading
+`process.env["NODE_ENV"]`. **`process` does not exist in a browser**, so the one
+code path meant to soften a missing string was the path that threw, and the
+error boundary replaced everything. A missing word became a blank page.
+
+Vite does substitute `process.env.NODE_ENV` at build time, in that exact
+spelling; the bracket form used here survived into the bundle untouched. A
+`typeof` guard needs no bundler cooperation and is correct in Node too, where
+the same strings are rendered by tests.
+
+Worth keeping for two reasons beyond the fix. **A fallback path is the one least
+likely to be exercised and the most expensive when it breaks**, which argues for
+testing it deliberately rather than waiting to meet it. And the crash that
+exposed it came from a dev server holding a stale catalogue, not from a real
+missing key: the bug was real, the trigger was not, and telling those apart took
+restarting the server rather than reading the code.
