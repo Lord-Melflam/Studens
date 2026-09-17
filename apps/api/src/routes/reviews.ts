@@ -62,32 +62,37 @@ export function reviewRoutes(prisma: PrismaClient): Router {
 
       const courses = await prisma.course.findMany({
         where: { id: { in: [...totals.keys()] } },
-        select: { id: true, code: true },
+        select: { id: true, code: true, institution: { select: { code: true } } },
       });
+      // KEYED BY INSTITUTION AND CODE, because a bare code is not a course
+      // (OPEN-48). Keyed by code alone, two universities sharing a string
+      // would have had one of their counts overwrite the other's, and the
+      // number on screen would have been wrong with nothing to notice it.
       const counts: Record<string, number> = {};
-      for (const c of courses) counts[c.code] = totals.get(c.id) ?? 0;
+      for (const c of courses) {
+        counts[`${c.institution.code}/${c.code}`] = totals.get(c.id) ?? 0;
+      }
       res.json({ counts });
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
 
   /**
-   * A course, by the code in the URL.
+   * A course, by the institution and code in the URL (OPEN-48).
    *
-   * `findFirst` and not `findUnique`, because a course code is unique inside
-   * ONE institution's catalogue and the unique key is now (institution, code).
-   * A URL carries no institution, so with two catalogues loaded this question
-   * has more than one answer. That is OPEN-48, and it matters more here than
-   * on the read path: attaching a review to the wrong university's course is a
-   * wrong row, not a wrong page.
+   * It took a bare code until 2026-09-18 and ordered the ambiguity away, which
+   * was stable and was still a guess. It matters more here than on the read
+   * path: attaching a review to the wrong university's course is a wrong row,
+   * not a wrong page, and nothing downstream would ever notice.
    *
-   * Identical while one catalogue is loaded. The ordering is so that today's
-   * answer is stable rather than whatever the planner returns first, and one
-   * function is so the day OPEN-48 is answered there is one place to change.
+   * `findFirst` rather than `findUnique` only because the unique key is on ids
+   * and this matches on two codes.
    */
-  const courseByCode = (client: PrismaClient, code: string) =>
+  const courseByCode = (client: PrismaClient, institution: string, code: string) =>
     client.course.findFirst({
-      where: { code: code.toLowerCase() },
-      orderBy: { institutionId: "asc" },
+      where: {
+        code: code.toLowerCase(),
+        institution: { code: institution.toLowerCase() },
+      },
     });
 
   /**
@@ -96,9 +101,9 @@ export function reviewRoutes(prisma: PrismaClient): Router {
    * Both numbers are already public on the course page, so this discloses
    * nothing new. It exists so the choice can be made with them in view.
    */
-  router.get("/courses/:code/review-context", (req, res) => {
+  router.get("/courses/:institution/:code/review-context", (req, res) => {
     void (async () => {
-      const course = await courseByCode(prisma, req.params.code);
+      const course = await courseByCode(prisma, req.params.institution, req.params.code);
       if (!course) {
         res.status(404).json({ error: "no such course" });
         return;
@@ -125,9 +130,9 @@ export function reviewRoutes(prisma: PrismaClient): Router {
    * withholding it would make the course page useless to a visitor for no
    * privacy gain.
    */
-  router.get("/courses/:code/reviews", (req, res) => {
+  router.get("/courses/:institution/:code/reviews", (req, res) => {
     void (async () => {
-      const course = await courseByCode(prisma, req.params.code);
+      const course = await courseByCode(prisma, req.params.institution, req.params.code);
       if (!course) {
         res.status(404).json({ error: "no such course" });
         return;
@@ -147,11 +152,11 @@ export function reviewRoutes(prisma: PrismaClient): Router {
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
 
-  router.post("/courses/:code/reviews", (req, res) => {
+  router.post("/courses/:institution/:code/reviews", (req, res) => {
     void (async () => {
       const who = await identify(prisma, req, res);
 
-      const course = await courseByCode(prisma, req.params.code);
+      const course = await courseByCode(prisma, req.params.institution, req.params.code);
       if (!course) {
         res.status(404).json({ error: "no such course" });
         return;

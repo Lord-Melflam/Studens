@@ -38,10 +38,13 @@ function Sent({ result, onDone }: { result: SentResult; onDone: () => void }) {
 }
 
 export function SubmitFlow({
+  courseInstitution,
   courseCode,
   onClose,
   onSubmitted,
 }: {
+  /** The institution half of the address (OPEN-48). */
+  courseInstitution: string;
   courseCode: string;
   onClose: () => void;
   /** Lets the course page reload its reviews without knowing this flow's state. */
@@ -57,10 +60,10 @@ export function SubmitFlow({
 
   useEffect(() => {
     api
-      .reviewContext(courseCode)
+      .reviewContext(courseInstitution, courseCode)
       .then(setCtx)
       .catch(() => setError("impossible de charger cette page"));
-  }, [courseCode]);
+  }, [courseInstitution, courseCode]);
 
   /**
    * Every button goes through here. The component chooses no destination of
@@ -77,7 +80,7 @@ export function SubmitFlow({
     setBusy(true);
     setError(null);
     try {
-      const res = await api.submitReview(courseCode, draft, anonymous);
+      const res = await api.submitReview(courseInstitution, courseCode, draft, anonymous);
       setResult({ anonymous: res.anonymous });
       setStep(next(step, "accepted").step);
       onSubmitted();

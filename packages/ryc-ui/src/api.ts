@@ -9,6 +9,13 @@ import type { Block } from "./Prose.js";
  * The API response is a contract in its own right.
  */
 export interface CourseSummary {
+  /**
+   * Which catalogue this came from, as an institution code (OPEN-48).
+   *
+   * Every link to a course is built from a summary, and a link needs it: a
+   * code is unique inside one catalogue and nothing more.
+   */
+  institution: string;
   code: string;
   title: string;
   /** The year this description comes from, which is not always the current one. */
@@ -45,6 +52,8 @@ export interface FacultySummary {
 }
 
 export interface ProgrammeSummary {
+  /** Which catalogue this came from, for the same reason as on a course. */
+  institution: string;
   code: string;
   title: string;
   faculty: string;
@@ -172,11 +181,13 @@ async function json<T>(url: string, init?: RequestInit): Promise<T> {
  * The response for the anonymous path carries no id, so this returns none.
  */
 async function submit(
+  institution: string,
   code: string,
   draft: ReviewDraft,
   anonymous: boolean,
 ): Promise<{ anonymous: boolean; id?: string }> {
-  const res = await fetch(`/api/courses/${encodeURIComponent(code)}/reviews`, {
+  const target = `/api/courses/${encodeURIComponent(institution)}/${encodeURIComponent(code)}`;
+  const res = await fetch(`${target}/reviews`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ ...draft, anonymous }),
@@ -202,7 +213,18 @@ export const api = {
   catalogue: () => json<{ year: number; courses: number }>("/api/catalogue"),
   search: (q: string) =>
     json<{ query: string; results: CourseSummary[] }>(`/api/courses?q=${encodeURIComponent(q)}`),
-  course: (code: string) => json<CourseDetail>(`/api/courses/${encodeURIComponent(code)}`),
+  course: (institution: string, code: string) =>
+    json<CourseDetail>(
+      `/api/courses/${encodeURIComponent(institution)}/${encodeURIComponent(code)}`,
+    ),
+  /**
+   * Which catalogues hold a bare code, for a link made before OPEN-48.
+   *
+   * Deliberately not a way to fetch a course: it answers with institutions and
+   * nothing else, so a caller has to go to the real address afterwards.
+   */
+  locate: (code: string) =>
+    json<{ code: string; institutions: string[] }>(`/api/locate/${encodeURIComponent(code)}`),
   faculties: () => json<{ faculties: FacultySummary[] }>("/api/faculties"),
   /** Every programme of the year, across faculties. */
   allProgrammes: () => json<{ programmes: ProgrammeSummary[] }>("/api/programmes"),
@@ -210,13 +232,13 @@ export const api = {
     json<{ faculty: string; programmes: ProgrammeSummary[] }>(
       `/api/faculties/${encodeURIComponent(faculty)}/programmes`,
     ),
-  coursesOfProgramme: (programme: string) =>
-    json<{ programme: string; courses: CourseSummary[] }>(
-      `/api/programmes/${encodeURIComponent(programme)}/courses`,
+  coursesOfProgramme: (institution: string, programme: string) =>
+    json<{ institution: string; programme: string; courses: CourseSummary[] }>(
+      `/api/programmes/${encodeURIComponent(institution)}/${encodeURIComponent(programme)}/courses`,
     ),
-  reviews: (code: string) =>
+  reviews: (institution: string, code: string) =>
     json<{ aggregate: Aggregate; reviews: PublishedReview[]; sessionRequired: boolean }>(
-      `/api/courses/${encodeURIComponent(code)}/reviews`,
+      `/api/courses/${encodeURIComponent(institution)}/${encodeURIComponent(code)}/reviews`,
     ),
   /**
    * How many published reviews each course has, for the whole catalogue.
@@ -224,6 +246,9 @@ export const api = {
    * One request for the lot rather than one per course: at launch 10 courses of
    * 547 have anything to read, so the answer is a few hundred bytes and it is
    * what makes "only courses with reviews" possible at all.
+   *
+   * Keyed `<institution>/<code>`, because a bare code is not a course
+   * (OPEN-48). `courseKey` builds the key; nothing should build it by hand.
    */
   reviewCounts: () => json<{ counts: Record<string, number> }>("/api/reviews/counts"),
   /**
@@ -244,7 +269,9 @@ export const api = {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ targetKind: "ryc.review", ...input }),
     }),
-  reviewContext: (code: string) =>
-    json<ReviewContext>(`/api/courses/${encodeURIComponent(code)}/review-context`),
+  reviewContext: (institution: string, code: string) =>
+    json<ReviewContext>(
+      `/api/courses/${encodeURIComponent(institution)}/${encodeURIComponent(code)}/review-context`,
+    ),
   submitReview: submit,
 };

@@ -38,9 +38,11 @@ import {
   type ProgrammeFilter,
 } from "./filters.js";
 import { queryOf, settingsRoute } from "./urlstate.js";
+import { programmePath } from "./Ryc.js";
 
 export function Browse({
   programme: openCode,
+  legacyProgramme,
   onOpenProgramme,
   onOpen,
   reviewCounts,
@@ -54,9 +56,17 @@ export function Browse({
    * refresh lost it, and Back left the app instead of stepping out of it.
    * Navigation that does not touch the URL is not navigation.
    */
-  programme: string | null;
-  onOpenProgramme: (code: string | null) => void;
-  onOpen: (code: string) => void;
+  programme: { institution: string; code: string } | null;
+  /**
+   * A programme code from a link written before the institution was in the
+   * path (OPEN-48).
+   *
+   * Resolved here rather than by an endpoint of its own, because this screen
+   * already holds every programme of the year: the answer is in memory.
+   */
+  legacyProgramme: string | null;
+  onOpenProgramme: (programme: { institution: string; code: string } | null) => void;
+  onOpen: (course: CourseSummary) => void;
   reviewCounts: Record<string, number>;
   /** The query string, carried down unread from the shell. */
   search: string;
@@ -88,9 +98,35 @@ export function Browse({
     api.allProgrammes().then((r) => setProgrammes(r.programmes));
   }, []);
 
+  /**
+   * Forward a legacy link once the list it is resolved against has arrived.
+   *
+   * Exactly one match is sent to its real address, replacing the history entry
+   * so Back does not land on the old one and bounce forward again. More than
+   * one is genuinely ambiguous: two universities publishing the same programme
+   * code, with nothing in the link to say which was meant, and picking would
+   * send a reader somewhere they never asked to go.
+   */
+  const legacyMatches = useMemo(
+    () => (legacyProgramme ? programmes.filter((p) => p.code === legacyProgramme) : []),
+    [legacyProgramme, programmes],
+  );
+  useEffect(() => {
+    if (!legacyProgramme || legacyMatches.length !== 1) return;
+    const only = legacyMatches[0]!;
+    // WITH THE QUERY STRING. Filters live in the URL since FR-B21, so an old
+    // link to a filtered list carries them, and forwarding the path alone
+    // would answer a shared link with a different list than it named.
+    navigate(`${programmePath(only.institution, only.code)}${search}`, { replace: true });
+  }, [legacyProgramme, legacyMatches, search]);
+
   // Derived from the URL rather than held beside it, so there is one answer to
   // "which programme am I looking at" and a refresh gives the same one.
-  const programme = openCode ? (programmes.find((p) => p.code === openCode) ?? null) : null;
+  const programme = openCode
+    ? (programmes.find(
+        (p) => p.code === openCode.code && p.institution === openCode.institution,
+      ) ?? null)
+    : null;
 
   useEffect(() => {
     if (!openCode) {
@@ -99,11 +135,13 @@ export function Browse({
     }
     let live = true;
     setCourses([]);
-    api.coursesOfProgramme(openCode).then((r) => live && setCourses(r.courses));
+    api
+      .coursesOfProgramme(openCode.institution, openCode.code)
+      .then((r) => live && setCourses(r.courses));
     return () => {
       live = false;
     };
-  }, [openCode]);
+  }, [openCode?.institution, openCode?.code]);
 
   const shown = useMemo(() => applyProgrammeFilter(programmes, filter), [programmes, filter]);
   const grouped = useMemo(() => groupByKind(shown), [shown]);
@@ -117,7 +155,35 @@ export function Browse({
         <button type="button" className="back" onClick={() => onOpenProgramme(null)}>
           {t("ryc.browse.back")}
         </button>
-        <p className="empty">{t("ryc.browse.noSuchProgramme", { code: openCode.toUpperCase() })}</p>
+        <p className="empty">{t("ryc.browse.noSuchProgramme", { code: openCode.code.toUpperCase() })}</p>
+      </section>
+    );
+  }
+
+  if (legacyProgramme) {
+    if (programmes.length === 0) return <p className="meta">{t("ryc.loading")}</p>;
+    if (legacyMatches.length === 0) {
+      return (
+        <p className="empty">
+          {t("ryc.browse.noSuchProgramme", { code: legacyProgramme.toUpperCase() })}
+        </p>
+      );
+    }
+    if (legacyMatches.length === 1) return <p className="meta">{t("ryc.loading")}</p>;
+    return (
+      <section>
+        <p className="notice">
+          {t("ryc.legacy.ambiguous", { code: legacyProgramme.toUpperCase() })}
+        </p>
+        <ul className="plain">
+          {legacyMatches.map((p) => (
+            <li key={p.institution}>
+              <button type="button" className="linkish" onClick={() => onOpenProgramme(p)}>
+                {p.institution.toUpperCase()}
+              </button>
+            </li>
+          ))}
+        </ul>
       </section>
     );
   }
@@ -164,7 +230,7 @@ export function Browse({
               onOpen={onOpen}
               emptyLabel={t("ryc.browse.noneInProgramme")}
               search={search}
-              here={`/p/${openCode}`}
+              here={programmePath(openCode!.institution, openCode!.code)}
               navigate={navigate}
             />
           </div>
@@ -190,6 +256,17 @@ export function Browse({
               placeholder={t("ryc.browse.searchPlaceholder")}
               value={filter.text}
               onChange={(text) => setFilter({ ...filter, text })}
+            />
+            {/* First, because it is the widest question: which university.
+                A dimension with one option is not rendered, so this control
+                appears only once a second catalogue is loaded. */}
+            <FilterGroup
+              legend={t("ryc.filter.institution")}
+              facets={facets.institutions}
+              chosen={filter.institutions}
+              onToggle={(v) =>
+                setFilter({ ...filter, institutions: toggle(filter.institutions, v) })
+              }
             />
             <FilterGroup
               legend={t("ryc.filter.kind")}
@@ -262,7 +339,7 @@ export function Browse({
                 <ul className="results">
                   {rows.map((p) => (
                     <li key={p.code}>
-                      <button type="button" onClick={() => onOpenProgramme(p.code)}>
+                      <button type="button" onClick={() => onOpenProgramme(p)}>
                         <span className="code">{p.code.toUpperCase()}</span>
                         <span className="title">{titleWithoutSite(p.title, p.site)}</span>
                         {/*
