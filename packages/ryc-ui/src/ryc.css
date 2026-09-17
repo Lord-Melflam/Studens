@@ -737,8 +737,29 @@ button.ghost {
     gap: 1.5rem;
     align-items: start;
   }
-  .browse-wide .filters { margin-top: 0; position: sticky; top: 4.5rem; }
+  /* Sticky, and SCROLLABLE ON ITS OWN.
+     Expanded, the panel is taller than the window: with 20 faculties open it
+     runs past the bottom of the screen, and a sticky element taller than the
+     viewport simply never shows its end, whichever way the page is scrolled.
+     Its own scrollbar is the only thing that reaches the bottom of it. */
+  .browse-wide .filters {
+    margin-top: 0;
+    position: sticky;
+    top: 4.5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
   .browse-wide .results { margin-top: 0; }
+
+  /* Placed by NAME, not by order.
+     A grid lays children out in sequence, so the bug this fixes was invisible
+     in the markup: the list grew from one child to one per kind and the even
+     ones were dealt into the filter column, 272px wide, under the filters.
+     Naming the columns means any child added later lands in the list column
+     whatever it is and however many there are. */
+  .browse-wide > .filters { grid-column: 1; }
+  .browse-wide > * { grid-column: 2; }
   .browse-wide .prog-group:first-child .prog-group-title { margin-top: 0; }
 }
 

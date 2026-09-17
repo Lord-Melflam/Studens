@@ -118,7 +118,11 @@ export function CourseFilters({
       {shown.length === 0 ? (
         <p className="empty">{t("ryc.filter.noMatch")}</p>
       ) : (
-        groupByTerm(shown).map(([term, rows]) => (
+        // One child, for the same reason as the programme list: the parent may
+        // be a two column grid, and a section per term would be laid out one
+        // per column.
+        <div className="browse-list">
+          {groupByTerm(shown).map(([term, rows]) => (
           <section className="term-group" key={String(term)}>
             {term !== null && (
               <h3 className="term-group-title">
@@ -130,9 +134,10 @@ export function CourseFilters({
                 {t("ryc.filter.noTerm")} <span className="n">{rows.length}</span>
               </h3>
             )}
-            <CourseList courses={rows} onOpen={onOpen} reviewCounts={reviewCounts} />
-          </section>
-        ))
+              <CourseList courses={rows} onOpen={onOpen} reviewCounts={reviewCounts} />
+            </section>
+          ))}
+        </div>
       )}
     </>
   );
