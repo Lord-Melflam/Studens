@@ -16,10 +16,26 @@ import "./ryc.css";
 export interface ModuleRegistration {
   /** Stable identifier, used in the route. */
   id: string;
-  /** What a Member sees in the shell's navigation. */
+  /**
+   * The module's product name, and the one field here that is NOT translated:
+   * "Rate Your Courses" is a name, not a sentence, and translating a name is
+   * how a product ends up being called three different things.
+   */
   name: string;
-  /** One line, shown on the shell's home screen. */
-  summary: string;
+
+  // NO `summary` FIELD, deliberately. Line comments, not a doc comment, so this
+  // cannot be read as documenting the field below it.
+  //
+  // There was one, holding a French sentence, and the shell's home screen
+  // printed it verbatim: an English page said "Ce que valent vraiment les
+  // cours". Nothing caught it, because the gate that forbids hardcoded prose
+  // looks at markup, and a sentence stored in a data field is not markup.
+  //
+  // The one line about a module comes from its own catalogue, under
+  // `<id>.summary`, which every module already defines in all three languages.
+  // Removing the field removes the place an untranslated sentence could sit,
+  // which is worth more than a check that finds it afterwards.
+
   /**
    * Absent for a module that is announced but not built. The shell mounts and
    * navigates to live modules only; the public zone lists both, because "what
@@ -113,7 +129,6 @@ export interface ModulePresentation {
 export const rycModule: ModuleRegistration = {
   id: "ryc",
   name: "Rate Your Courses",
-  summary: "Ce que valent vraiment les cours, d'après les étudiants qui les ont suivis.",
   component: Ryc,
   strings: rycStrings,
   presentation: (t) => ({

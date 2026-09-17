@@ -49,7 +49,6 @@ const mpaStrings: Bundle = {
 const plannedMpa: ModuleRegistration = {
   id: "mpa",
   name: "My Planning Advisor",
-  summary: "De l'aide pour organiser son année et son travail.",
   strings: mpaStrings,
   presentation: (t) => ({
     status: "planned",

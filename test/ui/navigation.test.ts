@@ -81,7 +81,7 @@ describe("the app is no longer one directional", () => {
     // the public zone and the app kept its hardcoded strings.
     for (const locale of LOCALES) {
       const t = createTranslator(bundle, locale);
-      for (const key of ["app.home.lede", "app.modules", "app.home.more", "app.back"]) {
+      for (const key of ["app.home.lede", "app.modules", "app.home.planned", "app.back"]) {
         expect(t(key), `${locale}:${key}`).not.toBe(key);
       }
     }

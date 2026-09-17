@@ -101,7 +101,6 @@ header { margin-bottom: 1.75rem; }
 .modules .name { display: block; font-weight: 600; }
 .modules .summary { display: block; margin-top: 0.2rem; font-size: 0.9rem; color: var(--muted); }
 
-.footnote { margin-top: 1.5rem; font-size: 0.85rem; color: var(--muted); }
 
 .error { color: #a3231b; font-size: 0.9rem; }
 .linkish {
@@ -383,7 +382,17 @@ main.app {
 
 .plain { margin: 0; padding-left: 1.1rem; font-size: 0.92rem; line-height: 1.7; color: var(--muted); }
 
-.app-footer { max-width: 60rem; margin: 3rem auto 0; padding: 1.2rem 1.5rem 0; }
+/* `width: 100%` is load bearing, not belt and braces. main.app is a column
+   flex container, and auto margins on the cross axis switch stretching off:
+   without a width the footer shrank to fit its own text and sat 430px
+   narrower than the body above it, centred on nothing. .app-body already
+   carries the same line for the same reason. */
+.app-footer {
+  width: 100%;
+  max-width: 60rem;
+  margin: 3rem auto 0;
+  padding: 1.2rem 1.5rem 0;
+}
 
 @media (max-width: 44rem) {
   .app-bar { flex-wrap: wrap; gap: 0.6rem 1rem; padding: 0.7rem 1rem; }
@@ -571,3 +580,70 @@ main.app {
 }
 .holder-confirm > span { flex: 1 1 14rem; }
 .holder-confirm button.danger { color: var(--danger); border-color: #e6cdc9; }
+
+/* ===========================================================================
+   THE APP HOME.
+
+   One module, one card stretched across 900px, and most of a screen of
+   nothing under it. The card was built as a full-width row when a row was the
+   only shape there was; at one item it reads as a mistake rather than a menu.
+   =========================================================================== */
+
+/* Cards that keep a card's proportions whatever the count. `auto-fill` with a
+   maximum means one module does not stretch and four do not shrink. */
+.modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 22rem));
+  gap: 0.9rem;
+  margin-top: 1.5rem;
+}
+.modules li + li { margin-top: 0; }
+.modules button {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.1rem 1.15rem 1rem;
+  /* The accent edge is the module's own colour cue, and the only decoration
+     here: a card that needs an illustration to look finished is a card with
+     nothing to say. */
+  border-left: 3px solid var(--accent);
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+}
+.modules button:hover {
+  border-color: var(--accent);
+  box-shadow: 0 6px 18px rgba(22, 25, 29, 0.07);
+  transform: translateY(-1px);
+}
+.modules .name { font-size: 1.05rem; }
+.modules .summary { margin-top: 0; line-height: 1.5; }
+.modules .go {
+  margin-top: auto;
+  padding-top: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.modules .go::after { content: " \2192"; }
+
+/* Announced and not built. A different shape from a card on purpose: nothing
+   here is pressable, so nothing here should look pressable. */
+.planned { margin-top: 2.2rem; }
+.planned h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.planned ul { list-style: none; margin: 0; padding: 0; }
+.planned li {
+  max-width: 34rem;
+  padding: 0.75rem 0 0.75rem 0.9rem;
+  border-left: 2px solid var(--line);
+}
+.planned li + li { margin-top: 0.5rem; }
+.planned .name { display: block; font-weight: 600; font-size: 0.95rem; }
+.planned .summary { display: block; margin-top: 0.15rem; font-size: 0.9rem; color: var(--muted); }
+.planned .note { display: block; margin-top: 0.3rem; font-size: 0.82rem; color: var(--muted); }
