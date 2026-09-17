@@ -24,6 +24,7 @@ import {
   type Moderatable,
 } from "@studens/platform";
 import { RYC_REVIEW_KIND, holdReview, reviewExists } from "@studens/ryc";
+import { upsertCourse } from "../fixtures/catalogue.js";
 
 const prisma = new PrismaClient();
 let reachable = false;
@@ -60,11 +61,7 @@ async function seed() {
     create: { id: "00000000-0000-0000-0000-0000000000t4", name: "test" },
   });
   tenantId = tenant.id;
-  const course = await prisma.course.upsert({
-    where: { code: "ztst0003" },
-    update: {},
-    create: { code: "ztst0003" },
-  });
+  const course = await upsertCourse(prisma, "ztst0003");
   courseId = course.id;
 }
 

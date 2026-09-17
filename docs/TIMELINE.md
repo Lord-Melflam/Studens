@@ -1400,10 +1400,85 @@ deliberately not the same letter: the search screen shows both at once, and
 writing one as a whole new query string would erase the other.
 
 
+### Phase 33: a code belongs to a catalogue
+
+Two decisions from François, and the second is what made the first urgent.
+
+**No EPL import, and no affiliation.** "I choose we don't affiliate with them.
+We must stay out of any administrative stuffs for now. We accept the first
+student to see the app as mostly new (in term of reviews)." OPEN-42 closes as
+declined rather than staying open. The cost is real and is written into the
+requirement rather than softened: 6,715 courses and 13 reviews, so the first
+cohort arrives at an almost empty product. What is bought is owing nothing to a
+faculty, asking no administration for anything, and no third party able to
+withdraw permission later.
+
+**ULB next, alongside UCLouvain.** "These are the 2 univs I want to start with."
+
+**ULB was read before anything was proposed.** `robots.txt` permits a crawl and
+publishes a sitemap; 572 of its 4,166 URLs are programmes for 2025, so about 286
+per language; the programme page carries no course list and fetches one from
+`/api/formation`; course pages need no JavaScript and carry credits, language,
+teachers, campus, content and the evaluation method with weightings, for both
+2025-2026 and 2026-2027. Two differences to expect rather than discover: ULB
+publishes no quadrimester, and it publishes lecturer email addresses, which we
+do not store. `design/catalogue-ingestion.md` 13.1.
+
+**Then the thing that had to change first.** `Course.code` was globally unique
+and `Programme` was unique on `(code, year)`. Both were correct with one
+institution and were an accident of naming with two: UCLouvain writes
+`lepl1503`, ULB writes `comm-b1010` and `ba-tecn`. Nothing would have collided
+on the day, and nothing said it had to keep not colliding.
+
+The cost of finding out later is not a duplicate row. A load is one transaction,
+so one colliding code fails a whole catalogue after the crawl that produced it
+has spent over an hour, which is phase 30's `numeric field overflow` in a
+different column. Requirements 1.5 puts tenancy among the few things cheap now
+and expensive later, and this is it: a backfill today, a migration under live
+reviews tomorrow.
+
+**The column means less than it looks like it means**, deliberately. It says
+which code space a string was drawn from, not who teaches the course. FR-D31's
+tenant is the second question, its answer is sometimes another institution, and
+it needs FR-D30's two stated fields, which are specified and still not parsed:
+`read.ts` derives `external` from having no teachers and no assessment, which is
+the heuristic FR-D30 measured as wrong on 4 of 66. Putting the tenant here would
+have made a guess look like a fact.
+
+**The denormalisation is enforced rather than trusted.** `Programme.institutionId`
+duplicates what its faculty already knows, and two copies of one fact drift. The
+foreign key is composite, so a programme filed under an institution its faculty
+does not belong to cannot be written at all. Verified against the running
+database, not just asserted: the update is refused by name.
+
+**Two things found on the way.**
+
+The migration refuses to finish rather than guessing. It raises if any row has
+no institution after the backfill, and separately if any course is reached from
+programmes of more than one institution, which is the FR-D31 case this column
+cannot answer.
+
+And a gate was flaky before this touched it. The FR-B6 test starts ESLint rather
+than reading a file: 1.6 seconds alone, 6.2 seconds in a full suite, against a 5
+second default. It had been passing at 2.4 to 3.1 and one unrelated new test
+file pushed it over, so it failed on a change that had nothing to do with it. A
+gate whose result depends on how busy the machine is teaches people to re-run it
+rather than read it.
+
+**What this deliberately does not do.** Load ULB. A code in a URL still does not
+say which university it belongs to, and `/app/ryc/c/lepl1503` resolves against
+the whole catalogue. That is OPEN-48, and it blocks the second catalogue rather
+than the schema.
+
+
 ---
 
 ## Next
 
+0. **ULB, the second catalogue.** The database can hold two since phase 33; the
+   read path cannot yet address them apart (OPEN-48), and the crawler needs a
+   source adapter because the current one is UCLouvain-shaped throughout. The
+   reconnaissance is done and measured in `design/catalogue-ingestion.md` 13.
 1. ~~Authentication~~ done, phases 19 and 25. Google works end to end. Microsoft
    is registered and untried: UCLouvain's tenant turns an outside account into
    an `#EXT#` guest, so it needs testing from the `procyo.be` tenant instead.

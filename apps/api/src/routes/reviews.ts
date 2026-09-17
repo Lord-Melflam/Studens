@@ -71,6 +71,26 @@ export function reviewRoutes(prisma: PrismaClient): Router {
   });
 
   /**
+   * A course, by the code in the URL.
+   *
+   * `findFirst` and not `findUnique`, because a course code is unique inside
+   * ONE institution's catalogue and the unique key is now (institution, code).
+   * A URL carries no institution, so with two catalogues loaded this question
+   * has more than one answer. That is OPEN-48, and it matters more here than
+   * on the read path: attaching a review to the wrong university's course is a
+   * wrong row, not a wrong page.
+   *
+   * Identical while one catalogue is loaded. The ordering is so that today's
+   * answer is stable rather than whatever the planner returns first, and one
+   * function is so the day OPEN-48 is answered there is one place to change.
+   */
+  const courseByCode = (client: PrismaClient, code: string) =>
+    client.course.findFirst({
+      where: { code: code.toLowerCase() },
+      orderBy: { institutionId: "asc" },
+    });
+
+  /**
    * FR-C21: the counts a contributor needs BEFORE choosing a path.
    *
    * Both numbers are already public on the course page, so this discloses
@@ -78,7 +98,7 @@ export function reviewRoutes(prisma: PrismaClient): Router {
    */
   router.get("/courses/:code/review-context", (req, res) => {
     void (async () => {
-      const course = await prisma.course.findUnique({ where: { code: req.params.code.toLowerCase() } });
+      const course = await courseByCode(prisma, req.params.code);
       if (!course) {
         res.status(404).json({ error: "no such course" });
         return;
@@ -107,7 +127,7 @@ export function reviewRoutes(prisma: PrismaClient): Router {
    */
   router.get("/courses/:code/reviews", (req, res) => {
     void (async () => {
-      const course = await prisma.course.findUnique({ where: { code: req.params.code.toLowerCase() } });
+      const course = await courseByCode(prisma, req.params.code);
       if (!course) {
         res.status(404).json({ error: "no such course" });
         return;
@@ -131,7 +151,7 @@ export function reviewRoutes(prisma: PrismaClient): Router {
     void (async () => {
       const who = await identify(prisma, req, res);
 
-      const course = await prisma.course.findUnique({ where: { code: req.params.code.toLowerCase() } });
+      const course = await courseByCode(prisma, req.params.code);
       if (!course) {
         res.status(404).json({ error: "no such course" });
         return;

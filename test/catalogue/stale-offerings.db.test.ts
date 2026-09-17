@@ -16,6 +16,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { DatabaseCatalogue } from "@studens/ref";
+import { upsertCourse } from "../fixtures/catalogue.js";
 
 const prisma = new PrismaClient();
 let reachable = false;
@@ -41,11 +42,7 @@ let courseId = "";
 
 beforeAll(async () => {
   if (!reachable) return;
-  const course = await prisma.course.upsert({
-    where: { code: "ztst9001" },
-    update: {},
-    create: { code: "ztst9001" },
-  });
+  const course = await upsertCourse(prisma, "ztst9001");
   courseId = course.id;
   // Only an OLD offering: the institution stopped offering it.
   await prisma.courseOffering.upsert({
@@ -54,11 +51,7 @@ beforeAll(async () => {
     create: { courseId, year: LAST_YEAR, title: "A course that is no longer given", ects: 5 },
   });
   // And one current course, so the catalogue has a current year at all.
-  const current = await prisma.course.upsert({
-    where: { code: "ztst9002" },
-    update: {},
-    create: { code: "ztst9002" },
-  });
+  const current = await upsertCourse(prisma, "ztst9002");
   await prisma.courseOffering.upsert({
     where: { courseId_year: { courseId: current.id, year: THIS_YEAR } },
     update: { title: "A course still given" },

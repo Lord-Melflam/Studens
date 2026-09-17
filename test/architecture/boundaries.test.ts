@@ -89,7 +89,20 @@ describe("workspace tiers", () => {
 });
 
 describe("the lint gate actually bites (FR-B6)", () => {
-  it("rejects a deep import into a module's internals", async () => {
+  /**
+   * A LONGER TIMEOUT, because this one starts ESLint rather than reading a file.
+   *
+   * Measured on 2026-09-18: 1.6 seconds run alone, 6.2 seconds in a full suite,
+   * against Vitest's 5 second default. It had been passing at 2.4 to 3.1
+   * seconds and adding one unrelated test file to the suite pushed it over, so
+   * it failed on a change that had nothing to do with it.
+   *
+   * A gate whose result depends on how busy the machine is teaches people to
+   * re-run it rather than to read it, and that habit costs more than the gate
+   * is worth. Thirty seconds is far past anything measured, and it is still a
+   * failure and not a hang if the rule ever stops firing.
+   */
+  it("rejects a deep import into a module's internals", { timeout: 30_000 }, async () => {
     // ignore: false is required. eslint.config.js excludes test/fixtures so
     // that `npm run lint` stays clean despite the deliberate violation living
     // there; without this flag the fixture is skipped and this test passes

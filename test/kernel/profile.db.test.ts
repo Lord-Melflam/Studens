@@ -38,10 +38,14 @@ let two = "";
 
 async function seed(): Promise<void> {
   if (!reachable) return;
+  // Its OWN tenant id. It shared `...t2` with test/auth/session.db.test.ts, and
+  // Vitest runs files in parallel workers: both found nothing, both inserted,
+  // and one got a unique violation. It only surfaced when an unrelated new test
+  // file changed which files overlap.
   const tenant = await prisma.tenant.upsert({
-    where: { id: "00000000-0000-0000-0000-0000000000t2" },
+    where: { id: "00000000-0000-0000-0000-0000000000t6" },
     update: {},
-    create: { id: "00000000-0000-0000-0000-0000000000t2", name: "test" },
+    create: { id: "00000000-0000-0000-0000-0000000000t6", name: "test" },
   });
   const mk = async (subject: string) => {
     const m = await prisma.member.upsert({

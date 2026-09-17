@@ -408,14 +408,19 @@ export class DatabaseCatalogue implements Catalogue {
     // The current year first, then the most recent there is. A course the
     // institution has stopped offering still has readers: somebody who took it
     // last year, and anybody reading the reviews they wrote about it.
+    //
+    // A code alone no longer identifies a course once a second catalogue is
+    // loaded. See coursesOfProgramme and OPEN-48; the ordering below keeps this
+    // deterministic in the meantime rather than leaving it to the planner.
     const row =
       (await this.prisma.courseOffering.findFirst({
         where: { year: this.year, course: { code: code.toLowerCase() } },
+        orderBy: { course: { institutionId: "asc" } },
         include: { course: true, teachers: true, faculties: { include: { faculty: true } } },
       })) ??
       (await this.prisma.courseOffering.findFirst({
         where: { course: { code: code.toLowerCase() } },
-        orderBy: { year: "desc" },
+        orderBy: [{ year: "desc" }, { course: { institutionId: "asc" } }],
         include: { course: true, teachers: true, faculties: { include: { faculty: true } } },
       }));
     if (!row) return null;
@@ -471,8 +476,18 @@ export class DatabaseCatalogue implements Catalogue {
   }
 
   async coursesOfProgramme(programmeCode: string): Promise<CourseSummary[] | null> {
-    const programme = await this.prisma.programme.findUnique({
-      where: { code_year: { code: programmeCode.toLowerCase(), year: this.year } },
+    // `findFirst`, not `findUnique`, because the unique key is now
+    // (institution, code, year) and this reader has no institution.
+    //
+    // IDENTICAL WHILE ONE CATALOGUE IS LOADED, and not a decision about what
+    // happens when two are. A code in a URL does not say which university it
+    // belongs to, and `/app/ryc/c/lepl1503` cannot start meaning two things.
+    // That is a product question, it is recorded as OPEN-48, and loading ULB
+    // cannot ship before it is answered. Ordered so that today's answer is at
+    // least stable rather than whatever the planner returns first.
+    const programme = await this.prisma.programme.findFirst({
+      where: { code: programmeCode.toLowerCase(), year: this.year },
+      orderBy: { institutionId: "asc" },
     });
     if (!programme) return null;
     const rows = await this.prisma.programmeOffering.findMany({

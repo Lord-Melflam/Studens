@@ -184,13 +184,23 @@ export async function loadSnapshot(
           domainId: p.domain ? (domainIds.get(p.domain) ?? null) : null,
         };
         const row = await tx.programme.upsert({
-          where: { code_year: { code: p.code, year: snapshot.year } },
+          // Scoped to the institution, because a programme code is only unique
+          // inside one catalogue: ULB publishes `ba-tecn` and UCLouvain
+          // publishes `sinf1ba`, and nothing but naming kept those apart.
+          where: {
+            institutionId_code_year: {
+              institutionId: institution.id,
+              code: p.code,
+              year: snapshot.year,
+            },
+          },
           update: { title: p.title, facultyId, ...dimensions },
           create: {
             code: p.code,
             year: snapshot.year,
             title: p.title,
             facultyId,
+            institutionId: institution.id,
             ...dimensions,
           },
         });
@@ -199,9 +209,16 @@ export async function loadSnapshot(
       result.programmes = programmeIds.size;
 
       for (const o of snapshot.offerings) {
-        // Rule 1: match on code, keep the existing id.
-        const existing = await tx.course.findUnique({ where: { code: o.code } });
-        const course = existing ?? (await tx.course.create({ data: { code: o.code } }));
+        // Rule 1: match on code, keep the existing id. Within this catalogue
+        // only: the same string in another institution's catalogue is another
+        // course, and reusing its row would attach one university's reviews to
+        // the other's course.
+        const existing = await tx.course.findUnique({
+          where: { institutionId_code: { institutionId: institution.id, code: o.code } },
+        });
+        const course =
+          existing ??
+          (await tx.course.create({ data: { code: o.code, institutionId: institution.id } }));
         if (existing) result.coursesReused += 1;
         else result.coursesCreated += 1;
 

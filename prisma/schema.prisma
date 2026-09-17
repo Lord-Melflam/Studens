@@ -313,6 +313,7 @@ model Institution {
   available  Boolean   @default(false)
   faculties  Faculty[]
   sites      Site[]
+  courses    Course[]
 
   @@schema("ref")
 }
@@ -364,13 +365,29 @@ model Faculty {
   offerings  OfferingFaculty[]
 
   @@unique([institutionId, code])
+  /// Redundant on its own, and the target of Programme's composite foreign key.
+  /// It is what makes "a programme's institution is its faculty's institution"
+  /// a fact the database enforces rather than a rule the loader remembers.
+  @@unique([id, institutionId])
   @@schema("ref")
 }
 
 model Programme {
   id        String  @id @default(uuid())
   facultyId String
-  faculty   Faculty @relation(fields: [facultyId], references: [id])
+  /// WHOSE CATALOGUE THIS CODE BELONGS TO.
+  ///
+  /// Derivable through the faculty, and stored anyway, because a unique index
+  /// cannot span a join and `@@unique([code, year])` was wrong the moment a
+  /// second institution existed: nothing stopped ULB and UCLouvain from both
+  /// publishing a `ba-tecn` for 2025, and the second load would have failed
+  /// with a constraint error naming neither of them.
+  ///
+  /// Kept honest by the composite foreign key below rather than by the loader
+  /// being careful: a Programme whose institution disagrees with its faculty's
+  /// cannot be written at all.
+  institutionId String
+  faculty   Faculty @relation(fields: [facultyId, institutionId], references: [id, institutionId])
   code      String
   year      Int
   title     String
@@ -397,9 +414,10 @@ model Programme {
 
   offerings ProgrammeOffering[]
 
-  @@unique([code, year])
+  @@unique([institutionId, code, year])
   @@index([siteId])
   @@index([domainId])
+  @@index([facultyId])
   @@schema("ref")
 }
 
@@ -426,9 +444,29 @@ model Course {
   /// years (LINGI became LINFO, LFSAB became LEPL), so per-year data lives on
   /// CourseOffering. See catalogue-ingestion.md 3.2 and OPEN-38.
   id        String           @id @default(uuid())
-  code      String           @unique
+  /// WHOSE CATALOGUE THIS CODE BELONGS TO, which is not the same question as
+  /// who teaches the course.
+  ///
+  /// A course code is only unique inside one institution's catalogue.
+  /// `code @unique` held while there was one catalogue and was an accident of
+  /// naming after that: UCLouvain writes `lepl1503` and ULB writes
+  /// `comm-b1010`, so nothing would have collided on the day, and nothing said
+  /// it had to keep being true. A collision would have failed the load of a
+  /// whole catalogue on one row, which is how the 78 minute crawl was lost once
+  /// already (see the ects_fits_a_programme migration).
+  ///
+  /// NOT FR-D31's tenant. That rule is about a course UCLouvain lists and
+  /// another institution teaches, and its answer is that other institution.
+  /// This column answers the narrower question the unique index needs: which
+  /// code space the string `code` was drawn from. FR-D30's two stated fields,
+  /// which would let the tenant be read rather than guessed, are specified and
+  /// not yet parsed.
+  institutionId String
+  institution   Institution      @relation(fields: [institutionId], references: [id])
+  code      String
   offerings CourseOffering[]
 
+  @@unique([institutionId, code])
   @@schema("ref")
 }
 
