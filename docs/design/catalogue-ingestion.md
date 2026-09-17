@@ -1177,11 +1177,13 @@ All of this was read off the live site on 2026-09-17, not inferred.
 
 Two differences from UCLouvain that the parser must expect rather than discover.
 
-**No quadrimester.** The word appears nowhere on the course page. `quarter` is
-already nullable and the filter facets are derived from the data, so the Term
-filter will simply not be offered for ULB courses. This is section 12.8's rule
-working as intended: a field the source omits is a state to record, never a
-reason to lose the course.
+**No quadrimester on the course page, and one on the listing.** The 2026-09-17
+note here said ULB does not publish the term. That was true of the course page
+and wrong about ULB: the programme listing carries it per course, as
+`premier quadrimestre`, `deuxième quadrimestre` or `1e et 2e quadrimestre`.
+UCLouvain is the mirror image, publishing it on the course page and not in its
+listings. Neither is missing it; they put it in different places, which is the
+clearest argument there is for a source being an interface rather than a flag.
 
 **Lecturer email addresses are published**, in a `Contacts` block next to the
 teacher's name, in the form `prenom.nom@ulb.be`. We store names and never
@@ -1243,6 +1245,24 @@ one is UCLouvain-shaped throughout, walking faculty indexes and the search
 application, while ULB's shape is sitemap, then the programme endpoint, then
 course pages.
 
-Rough size, extrapolated from one bachelor and therefore an estimate rather
-than a measurement: around 286 French-language programmes and somewhere near
-5,000 to 8,000 courses, so perhaps 6,000 requests.
+### 13.4 The listing is the source, not the course pages
+
+Measured 2026-09-18, parsing the real response for `BA-TECN`. Each row of a
+programme listing carries the code, the title, the language, the quadrimester,
+the lecturers, the credits and the teaching hours. On that programme's 34
+courses: title, language, quadrimester, credits and hours present on all 34,
+and lecturers on 21, with the other 13 carrying a `prg-coursTitulaires` element
+that exists and is empty. That is ULB stating nobody, which is a fact to record
+and must stay distinguishable from a parse that found nothing (12.8).
+
+**So the crawl is one request per programme, not one per course.** About 286
+French-language programmes fills every field except the three long prose ones;
+the per-course pages are needed only for content, objectives and the assessment
+method. That is roughly 290 requests for a usable catalogue against the 6,000
+first estimated, and it makes a first ULB load a matter of minutes rather than
+the 78 that UCLouvain's took.
+
+The prose fields remain a per-course request and can be a second pass. A
+catalogue with every fact and no long text is worth loading before one with
+everything is finished, and phase 30's rule applies to both: a page we could not
+GET is tolerated, a page we could not UNDERSTAND is not.

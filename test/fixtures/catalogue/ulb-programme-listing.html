@@ -1,0 +1,128 @@
+<!--
+Structural excerpt of an ULB PROGRAMME LISTING, captured 2026-09-18 from
+
+  GET https://www.ulb.be/api/formation
+      ?path=/ksup/programme%3Fgen%3Dprod%26anet%3DBA-TECN%26lang%3Dfr%26
+
+which is what the programme page fetches for itself: the page's own HTML holds
+no course list at all. The response is JSON with the rendered listing in its
+`html` field; this file is that field, trimmed to one bloc and two courses.
+
+WHY THE LISTING AND NOT THE COURSE PAGES. Every field a course row needs except
+the long prose is here: the code, the title, the language, the quadrimester,
+the lecturers, the credits and the contact hours. One request per programme
+covers what would otherwise be one request per course, and ULB has roughly 286
+programmes against several thousand courses.
+
+THE THIRD COURSE HAS NO LECTURER, and that is the real page, not a trimming.
+Its `prg-coursTitulaires` element is present and empty: ULB states nobody, on 13
+of the 34 courses in this programme. An element that exists and is empty is the
+source saying "none", which is a fact to record, and it has to stay
+distinguishable from a parse that found nothing.
+
+THE LECTURER NAME IS NOT REAL. ULB publishes the real one and we store names,
+not addresses, so keeping one here would be republishing a person's name in a
+public repository for no reason the test needs. The structure around it is
+untouched.
+-->
+<div class="prg-bloc blocLevel0 blocMargin0 blocPadding1 title ruleMargin0 rulePadding0 last-bloc">
+<div class="prg-content prg-bloc-title">Cours obligatoires</div>
+<div class="prg-content prg-courses">
+<div class="prg-course-item" data-nre="66024">
+<div class="prg-cours" id="a2025b1c1">
+<div class="prg-coursIcon"></div>
+<div class="prg-coursContent">
+<div class="prg-coursLeft">
+<div class="prg-coursMnemonique">COMM-B1010</div>
+<div class="prg-coursLangue" id="langa2025b1c1">
+<span>fr</span>
+</div>
+<span class="prg-coursQuadrimestreCarte">premier quadrimestre</span>
+</div>
+<div class="prg-coursRight">
+<div class="prg-coursContainer">
+<div class="prg-coursPopup" id="popupa2025b1c1"></div>
+<div id="contenta2025b1c1">
+<div id="a2025b1c1-dbg" style="display:none" class="prgDebug course"></div>
+<div class="prg-coursIntitule">
+<a class="lien_interne" href="https://www.ulb.be/fr/programme/2025-comm-b1010" title="COURS COMM-B1010">Cultures num&eacute;riques</a><a class="extLink" target="_blank" onclick="window.event.stopPropagation()" href="https://www.ulb.be/fr/programme/2025-comm-b1010" title="COURSE COMM-B1010"></a>
+</div>
+<div class="prg-coursTitulaires" xml:space="preserve">
+<span>Nom Prenom (Coordonnateur)</span>
+                              
+                            
+</div>
+<div class="prg-coursCredits">5 cr&eacute;dits [cours magistral: 24h]<span class="prg-coursQuadrimestreListe"> - premier quadrimestre</span>
+</div>
+</div>
+<div id="a2025b1c1-dbg" style="display:none" class="prgDebug course"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="prg-course-item" data-nre="66059">
+<div class="prg-cours" id="a2025b1c2">
+<div class="prg-coursIcon"></div>
+<div class="prg-coursContent">
+<div class="prg-coursLeft">
+<div class="prg-coursMnemonique">COMM-B1020</div>
+<div class="prg-coursLangue" id="langa2025b1c2">
+<span>fr</span>
+</div>
+<span class="prg-coursQuadrimestreCarte">deuxi&egrave;me quadrimestre</span>
+</div>
+<div class="prg-coursRight">
+<div class="prg-coursContainer">
+<div class="prg-coursPopup" id="popupa2025b1c2"></div>
+<div id="contenta2025b1c2">
+<div id="a2025b1c2-dbg" style="display:none" class="prgDebug course"></div>
+<div class="prg-coursIntitule">
+<a class="lien_interne" href="https://www.ulb.be/fr/programme/2025-comm-b1020" title="COURS COMM-B1020">Veille strat&eacute;gique</a><a class="extLink" target="_blank" onclick="window.event.stopPropagation()" href="https://www.ulb.be/fr/programme/2025-comm-b1020" title="COURSE COMM-B1020"></a>
+</div>
+<div class="prg-coursTitulaires" xml:space="preserve">
+<span>Nom Prenom (Coordonnateur)</span>
+                              
+                            
+</div>
+<div class="prg-coursCredits">4 cr&eacute;dits [cours magistral: 20h]<span class="prg-coursQuadrimestreListe"> - deuxi&egrave;me quadrimestre</span>
+</div>
+</div>
+<div id="a2025b1c2-dbg" style="display:none" class="prgDebug course"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="prg-course-item" data-nre="66050">
+<div class="prg-cours" id="a2025b3c2">
+<div class="prg-coursIcon"></div>
+<div class="prg-coursContent">
+<div class="prg-coursLeft">
+<div class="prg-coursMnemonique">COMM-B3010</div>
+<div class="prg-coursLangue" id="langa2025b3c2">
+<span>fr</span>
+</div>
+<span class="prg-coursQuadrimestreCarte">deuxi&egrave;me quadrimestre</span>
+</div>
+<div class="prg-coursRight">
+<div class="prg-coursContainer">
+<div class="prg-coursPopup" id="popupa2025b3c2"></div>
+<div id="contenta2025b3c2">
+<div id="a2025b3c2-dbg" style="display:none" class="prgDebug course"></div>
+<div class="prg-coursIntitule">
+<a class="lien_interne" href="https://www.ulb.be/fr/programme/2025-comm-b3010" title="COURS COMM-B3010">Recherche scientifique</a><a class="extLink" target="_blank" onclick="window.event.stopPropagation()" href="https://www.ulb.be/fr/programme/2025-comm-b3010" title="COURSE COMM-B3010"></a>
+</div>
+<div class="prg-coursTitulaires" xml:space="preserve">
+                                
+                            
+</div>
+<div class="prg-coursCredits">5 cr&eacute;dits [cours magistral: 24h]<span class="prg-coursQuadrimestreListe"> - deuxi&egrave;me quadrimestre</span>
+</div>
+</div>
+<div id="a2025b3c2-dbg" style="display:none" class="prgDebug course"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
