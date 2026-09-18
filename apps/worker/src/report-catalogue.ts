@@ -29,8 +29,10 @@ interface Args {
   year?: number;
 }
 
+const DEFAULT_OUT = "data/catalogue-report.txt";
+
 function parseArgs(argv: string[]): Args {
-  const args: Args = { snapshot: "data/catalogue.json", out: "data/catalogue-report.txt" };
+  const args: Args = { snapshot: "data/catalogue.json", out: DEFAULT_OUT };
   for (let i = 0; i < argv.length; i += 1) {
     const value = argv[i + 1];
     switch (argv[i]) {
@@ -137,10 +139,23 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
   }
 
   // --- what reached the database -------------------------------------------
+  /**
+   * EVERY QUERY BELOW IS SCOPED TO THIS SNAPSHOT'S INSTITUTION.
+   *
+   * A snapshot is one institution's crawl and the database now holds more than
+   * one. Unscoped, this report compares UCLouvain's file against everything
+   * stored: the three counts mix two universities, and the "in the database and
+   * not in this snapshot" check lists the whole of the other one. Thousands of
+   * codes, printed as a note, on a report whose entire job is to be read.
+   *
+   * Written as one object reused by each query rather than repeated, because
+   * five places filtering the same way is five places to forget.
+   */
+  const ofThisInstitution = { institution: { code: snapshot.institution } };
   const [dbOfferings, dbProgrammes, dbCourses] = await Promise.all([
-    prisma.courseOffering.count({ where: { year } }),
-    prisma.programme.count({ where: { year } }),
-    prisma.course.count(),
+    prisma.courseOffering.count({ where: { year, course: ofThisInstitution } }),
+    prisma.programme.count({ where: { year, ...ofThisInstitution } }),
+    prisma.course.count({ where: ofThisInstitution }),
   ]);
   out.push("WHAT REACHED THE DATABASE");
   out.push(line("programmes", dbProgrammes));
@@ -157,7 +172,10 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
   const snapshotCodes = new Set(snapshot.programmes.map((p) => p.code));
   const storedProgrammes = new Set(
     (
-      await prisma.programme.findMany({ where: { year }, select: { code: true } })
+      await prisma.programme.findMany({
+        where: { year, ...ofThisInstitution },
+        select: { code: true },
+      })
     ).map((p) => p.code),
   );
   const missingProgrammes = [...snapshotCodes].filter((c) => !storedProgrammes.has(c));
@@ -197,7 +215,7 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
   const stored = new Set(
     (
       await prisma.courseOffering.findMany({
-        where: { year },
+        where: { year, course: ofThisInstitution },
         select: { course: { select: { code: true } } },
       })
     ).map((o) => o.course.code),
@@ -257,6 +275,12 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const snapshot = await load(args.snapshot);
+  // One report per institution, not one report overwritten by the last run.
+  // Derived from the snapshot's own institution rather than from the file name,
+  // so a snapshot read from anywhere still reports to a predictable place.
+  if (args.out === DEFAULT_OUT && snapshot.institution !== "uclouvain") {
+    args.out = `data/catalogue-report-${snapshot.institution}.txt`;
+  }
   const prisma = new PrismaClient();
   try {
     const text = await report(snapshot, prisma, args.year ?? snapshot.year);
