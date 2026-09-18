@@ -320,3 +320,46 @@ describe("what is not published does not go in the address", () => {
   }
 });
 
+describe("the address wins over the member's own preference", () => {
+  /**
+   * RYC defaults its university filter to the catalogues a member asked for,
+   * which is what François wanted: the catalogue follows the university chosen
+   * at registration, and a control widens it.
+   *
+   * The rule that makes that safe is the ORDER. A link that names institutions
+   * shows those; only a link that names none falls back to the profile. Doing
+   * it the other way, or writing the preference into the URL on arrival, would
+   * break the property FR-B21 exists for: a shared link must show its reader
+   * the list it names, not the list their own account would have produced.
+   *
+   * Checked against the source, because the alternative is a browser with two
+   * different signed-in members in it.
+   */
+  const browse = readFileSync(
+    new URL("../../packages/ryc-ui/src/Browse.tsx", import.meta.url).pathname,
+    "utf8",
+  );
+
+  it("falls back to the member only when the query names no institution", () => {
+    expect(browse).toContain("fromUrl.institutions.length === 0");
+  });
+
+  it("never writes the preference into the address", () => {
+    // `settingsRoute` is how this screen writes the URL. The preference must
+    // not travel through it, or arriving on somebody's link would quietly
+    // rewrite what they sent.
+    const writes = browse.split("settingsRoute(").slice(1);
+    for (const after of writes) {
+      expect(after.slice(0, 160)).not.toContain("mine");
+    }
+  });
+
+  it("tells 'not answered' apart from 'answered, everything'", () => {
+    // null and [] are different states: nobody has told us, against told us
+    // and the answer is no narrowing. Collapsed into one, a signed-out visitor
+    // would be narrowed to nothing or a member's choice would be ignored.
+    expect(browse).toContain("useState<string[] | null>(null)");
+    expect(browse).toContain("mine !== null");
+  });
+});
+

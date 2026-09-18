@@ -259,6 +259,28 @@ export const api = {
    */
   reviewCounts: () => json<{ counts: Record<string, number> }>("/api/reviews/counts"),
   /**
+   * WHICH CATALOGUES THIS MEMBER WANTS IN FRONT OF THEM.
+   *
+   * A fact about the member, so the platform owns it and this module reads it
+   * (FR-B11). It starts as the institution chosen at the first run, and an
+   * empty answer means "everything": somebody who never said has not asked to
+   * be narrowed.
+   *
+   * 401 is an ordinary answer, not an error. Browsing works signed out, and a
+   * visitor with no account has no preference to honour.
+   */
+  myInstitutions: () => json<{ institutions: string[] }>("/api/me/institutions"),
+  addInstitution: (code: string) =>
+    json<{ institutions: string[] }>("/api/me/institutions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code }),
+    }),
+  removeInstitution: (code: string) =>
+    json<{ institutions: string[] }>(`/api/me/institutions/${encodeURIComponent(code)}`, {
+      method: "DELETE",
+    }),
+  /**
    * FR-E8: file a notice. Works signed in or not, which Article 16 requires.
    *
    * The kind is fixed here rather than asked of the caller: a reporter sees a

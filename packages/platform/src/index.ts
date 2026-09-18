@@ -66,6 +66,9 @@ export { signValue, readSignedValue, BadSignedValue } from "./signed.js";
 /** A Member's own record and the username rule (FR-F). */
 export {
   readProfile,
+  institutionsOf,
+  addInstitution,
+  removeInstitution,
   writeProfile,
   usernamesFor,
   checkUsername,

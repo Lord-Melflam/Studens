@@ -19,10 +19,13 @@ import {
   UsernameInvalid,
   readProfile,
   writeProfile,
+  institutionsOf,
+  addInstitution,
+  removeInstitution,
   type ProfilePatch,
 } from "@studens/platform";
 import { listInstitutions } from "@studens/ref";
-import { identifyIfAny } from "../identity.js";
+import { identify, identifyIfAny } from "../identity.js";
 
 /** The languages the platform speaks. Kept here so a bad value cannot be stored. */
 const LOCALES = new Set(["fr", "nl", "en"]);
@@ -125,6 +128,42 @@ export function profileRoutes(prisma: PrismaClient): Router {
    * nothing about any member, and the sign-in page needs it before there is a
    * session to check.
    */
+  /**
+   * The member's own set: which catalogues they want in front of them.
+   *
+   * Separate from `/institutions`, which lists what exists. This is a
+   * preference about the member, so it lives in the platform beside the rest of
+   * their profile and RYC reads it rather than storing its own copy (FR-B11).
+   */
+  router.get("/me/institutions", (req, res) => {
+    void (async () => {
+      const who = await identify(prisma, req, res);
+      if (!who) return;
+      res.json({ institutions: await institutionsOf(prisma, who.memberId) });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  router.post("/me/institutions", (req, res) => {
+    void (async () => {
+      const who = await identify(prisma, req, res);
+      if (!who) return;
+      const code = (req.body ?? {}).code as unknown;
+      if (typeof code !== "string" || code.trim() === "") {
+        res.status(400).json({ error: "invalid", field: "code" });
+        return;
+      }
+      res.json({ institutions: await addInstitution(prisma, who.memberId, code) });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  router.delete("/me/institutions/:code", (req, res) => {
+    void (async () => {
+      const who = await identify(prisma, req, res);
+      if (!who) return;
+      res.json({ institutions: await removeInstitution(prisma, who.memberId, req.params.code) });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
   router.get("/institutions", (_req, res) => {
     void (async () => {
       res.json({ institutions: await listInstitutions({ client: prisma }) });

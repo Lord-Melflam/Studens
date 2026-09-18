@@ -132,6 +132,16 @@ SELECT pg_temp.expect_allowed('studens_ref',
 -- than trusted: this file checks tables one at a time, so a table nobody names
 -- here is a table whose grants are never verified, and it would fail first at
 -- ingestion instead of here.
+-- The member's own set of catalogues (20260919_which_catalogues_a_member_wants).
+-- Platform, so a feature module must not touch it: RYC reads it through the
+-- platform's own function, which is FR-B11 and is why this probe exists.
+SELECT pg_temp.expect_allowed('studens_platform',
+  'SELECT 1 FROM platform."MemberInstitution" LIMIT 1',
+  'read which catalogues a member wants');
+SELECT pg_temp.expect_denied('studens_ryc',
+  'SELECT 1 FROM platform."MemberInstitution" LIMIT 1',
+  'a module reading the member table directly');
+
 -- Added with the campuses (20260919_a_course_has_campuses). Probed by name like
 -- every other table here: one nobody names is one whose grants are never
 -- verified, and it would fail first at ingestion instead of here.
