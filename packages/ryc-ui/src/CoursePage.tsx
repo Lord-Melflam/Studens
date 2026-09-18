@@ -122,10 +122,23 @@ export function CoursePage({
             arrives too late to stop somebody deciding the page is broken.
             Only where there is something for it to be about: on a course that
             publishes none of the three, it would be describing an empty page. */}
-        {(course.assessment || course.themes || course.content) && <CatalogueLanguageNote />}
+        {(course.assessment || course.themes || course.content) && (
+          <CatalogueLanguageNote institution={course.institution} />
+        )}
         <ProseField label={t("ryc.course.assessment")} blocks={course.assessment} />
         <ProseField label={t("ryc.course.themes")} blocks={course.themes} />
         <ProseField label={t("ryc.course.content")} blocks={course.content} />
+        {/*
+          The order is the order a student reads in, not the order the source
+          prints. What the course is about, what you should be able to do, what
+          you need first, how it is taught, what to read. Assessment stays at
+          the top because it is the thing FR-D19 exists for: the reviewer is
+          not asked what the catalogue already publishes.
+        */}
+        <ProseField label={t("ryc.course.objectives")} blocks={course.objectives} />
+        <ProseField label={t("ryc.course.prerequisites")} blocks={course.prerequisites} />
+        <ProseField label={t("ryc.course.teachingMethods")} blocks={course.teachingMethods} />
+        <ProseField label={t("ryc.course.bibliography")} blocks={course.bibliography} />
 
         <div className="field">
           <dt>{t("ryc.course.official")}</dt>

@@ -25,6 +25,23 @@ export interface UlbCourseProse {
   /** "Evaluation", which ULB titles more plainly than UCLouvain does. */
   assessment: Block[] | null;
   /**
+   * Four more that both universities publish, under different names.
+   *
+   * ULB's labels on the left, UCLouvain's on the right:
+   *   "Objectifs (et/ou acquis ...)"      / "Acquis d'apprentissage"
+   *   "Pré-requis et Co-requis"           / "Préalables"
+   *   "Méthodes d'enseignement et ..."    / "Méthodes d'enseignement"
+   *   "Références, bibliographie et ..."  / "Bibliographie"
+   *
+   * The objectives used to be deliberately dropped, because the only column
+   * that could have held them was `themes` and that means something else.
+   * They have a column of their own now, so they are read.
+   */
+  objectives: Block[] | null;
+  prerequisites: Block[] | null;
+  teachingMethods: Block[] | null;
+  bibliography: Block[] | null;
+  /**
    * The campuses, as published: "Plaine", "Solbosch", "Erasme", "Flagey".
    *
    * A LIST, because a course is regularly taught on more than one. ULB writes
@@ -41,27 +58,47 @@ export interface UlbCourseProse {
 }
 
 /**
- * WHAT IS DELIBERATELY NOT MAPPED, and why it is not an oversight.
+ * The sections read, by the label ULB gives them.
  *
- * ULB publishes "Objectifs (et/ou acquis d'apprentissages spécifiques)",
- * "Pré-requis et Co-requis", "Méthodes d'enseignement et activités
- * d'apprentissages" and "Contribution au profil d'enseignement". The catalogue
- * has no column for any of them.
+ * Matched on a normalised label, so the curly apostrophe and the accents that
+ * differ between ULB's own pages cannot make a section vanish. `normaliseName`
+ * is the same function that stopped two whole faculties matching nothing.
  *
- * `themes` is the tempting home for the objectives and it is the wrong one.
- * UCLouvain's `themes` is "Thèmes abordés", the topics a course covers;
- * objectives are what a student should be able to do afterwards. Putting one in
- * the other's column would make a field mean two things depending on which
- * university a row came from, and nothing on screen would say so.
+ * WHAT IS STILL NOT MAPPED, and why it is not an oversight. ULB also publishes
+ * "Contribution au profil d'enseignement" and "Support(s) de cours". The first
+ * is about the programme rather than the course; the second is a list of
+ * materials, and neither has a column. When one is wanted it gets a column of
+ * its own rather than being folded into a field that means something else,
+ * which is the rule that kept the objectives out until they had one.
  */
-const WANTED: Array<{ label: string; field: "content" | "assessment" }> = [
+const WANTED: Array<{ label: string; field: ProseField }> = [
   { label: "contenu du cours", field: "content" },
   { label: "evaluation", field: "assessment" },
+  { label: "objectifs et ou acquis d apprentissages specifiques", field: "objectives" },
+  { label: "pre requis et co requis", field: "prerequisites" },
+  { label: "methodes d enseignement et activites d apprentissages", field: "teachingMethods" },
+  { label: "references bibliographie et lectures recommandees", field: "bibliography" },
 ];
+
+type ProseField =
+  | "content"
+  | "assessment"
+  | "objectives"
+  | "prerequisites"
+  | "teachingMethods"
+  | "bibliography";
 
 export function parseCourseProse(html: string): UlbCourseProse {
   const $ = cheerio.load(html);
-  const out: UlbCourseProse = { content: null, assessment: null, campuses: [] };
+  const out: UlbCourseProse = {
+    content: null,
+    assessment: null,
+    objectives: null,
+    prerequisites: null,
+    teachingMethods: null,
+    bibliography: null,
+    campuses: [],
+  };
 
   /**
    * The campus sits under an h3 inside a section, not under one of the h2s
@@ -91,6 +128,30 @@ export function parseCourseProse(html: string): UlbCourseProse {
     const body = $(el).nextAll(".paragraphe__contenu--1").first();
     if (body.length === 0) return;
     out[want.field] = richBlocks($, body[0]!);
+  });
+
+  /**
+   * SOME OF THEM ARE ONE LEVEL DOWN, and the bibliography is one.
+   *
+   * "Références, bibliographie et lectures recommandées" is not a section of
+   * its own: it is an `h3` inside another, beside "Support(s) de cours" and,
+   * elsewhere, the campus. Reading only the `h2` sections found it nowhere and
+   * left the column null on every ULB course, which would have looked exactly
+   * like a university that publishes no bibliography.
+   *
+   * The block is everything between this heading and the next one, since there
+   * is no wrapper to grab. Collected rather than taking the first element,
+   * because the content is a paragraph on one course and a list on the next.
+   */
+  $(".paragraphe__contenu--1 h3").each((_, el) => {
+    const label = normaliseName($(el).text());
+    const want = WANTED.find((w) => w.label === label);
+    if (!want || out[want.field] !== null) return;
+    const parts = $(el)
+      .nextUntil("h3")
+      .toArray()
+      .flatMap((node) => richBlocks($, node) ?? []);
+    out[want.field] = parts.length > 0 ? parts : null;
   });
 
   return out;

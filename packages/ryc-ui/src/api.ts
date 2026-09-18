@@ -46,6 +46,11 @@ export interface CourseDetail extends CourseSummary {
   assessment: Block[] | null;
   themes: Block[] | null;
   content: Block[] | null;
+  /** Four more both universities publish, each with a column of its own. */
+  objectives: Block[] | null;
+  prerequisites: Block[] | null;
+  teachingMethods: Block[] | null;
+  bibliography: Block[] | null;
   owningFaculty: string | null;
   reachedVia: string[];
 }

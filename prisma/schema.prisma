@@ -575,6 +575,34 @@ model CourseOffering {
   /// not show what the file-backed one already did.
   themes       Json?
   content      Json?
+  /// FOUR MORE THAT BOTH UNIVERSITIES PUBLISH AND NEITHER OF US WAS KEEPING.
+  ///
+  /// François asked for them by name: "look at the courses page and see the
+  /// field we can have such as : Contenu du cours, Objectifs (et/ou acquis
+  /// d'apprentissages spécifiques), Méthodes d'enseignement et activités
+  /// d'apprentissages, Références, bibliographie et lectures recommandées".
+  ///
+  /// Each is its own column rather than folded into an existing one, because
+  /// the two sources name them differently and a column that means two things
+  /// depending on which university a row came from is a column nobody can
+  /// read. What each holds, on the left UCLouvain's label and on the right
+  /// ULB's:
+  ///
+  ///   objectives      "Acquis d'apprentissage"   / "Objectifs (et/ou acquis
+  ///                                                 d'apprentissages spécifiques)"
+  ///   prerequisites   "Préalables"               / "Pré-requis et Co-requis"
+  ///   teachingMethods "Méthodes d'enseignement"  / "Méthodes d'enseignement et
+  ///                                                 activités d'apprentissages"
+  ///   bibliography    "Bibliographie"            / "Références, bibliographie
+  ///                                                 et lectures recommandées"
+  ///
+  /// Json and not String, for the same reason as the three above: these are
+  /// lists written in a rich text editor and a flattened one is unreadable.
+  /// Null means the page does not state it, which is ordinary on both.
+  objectives      Json?
+  prerequisites   Json?
+  teachingMethods Json?
+  bibliography    Json?
   /// The entity acronym the page names as in charge, for instance "> MECA".
   /// Text rather than a Faculty reference because it is an entity code from a
   /// different vocabulary than the faculty slugs the crawl discovers, and

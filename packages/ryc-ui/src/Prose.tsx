@@ -157,11 +157,22 @@ export function ProseField({ label, blocks }: { label: string; blocks: Block[] |
  * It states a fact and makes no promise. It does not say a translation is
  * coming, because whether one ever does is OPEN-47 and nobody has decided.
  */
-export function CatalogueLanguageNote() {
+export function CatalogueLanguageNote({ institution }: { institution: string }) {
   const t = useT();
   const locale = useLocale();
   if (locale === CATALOGUE_LANG) return null;
   // A div and not a p, because on the course page this sits inside the <dl>
   // holding the fields, and a dl may hold only dt, dd and div.
-  return <div className="source-lang">{t("ryc.course.sourceLanguage")}</div>;
+  //
+  // THE INSTITUTION IS A PARAMETER because this line named UCLouvain whatever
+  // the course. That was true while there was one catalogue and became a
+  // falsehood the hour ULB loaded: an English reader on a ULB course was told
+  // UCLouvain had published it. The note exists to be accurate about where the
+  // French came from, so naming the wrong university defeats the whole point
+  // of having it.
+  return (
+    <div className="source-lang">
+      {t("ryc.course.sourceLanguage", { name: institution.toUpperCase() })}
+    </div>
+  );
 }

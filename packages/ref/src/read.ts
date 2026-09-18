@@ -124,6 +124,15 @@ export interface CourseDetail extends CourseSummary {
   assessment: Block[] | null;
   themes: Block[] | null;
   content: Block[] | null;
+  /**
+   * Four more that both universities publish, under different names. Added
+   * 2026-09-19 on François's request, each with a column of its own so a field
+   * does not mean two things depending on which university a row came from.
+   */
+  objectives: Block[] | null;
+  prerequisites: Block[] | null;
+  teachingMethods: Block[] | null;
+  bibliography: Block[] | null;
   owningFaculty: string | null;
   /** Faculties this course was reached through. Many-to-many on purpose. */
   reachedVia: string[];
@@ -400,6 +409,10 @@ export class SnapshotCatalogue implements Catalogue {
       assessment: o.assessment,
       themes: o.themes,
       content: o.content,
+      objectives: o.objectives ?? null,
+      prerequisites: o.prerequisites ?? null,
+      teachingMethods: o.teachingMethods ?? null,
+      bibliography: o.bibliography ?? null,
       owningFaculty: o.owningFaculty,
       reachedVia: this.snapshot.reachedVia
         .filter((r) => r.code === o.code)
@@ -547,6 +560,10 @@ export class DatabaseCatalogue implements Catalogue {
       assessment: blocksFrom(row.assessment),
       themes: blocksFrom(row.themes),
       content: blocksFrom(row.content),
+      objectives: blocksFrom(row.objectives),
+      prerequisites: blocksFrom(row.prerequisites),
+      teachingMethods: blocksFrom(row.teachingMethods),
+      bibliography: blocksFrom(row.bibliography),
       owningFaculty: row.owningFaculty,
       reachedVia: row.faculties.map((f) => f.faculty.code),
     };
