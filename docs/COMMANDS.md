@@ -70,7 +70,7 @@ should be called.
 | `npm run db:reset` | **Destructive.** Drops and rebuilds: you lose the catalogue and every review |
 | **Catalogue** | |
 | `npm run ingest` | Scrape into `data/catalogue.json`. Takes `-- --source ulb` (default `uclouvain`, and a non-default source writes `data/catalogue-<source>.json` instead), `-- --faculty epl,lsm`, `-- --year 2025`, `-- --max 40` (sample), `-- --max-requests 1500` (ceiling), `-- --no-cache`, `-- --prose` (ULB only: a second pass for the long fields, one request per course) |
-| `npm run db:load` | Load that snapshot into PostgreSQL, in one transaction. The file says which institution it is a crawl of, so a second catalogue needs no extra flag |
+| `npm run db:load` | Load that snapshot into PostgreSQL, in one transaction. The file says which institution it is a crawl of, so a second catalogue needs no extra flag. **Refuses a load that would remove more than a fifth of that institution's catalogue**, which is what a sampled crawl produces; `-- --shrink-ok` says you meant it |
 | `npm run catalogue:report` | **After any crawl:** what the crawl lost and whether the database holds it. Writes `data/catalogue-report.txt`. Exit 1 when something is missing |
 | **Build and run for real** | |
 | `npm run build` | Everything a server needs: the API, the worker, and the application |

@@ -33,6 +33,8 @@ interface Args {
   faculties: string[];
   max?: number;
   out: string;
+  /** Whether `--out` was given, which makes any destination deliberate. */
+  explicitOut: boolean;
   delayMs: number;
   maxRequests?: number;
   /**
@@ -50,6 +52,7 @@ function parseArgs(argv: string[]): Args {
     prose: false,
     faculties: [],
     out: "data/catalogue.json",
+    explicitOut: false,
     delayMs: 700,
     cacheDir: "data/page-cache",
   };
@@ -78,7 +81,10 @@ function parseArgs(argv: string[]): Args {
         i += 1;
         break;
       case "--out":
-        if (value) args.out = value;
+        if (value) {
+          args.out = value;
+          args.explicitOut = true;
+        }
         i += 1;
         break;
       case "--delay":
@@ -116,6 +122,29 @@ async function main(): Promise<void> {
   // there was a second source still means what it meant.
   if (args.out === "data/catalogue.json" && source.institution !== uclouvain.institution) {
     args.out = `data/catalogue-${source.institution}.json`;
+  }
+
+  /**
+   * A PARTIAL CRAWL DOES NOT GET THE LIVE FILENAME.
+   *
+   * `--max 40` used to write `data/catalogue.json`, the file a full crawl
+   * writes and the file `db:load` reads by default. A sample would therefore
+   * become the live snapshot by sitting still, and the next load would replace
+   * the real catalogue with a fortieth of itself, succeeding at every step.
+   *
+   * The guard in `db:load` catches the damage. This stops the hazard existing:
+   * two different artefacts stop sharing a name, so nobody has to notice.
+   * Naming `--out data/catalogue.json` explicitly still works, because that is
+   * somebody being deliberate rather than somebody forgetting.
+   */
+  const partial = args.max !== undefined || args.faculties.length > 0;
+  if (partial && !args.explicitOut) {
+    const base = args.out.replace(/\.json$/, "");
+    args.out = `${base}-partial.json`;
+    console.log(
+      `partial crawl (${args.max !== undefined ? `--max ${args.max}` : "--faculty"}), ` +
+        `writing ${args.out} rather than the live snapshot`,
+    );
   }
   const started = Date.now();
   const fetcher = new PoliteFetcher({
