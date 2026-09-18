@@ -74,3 +74,18 @@ export async function patchProfile(patch: Record<string, unknown>): Promise<Prof
   }
   throw new PatchFailed(body.field ?? "unknown");
 }
+
+/**
+ * Add one of the member's own catalogues.
+ *
+ * The first run can pick several universities, and `institutionCode` holds one.
+ * The extras go here, to the same set RYC reads.
+ */
+export async function addMyInstitution(code: string): Promise<void> {
+  const res = await fetch("/api/me/institutions", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) throw new Error(`${res.status}`);
+}

@@ -340,8 +340,18 @@ describe("the address wins over the member's own preference", () => {
     "utf8",
   );
 
-  it("falls back to the member only when the query names no institution", () => {
-    expect(browse).toContain("fromUrl.institutions.length === 0");
+  it("scopes the catalogue to the member before any filter is applied", () => {
+    // The preference used to be a fallback INSIDE the filter, which put it in
+    // two places at once. François rejected the shape it produced: a chip
+    // preselected inside a list of every institution, which treats all of them
+    // as the default and yours as a narrowing, and which is a wall at ten.
+    //
+    // The scope owns it now. Every count below is computed inside it, so the
+    // panel says 690 rather than 976 with one chip lit, and the filter is back
+    // to being purely what the address asked for.
+    expect(browse).toContain("const inScope");
+    expect(browse).toContain("applyProgrammeFilter(inScope, filter)");
+    expect(browse).toContain("programmeFacets(inScope, filter)");
   });
 
   it("never writes the preference into the address", () => {
@@ -359,7 +369,7 @@ describe("the address wins over the member's own preference", () => {
     // and the answer is no narrowing. Collapsed into one, a signed-out visitor
     // would be narrowed to nothing or a member's choice would be ignored.
     expect(browse).toContain("useState<string[] | null>(null)");
-    expect(browse).toContain("mine !== null");
+    expect(browse).toContain("mine === null");
   });
 });
 

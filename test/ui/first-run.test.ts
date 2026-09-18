@@ -315,3 +315,38 @@ describe("finishing lands in the app, not back in the wizard", () => {
     }
   });
 });
+
+/**
+ * STEP 5 IS A MULTIPLE CHOICE, and the choice is not exclusive.
+ *
+ * François: "I also see some people followig courses in 2 different
+ * universities, so it should be better if in /5 we make the choice non
+ * exclusive." A student registered at one university and taking a minor at
+ * another is not an edge case here, it is two of the three institutions this
+ * product launches with, twenty kilometres apart.
+ *
+ * Checked against the source rather than a rendered screen: the first run
+ * fetches its profile before it draws anything real, so a server render of
+ * step 5 is the placeholder and says nothing about what the buttons do.
+ */
+describe("step 5 takes more than one university", () => {
+  const wizard = read("apps/web/src/firstrun/FirstRun.tsx");
+
+  it("holds a set, not a single code", () => {
+    expect(wizard).toMatch(/useState<string\[\]>\(\[\]\)/);
+  });
+
+  it("presses off as well as on", () => {
+    // A radio group that cannot be unpicked is the exclusive choice this
+    // replaced, wearing a different control.
+    expect(wizard).toContain("was.filter((c) => c !== i.code)");
+    expect(wizard).toContain("[...was, i.code]");
+  });
+
+  it("writes every one that was chosen, not only the first", () => {
+    // `institutionCode` on the profile holds one. The rest are the member's
+    // own set, so the finish writes them there before it ends the first run.
+    expect(wizard).toContain("codes.slice(1)");
+    expect(wizard).toContain("addMyInstitution(code)");
+  });
+});

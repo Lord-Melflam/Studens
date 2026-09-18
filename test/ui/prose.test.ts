@@ -14,7 +14,7 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Blocks, ProseField, type Block } from "@studens/ryc-ui";
+import { Blocks, FoldedField, ProseField, type Block } from "@studens/ryc-ui";
 
 const html = (blocks: Block[]): string =>
   renderToStaticMarkup(createElement(Blocks, { blocks }));
@@ -90,5 +90,39 @@ describe("nothing from the scraped page reaches the DOM as markup", () => {
     const rogue = [{ kind: "script", src: "evil" }] as unknown as Block[];
     expect(() => html(rogue)).not.toThrow();
     expect(html(rogue)).not.toContain("evil");
+  });
+});
+
+/**
+ * A LONG FIELD STARTS FOLDED, so the reviews are not below a screenful of
+ * catalogue prose.
+ *
+ * François, after loading the ULB crawl: "it can be really exhaustive and take
+ * space for courses having large descriptions ... otherwise the review will
+ * come only far away at the bottom of the page". Seven prose fields on a ULB
+ * course, and the reviews are the reason anyone opened the page.
+ */
+describe("a folded field", () => {
+  const blocks: Block[] = [{ kind: "p", lines: [[{ t: "un contenu assez long" }]] }];
+
+  it("shows its name and not its body", () => {
+    const out = renderToStaticMarkup(
+      createElement(FoldedField, { label: "Objectifs", blocks }),
+    );
+    expect(out).toContain("Objectifs");
+    expect(out).toContain('aria-expanded="false"');
+    // Not hidden with CSS. A closed field on a long course holds hundreds of
+    // elements, and seven of them is a page the browser lays out for nobody.
+    expect(out).not.toContain("un contenu assez long");
+  });
+
+  it("is nothing at all when the field is empty", () => {
+    // Same rule as ProseField: a heading that opens onto nothing is worse
+    // than no heading.
+    for (const empty of [null, []] as Array<Block[] | null>) {
+      expect(
+        renderToStaticMarkup(createElement(FoldedField, { label: "Objectifs", blocks: empty })),
+      ).toBe("");
+    }
   });
 });

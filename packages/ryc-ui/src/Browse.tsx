@@ -22,7 +22,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useT } from "@studens/i18n";
 import { api, type CourseSummary, type ProgrammeSummary } from "./api.js";
 import { CourseFilters } from "./CourseFilters.js";
-import { FilterBar, FilterGroup, FilterText, kindLabel } from "./Filters.js";
+import { FilterBar, FilterGroup, FilterText, ScopePicker, kindLabel } from "./Filters.js";
 import {
   NO_PROGRAMME_FILTER,
   PROGRAMME_FILTER_KEYS,
@@ -117,14 +117,42 @@ export function Browse({
    * to a filtered list must show its reader the list it names, not the list
    * their own profile would have produced.
    */
-  const filter = useMemo(() => {
-    const fromUrl = programmeFilterFromQuery(queryOf(search));
-    const chosen =
-      fromUrl.institutions.length === 0 && mine !== null && mine.length > 0
-        ? { ...fromUrl, institutions: mine }
-        : fromUrl;
-    return pruneProgrammeFilter(chosen, programmes);
-  }, [search, programmes, mine]);
+  /**
+   * YOUR UNIVERSITIES ARE THE CATALOGUE, not a filter over everybody's.
+   *
+   * The first version preselected a chip inside a list of every institution.
+   * François: "this is not the right move (fragile from my perspective and
+   * added noise not avoided). Imagine we have 5 or 10 university ? What would
+   * it look like." He is right, and the objection is structural rather than
+   * visual: preselecting inside "all of them" treats every university as the
+   * default and yours as a narrowing, when it is the other way round.
+   *
+   * So the member's set is applied BEFORE anything else, and every count below
+   * is computed inside it. 690 programmes, not 976 with one chip lit. A
+   * university outside the set is not an option sitting in a filter; it is
+   * something you add, deliberately, with the control under the panel.
+   *
+   * Scoped only once we have been told. `mine === null` is a signed-out
+   * visitor or a request that failed, and narrowing them to nothing would be
+   * reading silence as a preference.
+   */
+  const inScope = useMemo(() => {
+    if (mine === null || mine.length === 0) return programmes;
+    return programmes.filter((p) => mine.includes(p.institution));
+  }, [programmes, mine]);
+
+  /**
+   * The filter is what the URL says, and nothing else.
+   *
+   * It used to fall back to the member's institutions when the address named
+   * none, which put the preference in two places: the filter and the scope.
+   * The scope owns it now, so this is back to being purely what was asked for,
+   * and a shared link still shows its reader the list it names (FR-B21).
+   */
+  const filter = useMemo(
+    () => pruneProgrammeFilter(programmeFilterFromQuery(queryOf(search)), inScope),
+    [search, inScope],
+  );
   const keep = (code: string): void => {
     void api
       .addInstitution(code)
@@ -193,9 +221,9 @@ export function Browse({
     };
   }, [openCode?.institution, openCode?.code]);
 
-  const shown = useMemo(() => applyProgrammeFilter(programmes, filter), [programmes, filter]);
+  const shown = useMemo(() => applyProgrammeFilter(inScope, filter), [inScope, filter]);
   const grouped = useMemo(() => groupByKind(shown), [shown]);
-  const facets = useMemo(() => programmeFacets(programmes, filter), [programmes, filter]);
+  const facets = useMemo(() => programmeFacets(inScope, filter), [inScope, filter]);
 
   // The list has arrived and the code in the URL is not in it. Said rather than
   // silently showing the whole list again, which would look like a lost click.
@@ -303,7 +331,22 @@ export function Browse({
           <FilterBar
             active={!programmeFilterIsEmpty(filter)}
             onClear={() => setFilter(NO_PROGRAMME_FILTER)}
-            summary={t("ryc.browse.count", { shown: shown.length, total: programmes.length })}
+            summary={t("ryc.browse.count", { shown: shown.length, total: inScope.length })}
+            scope={
+              mine === null ? null : (
+                <ScopePicker
+                  /* What has a catalogue, plus whatever this member already
+                     holds. The union rather than the first alone: a university
+                     that stops being listed, or one stored before the write
+                     path checked, would otherwise scope the screen to nothing
+                     and not appear in the control that removes it. */
+                  all={[...new Set([...programmes.map((p) => p.institution), ...mine])].sort()}
+                  mine={mine}
+                  onAdd={keep}
+                  onRemove={forget}
+                />
+              )
+            }
           >
             <FilterText
               id="prog-q"
@@ -312,9 +355,16 @@ export function Browse({
               value={filter.text}
               onChange={(text) => setFilter({ ...filter, text })}
             />
-            {/* First, because it is the widest question: which university.
-                A dimension with one option is not rendered, so this control
-                appears only once a second catalogue is loaded. */}
+            {/*
+              Narrowing WITHIN your own universities, and only when you have
+              more than one. A member with a single university has nothing to
+              choose between here and the group draws nothing, which is the
+              same rule every other dimension follows.
+
+              What it deliberately does not do is list universities you have
+              not chosen. Those are not options in a filter; adding one is the
+              separate, deliberate act below.
+            */}
             <FilterGroup
               legend={t("ryc.filter.institution")}
               facets={facets.institutions}
@@ -333,19 +383,7 @@ export function Browse({
               conflating them would make every shared link rewrite the reader's
               account.
             */}
-            {mine !== null && filter.institutions.length === 1 && (
-              <p className="filters-summary">
-                {mine.includes(filter.institutions[0]!) ? (
-                  <button type="button" className="linkish" onClick={() => forget(filter.institutions[0]!)}>
-                    {t("ryc.institution.forget", { name: filter.institutions[0]!.toUpperCase() })}
-                  </button>
-                ) : (
-                  <button type="button" className="linkish" onClick={() => keep(filter.institutions[0]!)}>
-                    {t("ryc.institution.keep", { name: filter.institutions[0]!.toUpperCase() })}
-                  </button>
-                )}
-              </p>
-            )}
+
             <FilterGroup
               legend={t("ryc.filter.kind")}
               facets={facets.kinds}
@@ -364,7 +402,6 @@ export function Browse({
                 of a screen somebody is trying to read. */}
             {facets.faculties.length > 1 && (
               <FilterGroup
-                collapsed
                 legend={t("ryc.filter.faculty")}
                 facets={facets.faculties}
                 chosen={filter.faculties}
@@ -373,7 +410,6 @@ export function Browse({
             )}
             {facets.domains.length > 1 && (
               <FilterGroup
-                collapsed
                 legend={t("ryc.filter.domain")}
                 facets={facets.domains}
                 chosen={filter.domains}

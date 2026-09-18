@@ -143,7 +143,7 @@ export function CourseFilters({
         {facets.reviewed > 0 && (
           <fieldset className="filter-group">
             <legend>{t("ryc.filter.reviews")}</legend>
-            <div className="chips">
+            <div className="chipset">
               <button
                 type="button"
                 className={filter.reviewedOnly ? "chip on" : "chip"}

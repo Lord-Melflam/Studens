@@ -29,6 +29,7 @@ import {
   fetchInstitutions,
   fetchProfile,
   patchProfile,
+  addMyInstitution,
   type Institution,
   type Profile,
   type UsernameProblem,
@@ -140,7 +141,17 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
   const [studies, setStudies] = useState("");
   const [year, setYear] = useState<number | null>(null);
   const [interests, setInterests] = useState("");
-  const [institution, setInstitution] = useState<string | null>(null);
+  /**
+   * SEVERAL, NOT ONE. François: "I also see some people followig courses in 2
+   * different universities, so it should be better if in /5 we make the choice
+   * non exclusive."
+   *
+   * The storage has been a set since `MemberInstitution` existed; this screen
+   * was the last thing still asking for one answer. `institutionCode` keeps the
+   * first one picked, because other code wants a single answer to "where do you
+   * study" and it is still a preference rather than a tenant (FR-F13).
+   */
+  const [chosen, setChosen] = useState<string[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -151,7 +162,7 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
       setStudies(p.studies ?? "");
       setYear(p.yearOfStudy);
       setInterests(p.interests ?? "");
-      setInstitution(p.institutionCode);
+      setChosen(p.institutionCode ? [p.institutionCode] : []);
       setInstitutions(list);
 
       // FR-F5: `/bienvenue` with no number means "wherever I was". The saved
@@ -187,6 +198,36 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
       }
     },
     [onDone],
+  );
+
+  /**
+   * Finish, writing every university picked.
+   *
+   * `institutionCode` takes the FIRST, because other code wants one answer to
+   * "where do you study" and FR-F13 keeps it a preference rather than a tenant.
+   * The rest go to the set, which is what RYC actually reads. Writing the first
+   * one through the profile also adds it to the set, so it is not sent twice.
+   *
+   * The set is written before the profile, because the profile call is the one
+   * that ends the first run: if the extra universities failed and the finish
+   * succeeded, somebody would land in the app having answered a question whose
+   * answer was thrown away.
+   */
+  const saveInstitutions = useCallback(
+    async (codes: string[]) => {
+      setSaving(true);
+      setProblem(null);
+      try {
+        for (const code of codes.slice(1)) await addMyInstitution(code);
+      } catch {
+        setProblem("other");
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+      await save({ institutionCode: codes[0] ?? null, onboardedAt: true }, STEPS + 1);
+    },
+    [save],
   );
 
   const back = () => navigate(firstRunPath(step - 1));
@@ -469,9 +510,14 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
                 <button
                   type="button"
                   disabled={!i.available || saving}
-                  className={i.code === institution ? "institution on" : "institution"}
+                  className={chosen.includes(i.code) ? "institution on" : "institution"}
                   style={i.colour ? { ["--mark" as string]: i.colour } : undefined}
-                  onClick={() => setInstitution(i.code === institution ? null : i.code)}
+                  aria-pressed={chosen.includes(i.code)}
+                  onClick={() =>
+                    setChosen((was) =>
+                      was.includes(i.code) ? was.filter((c) => c !== i.code) : [...was, i.code],
+                    )
+                  }
                 >
                   <span className="mark" aria-hidden="true">
                     {i.name.slice(0, 1)}
@@ -498,7 +544,7 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
               className="cta"
               disabled={saving}
               onClick={() =>
-                void save({ institutionCode: institution, onboardedAt: true }, STEPS + 1)
+                void saveInstitutions(chosen)
               }
             >
               {t("firstrun.finish")}
