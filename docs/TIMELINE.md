@@ -1798,11 +1798,15 @@ leaving them in capitals would have made one page look like two.
    must never reach an address bar, and whether a filter group or a course
    section is folded is not held anywhere, because it is read from the URL on
    every render.
-9b. **The app zone overflows sideways on a phone.** Measured 2026-09-18 at a
-   390px viewport on both the browse screen and a course page: the intro text
-   and the filter chips run past the right edge and the sign-in button is cut
-   off. The likely cause is the header bar, where `shell.css` deliberately
-   stops the sign-in buttons shrinking so their labels cannot wrap inside a
-   pill. Most students will open this on a phone, so it belongs immediately
-   after deployment.
+9b. ~~The app zone overflows sideways on a phone~~ **done, phase 40, and the
+   entry above was wrong in both halves.** The app zone never overflowed at any
+   phone width. The PUBLIC zone did, on every page, by 910px of document inside
+   a 375px screen. The cause was not the header bar either: `.site-main` is a
+   flex item and without an explicit width it took its content's width instead
+   of its container's.
+   It was claimed here on the strength of screenshots, and the screenshots were
+   the problem: `--window-size=420` is clamped to the host's minimum window
+   width, so the page laid out wider than the image and everything looked cut.
+   A DOM probe reading `scrollWidth` settled it in one run. **Measure the
+   document, not the picture of it**, and see `LESSONS.md` section 6.
 9. ~~Branch protection~~ done 2026-09-11, see phase 17.
