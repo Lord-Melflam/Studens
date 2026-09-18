@@ -16,7 +16,7 @@
  * URL is not navigation.
  */
 import { useEffect, useState } from "react";
-import { useT } from "@studens/i18n";
+import { useLocale, useT } from "@studens/i18n";
 import type { ModuleProps } from "./index.js";
 import { api, type CourseDetail, type CourseSummary } from "./api.js";
 import { queryOf, settingsRoute } from "./urlstate.js";
@@ -151,6 +151,7 @@ export function courseKey(c: { institution: string; code: string }): string {
 
 export function Ryc({ path, search, navigate }: ModuleProps) {
   const t = useT();
+  const locale = useLocale();
   const view = parseView(path);
   const [meta, setMeta] = useState<{ year: number; courses: number } | null>(null);
   /**
@@ -363,40 +364,88 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
         </button>
       </nav>
 
+      {/* The two tabs did not say what they were FOR, and the difference is
+          not obvious: one is for when you know your programme, the other for
+          when you know the course. Said under the tabs rather than in a
+          tooltip, because nobody hovers a tab to find out what it does. */}
+      <p className="tab-hint">
+        {view.kind === "search" ? t("ryc.tab.search.hint") : t("ryc.tab.browse.hint")}
+      </p>
+
       {meta && (
         <p className="meta">
-          {t("ryc.meta", { n: meta.courses, from: meta.year, to: meta.year + 1 })}
+          {t("ryc.meta", {
+            n: new Intl.NumberFormat(locale).format(meta.courses),
+            from: meta.year,
+            to: meta.year + 1,
+          })}
         </p>
       )}
       {error && <p className="error">{error}</p>}
 
       {view.kind === "search" ? (
         <>
-          <label className="search" htmlFor="q">
-            {t("ryc.search.label")}
-            <input
-              id="q"
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("ryc.search.placeholder")}
-              autoComplete="off"
-              autoFocus
-            />
-          </label>
+          {/*
+            ONE BOX, AND IT LOOKS LIKE THE POINT OF THE SCREEN.
+            It was a full width input under a small label, floating in an empty
+            page, with a second box under it once results arrived that asked
+            almost the same question. François: "it just feels like a simple
+            search bar from late years."
+          */}
+          <div className="searchbox">
+            <label htmlFor="q">{t("ryc.search.label")}</label>
+            <div className="searchbox-field">
+              <svg viewBox="0 0 20 20" aria-hidden="true" className="searchbox-icon">
+                <circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M13.2 13.2 17 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              <input
+                id="q"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("ryc.search.placeholder")}
+                autoComplete="off"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          {/* Nothing typed yet. An empty page teaches nothing, so this says
+              what the box takes and offers three words that certainly match,
+              rather than course codes that would rot the day one is renamed. */}
+          {query.trim().length < 2 && (
+            <div className="search-start">
+              <p>{t("ryc.search.start")}</p>
+              <ul className="examples">
+                {["informatique", "projet", "statistique"].map((word) => (
+                  <li key={word}>
+                    <button type="button" onClick={() => setQuery(word)}>
+                      {word}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {query.trim().length >= 2 && !searching && results.length === 0 && (
             <p className="empty">{t("ryc.search.none", { query })}</p>
           )}
           {results.length > 0 && (
-            <CourseFilters
-              courses={results}
-              reviewCounts={reviewCounts}
-              onOpen={(c) => navigate(coursePath(c.institution, c.code))}
-              emptyLabel={t("ryc.search.none", { query })}
-              search={search}
-              here="/recherche"
-              navigate={navigate}
-            />
+            <div className="results-in">
+              <CourseFilters
+                courses={results}
+                reviewCounts={reviewCounts}
+                onOpen={(c) => navigate(coursePath(c.institution, c.code))}
+                emptyLabel={t("ryc.search.none", { query })}
+                search={search}
+                here="/recherche"
+                navigate={navigate}
+                /* The box above already asks this question. */
+                textFilter={false}
+              />
+            </div>
           )}
         </>
       ) : (

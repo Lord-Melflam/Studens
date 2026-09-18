@@ -26,10 +26,14 @@ import {
   decide,
   fetchAppointments,
   fetchQueue,
+  fetchSettings,
+  setSetting,
+  suspend,
   appoint,
   type Appointment,
   type AppointmentEvent,
   type QueueEntry,
+  type SettingRow,
 } from "./api.js";
 
 function ago(iso: string, locale: string): string {
@@ -302,6 +306,175 @@ function Holder({
   );
 }
 
+/**
+ * WHAT AN ADMINISTRATOR MAY CHANGE WITHOUT A DEPLOY.
+ *
+ * Asked for directly: "the 10 reviews per page could change. Could be 5 or
+ * less according to what the admin will judge fine for users." I argued once
+ * for a constant and was overruled, which is the right outcome: the person
+ * running the product should be able to change how it behaves for the people
+ * using it, and that is not a thing to need a shell for.
+ *
+ * The bounds come from the server, so this screen does not have to know why
+ * three is the floor. Out of range is REFUSED rather than clamped: clamping
+ * would tell somebody they had set 500 when they had set 50.
+ */
+function Settings() {
+  const t = useT();
+  const [rows, setRows] = useState<SettingRow[] | null>(null);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [problem, setProblem] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    void fetchSettings().then((r) => {
+      setRows(r);
+      setDraft(Object.fromEntries(r.map((x) => [x.key, x.value ?? String(x.fallback)])));
+    });
+  }, []);
+  useEffect(load, [load]);
+
+  if (rows === null || rows.length === 0) return null;
+
+  const save = (row: SettingRow): void => {
+    setProblem(null);
+    setSaved(null);
+    void setSetting(row.key, draft[row.key] ?? "")
+      .then(() => {
+        setSaved(row.key);
+        load();
+      })
+      .catch((e: Error) => setProblem(e.message));
+  };
+
+  return (
+    <section className="panel">
+      <h3>{t("mod.settings")}</h3>
+      <p className="hint">{t("mod.settings.hint")}</p>
+      {rows.map((row) => (
+        <div key={row.key} className="inline-field">
+          {/* THE KEY IS THE LABEL. Translating it would mean the shell
+              holding a phrase like "reviews per page", which is the module's
+              vocabulary and exactly what FR-B16 keeps out of here; the gate
+              caught the first attempt. A key is also what an administrator
+              reading the audit log will see, and a new setting needs no change
+              to this screen at all. */}
+          <label htmlFor={row.key}><code>{row.key}</code></label>
+          <input
+            id={row.key}
+            className="text-input"
+            type="number"
+            min={row.min}
+            max={row.max}
+            value={draft[row.key] ?? ""}
+            onChange={(e) => setDraft({ ...draft, [row.key]: e.target.value })}
+          />
+          <button type="button" onClick={() => save(row)}>
+            {t("mod.settings.save")}
+          </button>
+          <span className="hint">
+            {t("mod.settings.range", { min: row.min, max: row.max, fallback: row.fallback })}
+          </span>
+        </div>
+      ))}
+      {saved && <p className="hint">{t("mod.settings.saved")}</p>}
+      {problem && <p className="bad">{t("mod.settings.refused")}</p>}
+    </section>
+  );
+}
+
+/**
+ * SUSPENDING AN ACCOUNT, and saying plainly what that is not.
+ *
+ * The three sentences under the heading are not decoration. Registration is
+ * open by design (FR-A6), so a suspension binds an account and not a person,
+ * and OPEN-35 forbids describing a speed bump as more than one. And it cannot
+ * reach the anonymous path (FR-E7): what that account published anonymously is
+ * not linked to it and cannot be gathered or withdrawn as a set. A moderator
+ * pressing this button is entitled to know both before pressing it.
+ */
+function Suspensions() {
+  const t = useT();
+  const [username, setUsername] = useState("");
+  const [reason, setReason] = useState("");
+  const [days, setDays] = useState<string>("30");
+  const [problem, setProblem] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const act = (lift: boolean): void => {
+    setProblem(null);
+    setDone(false);
+    setBusy(true);
+    void suspend({
+      username: username.trim(),
+      days: days === "permanent" ? null : Number(days),
+      reason: reason.trim(),
+      lift,
+    })
+      .then(() => {
+        setDone(true);
+        setUsername("");
+        setReason("");
+      })
+      .catch((e: Error) => setProblem(e.message))
+      .finally(() => setBusy(false));
+  };
+
+  return (
+    <section className="panel">
+      <h3>{t("mod.suspend")}</h3>
+      <p className="hint">{t("mod.suspend.account")}</p>
+      <p className="hint">{t("mod.suspend.anonymous")}</p>
+
+      <div className="inline-field">
+        <label htmlFor="susp-user">{t("mod.suspend.username")}</label>
+        <input
+          id="susp-user"
+          className="text-input"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          autoComplete="off"
+        />
+      </div>
+      <div className="inline-field">
+        <label htmlFor="susp-days">{t("mod.suspend.length")}</label>
+        <select id="susp-days" value={days} onChange={(e) => setDays(e.target.value)}>
+          {SUSPENSION_LENGTHS.map((d) => (
+            <option key={d} value={d}>
+              {d === "permanent" ? t("mod.suspend.permanent") : t("mod.suspend.days", { n: d })}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="inline-field">
+        <label htmlFor="susp-why">{t("mod.suspend.reason")}</label>
+        <input
+          id="susp-why"
+          className="text-input"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          autoComplete="off"
+        />
+      </div>
+
+      <div className="inline-field">
+        <button type="button" className="danger" disabled={busy || username.trim() === ""} onClick={() => act(false)}>
+          {t("mod.suspend.do")}
+        </button>
+        <button type="button" disabled={busy || username.trim() === ""} onClick={() => act(true)}>
+          {t("mod.suspend.lift")}
+        </button>
+      </div>
+      {done && <p className="hint">{t("mod.suspend.done")}</p>}
+      {problem && <p className="bad">{t(problem === "refused" ? "mod.suspend.refused" : "mod.suspend.failed")}</p>}
+    </section>
+  );
+}
+
+/** Offered lengths. Fixed, because a free date invites "until 2099". */
+const SUSPENSION_LENGTHS = ["7", "30", "90", "permanent"] as const;
+
 function Appointments() {
   const t = useT();
   const locale = useLocale();
@@ -461,6 +634,8 @@ export function ModerationConsole({ canAppoint }: { canAppoint: boolean }) {
         )}
       </section>
 
+      {canAppoint && <Suspensions />}
+      {canAppoint && <Settings />}
       {canAppoint && <Appointments />}
     </div>
   );

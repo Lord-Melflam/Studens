@@ -105,3 +105,45 @@ export async function appoint(username: string, role: string): Promise<void> {
     throw new Error(body.reason ?? "failed");
   }
 }
+
+export interface SettingRow {
+  key: string;
+  min: number;
+  max: number;
+  fallback: number;
+  /** Null when nobody has set it, so the screen can show the default as one. */
+  value: string | null;
+}
+
+export async function fetchSettings(): Promise<SettingRow[]> {
+  const r = await fetch("/api/moderation/settings");
+  if (!r.ok) return [];
+  return ((await r.json()) as { settings: SettingRow[] }).settings;
+}
+
+export async function setSetting(key: string, value: string): Promise<void> {
+  const r = await fetch("/api/moderation/settings", {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ key, value }),
+  });
+  if (!r.ok) {
+    const body = (await r.json().catch(() => ({}))) as { min?: number; max?: number };
+    throw new Error(body.min === undefined ? "failed" : `range:${body.min}:${body.max}`);
+  }
+}
+
+/** `days: null` is permanent. `lift: true` ends a suspension early. */
+export async function suspend(input: {
+  username: string;
+  days: number | null;
+  reason: string;
+  lift?: boolean;
+}): Promise<void> {
+  const r = await fetch("/api/moderation/suspend", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!r.ok) throw new Error(r.status === 409 ? "refused" : "failed");
+}

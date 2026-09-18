@@ -20,6 +20,7 @@
  */
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
+import { suspensionOf } from "./suspension.js";
 
 /** FR-A3. */
 export const IDLE_DAYS = 14;
@@ -58,7 +59,9 @@ export interface SessionIdentity {
 }
 
 export class NoSession extends Error {
-  constructor(readonly reason: "absent" | "unknown" | "revoked" | "idle" | "expired") {
+  constructor(
+    readonly reason: "absent" | "unknown" | "revoked" | "idle" | "expired" | "suspended",
+  ) {
     // FR-A4: the reason is for logs and tests, never for the response body. A
     // client that learns "revoked" rather than "unknown" learns that the token
     // it holds was real.
@@ -138,12 +141,29 @@ export async function verifySession(
             username: true,
             onboardedAt: true,
             onboardingStep: true,
+            suspendedAt: true,
+            suspendedUntil: true,
+            suspendedReason: true,
           },
         },
       },
     });
     if (!row) throw new NoSession("unknown");
     if (row.revokedAt) throw new NoSession("revoked");
+    /**
+     * A SUSPENDED ACCOUNT HAS NO SESSION, checked here rather than at each
+     * route, because here is the one place every signed-in request passes
+     * through. Suspending revokes the live sessions in the same transaction,
+     * so this is the second line of the same defence: it catches a session
+     * issued between the two, and a suspension written straight into the
+     * database.
+     *
+     * It reads as an ordinary absent session. The reason belongs on the
+     * sign-in screen, where there is somebody to read it, not in the failure
+     * of a request that was going to be a 401 either way (FR-A4: every
+     * failure here is the same failure).
+     */
+    if (suspensionOf(row.member).suspended) throw new NoSession("suspended");
     if (now.getTime() - row.lastSeenAt.getTime() > IDLE_DAYS * DAY_MS) {
       throw new NoSession("idle");
     }

@@ -7,8 +7,15 @@
  */
 import { Router, json } from "express";
 import { PrismaClient } from "@prisma/client";
-import { QuotaExceeded, quotaRemaining, usernamesFor } from "@studens/platform";
-import { ReviewInvalid, reviewsFor, submitAnonymous, submitAttributed, type ReviewInput } from "@studens/ryc";
+import { QuotaExceeded, quotaRemaining, readNumberSetting, usernamesFor } from "@studens/platform";
+import {
+  REVIEWS_PER_PAGE,
+  ReviewInvalid,
+  reviewsFor,
+  submitAnonymous,
+  submitAttributed,
+  type ReviewInput,
+} from "@studens/ryc";
 import { identify, identifyIfAny, NotAuthenticated } from "../identity.js";
 
 export function reviewRoutes(prisma: PrismaClient): Router {
@@ -144,9 +151,21 @@ export function reviewRoutes(prisma: PrismaClient): Router {
       // unbounded response this exists to prevent, so it is the module's
       // constant and the client does not get a say.
       const asked = Number.parseInt(String(req.query["page"] ?? "1"), 10);
+      // HOW MANY FIT ON A PAGE IS AN ADMINISTRATOR'S CHOICE, read here rather
+      // than baked in. François asked for it: "the 10 reviews per page could
+      // change. Could be 5 or less according to what the admin will judge fine
+      // for users." The bounds are the module's, not the setting's: a stored
+      // value of zero or of a million must not be a way to take a page down,
+      // and a row can be edited by somebody who never saw the form.
+      const perPage = await readNumberSetting(prisma, "ryc.reviewsPerPage", {
+        fallback: REVIEWS_PER_PAGE,
+        min: 3,
+        max: 50,
+      });
       const { reviews, aggregate, page, pages, total } = await reviewsFor(prisma, course.id, {
         names: (ids) => usernamesFor(prisma, ids),
         page: Number.isFinite(asked) ? asked : 1,
+        perPage,
       });
 
       const signedIn = (await identifyIfAny(prisma, req)) !== null;
