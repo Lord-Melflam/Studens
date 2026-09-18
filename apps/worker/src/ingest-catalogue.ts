@@ -27,6 +27,8 @@ interface Args {
   /** Which institution's catalogue. Defaults to UCLouvain, which is what every
       existing command line means. */
   source: string;
+  /** Also fetch what a source keeps only on its per-course pages. See --prose. */
+  prose: boolean;
   year?: number;
   faculties: string[];
   max?: number;
@@ -45,6 +47,7 @@ interface Args {
 function parseArgs(argv: string[]): Args {
   const args: Args = {
     source: uclouvain.institution,
+    prose: false,
     faculties: [],
     out: "data/catalogue.json",
     delayMs: 700,
@@ -54,6 +57,9 @@ function parseArgs(argv: string[]): Args {
     const flag = argv[i];
     const value = argv[i + 1];
     switch (flag) {
+      case "--prose":
+        args.prose = true;
+        break;
       case "--source":
         if (value) args.source = value.trim().toLowerCase();
         i += 1;
@@ -123,6 +129,7 @@ async function main(): Promise<void> {
     ...(args.year !== undefined ? { year: args.year } : {}),
     ...(args.faculties.length ? { onlyFaculties: args.faculties } : {}),
     ...(args.max !== undefined ? { maxOfferings: args.max } : {}),
+    ...(args.prose ? { prose: true } : {}),
     fetcher: fetcher,
     onProgress: (m) => console.log(`  ${m}`),
   });
