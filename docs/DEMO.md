@@ -12,31 +12,186 @@ figure here is also visible in the product, which reads them from the database.
 
 ## 1. Before the room arrives
 
-Three terminals, in this order. The first two stay open.
+Copy these exactly. Three terminals; the first two stay open for the whole
+session.
+
+### Terminal 1, the API
 
 ```bash
 cd ~/projects/studens
-sudo service postgresql start     # only if it is not already running
-
-npm run dev:api                   # terminal 1, API on 3001
-npm run dev:web                   # terminal 2, application on 5173
+sudo service postgresql start
+npm run dev:api
 ```
 
-Then check, in terminal 3, that there is something to show:
+Wait for it to print three lines. It has to say all three:
+
+```
+api listening on http://localhost:3001 (catalogue: database)
+  .env: /home/.../.env  |  sign-in providers: Google
+  web app: not built, API only (npm run build:web)
+```
+
+`npm run dev:api` **rebuilds before it starts**, so restarting it is how you
+pick up a code change. It takes about twenty seconds. It also turns on the
+development identity and warns about it in capitals; that warning is correct
+and it is worth not having on the projector.
+
+### Terminal 2, the application
+
+```bash
+cd ~/projects/studens
+npm run dev:web
+```
+
+Wait for `VITE ... ready` and `Local: http://localhost:5173/`.
+
+**This one does NOT rebuild anything on its own.** See section 1.2.
+
+### Terminal 3, the check before you start
 
 ```bash
 curl -s localhost:3001/api/catalogue
-# {"year":2026,"courses":12093,"programmes":976,"institutions":["uclouvain","ulb"]}
 ```
 
-**If a change you made does not appear in the browser**, stop the web server,
-`rm -rf node_modules/.vite`, and start it again. A stale module served next to
-fresh CSS has cost this project several hours; it is the first thing to check,
-not the last.
+Expected, and if it disagrees the rest of the session will too:
 
-`npm run dev:api` prints which sign-in providers are configured and warns that
-the development identity is on. That warning is correct and is worth not
-showing on a projector: it means anyone can sign in as one fixed member.
+```json
+{"year":2026,"courses":12093,"programmes":976,"institutions":["uclouvain","ulb"]}
+```
+
+---
+
+### 1.1 The order that matters
+
+```bash
+git pull                 # FIRST, before starting anything
+npm run dev:api          # rebuilds, then serves
+npm run dev:web          # serves source directly
+```
+
+Pull first. Starting the servers and then pulling is the single most common way
+to end up demonstrating last week's code, because neither server notices.
+
+---
+
+### 1.2 THE STALE SERVER, which has cost this project more hours than any bug
+
+**The symptom**: a change you know is merged is not on the screen. A button
+with no styling, a chevron that is not drawn, a number that is still the old
+one, a page that crashes with "Element type is invalid".
+
+**The cause**, one of two:
+
+- `dev:web` was started before you pulled, and Vite is serving modules it
+  cached. It does not re-read the disk for a change that arrived behind its
+  back, and it can serve **fresh CSS next to a stale component**, which is why
+  the result often looks like a styling bug rather than a stale one.
+- Two `vite` processes are running at once, from two terminals, and the one
+  answering port 5173 is not the one you think.
+
+**The fix, every time, in order:**
+
+```bash
+# 1. Find and stop every dev server
+ps -o pid,etime,args -C node | grep -E 'vite|api/dist'
+
+# 2. Stop them by PID, from that list. Never by pattern:
+#    `pkill -f vite` matches the shell running it and kills your terminal.
+kill <pid> <pid>
+
+# 3. Free the API port if something is still holding it
+fuser -k 3001/tcp
+
+# 4. Throw away Vite's cache
+rm -rf node_modules/.vite apps/web/node_modules/.vite
+
+# 5. Start again, API first
+npm run dev:api          # terminal 1
+npm run dev:web          # terminal 2
+```
+
+**How to know you are actually running what you think.** Compare how long the
+servers have been up against the last commit:
+
+```bash
+ps -o pid,etime,args -C node | grep -E 'vite|api/dist'
+git log -1 --format='%ci'
+```
+
+If a server has been running longer than the age of the newest commit, it
+predates your code. That is the whole check, and it takes five seconds.
+
+---
+
+### 1.3 Proving a specific change is live
+
+Guessing from the screen is how the wrong thing gets diagnosed. Ask the server.
+
+```bash
+# The catalogue figures (PR 57). Must name both universities.
+curl -s localhost:3001/api/catalogue
+
+# The reviews on the ULB demo course: 4 pages of 10, 35 in total.
+curl -s 'localhost:3001/api/courses/ulb/info-f101/reviews' \
+  | python3 -m json.tool | head -20
+
+# The administrator's settings (PR 59). Needs a session first.
+curl -s -c /tmp/j.txt -o /dev/null -X POST localhost:3001/api/session/dev
+curl -s -b /tmp/j.txt localhost:3001/api/moderation/settings
+# {"settings":[{"key":"ryc.reviewsPerPage","min":3,"max":50,"fallback":10,...}]}
+```
+
+A signed-out call to the settings route answers **404 on purpose**, not 401: an
+address that only exists for an administrator should not announce itself. So
+404 there does not mean the route is missing; sign in first and ask again.
+
+---
+
+### 1.4 When the database is the problem
+
+```bash
+sudo service postgresql status      # is it even running
+sudo service postgresql start
+
+npm run db:migrate                  # apply any migration you just pulled
+npm run db:grant-local              # after a migration, or reads start failing
+npm run db:verify-isolation         # 32 assertions, ends with a plain verdict
+```
+
+Counts, if a demo course looks empty:
+
+```bash
+psql -d studens -c 'select count(*) from ryc."ReviewAttributed";'
+psql -d studens -c 'select count(*) from ryc."ReviewAnonymous";'
+psql -d studens -c 'select count(*) from ref."Course";'
+```
+
+The two seeded demo courses, which should stay seeded:
+
+| course | path | reviews | pages |
+|---|---|---|---|
+| ULB, Programmation | `/fr/app/ryc/c/ulb/info-f101` | 35 | 4 |
+| UCLouvain, Projet 3 | `/fr/app/ryc/c/uclouvain/lepl1503` | 50 | 5 |
+
+---
+
+### 1.5 Everything else worth having on hand
+
+```bash
+npm run gates            # typecheck, lint, 746 tests, schema, doc links
+npm run gates:db         # the above against a real database, plus isolation
+npm run build            # the production artefact: API, worker, application
+npm start                # run that artefact, serving the app from the API
+
+npm run ingest                              # re-crawl UCLouvain
+npm run ingest -- --source ulb --prose      # re-crawl ULB, long fields too
+npm run db:load -- --in data/catalogue.json # load a snapshot
+npm run catalogue:report                    # what the crawl lost, if anything
+```
+
+**Do not run an ingest before a demonstration.** UCLouvain takes about 78
+minutes and ULB about 75, and a half-finished crawl is not loaded, so there is
+nothing to gain and a live catalogue to lose.
 
 ---
 
@@ -236,3 +391,33 @@ them, because nothing in the product answers them yet:
 
 The second one is the roadmap. `docs/requirements.md` section 7 is where an
 answer becomes an open question rather than a feature nobody asked for.
+
+---
+
+## 7. When something breaks, at a glance
+
+Read the symptom, do the fix. Do not diagnose from the screen: the screen is
+what is lying to you.
+
+| What you see | What it is | What to type |
+|---|---|---|
+| A change you merged is not there. Unstyled buttons, a missing icon, an old number | Stale dev server, or two of them | `ps -o pid,etime,args -C node`, `kill <pid>`, `rm -rf node_modules/.vite`, start both again (1.2) |
+| The page is blank, or "Element type is invalid" | Same thing: a stale module beside fresh code | The same. It is almost never the code |
+| `EADDRINUSE` on 3001 | An API is already running | `fuser -k 3001/tcp`, then `npm run dev:api` |
+| Your terminal dies when you stop a server | `pkill -f` matched the shell running it | Kill by PID, or by port. Never by pattern |
+| Everything 500s, or reads fail after a `git pull` | A migration arrived and has not been applied | `npm run db:migrate && npm run db:grant-local` |
+| `Can't reach database server` | PostgreSQL is not running | `sudo service postgresql start` |
+| A course page shows no reviews | Wrong course, or the database was reset | Check the counts in 1.4, and use the two seeded courses |
+| The catalogue figures look wrong on the public page | They are fetched, so the API is the source | `curl -s localhost:3001/api/catalogue` and compare |
+| `/api/moderation/settings` gives 404 | Correct when signed out; the route hides itself | Sign in as an administrator first (1.3) |
+| Sign-in does nothing | Only Google is registered; Microsoft is not | Use the DEV button, or Google |
+| A screenshot looks cut off at the right | The window was clamped to a minimum width | Measure the DOM, not the picture. Screenshots lie about width |
+
+**The single most useful check**, when anything at all looks wrong:
+
+```bash
+ps -o pid,etime,args -C node | grep -E 'vite|api/dist'
+git log -1 --format='%ci'
+```
+
+A server older than your newest commit is running code you have not got.
