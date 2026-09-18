@@ -308,7 +308,13 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   }
 
   return {
-    version: 8,
+    // 9 since 2026-09-18, when a programme's faculty became nullable and the
+    // file started naming the institution it is a crawl of. UCLouvain needs
+    // neither: every one of its programmes has a faculty, and this crawler
+    // only ever crawls UCLouvain. The number and the name below are the only
+    // lines this file has given to there being a second institution.
+    version: 9,
+    institution: "uclouvain",
     takenAt: new Date().toISOString(),
     year,
     faculties,

@@ -136,14 +136,21 @@ export function CoursePage({
               with a platform whose main promise is not linking people to what
               they read.
             */}
-            <a
-              className="official"
-              href={course.officialUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {course.officialUrl}
-            </a>
+            {course.officialUrl ? (
+              <a
+                className="official"
+                href={course.officialUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {course.officialUrl}
+              </a>
+            ) : (
+              // Null for an institution no source here knows how to link to.
+              // Saying so beats a link that goes nowhere on the one row whose
+              // job is to send a reader to the source.
+              <span className="meta">{t("ryc.course.noOfficialPage")}</span>
+            )}
           </dd>
         </div>
       </dl>

@@ -1519,17 +1519,79 @@ settings write. The legacy forward replaces too and is not a setting, so an
 honest file failed. It pairs each call with its own option now.
 
 
+### Phase 35: ULB, crawled
+
+The source seam from phase 34 gets its second implementation, and it needed one
+schema change, which François approved: **a programme may have no faculty.**
+
+Measured on 80 of ULB's 286 French-language 2025 programmes: 64 name an ULB
+faculty, 9 publish no organisers at all, and 7 name only "Pôle éducation" or a
+haute école, which are real organisers and are not ULB faculties. A fifth of the
+catalogue. Null means the source does not state one, the same word already used
+for credits, term, site, field of study and kind. The two alternatives were
+losing a fifth of ULB, or writing "Haute Ecole Francisco Ferrer" into the
+database as an ULB faculty to keep a column NOT NULL.
+
+**ULB's faculties are discovered from ULB**, and cost no request: every page
+carries a footer listing all twelve, each linked to its own subdomain, which is
+the code. `phisoc`, `ltc`, `droit`, `sbsem`, `psycho`, `archi`, `sciences`,
+`polytech`, `medecine`, `esp`, `fsm`, `pharmacie`. It is needed because a
+programme's organisers list mixes them with partner universities and hautes
+écoles, and nothing on the page marks which is which.
+
+**One request per programme, not one per course.** ULB's listing carries the
+code, title, language, quadrimester, lecturers, credits and teaching hours for
+every course in it, so the whole catalogue is about 580 requests and a few
+minutes rather than the 78 UCLouvain took. The three long prose fields live only
+on the course pages and are deliberately left for a second pass: a catalogue
+with every fact and no long text is worth loading while the rest is fetched, and
+the screen says a ULB course has no assessment section rather than implying it.
+
+**Four defects, every one found by running the crawl and none of them loud.**
+
+A header. The listing endpoint serves `application/json` and answers **404, not
+406**, when `Accept` does not allow it, and the fetcher sent `text/html` for
+everything. 269 of 286 listings were recorded "unreachable" and it looked
+exactly like a university with a lot of missing pages.
+
+Two blocks. A programme page carries two `js-formation-ulb` elements, the
+course list and the admission conditions, and taking the first fetched
+`/ksup/accesscond`. That answers 200 with perfectly good JSON containing no
+courses, so all 286 programmes read as "empty" and nothing looked broken at
+all. **A wrong endpoint that succeeds is worse than one that fails.**
+
+A guess. The listing parameter was built from the programme code, assuming
+`2025-ba-biolb` means `anet=BA-BIOLB`. True of almost every programme and false
+for two, which answered 404 and lost their course lists. The page publishes the
+parameter; it is read now.
+
+And typography. Matching organiser names against the footer list failed for two
+whole faculties because ULB writes them differently in the two places: a curly
+apostrophe against a straight one, "Éducation" against "Education", "Motricité"
+against "motricité". Twelve programmes of eighty would have been filed under no
+faculty, plausibly and silently.
+
+**What had to be widened, and what did not.** The snapshot format went to
+version 9, the course-code pattern gained ULB's shape as a second alternative
+rather than being relaxed, and `PoliteFetcher.get` takes an `accept`. Those are
+shared infrastructure. `crawl.ts` gained exactly two lines, the version number
+and the institution it names, and `urls.ts` and all five parsers are still
+untouched: the crawler's logic has not been edited to make room for ULB.
+
+`officialUrl` also stopped being UCLouvain-shaped for every course. It was
+built from one institution's URL grammar whatever the row came from, which was
+correct with one catalogue and would have been wrong the hour this one loaded.
+
+
 ---
 
 ## Next
 
-0. **ULB, the second catalogue.** The database can hold two since phase 33 and
-   the read path addresses them apart since phase 34. What is left is the
-   crawler: the current one is UCLouvain-shaped throughout and needs a source
-   adapter, and `officialUrl` is still built from a UCLouvain URL grammar for
-   every course whatever its institution, which must move to the adapter before
-   ULB data lands. The reconnaissance is done and measured in
-   `design/catalogue-ingestion.md` 13.
+0. **ULB.** Crawlable since phase 35: `npm run ingest -- --source ulb`, about
+   580 requests and a few minutes. Not yet run in full, and not yet loaded.
+   What is deliberately missing is the three long prose fields, which live only
+   on ULB's course pages and need a second pass of roughly one request per
+   course. Everything else a course row carries is in the first pass.
 1. ~~Authentication~~ done, phases 19 and 25. Google works end to end. Microsoft
    is registered and untried: UCLouvain's tenant turns an outside account into
    an `#EXT#` guest, so it needs testing from the `procyo.be` tenant instead.

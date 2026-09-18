@@ -10,9 +10,23 @@
  * Politeness is not optional and not configurable downward: see
  * docs/design/catalogue-ingestion.md section 4.
  */
-import { crawl, promote, PoliteFetcher } from "@studens/ref";
+import { promote, PoliteFetcher, uclouvain, ulb, type CatalogueSource } from "@studens/ref";
+
+/**
+ * Which catalogues can be crawled, by the code they are filed under.
+ *
+ * A map rather than a switch so that adding a third is a line here and nothing
+ * else, which is the same rule the module registry follows (FR-B4).
+ */
+const SOURCES: Record<string, CatalogueSource> = {
+  [uclouvain.institution]: uclouvain,
+  [ulb.institution]: ulb,
+};
 
 interface Args {
+  /** Which institution's catalogue. Defaults to UCLouvain, which is what every
+      existing command line means. */
+  source: string;
   year?: number;
   faculties: string[];
   max?: number;
@@ -30,6 +44,7 @@ interface Args {
 
 function parseArgs(argv: string[]): Args {
   const args: Args = {
+    source: uclouvain.institution,
     faculties: [],
     out: "data/catalogue.json",
     delayMs: 700,
@@ -39,6 +54,10 @@ function parseArgs(argv: string[]): Args {
     const flag = argv[i];
     const value = argv[i + 1];
     switch (flag) {
+      case "--source":
+        if (value) args.source = value.trim().toLowerCase();
+        i += 1;
+        break;
       case "--year":
         args.year = Number(value);
         i += 1;
@@ -80,6 +99,18 @@ function parseArgs(argv: string[]): Args {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
+  const source = SOURCES[args.source];
+  if (!source) {
+    throw new Error(
+      `no source for "${args.source}"; known: ${Object.keys(SOURCES).sort().join(", ")}`,
+    );
+  }
+  // A snapshot holds ONE institution's crawl, so two sources must not write to
+  // one file. Defaulted rather than required, so every command written before
+  // there was a second source still means what it meant.
+  if (args.out === "data/catalogue.json" && source.institution !== uclouvain.institution) {
+    args.out = `data/catalogue-${source.institution}.json`;
+  }
   const started = Date.now();
   const fetcher = new PoliteFetcher({
     delayMs: args.delayMs,
@@ -87,7 +118,8 @@ async function main(): Promise<void> {
     cacheDir: args.cacheDir,
   });
 
-  const snapshot = await crawl({
+  console.log(`crawling ${source.label} into ${args.out}`);
+  const snapshot = await source.crawl({
     ...(args.year !== undefined ? { year: args.year } : {}),
     ...(args.faculties.length ? { onlyFaculties: args.faculties } : {}),
     ...(args.max !== undefined ? { maxOfferings: args.max } : {}),
@@ -102,7 +134,7 @@ async function main(): Promise<void> {
     `\nwrote ${args.out}: year ${snapshot.year}, ` +
       `${snapshot.faculties.length} faculties, ${snapshot.programmes.length} programmes, ` +
       `${snapshot.offerings.length} offerings, ${seconds}s\n` +
-      `  ${fetcher.requestCount} requests to uclouvain.be, ${fetcher.cacheHits} served from cache`,
+      `  ${fetcher.requestCount} requests to ${source.label}, ${fetcher.cacheHits} served from cache`,
   );
 }
 

@@ -20,7 +20,7 @@ import type { Prisma } from "@prisma/client";
 import type { ParsedOffering, Snapshot } from "./index.js";
 import type { Block } from "./ingestion/parse/rich.js";
 import { load } from "./ingestion/snapshot.js";
-import { courseUrl, programmeUrl } from "./ingestion/urls.js";
+import { officialCourseUrl, officialProgrammeUrl } from "./sources/official-url.js";
 import { mainLanguage } from "./ingestion/parse/offering.js";
 import type { ProgrammeKind } from "./ingestion/parse/programme.js";
 
@@ -107,7 +107,8 @@ export interface CourseDetail extends CourseSummary {
    * 2024 this canonical form redirects to the archive portal, which is exactly
    * the behaviour wanted: the link lands on the right page either way.
    */
-  officialUrl: string;
+  /** Null for an institution no source here knows how to link to. */
+  officialUrl: string | null;
   language: string | null;
   contactHours: string | null;
   /** FR-D19: scraped, never asked of reviewers. Structured, see rich.ts. */
@@ -193,7 +194,9 @@ export interface ProgrammeSummary {
   institution: string;
   code: string;
   title: string;
-  faculty: string;
+  /** Null when the source states no faculty for it. See snapshot version 9. */
+  faculty: string | null;
+  /** Null when the programme has no faculty, for the same reason as above. */
   /**
    * The faculty's own name.
    *
@@ -202,7 +205,7 @@ export interface ProgrammeSummary {
    * not know which one owns it. The faculty is a filter now, and a filter needs
    * a label a person recognises rather than a four-letter code.
    */
-  facultyName: string;
+  facultyName: string | null;
   courses: number;
   /**
    * What kind of programme it is (FR-D24), null when nothing known matched.
@@ -226,7 +229,8 @@ export interface ProgrammeSummary {
    * joint programmes hosted by a partner, and they used to be hidden entirely
    * rather than shown with somewhere to go.
    */
-  officialUrl: string;
+  /** Null for an institution no source here knows how to link to. */
+  officialUrl: string | null;
   /**
    * The decree's field of study, for instance "Sciences juridiques".
    *
@@ -339,7 +343,10 @@ export class SnapshotCatalogue implements Catalogue {
         code: p.code,
         title: p.title,
         faculty: p.faculty,
-        facultyName: nameOf.get(p.faculty) ?? p.faculty.toUpperCase(),
+        // Null stays null rather than becoming a word. A programme whose
+        // source names no faculty has none, and "AUTRE" in that column would
+        // be an answer we invented.
+        facultyName: p.faculty === null ? null : (nameOf.get(p.faculty) ?? p.faculty.toUpperCase()),
         // Only courses actually present in this snapshot: a scoped run holds a
         // sample, and claiming a count we cannot show would be a lie.
         courses: new Set(
@@ -351,7 +358,7 @@ export class SnapshotCatalogue implements Catalogue {
         credits: p.credits,
         site: p.site,
         domain: p.domain,
-        officialUrl: programmeUrl(this.snapshot.year, p.code),
+        officialUrl: officialProgrammeUrl(this.institution, this.snapshot.year, p.code),
       }))
       .sort((a, b) => a.title.localeCompare(b.title));
   }
@@ -375,7 +382,7 @@ export class SnapshotCatalogue implements Catalogue {
     if (!o) return null;
     return {
       ...summarise(o, this.institution),
-      officialUrl: courseUrl(o.year, o.code),
+      officialUrl: officialCourseUrl(this.institution, o.year, o.code),
       language: o.language,
       contactHours: o.contactHours,
       assessment: o.assessment,
@@ -517,7 +524,7 @@ export class DatabaseCatalogue implements Catalogue {
     if (!row) return null;
     return {
       ...summariseRow(row, this.year),
-      officialUrl: courseUrl(row.year, row.course.code),
+      officialUrl: officialCourseUrl(row.course.institution.code, row.year, row.course.code),
       language: row.language,
       contactHours: row.contactHours,
       assessment: blocksFrom(row.assessment),
@@ -545,7 +552,8 @@ export class DatabaseCatalogue implements Catalogue {
         ...(facultyCode ? { faculty: { code: facultyCode.toLowerCase() } } : {}),
       },
       include: {
-        faculty: { include: { institution: true } },
+        faculty: true,
+        institution: true,
         site: true,
         domain: true,
         _count: { select: { offerings: true } },
@@ -553,17 +561,20 @@ export class DatabaseCatalogue implements Catalogue {
       orderBy: { title: "asc" },
     });
     return rows.map((p) => ({
-        institution: p.faculty.institution.code,
+        // From the programme's own column, not through the faculty: since
+        // 2026-09-18 a programme may have no faculty, and its institution is
+        // still known.
+        institution: p.institution.code,
         code: p.code,
         title: p.title,
-        faculty: p.faculty.code,
-        facultyName: p.faculty.name,
+        faculty: p.faculty?.code ?? null,
+        facultyName: p.faculty?.name ?? null,
         courses: p._count.offerings,
         kind: p.kind as ProgrammeKind | null,
         credits: p.credits,
         site: p.site?.name ?? null,
         domain: p.domain?.name ?? null,
-        officialUrl: programmeUrl(p.year, p.code),
+        officialUrl: officialProgrammeUrl(p.institution.code, p.year, p.code),
       }));
   }
 

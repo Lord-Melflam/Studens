@@ -314,6 +314,7 @@ model Institution {
   faculties  Faculty[]
   sites      Site[]
   courses    Course[]
+  programmes Programme[]
 
   @@schema("ref")
 }
@@ -374,7 +375,19 @@ model Faculty {
 
 model Programme {
   id        String  @id @default(uuid())
-  facultyId String
+  /// NULLABLE since 2026-09-18, because ULB's programmes do not always have one.
+  ///
+  /// Measured on 80 of its 2025 programmes: 64 name a faculty, 9 publish no
+  /// organiser at all, and 7 name only a partner, "Pôle éducation" or a haute
+  /// école, which are real organisers and are not ULB faculties. A fifth of the
+  /// catalogue, so not an edge case to drop.
+  ///
+  /// Null means THE SOURCE DOES NOT STATE ONE, the same word the catalogue
+  /// already uses for credits, term, site, field of study and kind. It does not
+  /// mean "none": inventing a faculty row for a haute école so that a column
+  /// could stay NOT NULL would have written something false into the database
+  /// to keep a constraint happy.
+  facultyId String?
   /// WHOSE CATALOGUE THIS CODE BELONGS TO.
   ///
   /// Derivable through the faculty, and stored anyway, because a unique index
@@ -385,9 +398,16 @@ model Programme {
   ///
   /// Kept honest by the composite foreign key below rather than by the loader
   /// being careful: a Programme whose institution disagrees with its faculty's
-  /// cannot be written at all.
+  /// cannot be written at all. That key is NOT enforced when `facultyId` is
+  /// null, which is why this column has a foreign key of its own as well.
   institutionId String
-  faculty   Faculty @relation(fields: [facultyId, institutionId], references: [id, institutionId])
+  faculty   Faculty? @relation(fields: [facultyId, institutionId], references: [id, institutionId])
+  /// Its own foreign key, and not only the composite one above.
+  ///
+  /// A composite key is not enforced when any of its columns is null, which is
+  /// exactly the new case. Without this, a programme with no faculty could name
+  /// an institution that does not exist and nothing would object.
+  institution   Institution @relation(fields: [institutionId], references: [id])
   code      String
   year      Int
   title     String

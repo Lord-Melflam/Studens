@@ -210,14 +210,19 @@ export function Browse({
           <div className="programme-empty">
             <p>{t("ryc.browse.noCourseList")}</p>
             <p className="hint">{t("ryc.browse.noCourseList.why")}</p>
-            <a
-              className="official"
-              href={programme.officialUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              {t("ryc.browse.officialProgramme")}
-            </a>
+            {/* Only where there is one. `officialUrl` is null for an
+                institution no source here knows how to link to, and a dead
+                link presented as official is worse than no link. */}
+            {programme.officialUrl && (
+              <a
+                className="official"
+                href={programme.officialUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                {t("ryc.browse.officialProgramme")}
+              </a>
+            )}
           </div>
         ) : (
           // The same column as the programme list, and for the same reason: the
@@ -367,7 +372,7 @@ export function Browse({
                           {p.courses === 0
                             ? `${p.site ? " · " : ""}${t("ryc.browse.noCourseList.flag")}`
                             : `${p.site ? " · " : ""}${t("ryc.browse.courses", { count: p.courses })}`}
-                          {` · ${p.faculty.toUpperCase()}`}
+                          {p.faculty ? ` · ${p.faculty.toUpperCase()}` : ""}
                         </span>
                       </button>
                     </li>

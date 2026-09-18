@@ -49,6 +49,16 @@ export interface LoadResult {
   institutions: number;
   faculties: number;
   programmes: number;
+  /**
+   * Programmes the snapshot filed under a faculty this load did not recognise.
+   *
+   * Zero on every UCLouvain run, because its faculties come from the same
+   * crawl. Counted rather than silent so that a source whose organiser names
+   * drift from its own faculty list says so: on ULB, two faculties differ
+   * between the two places it publishes them by a curly apostrophe and a
+   * capital letter, which is exactly how this number stops being zero.
+   */
+  programmesWithUnknownFaculty: number;
   coursesCreated: number;
   coursesReused: number;
   offerings: number;
@@ -85,7 +95,10 @@ export async function loadSnapshot(
   opts: LoadOptions = {},
 ): Promise<LoadResult> {
   const prisma = opts.client ?? new PrismaClient();
-  const institutionCode = opts.institutionCode ?? "uclouvain";
+  // The snapshot says whose crawl it is since version 9. The option still wins
+  // when given, because a caller naming it explicitly is being deliberate, and
+  // the fallback is only for a file written before the field existed.
+  const institutionCode = opts.institutionCode ?? snapshot.institution ?? "uclouvain";
   const assumeRole = opts.assumeRole === undefined ? "studens_ref" : opts.assumeRole;
 
   const result: LoadResult = {
@@ -95,6 +108,7 @@ export async function loadSnapshot(
     programmes: 0,
     coursesCreated: 0,
     coursesReused: 0,
+    programmesWithUnknownFaculty: 0,
     offerings: 0,
     teachers: 0,
     facultyLinks: 0,
@@ -172,8 +186,28 @@ export async function loadSnapshot(
       // them and a fresh id would drop every link.
       const programmeIds = new Map<string, string>();
       for (const p of snapshot.programmes) {
-        const facultyId = facultyIds.get(p.faculty);
-        if (!facultyId) continue;
+        /**
+         * A programme with no faculty is KEPT, with none.
+         *
+         * `p.faculty` became nullable at snapshot version 9 because ULB
+         * publishes an organisers list rather than faculty indexes, and on 80
+         * of its programmes sampled, 16 name no faculty of its own. This line
+         * used to `continue` on a falsy faculty, which with a null would have
+         * dropped a fifth of ULB without a word.
+         *
+         * A faculty the snapshot NAMES and the load does not recognise is a
+         * different thing and still skips, because filing a programme under a
+         * faculty that is not there is worse than leaving it out. It is
+         * counted now instead of vanishing.
+         */
+        let facultyId: string | null = null;
+        if (p.faculty !== null) {
+          facultyId = facultyIds.get(p.faculty) ?? null;
+          if (facultyId === null) {
+            result.programmesWithUnknownFaculty += 1;
+            continue;
+          }
+        }
         // Written as null rather than left alone when the snapshot has none, so
         // a programme that loses its site upstream loses it here too. A load is
         // a statement about the whole catalogue, not a patch over the last one.
