@@ -1070,3 +1070,37 @@ button.ghost {
   .browse-wide .chip { padding: 0.2rem 0.5rem; font-size: 0.78rem; }
   .browse-wide .chip .n { margin-left: 0.3rem; font-size: 0.7rem; }
 }
+
+/* --- the review pager ----------------------------------------------------
+   A previous, a where-you-are, and a next. No row of numbered pages: at
+   thirteen pages the numbers are wider than the column on a phone and none of
+   them is the one anybody wants. The count above already says how many reviews
+   there are, so the pager only has to move. */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--line);
+}
+.pager button {
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 0.45rem 0.9rem;
+  color: var(--accent);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.pager button:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+/* Disabled rather than hidden: a control that disappears at the ends makes the
+   other one move under the finger that was about to press it. */
+.pager button:disabled { color: var(--muted); cursor: default; opacity: 0.55; }
+.pager .pager-where {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

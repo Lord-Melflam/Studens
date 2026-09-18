@@ -24,6 +24,7 @@ export {
   reviewsFor,
   type NameResolver,
   PASS_BAND_FLOOR,
+  REVIEWS_PER_PAGE,
   type PublishedReview,
   type Aggregate,
   type Path,

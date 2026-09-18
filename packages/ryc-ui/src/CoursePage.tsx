@@ -49,6 +49,8 @@ export function CoursePage({
   writing,
   open,
   onToggleSection,
+  reviewPage,
+  onReviewPage,
   onBack,
   onWrite,
   onCloseWriting,
@@ -59,6 +61,9 @@ export function CoursePage({
   /** Which long fields are unfolded, by slug. From the URL, for the same reason. */
   open: readonly string[];
   onToggleSection: (slug: string) => void;
+  /** Which page of the reviews, from the URL like everything else on screen. */
+  reviewPage: number;
+  onReviewPage: (page: number) => void;
   onBack: () => void;
   onWrite: () => void;
   onCloseWriting: () => void;
@@ -67,19 +72,24 @@ export function CoursePage({
     aggregate: Aggregate;
     reviews: PublishedReview[];
     sessionRequired: boolean;
+    page: number;
+    pages: number;
+    total: number;
   } | null>(null);
   const [failed, setFailed] = useState(false);
   const t = useT();
 
   const load = useCallback(() => {
     api
-      .reviews(course.institution, course.code)
+      .reviews(course.institution, course.code, reviewPage)
       .then((r) => {
         setReviews(r);
         setFailed(false);
       })
       .catch(() => setFailed(true));
-  }, [course.institution, course.code]);
+    // Refetched when the page in the URL changes, which is what makes the
+    // address the source of truth rather than a label on it.
+  }, [course.institution, course.code, reviewPage]);
 
   useEffect(load, [load]);
 
@@ -241,6 +251,9 @@ export function CoursePage({
         <Reviews
           aggregate={reviews.aggregate}
           reviews={reviews.reviews}
+          page={reviews.page}
+          pages={reviews.pages}
+          onPage={onReviewPage}
           sessionRequired={reviews.sessionRequired}
           onWrite={onWrite}
         />

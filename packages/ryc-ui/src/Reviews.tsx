@@ -122,11 +122,18 @@ function Review({ r }: { r: PublishedReview }) {
 export function Reviews({
   aggregate,
   reviews,
+  page,
+  pages,
+  onPage,
   sessionRequired,
   onWrite,
 }: {
   aggregate: Aggregate;
   reviews: PublishedReview[];
+  /** Which page of them, and how many there are. Both come from the server. */
+  page: number;
+  pages: number;
+  onPage: (page: number) => void;
   /** FR-D13: course pages are public, review bodies are not. */
   sessionRequired: boolean;
   onWrite: () => void;
@@ -154,6 +161,27 @@ export function Reviews({
       {reviews.map((r) => (
         <Review key={r.id} r={r} />
       ))}
+
+      {/* Only when there is more than one page AND there are bodies to page
+          through. A pager over a single page is a control that can never do
+          anything, the same rule the filter groups follow. The second half is
+          the signed-out case: FR-D13 sends the counts and withholds the text,
+          so `pages` is honest and the list is empty, and a Next button over
+          nothing would be a promise the next page could not keep. */}
+      {pages > 1 && reviews.length > 0 && (
+        <nav className="pager" aria-label={t("ryc.reviews.pager")}>
+          <button type="button" onClick={() => onPage(page - 1)} disabled={page <= 1}>
+            {t("ryc.reviews.prev")}
+          </button>
+          {/* A statement of where you are, not a row of numbered links: at
+              thirteen pages the numbers are wider than the panel and none of
+              them is the one you want. */}
+          <span className="pager-where">{t("ryc.reviews.page", { page, pages })}</span>
+          <button type="button" onClick={() => onPage(page + 1)} disabled={page >= pages}>
+            {t("ryc.reviews.next")}
+          </button>
+        </nav>
+      )}
     </section>
   );
 }

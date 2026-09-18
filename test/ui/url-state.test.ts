@@ -25,6 +25,7 @@ import {
   COURSE_FILTER_KEYS,
   NO_COURSE_FILTER,
   OPEN_KEY,
+  PAGE_KEY,
   NO_PROGRAMME_FILTER,
   PROGRAMME_FILTER_KEYS,
   UNSTATED,
@@ -32,6 +33,8 @@ import {
   courseFilterToQuery,
   openSectionsFrom,
   openSectionsQuery,
+  reviewPageFrom,
+  reviewPageQuery,
   programmeFilterFromQuery,
   programmeFilterToQuery,
   pruneCourseFilter,
@@ -424,5 +427,47 @@ describe("the unfolded sections of a course page", () => {
     const route = settingsRoute("/c/ulb/proj-p5314", "?q=archi", [OPEN_KEY], openSectionsQuery(["biblio"]));
     expect(route).toContain("q=archi");
     expect(route).toContain("ouvert=biblio");
+  });
+});
+
+/**
+ * WHICH PAGE OF THE REVIEWS IS ALSO IN THE ADDRESS.
+ *
+ * Reviews are paged rather than scrolled forever, and the page is a setting
+ * like the filters: a refresh keeps it, Back leaves the course, and page 7 of
+ * a long course can be linked to. "Load more" was the alternative and cannot
+ * do any of those, because the number of times somebody pressed a button is
+ * not a thing a URL can hold.
+ */
+describe("the page of reviews on screen", () => {
+  it("is 1 when the address says nothing", () => {
+    expect(reviewPageFrom("")).toBe(1);
+    expect(reviewPageFrom("?f=info")).toBe(1);
+  });
+
+  it("is 1 when the address says nonsense, rather than NaN", () => {
+    // It arrives from a URL somebody may have edited by hand.
+    for (const q of ["?avis=", "?avis=abc", "?avis=0", "?avis=-3", "?avis=1"]) {
+      expect(reviewPageFrom(q)).toBe(1);
+    }
+  });
+
+  it("round trips a page", () => {
+    for (const page of [2, 7, 130]) {
+      expect(reviewPageFrom(`?${reviewPageQuery(page).toString()}`)).toBe(page);
+    }
+  });
+
+  it("says nothing for page one, because that is the default", () => {
+    expect(reviewPageQuery(1).toString()).toBe("");
+  });
+
+  it("does not disturb the folded sections, and they do not disturb it", () => {
+    // The two settings live on the same screen and own different keys.
+    const withBoth = settingsRoute("/c/ulb/proj-p5314", "?ouvert=biblio", [PAGE_KEY], reviewPageQuery(3));
+    expect(withBoth).toContain("ouvert=biblio");
+    expect(withBoth).toContain("avis=3");
+    expect(openSectionsFrom("?ouvert=biblio&avis=3")).toEqual(["biblio"]);
+    expect(reviewPageFrom("?ouvert=biblio&avis=3")).toBe(3);
   });
 });

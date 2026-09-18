@@ -191,6 +191,8 @@ export {
   openSectionsQuery,
   toggleSection,
 } from "./Ryc.js";
+/** Which page of a course's reviews is on screen, as it travels in the URL. */
+export { PAGE_KEY, reviewPageFrom, reviewPageQuery } from "./Ryc.js";
 export type { CourseDetail, CourseSummary, ProgrammeSummary } from "./api.js";
 
 /**
@@ -275,6 +277,8 @@ export { REPORT_CATEGORIES, REPORT_DETAIL_MIN, type ReportCategory } from "./api
 
 /** The filter bar over a list of courses. Exported so it can be rendered in a test. */
 export { CourseFilters } from "./CourseFilters.js";
+/** The review list and its pager, exported so the pager is checked directly. */
+export { Reviews } from "./Reviews.js";
 /**
  * The filter panel's two pieces, exported for test/ui/filter-panel.test.ts.
  *

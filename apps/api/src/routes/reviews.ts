@@ -139,16 +139,24 @@ export function reviewRoutes(prisma: PrismaClient): Router {
       }
       // The composition point: the module asks for names, the platform
       // answers. Neither one gains the other's access (FR-B11).
-      const { reviews, aggregate } = await reviewsFor(prisma, course.id, {
+      // `?page=` and nothing else. The SIZE of a page is not a parameter: a
+      // caller that could ask for ten thousand reviews in one request is the
+      // unbounded response this exists to prevent, so it is the module's
+      // constant and the client does not get a say.
+      const asked = Number.parseInt(String(req.query["page"] ?? "1"), 10);
+      const { reviews, aggregate, page, pages, total } = await reviewsFor(prisma, course.id, {
         names: (ids) => usernamesFor(prisma, ids),
+        page: Number.isFinite(asked) ? asked : 1,
       });
 
       const signedIn = (await identifyIfAny(prisma, req)) !== null;
       if (!signedIn) {
-        res.json({ aggregate, reviews: [], sessionRequired: true });
+        // The counts still go out. They describe the course, not any
+        // contributor, and FR-D13 withholds the bodies rather than the shape.
+        res.json({ aggregate, reviews: [], sessionRequired: true, page, pages, total });
         return;
       }
-      res.json({ aggregate, reviews, sessionRequired: false });
+      res.json({ aggregate, reviews, sessionRequired: false, page, pages, total });
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
 
