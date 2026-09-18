@@ -256,7 +256,11 @@ function matchesProgramme(
     if (!p.site || !f.sites.includes(p.site)) return false;
   }
   if (ignore !== "faculties" && f.faculties.length > 0) {
-    if (!f.faculties.includes(p.faculty)) return false;
+    // A programme with no faculty matches no faculty. Treated like the site
+    // and the field of study above rather than given a group of its own: a
+    // faculty filter is for finding a faculty's programmes, and "the ones
+    // belonging to no faculty" is not that question.
+    if (!p.faculty || !f.faculties.includes(p.faculty)) return false;
   }
   if (ignore !== "domains" && f.domains.length > 0) {
     if (!p.domain || !f.domains.includes(p.domain)) return false;
@@ -300,7 +304,7 @@ export function programmeFacets(
   // a list and the code is what the rest of the catalogue joins on.
   const faculties = new Map<string, { label: string; count: number }>();
   for (const p of programmes) {
-    if (!matchesProgramme(p, f, "faculties")) continue;
+    if (!matchesProgramme(p, f, "faculties") || !p.faculty) continue;
     const seen = faculties.get(p.faculty);
     faculties.set(p.faculty, {
       label: p.facultyName || p.faculty.toUpperCase(),
@@ -561,7 +565,10 @@ export function pruneProgrammeFilter(
       new Set(programmes.map((p) => p.site).filter((s): s is string => s !== null)),
       f.sites,
     ),
-    faculties: has(new Set(programmes.map((p) => p.faculty)), f.faculties),
+    faculties: has(
+      new Set(programmes.map((p) => p.faculty).filter((x): x is string => x !== null)),
+      f.faculties,
+    ),
     institutions: has(new Set(programmes.map((p) => p.institution)), f.institutions),
     domains: has(
       new Set(programmes.map((p) => p.domain).filter((d): d is string => d !== null)),

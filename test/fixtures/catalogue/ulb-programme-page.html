@@ -1,0 +1,288 @@
+<!--
+Structural excerpt of an ULB PROGRAMME PAGE, captured 2026-09-18 from
+https://www.ulb.be/fr/programme/2025-ba-tecn, trimmed to the three things the
+parsers read and nothing else.
+
+  1. The footer column "Facultés, instituts et écoles". It is on EVERY page, so
+     discovering ULB's 12 faculties costs the crawl no request of its own. The
+     subdomain in each link is the faculty's code.
+
+  2. The organisers list. It mixes ULB faculties with partner universities and
+     hautes écoles, and nothing marks which is which, so the footer above is
+     the only way to tell them apart.
+
+  3. BOTH `js-formation-ulb` blocks, which is the point. A programme page
+     carries two: the admission conditions and the course list. Taking the
+     first one fetched /ksup/accesscond, which answers 200 with good JSON that
+     contains no courses, so all 286 programmes read as "empty" and nothing
+     looked broken. That is why the fixture keeps both and the test asserts
+     which one is chosen.
+
+This page names no individual.
+-->
+<html><head><title>Bachelier en technologies numériques pour l'information et la communication - ULB</title></head>
+<body>
+<strong>Faculté(s) et université(s) organisatrice(s)</strong>
+			<ul>
+			
+				<li><a href="https://www.ulb.be/fr/programme/faculte-de-lettres-traduction-et-communication">Faculté de Lettres, Traduction et Communication</a></li>
+			
+				<li><a href="https://www.ulb.be/fr/programme/universite-catholique-de-louvain">Université Catholique de Louvain</a></li>
+			
+				<li><a href="https://www.ulb.be/fr/programme/haute-ecole-provinciale-de-hainaut-condorcet">Haute Ecole Provinciale de Hainaut - Condorcet</a></li>
+			
+				<li><a href="https://www.ulb.be/fr/programme/haute-ecole-galilee-institut-des-hautes-etudes-des-communications-sociales">Haute Ecole Galilée/Institut des Hautes Etudes des Communications Sociales</a></li>
+			
+				<li><a href="https://www.ulb.be/fr/programme/universite-de-mons">Université de Mons</a></li>
+			
+				<li><a href="https://www.ulb.be/fr/programme/heg-haute-ecole-galilee-categorie-pedagogique">HEG/Haute Ecole Galilée (catégorie Pédagogique)</a></li>
+			
+				<li><a href="https://www.ulb.be/fr/programme/haute-ecole-provinciale-de-hainaut-condorcet-categorie-economique">Haute Ecole Provinciale de Hainaut/Condorcet (catégorie économique)</a></li>
+			
+			</ul>
+<div id="tagWS_34e0f34c-989e-4bc7-8e9c-f8f9d240d7a2" class="js-formation-ulb js-formation__conditionsacces" data-type="conditionsacces" data-attribute-url="/ksup/accesscond?gen=prod&amp;anet=BA-TECN&amp;lang=fr&amp;" data-callback-method="prgInitAccessCond">    </div>
+<div id="tagWS_01549926-5199-4d2c-80ca-b30a9a2ab839" class="js-formation-ulb js-formation__programme" data-type="programme" data-attribute-url="/ksup/programme?gen=prod&amp;anet=BA-TECN&amp;lang=fr&amp;" data-callback-method="prgInitProgramme"></div>
+<div class="footer_ligne2__col3">
+					
+						<button type="button" class="footer_col__titre" data-toggle=".footer_ligne2__col3">
+							Facultés, instituts et écoles
+							<span class="arrow">
+								<span class="icon icon-ulb-arrow-down"></span>
+								<span class="icon icon-ulb-arrow-up"></span>
+							</span>
+						</button>
+					
+	                
+	                    <ul class="footer_col__liste-puce">
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://phisoc.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#0099cc"></span>
+	                            <span>Faculté de Philosophie et Sciences sociales</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://ltc.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#858791"></span>
+	                            <span>Faculté de Lettres, Traduction et Communication</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://droit.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#a11f7d"></span>
+	                            <span>Faculté de Droit et de Criminologie</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://sbsem.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#f6a924"></span>
+	                            <span>Solvay Brussels School of Economics and Management</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://psycho.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#006bb3"></span>
+	                            <span>Faculté de Psychologie, des Sciences de l’Éducation et de Logopédie</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://archi.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#90be45"></span>
+	                            <span>Faculté d'Architecture La Cambre Horta</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://sciences.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#6c5098"></span>
+	                            <span>Faculté des Sciences</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://polytech.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#1a171b"></span>
+	                            <span>École polytechnique de Bruxelles</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://medecine.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#e32119"></span>
+	                            <span>Faculté de Médecine</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://esp.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#e32119"></span>
+	                            <span>École de Santé publique</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://fsm.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#e32119"></span>
+	                            <span>Faculté des Sciences de la Motricité humaine</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                            
+	                                <li>
+	                                
+	                                    
+	                                    	<a href="https://pharmacie.ulb.be/" class="type_rubrique_0001">
+	                                    
+	                                    
+	                            	
+	                            <span class="footer_puce" style="border-bottom-color:#008751"></span>
+	                            <span>Faculté de Pharmacie</span>
+	                            	
+	                                	
+	                                    	</a>
+	                                    
+	                                    
+	                                
+	                                </li>
+	                            
+	                        
+	                    </ul>
+</div>
+</body></html>

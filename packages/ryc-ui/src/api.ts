@@ -34,7 +34,8 @@ export interface CourseSummary {
 }
 
 export interface CourseDetail extends CourseSummary {
-  officialUrl: string;
+  /** Null for an institution no source here knows how to link to. */
+  officialUrl: string | null;
   language: string | null;
   contactHours: string | null;
   /** FR-D19: scraped, and structured. See Prose.tsx for the model. */
@@ -56,9 +57,10 @@ export interface ProgrammeSummary {
   institution: string;
   code: string;
   title: string;
-  faculty: string;
+  /** Null when the source states no faculty for it. See snapshot version 9. */
+  faculty: string | null;
   /** The faculty's own name, so a filter can be labelled with something readable. */
-  facultyName: string;
+  facultyName: string | null;
   courses: number;
   /** Stored by the reference module. Null when nothing known matched. */
   kind: string | null;
@@ -68,7 +70,8 @@ export interface ProgrammeSummary {
   /** The decree's field of study. Null where the source that publishes it does not cover the programme. */
   domain: string | null;
   /** The programme's page on the institution's site, so an empty one leads somewhere. */
-  officialUrl: string;
+  /** Null for an institution no source here knows how to link to. */
+  officialUrl: string | null;
 }
 
 /**

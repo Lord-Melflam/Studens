@@ -445,7 +445,8 @@ function snapshotOf(n: number, blank?: string): Snapshot {
     }
   }
   return {
-    version: 8,
+    version: 9,
+    institution: "uclouvain",
     takenAt: new Date().toISOString(),
     year: YEAR,
     faculties: [{ code: "zzz", name: "Zeta" }],

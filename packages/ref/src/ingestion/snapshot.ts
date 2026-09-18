@@ -21,7 +21,16 @@ export interface DiscoveredFaculty {
 
 export interface SnapshotProgramme {
   code: string;
-  faculty: string;
+  /**
+   * NULL WHEN THE SOURCE STATES NONE, since version 9.
+   *
+   * UCLouvain reaches every programme through exactly one faculty index, so
+   * this was a string. ULB publishes an organisers list instead, and on 80
+   * programmes sampled, 9 publish no organisers at all and 7 name only a
+   * partner or an entity that is not one of its 12 faculties. Null is the same
+   * word used for credits, term, site and kind: the source does not state one.
+   */
+  faculty: string | null;
   title: string;
   /** From the title, by `programmeShape`. Null when it matches no known kind. */
   kind: string | null;
@@ -98,11 +107,27 @@ export interface Snapshot {
    *    attempt skipped those courses, which lost every other field the
    *    catalogue does publish about them over the one it does not. A scraped
    *    source omitting a field is an ordinary state to record and say plainly.
+   * 9: a programme's faculty became nullable and the file records WHICH
+   *    institution it is a crawl of. Both because of ULB, which reaches
+   *    programmes through an organisers list rather than faculty indexes, and
+   *    names something other than one of its own faculties on a fifth of them.
    *
-   * The version field exists to be used, so an older snapshot is refused
-   * rather than silently loaded with a field missing.
+   * The version field exists to be used. An older snapshot is refused rather
+   * than silently loaded with a field missing, EXCEPT where the older shape can
+   * be stated exactly: a version 8 file predates there being a second
+   * institution, so it is UCLouvain's, and `upgrade` says so once rather than
+   * costing a re-crawl of a catalogue that has not changed.
    */
-  version: 8;
+  version: 9;
+  /**
+   * The institution this is a crawl of, as an `ref.Institution.code`.
+   *
+   * `load.ts` has taken it as an option since before the file recorded it, for
+   * want of anywhere better to put it, and a crawl's own institution is a fact
+   * about the crawl. The option still wins when both are given, so nothing
+   * that passes it explicitly changes behaviour.
+   */
+  institution: string;
   /** When the crawl finished. */
   takenAt: string;
   /** The academic year crawled. */
@@ -160,19 +185,27 @@ export class SnapshotInvalid extends Error {}
  * Kept strict rather than permissive on purpose. This is the check that stops
  * a parser reading something that is not a course code at all, so widening it
  * to `.+` would remove the only guard against that.
+ *
+ * TWO SHAPES SINCE 2026-09-18, ONE PER INSTITUTION, and a union rather than a
+ * relaxation. UCLouvain writes `lepl1503`; ULB writes `comm-b1010` and
+ * `cnst-p1102`, which is letters, a hyphen, one letter, then digits. Merging
+ * them into something loose enough to match both would have let through the
+ * things this exists to catch, so each is spelled out and anything that is
+ * neither is still refused.
  */
-const COURSE_CODE = /^[a-z]{3,6}\d{3,5}[a-z]?$/;
+const COURSE_CODE = /^(?:[a-z]{3,6}\d{3,5}[a-z]?|[a-z]{2,6}-[a-z]\d{3,5}[a-z]?)$/;
 
 /**
  * Refuse to promote a snapshot that would make the catalogue worse.
  * Every check here is a failure the crawl could plausibly produce.
  */
 export function validate(s: Snapshot): void {
-  if (s.version !== 8) {
+  if (s.version !== 9) {
     throw new SnapshotInvalid(
-      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 8)`,
+      `snapshot version ${s.version} is not readable; re-run the ingestion (expected 9)`,
     );
   }
+  if (!s.institution) throw new SnapshotInvalid("snapshot names no institution");
   if (s.faculties.length === 0) throw new SnapshotInvalid("no faculties discovered");
   if (s.programmes.length === 0) throw new SnapshotInvalid("no programmes discovered");
   if (s.offerings.length === 0) throw new SnapshotInvalid("no course offerings parsed");
@@ -290,8 +323,29 @@ export async function promote(snapshot: Snapshot, livePath: string): Promise<voi
   }
 }
 
+/**
+ * Bring a file written by an older crawl up to the current shape.
+ *
+ * Version 8 predates there being a second institution, so it is UCLouvain's:
+ * that is a fact about when the file was written, not a default being guessed
+ * at. Upgrading rather than refusing is deliberate. The alternative is that
+ * widening the format for ULB costs a 78 minute re-crawl of a catalogue that
+ * has not changed, and a version field exists so that an old file can be
+ * understood, not only so it can be rejected.
+ */
+export interface SnapshotV8 extends Omit<Snapshot, "version" | "institution"> {
+  version: 8;
+  institution?: undefined;
+}
+
+export function upgrade(s: Snapshot | SnapshotV8): Snapshot {
+  if (s.version === 8) return { ...s, version: 9, institution: "uclouvain" };
+  return s;
+}
+
 export async function load(livePath: string): Promise<Snapshot> {
-  const s = JSON.parse(await readFile(livePath, "utf8")) as Snapshot;
+  const raw = JSON.parse(await readFile(livePath, "utf8")) as Snapshot | SnapshotV8;
+  const s = upgrade(raw);
   validate(s);
   return s;
 }

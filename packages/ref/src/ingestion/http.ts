@@ -158,13 +158,13 @@ export class PoliteFetcher {
   }
 
   /** Serial by construction: callers cannot accidentally fan out. */
-  async get(url: string): Promise<Fetched> {
+  async get(url: string, opts: { accept?: string } = {}): Promise<Fetched> {
     const cached = await this.fromCache(url);
     if (cached) {
       this.hits += 1;
       return { url, finalUrl: cached.finalUrl, html: cached.html };
     }
-    const run = this.chain.then(() => this.fetchWithRetries(url));
+    const run = this.chain.then(() => this.fetchWithRetries(url, opts.accept ?? "text/html"));
     this.chain = run.catch(() => undefined);
     const fetched = await run;
     await this.toCache(url, fetched);
@@ -183,11 +183,11 @@ export class PoliteFetcher {
    * server saying how long it wants to be left alone, which is not a number to
    * second-guess.
    */
-  private async fetchWithRetries(url: string): Promise<Fetched> {
+  private async fetchWithRetries(url: string, accept: string): Promise<Fetched> {
     let last: unknown;
     for (let attempt = 0; attempt <= this.retries; attempt += 1) {
       try {
-        return await this.fetchOnce(url);
+        return await this.fetchOnce(url, accept);
       } catch (err) {
         last = err;
         if (!isTransient(err) || attempt === this.retries) break;
@@ -236,7 +236,7 @@ export class PoliteFetcher {
     }
   }
 
-  private async fetchOnce(url: string): Promise<Fetched> {
+  private async fetchOnce(url: string, accept: string): Promise<Fetched> {
     // Checked before the delay, so hitting the ceiling stops immediately rather
     // than waiting first. The run fails and the snapshot is not promoted: a
     // crawl that stopped early has an incomplete catalogue, and promoting it
@@ -249,7 +249,13 @@ export class PoliteFetcher {
 
     const res = await this.fetchImpl(url, {
       redirect: "follow",
-      headers: { "user-agent": USER_AGENT, accept: "text/html" },
+      // `accept` is a parameter because a source may need something other than
+      // a page. ULB's course lists come from an endpoint serving
+      // application/json, and it answers 404 rather than 406 when the Accept
+      // header does not allow it, so this looked exactly like a missing page:
+      // 269 listings "unreachable" on a trial crawl, from a header.
+      headers: { "user-agent": USER_AGENT, accept },
+
       signal: AbortSignal.timeout(this.timeoutMs),
     });
 

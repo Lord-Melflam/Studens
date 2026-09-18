@@ -174,6 +174,10 @@ async function report(snapshot: Snapshot, prisma: PrismaClient, year: number): P
   if (perFaculty > 0) {
     const counts = new Map<string, string[]>();
     for (const p of snapshot.programmes) {
+      // A programme with no faculty is not listed under one, so it cannot be
+      // listed under more than one. Skipped rather than counted as a faculty
+      // called "null", which is how a report starts lying quietly.
+      if (p.faculty === null) continue;
       counts.set(p.code, [...(counts.get(p.code) ?? []), p.faculty]);
     }
     const shared = [...counts.entries()].filter(([, f]) => f.length > 1);
