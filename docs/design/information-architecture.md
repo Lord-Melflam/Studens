@@ -65,14 +65,39 @@ ONBOARDING              first sign-in only, resumable, one step per screen
   /bienvenue/2          username
   /bienvenue/3          language and theme
   /bienvenue/4          your studies          (optional, see 4)
-  /bienvenue/5          your institution
+  /bienvenue/5          your universities, and the choice is NOT exclusive:
+                        a student registered at one and taking a minor at
+                        another is two of the three institutions this launches
+                        with, twenty kilometres apart
   → /app
 
 APP
   /app                  module home
   /app/ryc/...          the module owns everything below its own segment
   /app/moi              profile, preferences, sessions (FR-A5), my reviews (FR-D12)
+
+QUERY                   what is on screen, per FR-B21. Owned by the module,
+                        handed over by the shell without being read
+  ?q=                   the question asked of the server, on the search screen
+  ?f= &type= &site=     what narrows the rows already fetched
+  &fac= &domaine=
+  &univ= &quad=
+  &langue= &credits=
+  &entite= &campus=
+  ?ouvert=              which long fields of a course page are unfolded, by
+                        slug: evaluation, contenu, objectifs, prerequis,
+                        methodes, biblio, themes
 ```
+
+**The keys are short French words**, like the paths above them, because a URL
+is read by people. They are also part of every link anybody has ever shared,
+so one may be added and none may be renamed: a renamed key does not fail, it
+silently comes back as the default, which is the worst way for a link to rot.
+
+**What never appears here is anything unpublished**, and the text of a review
+being written above all. Browser history, bookmark sync and whoever is looking
+over a shoulder all read a URL, and FR-C9's promise about an anonymous
+contribution cannot reach any of them.
 
 **"Se connecter" and "Créer un compte" lead to the same screen.** FR-A6 settled
 that registration is open and FR-A7 that there are no passwords, so there is
@@ -170,11 +195,38 @@ Hochschule Ostbelgien in the German-speaking Community. Hautes écoles and
 hogescholen are numerous and are not reliably enumerable from a general source,
 so they come as a later seed from the official registries.
 
-**All are shown; only UCLouvain is selectable.** Decided by François. Only
-UCLouvain's catalogue is ingested, so choosing another today would land a member
-in an empty product. The rest are visible and marked as not yet available, which
-shows where this is going without lying about where it is. The copy has to carry
-that, because a grid of disabled cards reads as broken unless it says why.
+**All are shown; only the ingested ones are selectable.** Decided by François,
+and now two: UCLouvain and ULB, as of 2026-09-18. Choosing one whose catalogue
+is not loaded would land a member in an empty product, and the screen has no way
+to tell that from a filter that happens to match nothing. The rest are visible
+and marked as not yet available, which shows where this is going without lying
+about where it is. The copy has to carry that, because a grid of disabled cards
+reads as broken unless it says why.
+
+The rule is enforced on both ways in, the first run's PATCH and the browse
+screen's POST, through one function. It was written on the first only, and the
+second accepted `kuleuven` and scoped the member to a catalogue that is not
+there.
+
+**Your universities ARE the catalogue, not a filter over everybody's.**
+Decided 2026-09-18, after a first attempt that preselected a chip inside a list
+of every institution. François: "this is not the right move (fragile from my
+perspective and added noise not avoided). Imagine we have 5 or 10 university ?
+What would it look like." The objection is structural rather than visual:
+preselecting inside "all of them" makes every university the default and yours
+the narrowing, when it is the other way round.
+
+So the member's set is applied before anything else and every count is computed
+inside it, 690 programmes rather than 976 with one chip lit. A university
+outside the set is not an option sitting in a filter, it is something added
+deliberately with the control above the panel. Three states, and they are
+different: **not told** is a signed-out visitor or a failed request and leaves
+the catalogue whole; **told, and it is empty** means everything, so narrowing
+stays reversible; **told** scopes it.
+
+The control offers what has a catalogue plus whatever the member already holds.
+The union, so that a university which stops being listed cannot scope somebody
+to nothing while being absent from the control that would remove it.
 
 ## 6. The app home
 

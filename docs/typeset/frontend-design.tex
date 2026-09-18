@@ -291,10 +291,10 @@ Every box is a screen that exists or is proposed. Nothing else is planned.
 \begin{tikzpicture}[x=1cm,y=1cm]
 
 \node[wtier={3.6cm}{0.9cm}]  (home)   at (0,5.1)   {\textbf{Modules}\\[0.3mm]\tiny l'accueil du shell};
-\node[wghost={3.0cm}{0.9cm}] (signin) at (-5.0,5.1) {Se connecter\\[0.3mm]\tiny FR-A, pas construit};
-\node[wghost={3.0cm}{0.9cm}] (acct)   at (5.0,5.1)  {Mon compte\\[0.3mm]\tiny sessions, FR-A5};
+\node[wbox={3.0cm}{0.9cm}] (signin) at (-5.0,5.1) {Se connecter\\[0.3mm]\tiny FR-A, Google};
+\node[wbox={3.0cm}{0.9cm}] (acct)   at (5.0,5.1)  {Mon compte\\[0.3mm]\tiny sessions, FR-A5};
 \draw[flow] (signin) -- (home);
-\draw[flow,dashed] (home) -- (acct);
+\draw[flow] (home) -- (acct);
 
 \node[wbox={3.6cm}{0.65cm},draw=studens] (ryc) at (0,3.75) {\textbf{RYC}};
 \draw[flow] (home) -- (ryc);
@@ -333,10 +333,10 @@ Every box is a screen that exists or is proposed. Nothing else is planned.
 \draw[flown] (nform.south) |- (done.west);
 \draw[flowa] (aconf.south) |- (done.east);
 
-\node[wghost={3.4cm}{0.7cm}] (queue)   at (5.6,-3.85) {File d'attente};
-\node[wghost={3.4cm}{0.7cm}] (mdetail) at (5.6,-5.05) {Traiter un avis};
-\draw[flow,dashed] (queue) -- (mdetail);
-\draw[flow,dashed] (aform.east) -- (queue.west);
+\node[wbox={3.4cm}{0.7cm}] (queue)   at (5.6,-3.85) {File d'attente};
+\node[wbox={3.4cm}{0.7cm}] (mdetail) at (5.6,-5.05) {Traiter un avis};
+\draw[flow] (queue) -- (mdetail);
+\draw[flow] (aform.east) -- (queue.west);
 
 \begin{scope}[on background layer]
   \node[draw=line,dashed,rounded corners=3pt,fit=(queue)(mdetail),inner sep=6pt] (modbox) {};
@@ -874,5 +874,61 @@ and watch which of the two tabs they touch first. That costs an afternoon and
 would settle it before the review module is built on top of it.
 \end{tcolorbox}
 \end{center}
+
+\newpage
+% ===========================================================================
+\section{What changed after this was drawn}
+
+This document was written on 2026-09-10 and the screen map redrawn as things
+were built. The paragraphs below record what the drawings no longer say, so the
+document can be read as of 2026-09-18 without being redrawn. Where a decision
+here was reversed, the original is left in place rather than deleted.
+
+\subsection{Two universities, not one}
+
+The specification said v1 served UCLouvain alone. It serves \textbf{UCLouvain
+and ULB} since 2026-09-17, on the ground that the thing v1 needs is testers and
+two universities twenty kilometres apart roughly double the population that can
+be asked. \texttt{requirements.md} 1.6 carries the reasoning and the costs.
+
+Three things in this document follow from that and are no longer accurate as
+drawn. A course is addressed by \textbf{institution and code}, not by code:
+\texttt{/app/ryc/c/uclouvain/lepl1503}. The screen map's boxes are unchanged in
+shape, but every path below \texttt{/app/ryc} carries the institution.
+
+And the browse screen is \textbf{scoped to the member's own universities}
+rather than filtered within everybody's. A first attempt preselected the
+member's institution as a chip in a list of all of them, and it was rejected:
+preselecting inside ``all of them'' makes every university the default and
+yours the narrowing, when it is the other way round.
+
+\subsection{What is built that this document drew as proposed}
+
+Sign-in, the account, the first run and moderation are all built and the map
+now draws them solid. \textbf{Microsoft is written and not registered}, which
+is the gap that matters: UCLouvain runs on Microsoft 365, so the whole target
+population already has an identity none of them can use yet.
+
+What is still proposed and still dashed: ``Mes avis'' (FR-D12), editing an
+attributed review (FR-C14), and automatic screening (FR-E4).
+
+\subsection{The course page folds}
+
+The course screen drawn under ``Scenario 1: the PAE deadline'' has its
+fields open.
+A ULB course carries seven prose fields and on a large one the assessment alone
+runs past the bottom of the screen, which put the reviews, the reason anybody
+opens the page, below all of it. The long fields fold and start closed; the
+short facts stay open, because a heading you have to press to read one line is
+worse than the line. Which sections are unfolded travels in the address, so a
+refresh keeps them and a link can name one.
+
+\subsection{The type on this document's screens was rebuilt}
+
+The small-capital field labels drawn throughout, 0.78\,rem with the letters
+pushed apart, were replaced on 2026-09-18 with sentence case at a readable
+size, weight doing the work the tracking was doing. François: ``it looks
+old''. The drawings here still show the old treatment.
+
 
 \end{document}

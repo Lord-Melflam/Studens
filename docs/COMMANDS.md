@@ -319,6 +319,31 @@ not in this snapshot" check would list the whole of the other one.
 Run it once per snapshot. `npm run catalogue:report` with no argument still
 reports on UCLouvain, which is what it always meant.
 
+### Both universities at once
+
+The two crawls hit different hosts and write different files, so they can run
+side by side. **Build once first**, because `npm run ingest` compiles the worker
+before it starts and two concurrent `tsc --build` runs race over
+`apps/worker/dist`:
+
+```bash
+npm run build:worker                                        # once, first
+
+# then one terminal each, calling node directly so neither rebuilds
+node apps/worker/dist/ingest-catalogue.js --source ulb --prose
+node apps/worker/dist/ingest-catalogue.js
+
+# then, sequentially, once both have finished
+npm run db:load -- --in data/catalogue.json
+npm run db:load -- --in data/catalogue-ulb.json
+npm run catalogue:report
+npm run catalogue:report -- --snapshot data/catalogue-ulb.json
+```
+
+Measured 2026-09-18: ULB with `--prose` took 75 minutes and 5,290 requests for
+286 programmes and 5,439 courses. UCLouvain's full crawl takes about 78. They
+share `data/page-cache` safely, because a cache key includes the host.
+
 `--source` defaults to `uclouvain`, so every command written before there was a
 second one still means what it meant. A non-default source writes to its own
 file rather than `data/catalogue.json`: a snapshot holds ONE institution's

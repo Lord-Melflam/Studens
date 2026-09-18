@@ -10,17 +10,18 @@ gone wrong and what each failure changed.
 
 ---
 
-## State, as of 2026-09-13
+## State, as of 2026-09-18
 
 | | |
 |---|---|
-| Stage | **Working software.** Catalogue end to end, sign-in with Google, a first run, an account somebody can leave, and reviews submitted and read on both paths |
-| Commits | 47 |
+| Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted and read on both paths, and moderation end to end. The web process now serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
+| Commits | 81 |
 | Requirements | **154**: 136 functional and 18 non-functional. Counted, not carried forward |
-| Open questions | **8** open, 38 resolved |
-| Tests | **469**, plus 19 database isolation assertions |
-| Code | 14,274 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 5,620 of tests. Measured over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts` |
-| Data | 546 courses, 546 offerings, 43 programmes, 893 lecturer rows, and 11 institutions, in PostgreSQL |
+| Open questions | **8** open, 40 resolved. Counted across both tables in requirements.md section 7, since a question resolved in place is struck there and one resolved with a long argument is written out in 7.1 |
+| Tests | **729**, plus 32 database isolation assertions |
+| Code | 22,169 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 10,339 of tests. Measured over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts` |
+| Data | **Two catalogues in PostgreSQL**, counted 2026-09-18: 12,154 courses, 13,062 offerings (12,093 for 2026-2027 and 969 kept from 2025-2026), 1,055 programmes, 32 faculties, 16,589 teacher rows, 21 sites, 22 fields of study, and 11 institutions of which 2 are open for choosing. UCLouvain is 769 programmes and 6,715 courses; ULB is 286 and 5,439 |
+| Reviews | **14, all written by us while testing.** 8 attributed and 6 anonymous. No student has used this yet, and the product does not pretend otherwise |
 | Not sent | **No mail leaves this installation.** Messages are queued and printed; five `STUDENS_SMTP_*` variables turn that into delivery |
 
 ### What runs today
@@ -1399,6 +1400,38 @@ has.
 deliberately not the same letter: the search screen shows both at once, and
 writing one as a whole new query string would erase the other.
 
+### Phase 32b: one artefact, and a refresh that is not a 404
+
+Recorded late: this landed between phases 32 and 33 and was left out of the log
+at the time.
+
+Phase 32 had just put every screen in the address, which made the missing piece
+obvious. In development Vite serves the application and proxies `/api`; in
+production there is no Vite, and something has to answer `GET /fr/app/ryc` with
+`index.html` or a refresh on any page but the root is a 404. The web process
+does it, in `apps/api/src/web.ts`.
+
+**Not in a reverse proxy**, though one is needed anyway for TLS and could do it
+with a single directive. A second place that knows which paths are the
+application's is a second place that can disagree with this one, and the
+disagreement shows as a 404 on one route in production and nowhere else.
+Keeping it here also means the production artefact runs on a laptop with no
+proxy, so the thing deployed is the thing tested.
+
+**The order is the whole design.** It mounts after the `/api` 404, never
+before. A fallback that catches everything catches a mistyped API path too, and
+then `/api/corses/lepl1503` gets `index.html` with status 200, the client
+parses HTML as JSON, and the error says nothing about the typo.
+
+Two defects found by running the built process. `app.get("*")` refuses to
+start under Express 5, whose path parser reads a bare `*` as a parameter
+missing its name; a path-less middleware does the same job and does not tie the
+file to one major version of a parser it has no other reason to know about.
+And `GET /assets/nope.js` answered `index.html` with 200, so a browser that
+asked for a script got a page and failed with a syntax error pointing at line 1
+of the HTML. A path whose last segment carries a dot is a file request and 404s
+now, which matters most after a deploy, where a stale `index.html` naming
+assets that no longer exist would otherwise get 200s for all of them.
 
 ### Phase 33: a code belongs to a catalogue
 
@@ -1583,18 +1616,146 @@ built from one institution's URL grammar whatever the row came from, which was
 correct with one catalogue and would have been wrong the hour this one loaded.
 
 
+### Phase 36: six things wrong on screen, found by using it
+
+François opened the app after phase 35 and listed six. None was found by a
+test, and one of them had been wrong for days.
+
+**ULB was crawled and not choosable.** The first run listed institutions from
+`available`, which is set by the ingestion, so a university whose catalogue was
+loaded still could not be picked. **The 2026 links were dead.** ULB's URL year
+is not the academic year: `www.ulb.be/fr/programme/2026-info-f530` is a page
+not found while the year-less form serves the same course, so every official
+link pointed at nothing. 25 of 25 sampled year-less URLs answered 200, and that
+is the form stored now. **The setup banner said something false**, telling
+members who already had a username that they had none, because it read a single
+unfinished step as an unfinished profile.
+
+**ULB is multi-site and the model said one site.** A single nullable column was
+built first, to the shape that had been approved, and then measured: five
+courses publish "Solbosch, Flagey" and one publishes five campuses. So it is a
+join table, `OfferingSite`, changed before the merge rather than after, and
+3,762 rows now say where a course is taught.
+
+The lesson repeated from phase 30: a field is worth measuring before its column
+is chosen, because the source is not obliged to agree with the shape that is
+convenient.
+
+### Phase 37: the four fields both universities publish
+
+A course page at either university carries more than content and assessment,
+and neither of us was keeping it: objectives, prerequisites, teaching methods,
+and references and bibliography. UCLouvain's parser had the selectors for them
+and dropped the values; ULB's prose pass did not look.
+
+Four columns on `CourseOffering`, one parser change each side, and a name
+mapped per institution because the two publish the same field under different
+headings. The bibliography was the awkward one: at ULB it is not a section but
+an `h3` inside "Autres renseignements", beside the campus, so reading only the
+`h2` sections found it nowhere and would have looked exactly like a university
+that publishes no bibliography.
+
+Then the crawl was run in full. Of 5,439 ULB courses: 3,515 have objectives,
+3,498 teaching methods, 2,977 prerequisites and 2,608 a bibliography. A field
+absent on every row is the signal that a selector has stopped matching, and the
+snapshot check for that is what would have caught this had it been written when
+the columns were.
+
+### Phase 38: your universities are the catalogue
+
+The first answer to "the catalogue should follow the university I chose" was to
+preselect a chip in a list of every institution. François rejected it: "this is
+not the right move (fragile from my perspective and added noise not avoided).
+Imagine we have 5 or 10 university ? What would it look like."
+
+He is right, and the objection is structural rather than visual. Preselecting
+inside "all of them" makes every university the default and yours the
+narrowing, when it is the other way round. So the member's set is applied
+BEFORE anything else and every count is computed inside it: 690 programmes, not
+976 with one chip lit. A university outside the set is not an option sitting in
+a filter, it is something added deliberately with the control above the panel.
+`/bienvenue/5` takes several, because a student registered at one university
+and taking a minor at another is two of the three institutions this launches
+with, twenty kilometres apart.
+
+**The filter panel was rebuilt in the same change**, on his verdict: "too many
+groups stacked (or not properly separated), and the long ones hidden behind
+'choose from'. And it's ugly." Every group opens now; folding the long ones had
+answered crowding by removing the filters. A dimension with more than twelve
+options gets a search box and becomes a list of rows rather than a field of
+pills, because twenty faculty names wrap to three lines each inside a rounded
+border and cannot be scanned.
+
+**Three defects surfaced while building it, and two were in the API.**
+
+`GET /me/institutions` used `identify`, which issues a session when the
+development identity is on. Every signed-out page load created a member, set a
+cookie and answered a visitor with somebody else's preference, so the catalogue
+was scoped to UCLouvain for a person who had never chosen anything. It is a
+read, so it uses `identifyIfAny` and answers 401. `POST /me/institutions`
+accepted any code, including `kuleuven`, whose catalogue is not loaded, which
+left the member scoped to nothing; the first run's PATCH already checked, and
+both go through one function now (FR-F11).
+
+The third was CSS. The public zone and the module both declared `.chips`, both
+stylesheets load into one document, and the public one is later in the cascade,
+so it supplied a 1.6rem margin above every group of chips in the panel. A
+shell stylesheet silently restyling a module's component is an FR-B16 leak and
+not only a cosmetic one. The module's class is `chipset` now, and
+`test/architecture/css-collisions.test.ts` holds the fourteen names still
+shared: the list may shrink and may not grow.
+
+### Phase 39: the last thing held in component state
+
+A ULB course carries seven prose fields, and on a large one the assessment
+alone runs past the bottom of the screen. The reviews are the reason anybody
+opens the page and they were arriving after all of it. So the long fields fold,
+closed to start with, while the short facts above stay open: a heading you have
+to press to read one line is worse than the line.
+
+The default is the opposite of the filter panel's, and deliberately. There,
+folding hid the controls needed to work the screen and the groups are short.
+Here the content is long-form and what it buries is the product.
+
+**It was component state for a day, and that was wrong twice.** A refresh
+closed everything a reader had opened, and there was no way to send somebody
+the bibliography of a course rather than the course. FR-B21 is the rule and it
+applies here like everywhere else, so `?ouvert=evaluation,biblio` and the
+component holds nothing. The slugs are French and short like the filter keys
+beside them, because a URL is read by people, and they are part of every link
+anybody shares: add, never rename.
+
+Written with `replace`, since opening four sections while reading is not four
+places you have been. The order is the reader's rather than sorted, because
+sorting would rewrite the address on a press that changed nothing on screen and
+make two identical screens produce two different links.
+
+The rows were then restyled, on the verdict "it looks old". Three things were
+doing it: 0.78rem labels in capitals with the letters pushed apart, a chevron
+built from two rotated borders that thickens on the diagonal and sits a pixel
+off its own centre, and no hover at all. The fact labels above followed, since
+leaving them in capitals would have made one page look like two.
+
+
 ---
 
 ## Next
 
-0. **ULB.** Crawlable since phase 35: `npm run ingest -- --source ulb`, about
-   580 requests and a few minutes. Not yet run in full, and not yet loaded.
-   What is deliberately missing is the three long prose fields, which live only
-   on ULB's course pages and need a second pass of roughly one request per
-   course. Everything else a course row carries is in the first pass.
-1. ~~Authentication~~ done, phases 19 and 25. Google works end to end. Microsoft
-   is registered and untried: UCLouvain's tenant turns an outside account into
-   an `#EXT#` guest, so it needs testing from the `procyo.be` tenant instead.
+0. ~~ULB~~ done, phases 35 to 39, and **loaded**. The full crawl ran on
+   2026-09-18 with the prose pass: 286 programmes, 5,439 courses, 12 faculties,
+   75 minutes, 5,290 requests. Measured fill: assessment on 4,755 courses,
+   content 3,527, objectives 3,515, teaching methods 3,498, prerequisites
+   2,977, bibliography 2,608, and a campus on 3,317. See
+   `design/catalogue-ingestion.md` 13.5.
+1. ~~Authentication~~ done, phases 19 and 25 for the code. Google works end to
+   end. **Microsoft is written and NOT registered**, which is the gap that
+   matters most: UCLouvain runs on Microsoft 365, so the whole target
+   population already has a Microsoft identity and none of them can use it yet.
+   Two values in `providers.ts` were written from documentation and have never
+   been observed, the `preferred_username` fallback and
+   `requireEmailVerified: false`. **It is to be registered from a personal
+   account, never a company tenant**, and François's own
+   `student.uclouvain.be` account is what tests the path that matters.
 2. ~~FR-E8, the notice and action mechanism~~ done, phase 28.
 3. ~~The moderator's console~~ done, phase 29. What is left of FR-E is
    **FR-E9, the statement of reasons**, and it is `[OPEN]` rather than unbuilt:
@@ -1609,8 +1770,15 @@ correct with one catalogue and would have been wrong the hour this one loaded.
    variables are set: messages queue correctly and the worker prints them. The
    zero-budget start is a Gmail app password; the exit is a relay on the real
    domain. François's to supply, and it blocks nothing else.
-6. **Deployment.** Nothing deploys. The API does not serve the single-page
-   application, so path routing would 404 in production on any refresh.
+6. **Deployment, and it is now the only thing between this and a tester.**
+   The web process serves the built application as well as the API since phase
+   32b, in one process, mounted after the `/api` 404 so a mistyped API path
+   still answers JSON. So there is one artefact and it has never run anywhere
+   but a laptop. What is missing is a host, a domain and TLS. The recorded
+   choice is Oracle Cloud Always Free, one EU-region ARM VM running the
+   application and PostgreSQL together, with three accepted risks in
+   requirements 5.2; Hetzner at about 4 EUR a month removes all three and is
+   the fallback.
 7. **The catalogue's own text is French**, in every language of the interface:
    a programme's title, its site, its field of study and the three long course
    fields are all stored as crawled. Since phase 31 the screen says so rather
@@ -1623,7 +1791,18 @@ correct with one catalogue and would have been wrong the hour this one loaded.
    `npm run catalogue:report` compares the snapshot against the database in
    both directions and exits 1 on a gap.
 8. ~~A programme is not in the URL~~ done, phase 30, and the filters and the
-   search box followed in phase 32 (FR-B21). What is still held in component
-   state and should not be: nothing known. What is held there deliberately: the
-   text of a review being written, which must never reach an address bar.
+   search box followed in phase 32 (FR-B21). The folded sections of a course
+   page were the last thing to break the rule and joined them in phase 39.
+   What is still held in component state and should not be: nothing known.
+   What is held there deliberately: the text of a review being written, which
+   must never reach an address bar, and whether a filter group or a course
+   section is folded is not held anywhere, because it is read from the URL on
+   every render.
+9b. **The app zone overflows sideways on a phone.** Measured 2026-09-18 at a
+   390px viewport on both the browse screen and a course page: the intro text
+   and the filter chips run past the right edge and the sign-in button is cut
+   off. The likely cause is the header bar, where `shell.css` deliberately
+   stops the sign-in buttons shrinking so their labels cannot wrap inside a
+   pill. Most students will open this on a phone, so it belongs immediately
+   after deployment.
 9. ~~Branch protection~~ done 2026-09-11, see phase 17.

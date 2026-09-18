@@ -233,6 +233,42 @@ holds; the mechanical check in section 6 is what makes it hold.
 | Modules do not read each other's storage | A schema test asserts each module's tables are reachable only by their owner, by naming convention plus an allowlist. |
 | No log record names a member and a target together | A test on the logging and metrics writers rejects any record carrying both field kinds. Fails closed: an unknown field pairing is a failure, not a pass. |
 | No cross-module aggregation by member | Reviewed by hand at first. Automatable once the read models exist, by asserting no query groups by member across two module schemas. |
+| The shell does not restyle a module's components | A test lists the class names declared both in the module's stylesheet and in the shell's, against a frozen list that may shrink and may not grow. `test/architecture/css-collisions.test.ts`. |
+
+### 6.1 The boundary leaks through CSS, which none of the above catches
+
+Found 2026-09-18, and worth writing down because the mechanism is invisible in
+the code that suffers from it.
+
+Imports point one way and the module owns its own stylesheet, so FR-B16 looked
+satisfied. But `apps/web/src/main.tsx` imports the shell's three stylesheets
+and `packages/ryc-ui/src/index.tsx` imports the module's, and all four land in
+one document and one cascade. A class name declared in both is then decided by
+source order and by which properties each rule happens to leave unset.
+
+The concrete case: the public zone declares `.chips` with `margin: 1.6rem 0 0`
+for its own row of pills, the module declared `.chips` for its filter toggles
+and set no margin, and the public rule is later in the cascade. Every group of
+chips in the RYC filter panel carried a margin no rule in the module asked for.
+It took a screenshot and three rounds of debug outlines to find, because the
+rule producing it lives in a file that has nothing to do with filters.
+
+That is the shell knowing what a module's screens look like, by accident, which
+is exactly what FR-B16 forbids when it happens on purpose.
+
+**The fix for one collision is to rename, not to out-specify.** The module's
+class is `chipset`. Winning by specificity would mean a selector whose only job
+is to beat a file the module should not know about, which encodes the coupling
+instead of removing it.
+
+**Fifteen names collided** when this was first measured, so the test freezes the
+list rather than demanding zero. Renaming all of them, or scoping each zone's
+stylesheet under its own root, is a change to four files and 2,100 lines of CSS
+with no visible result. A list that may shrink and may not grow costs nothing,
+stops the next one, and states the debt out loud instead of leaving it to be
+rediscovered the same expensive way. The permanent fix, when it is worth doing,
+is to scope each stylesheet under the zone's root element; the public zone
+already has one, `.site`.
 
 ## 7. What v1 builds
 

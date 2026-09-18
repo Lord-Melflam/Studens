@@ -1232,18 +1232,25 @@ institutionId)`, so a programme filed under an institution its own faculty does
 not belong to cannot be written, whatever the loader does. A trigger would have
 achieved the same and would have been code nobody reads.
 
-### 13.3 What is not yet decided
+### 13.3 What was not yet decided, and now is
 
-A code in a URL does not say which university it belongs to. `/app/ryc/c/lepl1503`
-resolves against the whole catalogue, which is unambiguous with one institution
-and ambiguous with two. That is **OPEN-48**, and it blocks loading ULB's
-catalogue rather than the schema change: the database can hold two catalogues
-today, and the read path cannot yet address them apart.
+Both blockers recorded here are closed. Kept rather than deleted, because what
+blocked a second catalogue is the useful part for a third.
 
-The crawler also needs a source adapter before ULB can be ingested: the current
-one is UCLouvain-shaped throughout, walking faculty indexes and the search
-application, while ULB's shape is sitemap, then the programme endpoint, then
-course pages.
+A code in a URL did not say which university it belonged to. `/app/ryc/c/lepl1503`
+resolved against the whole catalogue, which is unambiguous with one institution
+and ambiguous with two. That was **OPEN-48**, resolved 2026-09-18: the
+institution goes in the path, `/app/ryc/c/uclouvain/lepl1503`, and a bare code
+is forwarded to its real address rather than refused. One match is forwarded;
+several is a genuinely ambiguous link and the screen offers the choice, because
+guessing sends a reader to a university they never asked about.
+
+The crawler needed a source adapter, the old one being UCLouvain-shaped
+throughout. It has one: `CatalogueSource`, with UCLouvain wrapping the existing
+crawler by delegation and ULB as a second implementation. The UCLouvain crawler
+itself was not moved or rewritten, on François's instruction, because it is the
+only one here that has ever met the real site and every defect it has met is
+written into it.
 
 ### 13.4 The listing is the source, not the course pages
 
@@ -1266,3 +1273,49 @@ The prose fields remain a per-course request and can be a second pass. A
 catalogue with every fact and no long text is worth loading before one with
 everything is finished, and phase 30's rule applies to both: a page we could not
 GET is tolerated, a page we could not UNDERSTAND is not.
+
+### 13.5 The full ULB crawl, measured
+
+Run 2026-09-18 with the prose pass, against the live site. 286 programmes,
+5,439 courses, 12 faculties, 75 minutes, 5,290 requests to ULB and 705 served
+from the 30-day page cache.
+
+What was skipped, and why it is not a loss. Two codes are placeholders,
+`HULB-0000` and `TEMP-0000`, which are credit allowances rather than courses.
+Twelve carry no title at all: a course with no title is a row the browse screen
+cannot draw, and the snapshot refuses it rather than storing an empty string
+that reads as a course whose name we lost.
+
+Fill rates over the 5,439, which are the numbers to compare a later run
+against:
+
+| field | courses | share |
+|---|---|---|
+| assessment | 4,755 | 87% |
+| content | 3,527 | 65% |
+| objectives | 3,515 | 65% |
+| teaching methods | 3,498 | 64% |
+| prerequisites | 2,977 | 55% |
+| bibliography | 2,608 | 48% |
+| a campus | 3,317 | 61% |
+
+Four course pages would not load, and each cost that course its prose and
+nothing else (12.8).
+
+**None of these is 100%, and that is the source and not the parser.** The
+figure that would mean a selector had stopped matching is zero, which is what
+`assertNothingWentBlank` watches for, and it is the check that would have
+caught the four fields being dropped had it existed when the columns were
+added.
+
+The campuses, counted: Solbosch 2,158, Plaine 483, Erasme 369, "Hors campus
+ULB" 271, "Autre campus" 200, Flagey 70, Charleroi Ville Haute 70, UMons 67,
+Campus Biopark Gosselies 33, UMons Charleroi 15, Porte de Hal/Brugman 12,
+UCharleroi 7, Uccle 7. Two of those name another university, which is the same
+fact 8.3 records for UCLouvain: a catalogue contains courses taught elsewhere,
+and the page says so rather than it being inferred.
+
+**A campus is many, not one.** The column was first built nullable and single,
+to the shape that had been approved, and then measured: five courses publish
+"Solbosch, Flagey" and one publishes five campuses. `OfferingSite` is a join
+table for that reason, and it was changed before the merge rather than after.

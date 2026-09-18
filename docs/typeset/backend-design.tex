@@ -146,9 +146,16 @@ own code is self-review.
 % ===========================================================================
 \section{The data model}
 
-Sixteen tables. Read out of the live database on 2026-09-10. The columns are
+Sixteen tables, read out of the live database on 2026-09-10. The columns are
 ordered by what references what rather than by tier, so \texttt{ryc} sits in the
 middle: it is the only schema that references both of the others.
+
+\textbf{The drawing is as of that date and has not been redrawn.} The live
+database holds \textbf{24} tables on 2026-09-18, 10 in \texttt{platform}, 11 in
+\texttt{ref} and 3 in \texttt{ryc}. What was added, and why, is at the end of
+this document under ``What changed after this was drawn''. The shape it
+illustrates, three schemas with \texttt{ryc} referencing both and no foreign key
+crossing a schema, is unchanged.
 
 \begin{center}
 \begin{tikzpicture}[x=1cm,y=1cm]
@@ -575,15 +582,18 @@ they were code is worse than none.
 \sffamily\small
 \begin{tabular}{@{}p{4.6cm}p{4.0cm}p{5.4cm}@{}}
 \toprule
-\textbf{Piece} & \textbf{State} & \textbf{Blocked on} \\
+\textbf{Piece} & \textbf{State, 2026-09-18} & \textbf{Blocked on} \\
 \midrule
-Catalogue, end to end & \textbf{built and running} & 546 courses loaded \\
-The three tiers and their grants & \textbf{built, and tested by mutation} & \\
-Review submission & \textbf{not built} & the next thing. Exercises the kernel \\
-Authentication & not built & OPEN-5 answered, nothing written \\
-Reading reviews & not built & needs authentication (FR-D13) \\
-Moderation, the queue & not built & OPEN-7, OPEN-8, OPEN-24 \\
-Import of historical reviews & not built & OPEN-42, permission \\
+Catalogue, end to end & \textbf{built and running} & two catalogues, 12{,}154 courses loaded \\
+The three tiers and their grants & \textbf{built, and tested by mutation} & 32 isolation assertions \\
+Review submission & \textbf{built}, both paths & 14 reviews, all written while testing \\
+Authentication & \textbf{built}; Google works & Microsoft written, \textbf{not registered} \\
+Reading reviews & \textbf{built} & \\
+Moderation, the queue & \textbf{built}, notice and console & FR-E9 still \texttt{[OPEN]}, needs a lawyer \\
+Serving the application & \textbf{built}, one process & no host, no domain, no TLS \\
+Automatic screening (FR-E4) & not built & every submission publishes directly \\
+Mail delivery & not built & queued and printed; five \texttt{STUDENS\_SMTP\_*} variables \\
+Import of historical reviews & \textbf{will not be built} & OPEN-42 resolved: not asked, not imported \\
 Any AI capability & not built, and not assumed & OPEN-17, OPEN-23 \\
 \bottomrule
 \end{tabular}
@@ -626,5 +636,68 @@ is invisible, so it has to be drawn, tested and written down, or it will be
 removed by someone who cannot see it.
 \end{tcolorbox}
 \end{center}
+
+\newpage
+% ===========================================================================
+\section{What changed after this was drawn}
+
+Written 2026-09-10, updated 2026-09-18. The diagrams above are as first drawn;
+this section says what they no longer show, so the document can be read as of
+today without being redrawn.
+
+\subsection{Eight tables, and why each one exists}
+
+\textbf{In \texttt{ref}.} \texttt{Institution} and \texttt{Domain} came with
+the full catalogue. \texttt{Site} holds a campus, and \texttt{OfferingSite}
+joins it to an offering, because \textbf{a campus is many and not one}: the
+column was first built nullable and single, then measured, and five ULB courses
+publish ``Solbosch, Flagey'' while one publishes five campuses. 3{,}762 rows.
+\texttt{OfferingFaculty} and \texttt{ProgrammeOffering} are the same shape for
+the same reason, one programme belonging to three faculties.
+
+\textbf{In \texttt{platform}.} \texttt{MemberInstitution} holds which
+catalogues a member wants in front of them. It is a preference and not a
+tenancy, so it sits beside the rest of the profile, and RYC reads it rather
+than keeping a copy (FR-B11). \textbf{It carries no foreign key to
+\texttt{ref}}, in keeping with the rule this document already states: a
+cross-schema reference is a plain identifier.
+
+\subsection{A course code is not unique, and the schema said it was}
+
+\texttt{Course.code} was the key. Two catalogues broke it: ULB and UCLouvain
+can both publish a code, and the row that arrived second would have overwritten
+the first. The key is \texttt{(institutionId, code)}, and the same correction
+runs through the read path and the URL, \texttt{/app/ryc/c/uclouvain/lepl1503}.
+
+\texttt{Programme.facultyId} also became nullable, with a composite foreign key
+to \texttt{(id, institutionId)} so a programme cannot borrow another
+university's faculty. A fifth of ULB's programmes name no ULB faculty: some
+publish no organiser at all, others name a haute école, which is a real
+organiser and is not a faculty.
+
+\subsection{Four more columns on an offering}
+
+\texttt{objectives}, \texttt{prerequisites}, \texttt{teachingMethods} and
+\texttt{bibliography}, all \texttt{Json} and all nullable, holding the same
+block model as \texttt{content} and \texttt{assessment}. Both universities
+publish all four and neither parser was keeping them.
+
+\subsection{The web process serves the application}
+
+The process drawn here as the API also serves the built single-page
+application, mounted \textbf{after} the \texttt{/api} 404 so a mistyped API
+path still answers JSON rather than a page with status 200. One artefact, which
+is what requirements 1.7 already said the web process was.
+
+\subsection{A failure mode this document did not list}
+
+``UCLouvain changes its markup'' is in the failure table. With two sources the
+sharper case is \textbf{a source that answers successfully with the wrong
+thing}: ULB's programme endpoint returns 200 and valid JSON containing no
+courses when the wrong one of two identically-named elements is read, so all 286
+programmes read as empty and nothing looked broken. A wrong endpoint that
+succeeds is worse than one that fails, and the guard is
+\texttt{assertNothingWentBlank}, which fails a crawl when a field is empty on
+every row rather than on one.
 
 \end{document}

@@ -230,8 +230,9 @@ a project with no deadline. Everything here is *deferred*, not rejected.
   consequence of this being impossible rather than merely deferred.
 - Third party module authors. The contract is designed with them in mind (1.5), but v1
   ships with modules written by the core team only.
-- More than one institution. v1 serves **UCLouvain** (OPEN-14 resolved), with tenancy kept
-  possible in the schema and the interface defaulted to it (1.5 item 1).
+- ~~More than one institution.~~ **Changed 2026-09-17, see 1.6.** v1 serves **UCLouvain and
+  ULB**. Both catalogues are loaded and both are selectable; every other institution is
+  listed and not selectable.
 - Secondary education. Out of scope permanently, not merely deferred. See OPEN-15.
 
 ### 1.5 Decisions that are expensive to reverse
@@ -256,14 +257,44 @@ corresponding door open.
 
 **[VERIFIED]** François, 2026-09-10. Resolves OPEN-14 and OPEN-11.
 
-**v1 serves UCLouvain**, and the second institution arrives only after v1 has demonstrated
-adoption and stability there. The reason given is the right one: building multi-tenant
-routing before product-market fit adds operational complexity and splits attention. Candidate
-institutions afterwards, by proximity and demand, include ULB, ULiège, UMons and partner
-hautes écoles.
+**v1 served UCLouvain alone**, and the second institution was to arrive only after v1 had
+demonstrated adoption and stability there. The reason given was the right one: building
+multi-tenant routing before product-market fit adds operational complexity and splits
+attention. Candidate institutions afterwards, by proximity and demand, included ULB,
+ULiège, UMons and partner hautes écoles.
 
-What is built now to keep that door open is only what 1.5 item 1 already requires: the tenant
+What was built to keep that door open was only what 1.5 item 1 already requires: the tenant
 column in the schema, and an interface that defaults to UCLouvain rather than assuming it.
+
+**CHANGED 2026-09-17: v1 serves UCLouvain and ULB.** François: "for now I want to fetch
+also ULB stuffs. These are the 2 univs I want to start with (they are potential tester
+candidates with huge added values)."
+
+The requirement it serves is the one this document opens with. v1 passes when a student can
+read rated feedback before their PAE deadline, and there are no reviews yet, so the thing
+that decides whether it passes is testers. Two universities twenty kilometres apart roughly
+double the population that can be asked, and a student taking courses at both is an ordinary
+case rather than an edge one.
+
+The alternative, holding to the original order, was rejected on evidence rather than
+preference: the multi-tenant complexity that 1.6 was protecting against turned out to be
+smaller than assumed once it was attempted. Adding ULB needed a source adapter, the
+institution in the URL (OPEN-48), institution-scoped course codes, and a nullable faculty.
+None of that is routing, none of it is operational, and all of it would have been needed
+eventually and been more expensive against a live installation.
+
+The costs accepted, and they are real. **Two catalogues to keep fresh** rather than one,
+each with its own crawl, its own parser and its own way of breaking. **The empty-product
+problem doubles**: a near-empty catalogue is less convincing at two universities than at
+one, and FR-D18 means nothing is imported to fill it. And **the interface can no longer
+default to one institution**, which is what forced the scope model in
+`design/information-architecture.md` 5: a member's universities are the catalogue rather
+than a filter over everybody's.
+
+What would change the answer back: nothing plausible. The work is done and the second
+catalogue is loaded. What would stop a **third** is the same question asked again, and the
+honest measure is whether ULB's crawl needs attention often enough that a second one is a
+standing cost rather than a one-off.
 
 **Unverified:** the intention to fetch a registry of Belgian higher education institutions
 from a public educational API. No such API has been identified or checked. Treat it as a hope,
