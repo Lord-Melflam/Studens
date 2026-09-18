@@ -14,14 +14,14 @@ gone wrong and what each failure changed.
 
 | | |
 |---|---|
-| Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted and read on both paths, and moderation end to end. The web process now serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
-| Commits | 81 |
+| Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted, read and paged on both paths, moderation end to end, and an administrator who can change settings and suspend an account. The web process serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
+| Commits | 87 |
 | Requirements | **154**: 136 functional and 18 non-functional. Counted, not carried forward |
 | Open questions | **8** open, 40 resolved. Counted across both tables in requirements.md section 7, since a question resolved in place is struck there and one resolved with a long argument is written out in 7.1 |
-| Tests | **729**, plus 32 database isolation assertions |
-| Code | 22,169 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 10,339 of tests. Measured over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts` |
-| Data | **Two catalogues in PostgreSQL**, counted 2026-09-18: 12,154 courses, 13,062 offerings (12,093 for 2026-2027 and 969 kept from 2025-2026), 1,055 programmes, 32 faculties, 16,589 teacher rows, 21 sites, 22 fields of study, and 11 institutions of which 2 are open for choosing. UCLouvain is 769 programmes and 6,715 courses; ULB is 286 and 5,439 |
-| Reviews | **14, all written by us while testing.** 8 attributed and 6 anonymous. No student has used this yet, and the product does not pretend otherwise |
+| Tests | **746**, plus 32 database isolation assertions |
+| Code | 23,192 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 10,622 of tests. Measured over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts` |
+| Data | **Two catalogues in PostgreSQL**, counted 2026-09-18: 12,154 courses, 1,055 programmes, 32 faculties, and 11 institutions of which 2 are open for choosing. UCLouvain is 769 programmes and 6,715 courses; ULB is 286 and 5,439. **No figure is written into the interface**: `/api/catalogue` reports them and the pages read it |
+| Reviews | **99, all written by us while testing**, seeded onto two courses so that paging and the aggregate can be shown. No student has used this yet, and the product does not pretend otherwise |
 | Not sent | **No mail leaves this installation.** Messages are queued and printed; five `STUDENS_SMTP_*` variables turn that into delivery |
 
 ### What runs today
@@ -1737,6 +1737,95 @@ off its own centre, and no hover at all. The fact labels above followed, since
 leaving them in capitals would have made one page look like two.
 
 
+### Phase 40: the phone overflow that was never where it looked
+
+Recorded as an app-zone defect caused by the sign-in buttons. Both halves were
+false, and both came from screenshots.
+
+`--window-size=420` is clamped to the host's minimum window width, so the page
+lays out wider than the image and every element looks cut off at the right
+edge. Two rounds of fixes went to elements that were never the problem.
+
+A DOM probe reading `scrollWidth` found it in one run. The app zone never
+overflowed at any phone width. The PUBLIC zone did, on every page, 910px of
+document inside a 375px screen, because `.site-main` is a flex item and without
+an explicit width it took its content's width rather than its container's.
+Three smaller ones at 320px followed from the same measurement: two grid track
+floors that could not collapse, and a sentence-length link inheriting the
+`nowrap` that keeps a two-word pill in shape.
+
+72 page and width combinations report no overflow now. **Measure the document,
+not the picture of it.**
+
+### Phase 41: reviews are paged, and the aggregate is not
+
+A course page fetched every review it had. At fourteen that is invisible;
+François asked what happens at a thousand.
+
+Ten a page, in the address, because "load more" cannot survive a refresh, a
+Back or a shared link.
+
+The part that mattered was the aggregate. It was summed from the array of
+reviews, which was the same thing while that array held every one of them and
+would have quietly come to mean "on this page". FR-C21 puts the named and
+anonymous counts in front of a contributor so they can judge their own
+exposure, and 3.3's arithmetic rests on the same figures, so they are counted
+by the database now over every published review.
+
+The order had to become total. Year is not, and nor is year plus date, because
+`ReviewAnonymous.createdAt` is a DATE rather than a timestamp so that it cannot
+serve as a join key against the quota counter (FR-C5). The id breaks the tie,
+and for an anonymous review that id is a random uuid chosen to publish no
+insertion order (FR-C18), which is exactly what makes it safe to sort by.
+
+### Phase 42: a number in a sentence is stale the moment the crawler runs
+
+The public page said "546 cours" and "43 programmes" while the database held
+12,093 and 976. Nobody had lied; the numbers were true when they were typed.
+
+François named the fix: "you see why it would have been interesting to have
+global variable? It would avoid things to be stale." `/api/catalogue` reports
+the courses, the programmes and the institutions, and the page renders what
+comes back. `test/architecture/no-stale-counts.test.ts` fails if a figure of
+three digits or more is typed back into a translated string; a four digit year
+is exempt, written as an exception rather than by loosening the rule.
+
+The same change stopped five in-app lines naming UCLouvain for what is the
+course's own university, and the first run offering "Seule l'UCLouvain peut
+être choisie" on a screen that now takes several.
+
+### Phase 43: the search screen, and signing out
+
+The search screen had TWO text boxes with nearly the same label, stacked: one
+asked the server, one narrowed what came back, and nothing said which was
+which. The second is gone on that screen. The box is bounded, has an icon and a
+focus ring, and an empty query offers three words that certainly match rather
+than an empty page. The two tabs now say what they are for, which was written
+nowhere: browse when you know your programme, search when you know the course.
+
+Signing out stayed on the page, or landed on `/app`, which is the application
+itself. A course page is public, so staying on one looked exactly like signing
+out had failed. It lands on the public home now.
+
+### Phase 44: an administrator who does not need a shell
+
+Settings in a `platform.Setting` table, changed from the console while the
+platform runs. I argued for keeping the reviews-per-page a constant and was
+overruled, correctly: the person running the product should be able to change
+how it behaves without a deploy.
+
+Keys are namespaced by module and the platform never learns what they mean.
+The console shows the KEY as the label, because translating it would put
+"reviews per page" into the shell's own strings, and the FR-B16 gate caught
+exactly that on the first attempt.
+
+Suspension came with it, and the screen says what it is not: it binds an
+account and never a person (FR-A6, OPEN-35), and it cannot reach the anonymous
+path (FR-E7). Fixed lengths rather than a free date, permanent as a null rather
+than a far future sentinel, sessions revoked in the same transaction, and no
+administrator may suspend themselves or another administrator.
+
+
 ---
 
 ## Next
@@ -1748,8 +1837,8 @@ leaving them in capitals would have made one page look like two.
    2,977, bibliography 2,608, and a campus on 3,317. See
    `design/catalogue-ingestion.md` 13.5.
 1. ~~Authentication~~ done, phases 19 and 25 for the code. Google works end to
-   end. **Microsoft is written and NOT registered**, which is the gap that
-   matters most: UCLouvain runs on Microsoft 365, so the whole target
+   end. **Microsoft is written and NOT registered, and it is now the gap that
+   matters most after a host**: UCLouvain runs on Microsoft 365, so the whole target
    population already has a Microsoft identity and none of them can use it yet.
    Two values in `providers.ts` were written from documentation and have never
    been observed, the `preferred_username` fallback and
@@ -1766,6 +1855,11 @@ leaving them in capitals would have made one page look like two.
    only a notice can hold it.
 4. **Editing an attributed review** (FR-C14) and "Mes avis" (FR-D12), both of
    which the fork already promises on screen.
+4b. ~~An administrator can change how the product behaves~~ done, phase 44:
+   settings in a table, changed from the console, namespaced by module.
+   Suspension came with it. What it deliberately cannot do is sanction the
+   author of an anonymous contribution (FR-E7), and the console says so above
+   the button rather than leaving a moderator to find out.
 5. **A mail relay.** Nothing is delivered until the five `STUDENS_SMTP_*`
    variables are set: messages queue correctly and the worker prints them. The
    zero-budget start is a Gmail app password; the exit is a relay on the real
@@ -1799,7 +1893,7 @@ leaving them in capitals would have made one page look like two.
    section is folded is not held anywhere, because it is read from the URL on
    every render.
 9b. ~~The app zone overflows sideways on a phone~~ **done, phase 40, and the
-   entry above was wrong in both halves.** The app zone never overflowed at any
+   entry as first written was wrong in both halves.** The app zone never overflowed at any
    phone width. The PUBLIC zone did, on every page, by 910px of document inside
    a 375px screen. The cause was not the header bar either: `.site-main` is a
    flex item and without an explicit width it took its content's width instead
