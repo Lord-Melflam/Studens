@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useT } from "@studens/i18n";
 import { api, type Aggregate, type CourseDetail, type PublishedReview } from "./api.js";
-import { CatalogueLanguageNote, ProseField } from "./Prose.js";
+import { CatalogueLanguageNote, FoldedField } from "./Prose.js";
 import { Reviews } from "./Reviews.js";
 import { SubmitFlow } from "./SubmitFlow.js";
 
@@ -125,9 +125,9 @@ export function CoursePage({
         {(course.assessment || course.themes || course.content) && (
           <CatalogueLanguageNote institution={course.institution} />
         )}
-        <ProseField label={t("ryc.course.assessment")} blocks={course.assessment} />
-        <ProseField label={t("ryc.course.themes")} blocks={course.themes} />
-        <ProseField label={t("ryc.course.content")} blocks={course.content} />
+        <FoldedField label={t("ryc.course.assessment")} blocks={course.assessment} />
+        <FoldedField label={t("ryc.course.themes")} blocks={course.themes} />
+        <FoldedField label={t("ryc.course.content")} blocks={course.content} />
         {/*
           The order is the order a student reads in, not the order the source
           prints. What the course is about, what you should be able to do, what
@@ -135,10 +135,10 @@ export function CoursePage({
           the top because it is the thing FR-D19 exists for: the reviewer is
           not asked what the catalogue already publishes.
         */}
-        <ProseField label={t("ryc.course.objectives")} blocks={course.objectives} />
-        <ProseField label={t("ryc.course.prerequisites")} blocks={course.prerequisites} />
-        <ProseField label={t("ryc.course.teachingMethods")} blocks={course.teachingMethods} />
-        <ProseField label={t("ryc.course.bibliography")} blocks={course.bibliography} />
+        <FoldedField label={t("ryc.course.objectives")} blocks={course.objectives} />
+        <FoldedField label={t("ryc.course.prerequisites")} blocks={course.prerequisites} />
+        <FoldedField label={t("ryc.course.teachingMethods")} blocks={course.teachingMethods} />
+        <FoldedField label={t("ryc.course.bibliography")} blocks={course.bibliography} />
 
         <div className="field">
           <dt>{t("ryc.course.official")}</dt>

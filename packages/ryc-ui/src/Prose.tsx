@@ -11,6 +11,7 @@
  * our own elements, so there is no sanitiser and no dangerouslySetInnerHTML
  * anywhere in the path.
  */
+import { useId, useState } from "react";
 import { useLocale, useT } from "@studens/i18n";
 
 /**
@@ -141,6 +142,64 @@ export function ProseField({ label, blocks }: { label: string; blocks: Block[] |
       <dd className="prose" lang={CATALOGUE_LANG}>
         <Blocks blocks={blocks} />
       </dd>
+    </div>
+  );
+}
+
+/**
+ * A course-page field that starts folded.
+ *
+ * WHY FOLDED HERE AND OPEN IN THE FILTER PANEL, because the two defaults are
+ * opposite and that is not drift.
+ *
+ * In the filter panel, folding hid the controls somebody needs to use the
+ * screen, and the groups are short. Here the content is long-form prose, and
+ * what it pushes off the bottom of the page is the reviews, which are the
+ * product. François: "it can be really exhaustive and take space for courses
+ * having large descriptions ... otherwise the review will come only far away
+ * at the bottom of the page". A UCLouvain assessment field alone runs to three
+ * items, a weighting list, a paragraph on generative AI and one on the second
+ * session, and there are seven fields like it.
+ *
+ * The short facts above are NOT folded. Teachers, credits, hours and the
+ * campus are a line each, they are what the page is looked up for, and a
+ * heading you have to open to read one line is worse than the line.
+ *
+ * The state is local rather than in the address. FR-B21 puts what is on screen
+ * in the URL, and what is meant by that is what the screen is SHOWING: which
+ * course, which filters, which search. Seven booleans for which paragraphs a
+ * reader happened to unfold are not that, and they would make two links to the
+ * same course differ for no reason a reader could see.
+ */
+export function FoldedField({ label, blocks }: { label: string; blocks: Block[] | null }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  if (!blocks || blocks.length === 0) return null;
+  return (
+    <div className={open ? "field fold open" : "field fold"}>
+      {/* A `dt` holding a button: the whole row is the control, and the button
+          carries the label, so a screen reader announces the field name and
+          its state together rather than "button, collapsed". */}
+      <dt>
+        <button
+          type="button"
+          className="fold-head"
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => setOpen(!open)}
+        >
+          <span className="fold-name">{label}</span>
+          <span className="fold-chevron" aria-hidden="true" />
+        </button>
+      </dt>
+      {/* Not rendered at all while folded rather than hidden with CSS: a
+          closed field holds hundreds of elements on a long course, and seven
+          of them is a page the browser lays out and nobody reads. */}
+      {open && (
+        <dd className="prose" id={id} lang={CATALOGUE_LANG}>
+          <Blocks blocks={blocks} />
+        </dd>
+      )}
     </div>
   );
 }

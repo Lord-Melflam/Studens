@@ -242,6 +242,7 @@ export { next, EVENTS, STEPS, type Event, type Step, type Transition } from "./f
 export {
   Blocks,
   ProseField,
+  FoldedField,
   CatalogueLanguageNote,
   CATALOGUE_LANG,
   type Block,

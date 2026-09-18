@@ -118,6 +118,46 @@ dl { margin: 0; }
 .field dt { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .field dd { margin: 0.3rem 0 0; }
 
+/* A FOLDED FIELD. The row is the control, so it spans the full width and has
+   no padding of its own: the padding belongs to `.field` above, and the two
+   together are what makes a closed field the same height as an open one's
+   heading. */
+.field.fold { padding: 0; }
+.field.fold .fold-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.9rem 0;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.field.fold .fold-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.field.fold .fold-head:hover .fold-name { color: var(--ink); }
+.field.fold .fold-chevron {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  /* Pointing down when closed, up when open: the chevron says what pressing
+     it will do, which is the reading people apply without being taught. */
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 0.12s ease;
+}
+.field.fold.open .fold-chevron { transform: rotate(-135deg) translate(-2px, -2px); }
+.field.fold dd { margin: 0; padding: 0 0 0.9rem; }
+
 .official { color: var(--accent); word-break: break-all; font-size: 0.92rem; }
 
 .reviews-absent { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
