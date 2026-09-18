@@ -49,20 +49,44 @@ describe("the long fields on a ULB course page", () => {
     expect(prose.campuses).toEqual(["Plaine"]);
   });
 
-  it("leaves the objectives out, rather than putting them in themes", () => {
+  it("reads the four fields both universities publish", () => {
+    // François asked for them by name. Each has a column of its own, so a
+    // field never means two things depending on which university a row came
+    // from: "Objectifs" here is "Acquis d'apprentissage" at UCLouvain, and
+    // both land in `objectives`.
+    expect(prose.objectives).not.toBeNull();
+    expect(prose.prerequisites).not.toBeNull();
+    expect(prose.teachingMethods).not.toBeNull();
+  });
+
+  it("finds the bibliography, which ULB nests one level down", () => {
+    // "Références, bibliographie et lectures recommandées" is not a section of
+    // its own: it is an h3 inside another, beside "Support(s) de cours" and
+    // the campus. Reading only the h2 sections found it nowhere and left the
+    // column null on every ULB course, which would have looked exactly like a
+    // university that publishes no bibliography.
+    expect(prose.bibliography).not.toBeNull();
+    expect(blocksToText(prose.bibliography!).toLowerCase()).toContain("python");
+  });
+
+  it("still leaves out what has no column of its own", () => {
     // ULB publishes "Objectifs (et/ou acquis d'apprentissages spécifiques)".
     // `themes` is UCLouvain's "Thèmes abordés", the topics a course covers;
     // objectives are what a student should be able to do afterwards. Filing
     // one under the other would make a column mean two things depending on
     // which university the row came from, and nothing on screen would say so.
     //
-    // The fixture keeps the section precisely so this can be asserted.
-    expect(page).toContain("Objectifs");
-    const everything = [prose.content, prose.assessment]
-      .filter((b) => b !== null)
-      .map((b) => blocksToText(b!))
+    // "Contribution au profil d'enseignement" is about the programme rather
+    // than the course, and "Support(s) de cours" is a list of materials.
+    // Neither has a column, so neither is read. When one is wanted it gets a
+    // column of its own, which is exactly what just happened to the
+    // objectives: they were dropped until there was somewhere honest to put
+    // them, rather than being folded into `themes`.
+    const everything = Object.values(prose)
+      .filter((b): b is NonNullable<typeof b> => Array.isArray(b) && b.length > 0 && typeof b[0] === "object")
+      .map((b) => blocksToText(b as never))
       .join("\n");
-    expect(everything).not.toContain("acquis d'apprentissages");
+    expect(everything).not.toContain("Contribution au profil");
   });
 });
 

@@ -209,8 +209,12 @@ describe("every sentence on screen comes from the translator", () => {
       expect(text, `${rel} must mark the quotation's language for the browser`).toMatch(
         /lang=\{CATALOGUE_LANG\}/,
       );
+      // Matched on the tag rather than the whole element, because the note
+      // takes the institution as a prop since 2026-09-19: it named UCLouvain
+      // whatever the course, which was true with one catalogue and a falsehood
+      // the hour ULB loaded.
       expect(text, `${rel} must tell the reader which language it is in`).toContain(
-        "<CatalogueLanguageNote />",
+        "<CatalogueLanguageNote",
       );
     }
   });
@@ -226,7 +230,7 @@ describe("every sentence on screen comes from the translator", () => {
       /className="prose" lang=\{CATALOGUE_LANG\}/,
     );
     const page = readFileSync(join(root, "packages/ryc-ui/src/CoursePage.tsx"), "utf8");
-    expect(page).toContain("<CatalogueLanguageNote />");
+    expect(page).toContain("<CatalogueLanguageNote");
   });
 
   it("no prose is passed as a user-visible attribute", () => {

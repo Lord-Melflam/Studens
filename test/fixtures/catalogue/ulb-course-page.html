@@ -1,28 +1,36 @@
 <!--
-Structural excerpt of an ULB COURSE PAGE, captured 2026-09-18 from
+Structural excerpt of an ULB COURSE PAGE, captured 2026-09-19 from
 https://www.ulb.be/fr/programme/info-f101 -- the YEAR-LESS URL, which is the
-one that works.
+one that works. ULB's URL year and its academic year are different numbers: the
+pages live under `2025-` while describing 2026-2027, so `2026-info-f101` is a
+404 and building an official link from the academic year gave every ULB course
+a dead one.
 
-ULB's URL year and its academic year are different numbers: the pages live
-under `2025-` while the courses they describe are 2026-2027, so
-`/fr/programme/2026-info-f101` is a 404. Building an official link from the
-academic year gave every ULB course a dead link the moment it shipped.
+Every section the parser reads is kept, and two it deliberately does not.
 
-Three sections are kept. Two are read: "Contenu du cours" and "Evaluation".
-The third, "Objectifs", is kept precisely because it is NOT read: the catalogue
-has no column for objectives, and `themes` is UCLouvain's "Thèmes abordés",
-which is a different thing. A test asserts it stays out.
+READ as sections of their own (h2):
+  Contenu du cours, Objectifs, Pré-requis et Co-requis,
+  Méthodes d'enseignement et activités d'apprentissages, Evaluation.
 
-The "Autres renseignements" section is kept for one field: the CAMPUS. ULB is
-multi-site the way UCLouvain is, and states it per COURSE rather than per
-programme, as `<h3>Campus</h3><p>Plaine</p>`. Solbosch, Plaine, Erasme and
-Charleroi come from here. The contact line beside it is left in because the
-campus has to be found among siblings and not by position, and the name in it
-is replaced.
+READ one level down (h3, inside another section), which is the shape that cost
+the most to find:
+  "Références, bibliographie et lectures recommandées" is NOT a section. Reading
+  only the h2 sections found it nowhere and left the column null on every ULB
+  course, which looked exactly like a university that publishes no bibliography.
+  The campus is the same shape, under "Autres renseignements".
 
-This page names no real individual.
+NOT READ, and kept here so a test can say so:
+  "Contribution au profil d'enseignement" is about the programme rather than the
+  course, and "Support(s) de cours" is a list of materials. Neither has a column
+  of its own, and neither is folded into a field that means something else. That
+  is the rule that kept the objectives out until they had a column, on
+  2026-09-19.
+
+This page names no real individual: the contact line is replaced and addresses
+are stripped.
 -->
-<html><body>
+<html><head><title>Programmation - ULB</title></head>
+<body>
 <h2  class="paragraphe__titre--1">Contenu du cours</h2>
         <div class="paragraphe__contenu--1 toolbox"><p>Initiation aux structures fondamentales, à l’écriture et à&nbsp;l’analyse des&nbsp;programmes dans un langage de haut niveau, en l’occurrence Python :</p>
 
@@ -59,6 +67,105 @@ This page names no real individual.
 
 
 
+
+
+
+
+
+
+
+
+<div class="paragraphe--1">
+    
+<h2 class="paragraphe__titre--1">Pré-requis et Co-requis</h2>
+    <div class="paragraphe__contenu--1 toolbox">
+        
+        
+        
+        
+            <h3>Cours ayant celui-ci comme pré-requis</h3>
+            <p><div class="prgULB"><div id="tagWsWrapper_418f1d1e-77a6-49d8-b4e2-b739868390b5" data-type="coursayantprerequis">    <div id="tagWS_418f1d1e-77a6-49d8-b4e2-b739868390b5" class="js-formation-ulb js-formation__coursayantprerequis" data-type="coursayantprerequis" data-attribute-url="/ksup/prerequisitsFor?gen=prod&amp;anac=2026&amp;mnemonic=INFO-F101&amp;lang=fr&amp;new=yes&amp;">    </div>                                            </div></div></p>
+        
+        
+            <h3>Cours ayant celui-ci comme co-requis</h3>
+            <p><div class="prgULB"><div id="tagWsWrapper_1a3be207-6d84-4977-a517-0fb23ae86dfc" data-type="coursayantprerequis">    <div id="tagWS_1a3be207-6d84-4977-a517-0fb23ae86dfc" class="js-formation-ulb js-formation__coursayantprerequis" data-type="coursayantprerequis" data-attribute-url="/ksup/corequisitsFor?gen=prod&amp;anac=2026&amp;mnemonic=INFO-F101&amp;lang=fr&amp;new=yes&amp;">    </div>                                            </div></div></p>
+        
+    </div>
+</div>
+
+    
+        <div class="paragraphe--1">
+            
+<h2  class="paragraphe__titre--1">Méthodes d'enseignement et activités d'apprentissages</h2>
+            <div class="paragraphe__contenu--1 toolbox">
+        
+            <p><p>L’apprentissage de la programmation Python de base, qui constitue la première partie des quatre premiers objectifs,&nbsp;se base sur&nbsp;le cours en ligne&nbsp;<i>« Apprendre à coder avec Python »,</i> accessible sur l'Université Virtuelle<i>.</i>&nbsp;L’écriture individuelle de programmes&nbsp;Python résolvant de petits problèmes, et auto-évalués par notre environnement, est demandée.</p>
+L’approfondissement des apprentissages, incluant les notions de récursivité, de programmation orientée objet, d'algorithmes et de complexité, se fait lors des séances de cours ex-cathedra et des séances d'exercices.&nbsp;<br>
+<br>
+Un suivi de l’apprentissage de chaque étudiant·e est réalisé en utilisant le carnet de notes de l'UV, et via la réalisation de devoirs&nbsp;de programmation, ainsi qu’au cours ex-cathedra, séances de séminaires et de travaux pratiques.<br>
+<br>
+L'accent est mis sur le travail autonome .&nbsp;</p>
+        
+            <h3>Références, bibliographie et lectures recommandées</h3>
+            <p><p>- Programmation (INFO-F-101),&nbsp; Presses Universitaires de Bruxelles.<br>
+-&nbsp;<a href="http://inforef.be/swi/python.htm" class="lien_externe">Apprendre à programmer avec Python 3, de Gérard Swinnen</a>.</p></p>
+        
+            
+
+
+
+
+
+
+
+
+    <h3>Support(s) de cours</h3>
+    <ul>
+    
+        <li>Université virtuelle</li>
+    
+        <li>Syllabus</li>
+    
+    </ul>
+
+
+
+            </div>
+        </div>
+    
+
+        
+            <div class="paragraphe--1">
+                
+<h2 class="paragraphe__titre--1">Contribution au profil d'enseignement</h2>
+                <p><p>Si vous avez suivi avec fruit le cours, vous aurez amélioré&nbsp;les compétences suivantes&nbsp;:</p>
+
+<ul>
+	<li>
+	<p>L’apprentissage autonome&nbsp;: vous serez dans une dynamique d’apprentissage autonome et permanent dans ce domaine en constante et rapide évolution.</p>
+	</li>
+	<li>
+	<p>La résolution de problèmes&nbsp;: vous aurez la capacité d’analyser des besoins, de structurer l’information, de concevoir, modéliser et mettre en oeuvre&nbsp;des solutions pertinentes et efficaces ; de façon plus globale on vous demandera dans les cours d’informatique d’acquérir la “pensée informatique” (“computational thinking”) en étant capable de faire des abstractions adéquates pour un problème, et d’allier la théorie à la pratique avec l’ordinateur comme support;</p>
+	</li>
+	<li>
+	<p>La communication&nbsp;: vous pourrez comprendre les problèmes posés, et expliquer les solutions proposées ; vous pourrez utiliser la communication scientifique et technique, et les formalismes mathématiques adéquats.</p>
+	</li>
+</ul></p>
+            </div>
+        <div class="paragraphe--1">
+            
+<h2  class="paragraphe__titre--1">Autres renseignements</h2>
+                <div class="paragraphe__contenu--1 toolbox">
+                
+                <h3>Contacts</h3>
+                <p><p>M. Nom Prenom (Campus Plaine, bâtiment NO)</p></p>
+            
+                    <h3>Campus</h3>
+                    <p>Plaine</p>
+            
+            </div>
+        </div>
+    
 
 
 
@@ -137,26 +244,4 @@ La note sur les exercices en ligne et des devoirs compte pour toutes les session
 
 
     <div class="toolbox"><div class="paragraphe--1">
-<div class="paragraphe--1">
-            <h2  class="paragraphe__titre--1">Autres renseignements</h2>
-                <div class="paragraphe__contenu--1 toolbox">
-                
-                <h3>Contacts</h3>
-                <p><p>M. Nom Prenom (Campus Plaine, bâtiment NO)</p></p>
-            
-                    <h3>Campus</h3>
-                    <p>Plaine</p>
-            
-            </div>
-        </div>
-    
-
-
-
-
-
-
-
-
-
 </body></html>

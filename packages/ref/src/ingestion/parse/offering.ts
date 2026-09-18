@@ -61,6 +61,20 @@ export interface ParsedOffering {
   assessment: Block[] | null;
   themes: Block[] | null;
   content: Block[] | null;
+  /**
+   * Four more that both universities publish, under different names.
+   *
+   * UCLouvain calls them "Acquis d'apprentissage", "Préalables", "Méthodes
+   * d'enseignement" and "Bibliographie"; ULB calls them "Objectifs", "Pré-requis
+   * et Co-requis", "Méthodes d'enseignement et activités d'apprentissages" and
+   * "Références, bibliographie et lectures recommandées".
+   *
+   * Optional so a parser that has never heard of them needs no change.
+   */
+  objectives?: Block[] | null;
+  prerequisites?: Block[] | null;
+  teachingMethods?: Block[] | null;
+  bibliography?: Block[] | null;
   owningFaculty: string | null;
   /**
    * The campuses this course is taught on, where the source states them per
@@ -317,6 +331,13 @@ export function parseOffering(
     ),
     themes: richField($, fields, ["themes abordes"], url, "themes"),
     content: richField($, fields, ["contenu"], url, "content"),
+    // Added 2026-09-19, on François's request. Four lines, and no logic above
+    // them is touched: the labels are read exactly as the six already here
+    // are, through the same `richField` and the same label map.
+    objectives: richField($, fields, ["acquisd'apprentissage", "acquis d'apprentissage"], url, "objectives"),
+    prerequisites: richField($, fields, ["prealables", "prealable"], url, "prerequisites"),
+    teachingMethods: richField($, fields, ["methodes d'enseignement", "methode d'enseignement"], url, "teachingMethods"),
+    bibliography: richField($, fields, ["bibliographie"], url, "bibliography"),
     owningFaculty: entity(
       field(
         fields,

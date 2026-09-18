@@ -286,6 +286,10 @@ export async function loadSnapshot(
             contactHours: o.contactHours,
             themes: asJson(o.themes),
             content: asJson(o.content),
+            objectives: asJson(o.objectives ?? null),
+            prerequisites: asJson(o.prerequisites ?? null),
+            teachingMethods: asJson(o.teachingMethods ?? null),
+            bibliography: asJson(o.bibliography ?? null),
             owningFaculty: o.owningFaculty,
           },
           create: {
@@ -299,6 +303,10 @@ export async function loadSnapshot(
             contactHours: o.contactHours,
             themes: asJson(o.themes),
             content: asJson(o.content),
+            objectives: asJson(o.objectives ?? null),
+            prerequisites: asJson(o.prerequisites ?? null),
+            teachingMethods: asJson(o.teachingMethods ?? null),
+            bibliography: asJson(o.bibliography ?? null),
             owningFaculty: o.owningFaculty,
           },
         });

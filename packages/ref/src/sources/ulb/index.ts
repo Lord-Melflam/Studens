@@ -231,6 +231,10 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
         assessment: null,
         themes: null,
         content: null,
+        objectives: null,
+        prerequisites: null,
+        teachingMethods: null,
+        bibliography: null,
         owningFaculty: null,
       });
     }
@@ -268,6 +272,10 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
         const prose = parseCourseProse(page);
         o.content = prose.content;
         o.assessment = prose.assessment;
+        o.objectives = prose.objectives;
+        o.prerequisites = prose.prerequisites;
+        o.teachingMethods = prose.teachingMethods;
+        o.bibliography = prose.bibliography;
         o.campuses = prose.campuses;
         if (prose.content || prose.assessment) filled += 1;
         if (prose.campuses.length > 0) withCampus += 1;

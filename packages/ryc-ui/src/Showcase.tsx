@@ -101,7 +101,7 @@ export function Showcase() {
             them are translated. */}
         <p className="ribbon">{t("ryc.mock.ribbon")}</p>
 
-        <CatalogueLanguageNote />
+        <CatalogueLanguageNote institution="UCLouvain" />
         <div className="field">
           <dt>{t("ryc.course.assessment")}</dt>
           {/* `lang` for the same reason as on the real page: without it a
