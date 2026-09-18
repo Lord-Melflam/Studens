@@ -222,7 +222,14 @@ async function submit(
 }
 
 export const api = {
-  catalogue: () => json<{ year: number; courses: number }>("/api/catalogue"),
+  catalogue: () =>
+    json<{
+      year: number;
+      courses: number;
+      programmes: number;
+      /** The institution codes actually present in the catalogue. */
+      institutions: string[];
+    }>("/api/catalogue"),
   search: (q: string) =>
     json<{ query: string; results: CourseSummary[] }>(`/api/courses?q=${encodeURIComponent(q)}`),
   course: (institution: string, code: string) =>

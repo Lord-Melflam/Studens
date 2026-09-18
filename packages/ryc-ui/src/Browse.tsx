@@ -286,7 +286,7 @@ export function Browse({
         */}
         {programme.courses === 0 ? (
           <div className="programme-empty">
-            <p>{t("ryc.browse.noCourseList")}</p>
+            <p>{t("ryc.browse.noCourseList", { name: programme.institution.toUpperCase() })}</p>
             <p className="hint">{t("ryc.browse.noCourseList.why")}</p>
             {/* Only where there is one. `officialUrl` is null for an
                 institution no source here knows how to link to, and a dead
@@ -298,7 +298,7 @@ export function Browse({
                 target="_blank"
                 rel="noreferrer noopener"
               >
-                {t("ryc.browse.officialProgramme")}
+                {t("ryc.browse.officialProgramme", { name: programme.institution.toUpperCase() })}
               </a>
             )}
           </div>
