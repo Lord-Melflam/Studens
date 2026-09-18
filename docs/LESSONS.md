@@ -457,6 +457,8 @@ Small, and each cost real time.
 | Duplicate `@prisma/client` | `^7.10.0` was installed nested in three packages while the CLI and the generated client were 5.22. Types checked, gates passed, and it would have failed at runtime | Pin the client to the exact version of the generator, in every package that declares it, then `rm -rf node_modules package-lock.json && npm install`. A nested duplicate is invisible to `tsc` |
 | `sudo npm` in this project | `sudo` resets `PATH` to `secure_path`, so it ran `/usr/bin/node` v12 instead of the nvm v22, and TypeScript died on its own `??` with `SyntaxError: Unexpected token '?'`. It would then have failed again on the database, because peer authentication makes the socket user `root` | Nothing here needs root: port 3001 is above 1024 and the grants are on your own user. `sudo` is for `service postgresql start` and nothing else. The error names a file nobody wrote, which is why it reads as a broken dependency rather than a wrong shell |
 | A comment is not a violation | The frontend boundary test failed on a CSS comment that *explained* the rule it was checking | Strip comments before scanning source for forbidden words |
+| Two dev servers, and stale CSS | An edit to `ryc.css` did not reach the browser. The page still had rules deleted a PR earlier, so the screenshot showed unstyled buttons and the change looked broken. Two `vite` processes were running at once, started hours apart | If a change seems not to apply, check the number of dev servers before re-reading the code. `node_modules/.vite` cleared and one server started fixed it. Half an hour went into reasoning about CSS that the browser never saw |
+| A Windows browser cannot be driven from WSL | Headless Edge screenshots work from WSL, but its devtools port binds on the Windows side and the firewall blocks it, so no cookie can be set and no signed-in page can be captured. `pkill` also cannot see Windows processes; `taskkill.exe /F /IM` can | Screenshot what a signed-out visitor sees, and cover the signed-in screens with render tests instead. Do not spend an hour on the transport |
 
 ---
 
@@ -585,3 +587,31 @@ The pattern is not hypocrisy, it is attention: the standard is loaded when
 judging someone else's material and unloaded when handling one's own.
 **Consistency needs a checklist rather than good intentions**, which is what the
 rule 6 scan is, and it has now caught this twice.
+
+---
+
+## 10. The helper that was right next to the wrong one
+
+`GET /me/institutions` called `identify`, which issues a session when the
+development identity is on. `identifyIfAny`, four lines below it in the same
+file and documented "for read paths: who is this, or nobody, without starting
+anything", is the one it wanted.
+
+The consequence was not an error. Every signed-out page load of the browse
+screen created a member, set a cookie, and answered a visitor with somebody
+else's stored preference, so the catalogue scoped itself to UCLouvain and
+showed 690 programmes of 976 to a person who had never chosen anything. It was
+found by reading a screenshot of the signed-out page and asking why it named a
+university, not by any test.
+
+Two things this repeats. **A wrong function that succeeds is worse than one
+that fails** (`design/catalogue-ingestion.md` 13, on the endpoint that answered
+200 with the wrong JSON). And **a route's auth helper is part of its contract**:
+the route below it, `/profile`, had the right one, so the two answered the same
+question differently and nothing pointed at the disagreement.
+
+What changed: the read paths were checked by hand against a signed-out session,
+which is now worth doing after any change to a route that reads member state.
+`dev:api:anon` exists for exactly this and had not been used.
+
+---
