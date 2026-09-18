@@ -199,7 +199,20 @@ export function FoldedField({
           onClick={onToggle}
         >
           <span className="fold-name">{label}</span>
-          <span className="fold-chevron" aria-hidden="true" />
+          {/* Drawn, not built out of two rotated borders. The border trick
+              gives a hairline that thickens on the diagonal and sits a pixel
+              off its own centre, which is most of why this row looked like an
+              accordion from 2012. */}
+          <svg className="fold-chevron" viewBox="0 0 20 20" aria-hidden="true">
+            <path
+              d="M5.5 8 10 12.5 14.5 8"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       </dt>
       {/* Not rendered at all while folded rather than hidden with CSS: a
