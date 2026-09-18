@@ -41,6 +41,15 @@ export interface SourceCrawlOptions {
   fetcher?: PoliteFetcher;
   now?: Date;
   onProgress?: (msg: string) => void;
+  /**
+   * Also fetch whatever a source keeps only on its per-course pages.
+   *
+   * One request per course instead of one per programme, so it is asked for
+   * rather than assumed. UCLouvain's crawler reads course pages either way and
+   * ignores this; ULB's needs it, because its listing carries every field but
+   * the long prose.
+   */
+  prose?: boolean;
 }
 
 export interface CatalogueSource {

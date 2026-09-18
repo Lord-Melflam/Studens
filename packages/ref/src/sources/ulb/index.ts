@@ -27,6 +27,7 @@ import type { CatalogueSource, SourceCrawlOptions } from "../index.js";
 import { parseFaculties, type UlbFaculty } from "./faculties.js";
 import { parseProgramme, programmeCodeFrom } from "./programme.js";
 import { parseListingFully } from "./listing.js";
+import { parseCourseProse } from "./course.js";
 
 const BASE = "https://www.ulb.be";
 
@@ -35,13 +36,30 @@ const BASE = "https://www.ulb.be";
     /META_INF/, /WEB_INF/ and /action/*, and names this file itself. */
 export const SITEMAP = `${BASE}/sitemap.xml`;
 
-export function courseUrl(year: number, code: string): string {
-  return `${BASE}/fr/programme/${year}-${code}`;
+/**
+ * NO YEAR IN THE LINK, and that is not a simplification.
+ *
+ * ULB's URL year and its academic year are different numbers. On 2026-09-18 the
+ * pages live under `2025-` while the courses they describe are 2026-2027, so
+ * `/fr/programme/2026-info-f101` is a 404 and `/fr/programme/2025-info-f101` is
+ * the 2026 course. Building the link from the academic year gave every ULB
+ * course an official link that was dead the moment it shipped.
+ *
+ * The year-less form answers 200 for courses and programmes alike and always
+ * points at the current edition, so it survives the rollover that broke the
+ * other one. Verified on `info-f101`, `comm-b1010` and `ba-tecn`.
+ *
+ * `year` is still in the signature because the interface is shared and
+ * UCLouvain needs it: its URLs carry the year and its archive depth is the
+ * reason they do.
+ */
+export function courseUrl(_year: number, code: string): string {
+  return `${BASE}/fr/programme/${code}`;
 }
 
 /** The same namespace as a course, which is ULB's doing and not a mistake here. */
-export function programmeUrl(year: number, code: string): string {
-  return `${BASE}/fr/programme/${year}-${code}`;
+export function programmeUrl(_year: number, code: string): string {
+  return `${BASE}/fr/programme/${code}`;
 }
 
 /**
@@ -227,6 +245,37 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
     if (codes.length > 0) say(`ulb: skipped ${codes.length} codes (${reason}): ${codes.join(", ")}`);
   }
   const crawledYear = year ?? pageYear;
+  /**
+   * THE SECOND PASS, and it is the expensive one.
+   *
+   * One request per course rather than one per programme: about 5,400 against
+   * 286, so it is asked for rather than assumed. Everything else a course row
+   * carries is already in hand by this point, which is why a run without it is
+   * still a catalogue and not half of one.
+   *
+   * A page that will not load costs that course its prose and nothing else. The
+   * course keeps every field the listing gave it, because losing a course over
+   * a field it does not have is the thing this crawl refuses to do (12.8).
+   */
+  if (opts.prose && offerings.length > 0) {
+    say(`ulb: second pass for the prose, ${offerings.length} course pages`);
+    let filled = 0;
+    let failed = 0;
+    for (const [i, o] of offerings.entries()) {
+      try {
+        const page = (await fetcher.get(courseUrl(o.year, o.code))).html;
+        const prose = parseCourseProse(page);
+        o.content = prose.content;
+        o.assessment = prose.assessment;
+        if (prose.content || prose.assessment) filled += 1;
+      } catch {
+        failed += 1;
+      }
+      if ((i + 1) % 250 === 0) say(`ulb: prose ${i + 1}/${offerings.length}, ${filled} filled`);
+    }
+    say(`ulb: prose done, ${filled} of ${offerings.length} filled, ${failed} pages unreachable`);
+  }
+
   say(`ulb: done, ${programmes.length} programmes and ${offerings.length} courses`);
 
   return {
@@ -238,7 +287,12 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
      * "nothing went blank" check knows these were not asked for, and so every
      * other field it watches is still checked.
      */
-    notCollected: ["assessment", "themes", "content"],
+    // `themes` is never collected: ULB publishes objectives, prerequisites and
+    // teaching methods, and none of them is "Thèmes abordés". Mapping one into
+    // that column would make a field mean two things depending on which
+    // university a row came from. The other two are collected only by the
+    // second pass, so a run without it says so.
+    notCollected: opts.prose ? ["themes"] : ["assessment", "themes", "content"],
     takenAt: new Date().toISOString(),
     year: crawledYear,
     // ULB's faculties, as ULB lists them. Only those that actually organise a

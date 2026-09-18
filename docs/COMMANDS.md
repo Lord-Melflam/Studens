@@ -69,7 +69,7 @@ should be called.
 | `npm run db:verify-isolation` | Assert every module role can and cannot do exactly what it should |
 | `npm run db:reset` | **Destructive.** Drops and rebuilds: you lose the catalogue and every review |
 | **Catalogue** | |
-| `npm run ingest` | Scrape into `data/catalogue.json`. Takes `-- --source ulb` (default `uclouvain`, and a non-default source writes `data/catalogue-<source>.json` instead), `-- --faculty epl,lsm`, `-- --year 2025`, `-- --max 40` (sample), `-- --max-requests 1500` (ceiling), `-- --no-cache` |
+| `npm run ingest` | Scrape into `data/catalogue.json`. Takes `-- --source ulb` (default `uclouvain`, and a non-default source writes `data/catalogue-<source>.json` instead), `-- --faculty epl,lsm`, `-- --year 2025`, `-- --max 40` (sample), `-- --max-requests 1500` (ceiling), `-- --no-cache`, `-- --prose` (ULB only: a second pass for the long fields, one request per course) |
 | `npm run db:load` | Load that snapshot into PostgreSQL, in one transaction. The file says which institution it is a crawl of, so a second catalogue needs no extra flag |
 | `npm run catalogue:report` | **After any crawl:** what the crawl lost and whether the database holds it. Writes `data/catalogue-report.txt`. Exit 1 when something is missing |
 | **Build and run for real** | |
@@ -303,6 +303,7 @@ npm run db:load -- --in /tmp/try.json
 
 ```bash
 npm run ingest -- --source ulb               # writes data/catalogue-ulb.json
+npm run ingest -- --source ulb --prose       # and the long fields: much slower
 npm run ingest -- --source ulb --max 200     # a slice, while working on it
 npm run db:load -- --in data/catalogue-ulb.json
 npm run catalogue:report -- --snapshot data/catalogue-ulb.json
@@ -332,8 +333,16 @@ lists: ULB's programme listing carries the code, title, language, quadrimester,
 lecturers, credits and teaching hours for every course, so the crawl asks once
 per programme rather than once per course. The three long prose fields, content,
 objectives and the assessment method, live only on ULB's course pages and are
-**not** fetched by this pass: a ULB course has no assessment section until a
-second pass exists, and the screen says so rather than implying it.
+**not** fetched unless you pass `--prose`, which reads one page per course:
+about 5,400 requests against 286, so it is asked for rather than assumed. A run
+without it is still a whole catalogue, and the snapshot says which fields it did
+not go looking for so the "a field empty everywhere" guard stays armed for
+every other one.
+
+`themes` is never collected for ULB. It publishes objectives, prerequisites and
+teaching methods, and none of them is UCLouvain's "Thèmes abordés": putting one
+in that column would make the field mean two things depending on which
+university a row came from.
 
 **Keep `data/page-cache`.** It is gitignored, so a fresh clone or a new worktree
 has none, and an ingest then re-crawls 546 pages instead of finishing in nine

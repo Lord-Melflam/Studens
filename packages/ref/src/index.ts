@@ -90,3 +90,6 @@ export {
   programmeCodeFrom,
   type UlbProgramme,
 } from "./sources/ulb/programme.js";
+
+/** ULB's per-course prose, read by the second pass. */
+export { parseCourseProse, type UlbCourseProse } from "./sources/ulb/course.js";
