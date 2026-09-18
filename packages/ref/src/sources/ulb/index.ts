@@ -26,7 +26,7 @@ import type { ParsedOffering } from "../../ingestion/parse/offering.js";
 import type { CatalogueSource, SourceCrawlOptions } from "../index.js";
 import { parseFaculties, type UlbFaculty } from "./faculties.js";
 import { parseProgramme, programmeCodeFrom } from "./programme.js";
-import { parseListing } from "./listing.js";
+import { parseListingFully } from "./listing.js";
 
 const BASE = "https://www.ulb.be";
 
@@ -66,11 +66,25 @@ export function programmeUrlsFrom(sitemapXml: string, year: number): string[] {
 }
 
 /**
+ * The year ULB itself calls the default, from a listing response.
+ *
+ * `/api/formation` returns metadata beside the HTML naming every academic year
+ * it holds and which one is current: `{"default":"a2026","anacs":[...]}`. That
+ * is ULB's answer to "which year is this", so it is read rather than worked
+ * out from a date or from the sitemap, which lists only the 2025 URLs while the
+ * responses behind them already carry 2026.
+ */
+export function defaultYearFrom(payloadJson: string | undefined): number | null {
+  if (!payloadJson) return null;
+  const m = /"default"\s*:\s*"a(\d{4})"/.exec(payloadJson);
+  return m ? Number(m[1]) : null;
+}
+
+/**
  * The most recent year the sitemap actually carries.
  *
- * Probed rather than assumed, the same rule UCLouvain's `resolveYear` follows:
- * ULB publishes next year's programmes before the year starts, exactly as
- * UCLouvain does, so a date is not an answer.
+ * A fallback for `defaultYearFrom`, not the first answer: the sitemap lists the
+ * URLs and the responses behind them can hold a later year than the URL says.
  */
 export function latestYearIn(sitemapXml: string): number | null {
   const years = [...sitemapXml.matchAll(/\/fr\/programme\/(\d{4})-/g)].map((m) => Number(m[1]));
@@ -82,11 +96,15 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
   const say = opts.onProgress ?? ((): void => undefined);
 
   const sitemap = (await fetcher.get(SITEMAP)).html;
-  const year = opts.year ?? latestYearIn(sitemap);
-  if (year === null) throw new Error("the ULB sitemap lists no programme for any year");
-  const urls = programmeUrlsFrom(sitemap, year);
-  if (urls.length === 0) throw new Error(`the ULB sitemap lists no programme for ${year}`);
-  say(`ulb: ${urls.length} programmes listed for ${year}-${year + 1}`);
+  // The sitemap's year addresses the PAGES; the year of the courses inside them
+  // is ULB's own default and can be later. Both are needed, and they are not
+  // the same number.
+  const pageYear = latestYearIn(sitemap);
+  if (pageYear === null) throw new Error("the ULB sitemap lists no programme for any year");
+  const urls = programmeUrlsFrom(sitemap, pageYear);
+  if (urls.length === 0) throw new Error(`the ULB sitemap lists no programme for ${pageYear}`);
+  let year = opts.year ?? null;
+  say(`ulb: ${urls.length} programme pages listed under ${pageYear}`);
 
   const programmes: SnapshotProgramme[] = [];
   const offerings: ParsedOffering[] = [];
@@ -94,6 +112,10 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
   const unavailable: string[] = [];
   const seenCourse = new Set<string>();
   let faculties: UlbFaculty[] = [];
+  // Rows that were not courses, with why. Counted across the run and said at
+  // the end, so a skipped row is a number somebody sees rather than one that
+  // quietly never arrived.
+  const skipped: Array<{ code: string; reason: string }> = [];
 
   for (const [i, url] of urls.entries()) {
     if (opts.maxOfferings !== undefined && offerings.length >= opts.maxOfferings) break;
@@ -122,7 +144,7 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
       continue;
     }
 
-    let courses: ReturnType<typeof parseListing> = [];
+    let courses: ReturnType<typeof parseListingFully>["courses"] = [];
     let listing: SnapshotProgramme["listing"] = "empty";
     if (p.listingPath === null) {
       // The page carries no block to fetch a list with. Real and ordinary: on
@@ -137,8 +159,14 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
         // "unreachable" before this line existed, and the cause was a header.
         const body = (await fetcher.get(listingUrl(p.listingPath), { accept: "application/json" }))
           .html;
-        const payload = JSON.parse(body) as { html?: string };
-        courses = parseListing(payload.html ?? "");
+        const payload = JSON.parse(body) as { html?: string; json?: string };
+        if (year === null) {
+          year = defaultYearFrom(payload.json) ?? pageYear;
+          say(`ulb: ULB's current academic year is ${year}-${year + 1}`);
+        }
+        const parsedListing = parseListingFully(payload.html ?? "", year);
+        courses = parsedListing.courses;
+        skipped.push(...parsedListing.skipped);
         listing = courses.length > 0 ? "listed" : "empty";
       } catch (err) {
         listing = "unreachable";
@@ -172,7 +200,7 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
       seenCourse.add(c.code);
       offerings.push({
         code: c.code,
-        year,
+        year: year ?? pageYear,
         era: "modern",
         title: c.title,
         ects: c.ects,
@@ -194,13 +222,25 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
     }
   }
 
+  for (const reason of ["placeholder", "no title"]) {
+    const codes = [...new Set(skipped.filter((x) => x.reason === reason).map((x) => x.code))].sort();
+    if (codes.length > 0) say(`ulb: skipped ${codes.length} codes (${reason}): ${codes.join(", ")}`);
+  }
+  const crawledYear = year ?? pageYear;
   say(`ulb: done, ${programmes.length} programmes and ${offerings.length} courses`);
 
   return {
     version: 9,
     institution: "ulb",
+    /**
+     * The three prose fields live only on ULB's course pages, and this pass
+     * reads one page per programme rather than one per course. Declared so the
+     * "nothing went blank" check knows these were not asked for, and so every
+     * other field it watches is still checked.
+     */
+    notCollected: ["assessment", "themes", "content"],
     takenAt: new Date().toISOString(),
-    year,
+    year: crawledYear,
     // ULB's faculties, as ULB lists them. Only those that actually organise a
     // programme in this crawl: a faculty with nothing in it would be a row the
     // browse screen offers and that answers with an empty list.

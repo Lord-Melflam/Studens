@@ -128,6 +128,26 @@ export interface Snapshot {
    * that passes it explicitly changes behaviour.
    */
   institution: string;
+  /**
+   * Fields this pass did not go looking for, so "empty everywhere" is expected.
+   *
+   * `assertNothingWentBlank` refuses a snapshot where one of the long fields is
+   * null on every offering, because that is what a layout change upstream looks
+   * like and it is the check that catches a crawl quietly returning less than
+   * it used to. It is the right rule for a crawl that fetches course pages.
+   *
+   * It is the wrong rule for one that does not. ULB publishes everything except
+   * the three prose fields in its programme listing, so a first pass reads one
+   * page per programme instead of one per course, about 580 requests against
+   * six thousand. The prose is genuinely not fetched, and refusing the whole
+   * catalogue over it would mean the cheap pass could never promote.
+   *
+   * DECLARED, NOT INFERRED. The check cannot tell "we did not ask" from "it
+   * vanished", and guessing between them would disarm the guard for every
+   * field. A source says which is which, and everything it does not name is
+   * still checked.
+   */
+  notCollected?: string[];
   /** When the crawl finished. */
   takenAt: string;
   /** The academic year crawled. */
@@ -265,7 +285,9 @@ const SAMPLE_FLOOR = 25;
 
 function assertNothingWentBlank(s: Snapshot): void {
   if (s.offerings.length < SAMPLE_FLOOR) return;
+  const notCollected = new Set(s.notCollected ?? []);
   for (const field of NEVER_ALL_EMPTY) {
+    if (notCollected.has(field)) continue;
     const filled = s.offerings.filter((o) => {
       const v = (o as unknown as Record<string, unknown>)[field];
       return Array.isArray(v) ? v.length > 0 : v !== null && v !== undefined && v !== "";

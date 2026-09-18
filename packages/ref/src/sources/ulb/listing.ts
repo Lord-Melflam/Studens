@@ -73,13 +73,64 @@ export function parseCredits(raw: string): { ects: number | null; contactHours: 
   };
 }
 
-export function parseListing(html: string): ListedCourse[] {
+export interface ParsedListing {
+  courses: ListedCourse[];
+  /** Rows that are not courses, with why. Reported rather than dropped quietly. */
+  skipped: Array<{ code: string; reason: "no title" | "placeholder" }>;
+}
+
+/**
+ * A code whose number is all zeros is a slot, not a course.
+ *
+ * ULB uses two: `HULB-0000` "Cours externe à l'Université" and `TEMP-0000`
+ * "Cours extérieurs au programme". They are allowances, a way of saying "spend
+ * this many credits outside the programme", and they appear 374 times across
+ * the 2025 crawl with credits from 5 to 60 depending on where they sit.
+ *
+ * They cannot be kept. A course code is unique within a catalogue, so 374 rows
+ * would collapse into one course carrying whichever credit figure was written
+ * last, and nobody can review "Cours extérieurs au programme": it is not a
+ * thing anybody took.
+ *
+ * Distinguished by the all-zero number rather than by listing the two codes,
+ * because that is ULB's convention and a list of two would not survive a third.
+ */
+export function isPlaceholderCode(code: string): boolean {
+  return /^[a-z]+-0+$/i.test(code);
+}
+
+export function parseListing(html: string, year: number): ListedCourse[] {
+  return parseListingFully(html, year).courses;
+}
+
+/**
+ * ONE ACADEMIC YEAR, AND THE RESPONSE HOLDS SEVERAL.
+ *
+ * `/api/formation` answers with every year it has, not the one asked for. For
+ * `BA-TECN` on 2026-09-18 that is 48 course items for 2025-2026 and 42 for
+ * 2026-2027, one after another in the same document, and the metadata beside
+ * them says the DEFAULT year is 2026.
+ *
+ * Read without filtering, every course of both years was filed under one, with
+ * whichever block came first winning on a code present in both. A catalogue
+ * that silently mixes two academic years is worse than one that is a year out
+ * of date: FR-D16 exists because a review states its own year, and it cannot
+ * if the year on the offering is a guess.
+ *
+ * The year is on the inner element's id, `a2025b1c1`, which is ULB's own
+ * marker and not a position anything here invented.
+ */
+export function parseListingFully(html: string, year: number): ParsedListing {
   const $ = cheerio.load(html);
   const out: ListedCourse[] = [];
+  const skipped: ParsedListing["skipped"] = [];
   const seen = new Set<string>();
 
+  const wanted = `a${year}`;
   $(".prg-course-item").each((_, el) => {
     const item = $(el);
+    const marker = item.find(".prg-cours[id]").first().attr("id") ?? "";
+    if (!marker.startsWith(wanted)) return;
     const code = item.find(".prg-coursMnemonique").first().text().trim().toLowerCase();
     // The href carries the code too, read as a second chance rather than
     // trusted as the only one. A row with neither is not a course anything can
@@ -106,8 +157,37 @@ export function parseListing(html: string): ListedCourse[] {
     credits.find(".prg-coursQuadrimestreListe").remove();
     const { ects, contactHours } = parseCredits(credits.text());
 
+    /**
+     * A ROW WITH NO TITLE IS A PLACEHOLDER, NOT A COURSE.
+     *
+     * ULB publishes some entries as a code and nothing else: the link text is
+     * empty, `data-nre` is empty, and there are no credits, no hours, no
+     * language and no lecturers. Their own course pages are titled "-".
+     *
+     * Measured across the full 2025 crawl: 134 such rows, 42 distinct courses,
+     * out of 62,707 rows. Every one of the 134 carries no credits, no hours,
+     * no language and no lecturer, so there is no other field to lose.
+     *
+     * That is the difference from a course with no credits, which is KEPT
+     * (design 12.8): dropping one of those would have cost the thirty fields
+     * the source does publish about it. Here the source publishes nothing, so
+     * keeping the row would put a course in the catalogue that no reader can
+     * identify and no reviewer can recognise.
+     *
+     * Returned to the caller rather than dropped in silence, so a run can say
+     * how many it saw.
+     */
+    if (isPlaceholderCode(id)) {
+      skipped.push({ code: id, reason: "placeholder" });
+      return;
+    }
+    if (!title) {
+      skipped.push({ code: id, reason: "no title" });
+      return;
+    }
+
     out.push({ code: id, title, language, quarter, teachers, ects, contactHours });
   });
 
-  return out;
+  return { courses: out, skipped };
 }

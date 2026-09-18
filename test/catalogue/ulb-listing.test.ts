@@ -12,7 +12,13 @@
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { parseCredits, parseListing } from "@studens/ref";
+import {
+  defaultYearFrom,
+  isPlaceholderCode,
+  parseCredits,
+  parseListing,
+  parseListingFully,
+} from "@studens/ref";
 
 const html = readFileSync(
   new URL("../fixtures/catalogue/ulb-programme-listing.html", import.meta.url).pathname,
@@ -20,7 +26,7 @@ const html = readFileSync(
 );
 
 describe("a ULB programme listing", () => {
-  const courses = parseListing(html);
+  const courses = parseListing(html, 2025);
 
   it("finds every course item, and each one once", () => {
     expect(courses.map((c) => c.code)).toEqual(["comm-b1010", "comm-b1020", "comm-b3010"]);
@@ -45,6 +51,40 @@ describe("a ULB programme listing", () => {
     // line. Read naively, the second copy lands in the teaching hours.
     expect(courses[0]?.contactHours).not.toMatch(/quadrimestre/);
     expect(courses[1]?.quarter).toBe("deuxième quadrimestre");
+  });
+
+  it("skips a row ULB lists with no title and no other field", () => {
+    // NOT the same as a course with no credits, which is kept (design 12.8).
+    // Dropping one of those loses the thirty fields the source does publish;
+    // here the source publishes nothing at all. Keeping it would put a course
+    // in the catalogue that no reader can identify and no reviewer can
+    // recognise. 134 such rows in the full 2025 crawl, 42 distinct, out of
+    // 62,707, and not one carries a credit, an hour, a language or a lecturer.
+    //
+    // It failed the whole crawl before this: the snapshot validator refused
+    // "edph-i9206: empty title" after 286 programmes had been fetched.
+    expect(courses.map((c) => c.code)).not.toContain("edph-i9206");
+  });
+
+  it("says which codes it skipped, and why, rather than dropping them in silence", () => {
+    expect(parseListingFully(html, 2025).skipped).toEqual([
+      { code: "edph-i9206", reason: "no title" },
+    ]);
+  });
+
+  it("skips a slot that is not a course", () => {
+    // `HULB-0000` is "Cours externe à l'Université" and `TEMP-0000` is "Cours
+    // extérieurs au programme": allowances, a way of saying "spend this many
+    // credits outside the programme". 374 rows across the 2025 crawl, with
+    // credits from 5 to 60 depending on where they sit.
+    //
+    // They cannot be kept. A code is unique within a catalogue, so 374 rows
+    // would collapse into one course carrying whichever credit figure was
+    // written last, and nobody can review a thing nobody took.
+    expect(isPlaceholderCode("hulb-0000")).toBe(true);
+    expect(isPlaceholderCode("temp-0000")).toBe(true);
+    expect(isPlaceholderCode("comm-b1010")).toBe(false);
+    expect(isPlaceholderCode("lepl1503")).toBe(false);
   });
 
   it("keeps a course ULB names no lecturer for", () => {
@@ -91,3 +131,34 @@ describe("the credits line", () => {
     expect(parseCredits("2,5 crédits").ects).toBe(2.5);
   });
 });
+
+describe("a listing that holds more than one academic year", () => {
+  const both = readFileSync(
+    new URL("../fixtures/catalogue/ulb-listing-two-years.html", import.meta.url).pathname,
+    "utf8",
+  );
+
+  it("takes only the year asked for", () => {
+    // The endpoint answers with every year it has. Read without filtering,
+    // 48 course items for 2025-2026 and 42 for 2026-2027 were all filed as one
+    // year, and a code in both kept whichever came first.
+    const y2025 = parseListing(both, 2025);
+    const y2026 = parseListing(both, 2026);
+    expect(y2025).toHaveLength(1);
+    expect(y2026).toHaveLength(1);
+    expect(y2025[0]?.code).not.toBe("");
+    // The same course in both years is one row per year, not one row.
+    expect(parseListing(both, 2024)).toHaveLength(0);
+  });
+
+  it("reads ULB's own answer to which year is current", () => {
+    // From the metadata beside the HTML: {"default":"a2026",...}. Read rather
+    // than worked out from a date, and rather than taken from the sitemap,
+    // which lists only the 2025 URLs while the responses behind them already
+    // carry 2026.
+    expect(defaultYearFrom('{"default":"a2026","anacs":[]}')).toBe(2026);
+    expect(defaultYearFrom(undefined)).toBeNull();
+    expect(defaultYearFrom("{}")).toBeNull();
+  });
+});
+

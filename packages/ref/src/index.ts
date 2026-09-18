@@ -62,12 +62,20 @@ export { parseSearchRows, slug, type SearchRow } from "./ingestion/parse/search.
  */
 export { uclouvain } from "./sources/uclouvain.js";
 export type { CatalogueSource, SourceCrawlOptions } from "./sources/index.js";
-export { parseListing, parseCredits, type ListedCourse } from "./sources/ulb/listing.js";
+export {
+  parseListing,
+  parseListingFully,
+  parseCredits,
+  type ListedCourse,
+  type ParsedListing,
+  isPlaceholderCode,
+} from "./sources/ulb/listing.js";
 export {
   ulb,
   listingUrl,
   programmeUrlsFrom,
   latestYearIn,
+  defaultYearFrom,
   SITEMAP as ULB_SITEMAP,
 } from "./sources/ulb/index.js";
 export {

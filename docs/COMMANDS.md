@@ -305,8 +305,18 @@ npm run db:load -- --in /tmp/try.json
 npm run ingest -- --source ulb               # writes data/catalogue-ulb.json
 npm run ingest -- --source ulb --max 200     # a slice, while working on it
 npm run db:load -- --in data/catalogue-ulb.json
-npm run catalogue:report
+npm run catalogue:report -- --snapshot data/catalogue-ulb.json
 ```
+
+**The report is per institution, and so is its output file.** A snapshot is one
+institution's crawl, so `catalogue:report` scopes every database query to the
+institution the snapshot names, and writes
+`data/catalogue-report-<institution>.txt` for anything but UCLouvain. Without
+the scoping the counts would mix two universities and the "in the database and
+not in this snapshot" check would list the whole of the other one.
+
+Run it once per snapshot. `npm run catalogue:report` with no argument still
+reports on UCLouvain, which is what it always meant.
 
 `--source` defaults to `uclouvain`, so every command written before there was a
 second one still means what it meant. A non-default source writes to its own
