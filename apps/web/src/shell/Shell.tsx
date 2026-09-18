@@ -150,9 +150,24 @@ function SetupPrompt() {
   const t = useT();
   const { session } = useSession();
   if (!session?.signedIn || session.onboarded !== false) return null;
+  /**
+   * TWO SENTENCES, BECAUSE THERE ARE TWO SITUATIONS AND ONE OF THEM WAS BEING
+   * TOLD SOMETHING FALSE.
+   *
+   * "Not onboarded" is a general state. "You have no username yet" is a
+   * specific claim, and it is wrong for anybody who pressed "redo the setup"
+   * from their account: that deliberately clears `onboardedAt`, so somebody
+   * cannot wander out of the wizard half-answered, and the banner then told a
+   * member with a perfectly good username that they had none. François hit it
+   * on an account that only wanted to change its language.
+   *
+   * The session already carries the username, so the banner can say the thing
+   * that is true rather than the thing that is usually true.
+   */
+  const started = session.username !== null && session.username !== undefined;
   return (
     <p className="setup-prompt">
-      <span>{t("app.setup.prompt")}</span>
+      <span>{t(started ? "app.setup.resume" : "app.setup.prompt")}</span>
       <a {...linkProps(FIRST_RUN)}>{t("app.setup.go")}</a>
     </p>
   );
