@@ -20,6 +20,37 @@ import { useT } from "@studens/i18n";
 import type { ModuleProps } from "./index.js";
 import { api, type CourseDetail, type CourseSummary } from "./api.js";
 import { queryOf, settingsRoute } from "./urlstate.js";
+
+/**
+ * The query key naming the unfolded sections of a course page.
+ *
+ * Exported because the shape of a URL is a contract: test/ui checks the round
+ * trip, and a second spelling of it anywhere is the bug that test exists for.
+ */
+export const OPEN_KEY = "ouvert";
+
+/** The unfolded sections named by an address, in the order they were given. */
+export function openSectionsFrom(search: string): string[] {
+  return (queryOf(search).get(OPEN_KEY) ?? "").split(",").filter((x) => x !== "");
+}
+
+/**
+ * Add a section to the set or take it out.
+ *
+ * Order is kept as the reader made it rather than sorted, because sorting
+ * would rewrite the address on a press that changed nothing about the screen
+ * and make two identical states produce two different links.
+ */
+export function toggleSection(open: readonly string[], slug: string): string[] {
+  return open.includes(slug) ? open.filter((x) => x !== slug) : [...open, slug];
+}
+
+/** What `?ouvert=` should say for a set of sections, empty when there are none. */
+export function openSectionsQuery(open: readonly string[]): URLSearchParams {
+  const p = new URLSearchParams();
+  if (open.length > 0) p.set(OPEN_KEY, open.join(","));
+  return p;
+}
 import { CoursePage } from "./CoursePage.js";
 import { CourseFilters } from "./CourseFilters.js";
 import { Browse } from "./Browse.js";
@@ -123,6 +154,25 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
     const asked = new URLSearchParams(next === "" ? [] : [["q", next]]);
     navigate(settingsRoute("/recherche", search, ["q"], asked), { replace: true });
   };
+  /**
+   * WHICH LONG FIELDS OF A COURSE ARE UNFOLDED, from the address.
+   *
+   * `?ouvert=evaluation,biblio`. Here rather than inside the course page for
+   * the same reason `writing` is: the page renders what the URL says and owns
+   * none of it, and the one file that knows how to build a course's address is
+   * this one.
+   *
+   * `replace`, like a filter chip. Opening four sections while reading is not
+   * four places you have been, and Back should leave the course rather than
+   * walk you back through your own unfolding.
+   */
+  const openSections = openSectionsFrom(search);
+  const onToggleSection = (slug: string): void => {
+    const here = view.kind === "course" ? coursePath(view.institution, view.code) : "/";
+    const next = openSectionsQuery(toggleSection(openSections, slug));
+    navigate(settingsRoute(here, search, [OPEN_KEY], next), { replace: true });
+  };
+
   const [results, setResults] = useState<CourseSummary[]>([]);
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -252,6 +302,8 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
       <CoursePage
         course={course}
         writing={view.writing}
+        open={openSections}
+        onToggleSection={onToggleSection}
         onBack={() => navigate("/")}
         onWrite={() => navigate(coursePath(course.institution, course.code, true))}
         onCloseWriting={() => navigate(coursePath(course.institution, course.code))}

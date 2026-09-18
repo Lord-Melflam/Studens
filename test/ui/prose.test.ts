@@ -105,10 +105,13 @@ describe("nothing from the scraped page reaches the DOM as markup", () => {
 describe("a folded field", () => {
   const blocks: Block[] = [{ kind: "p", lines: [[{ t: "un contenu assez long" }]] }];
 
-  it("shows its name and not its body", () => {
-    const out = renderToStaticMarkup(
-      createElement(FoldedField, { label: "Objectifs", blocks }),
+  const fold = (open: boolean): string =>
+    renderToStaticMarkup(
+      createElement(FoldedField, { label: "Objectifs", blocks, open, onToggle: () => {} }),
     );
+
+  it("shows its name and not its body when it is closed", () => {
+    const out = fold(false);
     expect(out).toContain("Objectifs");
     expect(out).toContain('aria-expanded="false"');
     // Not hidden with CSS. A closed field on a long course holds hundreds of
@@ -116,12 +119,27 @@ describe("a folded field", () => {
     expect(out).not.toContain("un contenu assez long");
   });
 
+  it("shows its body when the caller says it is open", () => {
+    // Open comes from the URL, so the component may not decide it: a field
+    // that could close itself would drop a section named in the address.
+    const out = fold(true);
+    expect(out).toContain('aria-expanded="true"');
+    expect(out).toContain("un contenu assez long");
+  });
+
   it("is nothing at all when the field is empty", () => {
     // Same rule as ProseField: a heading that opens onto nothing is worse
     // than no heading.
     for (const empty of [null, []] as Array<Block[] | null>) {
       expect(
-        renderToStaticMarkup(createElement(FoldedField, { label: "Objectifs", blocks: empty })),
+        renderToStaticMarkup(
+          createElement(FoldedField, {
+            label: "Objectifs",
+            blocks: empty,
+            open: true,
+            onToggle: () => {},
+          }),
+        ),
       ).toBe("");
     }
   });

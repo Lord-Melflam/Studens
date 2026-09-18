@@ -11,7 +11,7 @@
  * our own elements, so there is no sanitiser and no dangerouslySetInnerHTML
  * anywhere in the path.
  */
-import { useId, useState } from "react";
+import { useId } from "react";
 import { useLocale, useT } from "@studens/i18n";
 
 /**
@@ -165,14 +165,24 @@ export function ProseField({ label, blocks }: { label: string; blocks: Block[] |
  * campus are a line each, they are what the page is looked up for, and a
  * heading you have to open to read one line is worse than the line.
  *
- * The state is local rather than in the address. FR-B21 puts what is on screen
- * in the URL, and what is meant by that is what the screen is SHOWING: which
- * course, which filters, which search. Seven booleans for which paragraphs a
- * reader happened to unfold are not that, and they would make two links to the
- * same course differ for no reason a reader could see.
+ * WHICH ONES ARE OPEN IS IN THE ADDRESS, and this component holds no state of
+ * its own. It was local for one day, which was long enough to be wrong twice:
+ * a refresh closed everything a reader had opened, and there was no way to
+ * send somebody the bibliography of a course rather than the course. FR-B21 is
+ * the rule and it applies here like everywhere else, so the caller owns the
+ * set and this renders what it is told.
  */
-export function FoldedField({ label, blocks }: { label: string; blocks: Block[] | null }) {
-  const [open, setOpen] = useState(false);
+export function FoldedField({
+  label,
+  blocks,
+  open,
+  onToggle,
+}: {
+  label: string;
+  blocks: Block[] | null;
+  open: boolean;
+  onToggle: () => void;
+}) {
   const id = useId();
   if (!blocks || blocks.length === 0) return null;
   return (
@@ -186,7 +196,7 @@ export function FoldedField({ label, blocks }: { label: string; blocks: Block[] 
           className="fold-head"
           aria-expanded={open}
           aria-controls={id}
-          onClick={() => setOpen(!open)}
+          onClick={onToggle}
         >
           <span className="fold-name">{label}</span>
           <span className="fold-chevron" aria-hidden="true" />
