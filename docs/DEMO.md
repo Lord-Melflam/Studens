@@ -190,8 +190,23 @@ npm run catalogue:report                    # what the crawl lost, if anything
 ```
 
 **Do not run an ingest before a demonstration.** UCLouvain takes about 78
-minutes and ULB about 75, and a half-finished crawl is not loaded, so there is
-nothing to gain and a live catalogue to lose.
+minutes and ULB about 75, and there is nothing to gain by it.
+
+You can no longer lose the catalogue to one, though, which is the point. A
+sampled or scoped crawl writes `data/catalogue-partial.json` rather than the
+live snapshot, so it cannot become the live one by sitting still. And a load
+that would remove more than a fifth of what is already there is refused, with
+the numbers and the way through:
+
+```
+Error: refusing to load: this would remove 99.5% of uclouvain's catalogue,
+7623 offerings down to 40.
+  A sampled crawl (--max) or a partial one produces exactly this.
+  If the catalogue really did shrink, say so: npm run db:load -- --shrink-ok
+```
+
+Both are mechanisms rather than warnings, because a warning in this document
+is exactly what failed to protect anything.
 
 ---
 

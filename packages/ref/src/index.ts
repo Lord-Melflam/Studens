@@ -36,6 +36,13 @@ export {
   TooManyUnavailable,
 } from "./ingestion/errors.js";
 export { loadSnapshot, type LoadResult, type LoadOptions } from "./ingestion/load.js";
+/** Refusing to replace a catalogue with a much smaller one. */
+export {
+  SHRINK_LIMIT,
+  shrinkVerdict,
+  shrinkMessage,
+  type ShrinkVerdict,
+} from "./ingestion/shrink.js";
 export {
   type Catalogue,
   SnapshotCatalogue,
