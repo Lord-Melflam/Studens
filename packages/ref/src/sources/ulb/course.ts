@@ -24,6 +24,20 @@ export interface UlbCourseProse {
   content: Block[] | null;
   /** "Evaluation", which ULB titles more plainly than UCLouvain does. */
   assessment: Block[] | null;
+  /**
+   * The campuses, as published: "Plaine", "Solbosch", "Erasme", "Flagey".
+   *
+   * A LIST, because a course is regularly taught on more than one. ULB writes
+   * them comma-separated in one field, and on a 149-course slice five courses
+   * read "Solbosch, Flagey" and one lists five at once. Kept as one string,
+   * every combination would have become its own site and a filter would have
+   * offered "Flagey, Hors campus ULB, Autre campus, Plaine, Solbosch" as a
+   * place to go.
+   *
+   * Empty where the page does not say. "Autre campus" and "Hors campus ULB"
+   * are values ULB publishes, not missing ones, and are kept as published.
+   */
+  campuses: string[];
 }
 
 /**
@@ -40,14 +54,32 @@ export interface UlbCourseProse {
  * the other's column would make a field mean two things depending on which
  * university a row came from, and nothing on screen would say so.
  */
-const WANTED: Array<{ label: string; field: keyof UlbCourseProse }> = [
+const WANTED: Array<{ label: string; field: "content" | "assessment" }> = [
   { label: "contenu du cours", field: "content" },
   { label: "evaluation", field: "assessment" },
 ];
 
 export function parseCourseProse(html: string): UlbCourseProse {
   const $ = cheerio.load(html);
-  const out: UlbCourseProse = { content: null, assessment: null };
+  const out: UlbCourseProse = { content: null, assessment: null, campuses: [] };
+
+  /**
+   * The campus sits under an h3 inside a section, not under one of the h2s
+   * above, so it is found on its own rather than by walking the sections.
+   *
+   * Matched on the heading and not the position: "Autres renseignements" holds
+   * contacts, the campus and anything else ULB has to add, in whatever order a
+   * given course happens to have them.
+   */
+  $("h3").each((_, el) => {
+    if (out.campuses.length > 0) return;
+    if (normaliseName($(el).text()) !== "campus") return;
+    const value = $(el).nextAll("p").first().text().replace(/\s+/g, " ").trim();
+    out.campuses = value
+      .split(",")
+      .map((x) => x.trim())
+      .filter((x) => x.length > 0);
+  });
 
   $("h2.paragraphe__titre--1").each((_, el) => {
     const label = normaliseName($(el).text());

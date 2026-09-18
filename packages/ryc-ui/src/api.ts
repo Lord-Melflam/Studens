@@ -31,6 +31,10 @@ export interface CourseSummary {
   mainLanguage: string | null;
   /** The school or institute that teaches it, not the faculty it is reached through. */
   owningEntity: string | null;
+  /** The campuses, where the source states them per course. A list: a course
+      is regularly taught on more than one. Empty for UCLouvain, which states
+      the site on the programme instead. */
+  campuses: string[];
 }
 
 export interface CourseDetail extends CourseSummary {

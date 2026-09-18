@@ -335,6 +335,7 @@ model Site {
   /// As the institution publishes it, in the language it was crawled in.
   name          String
   programmes    Programme[]
+  offerings     OfferingSite[]
 
   @@unique([institutionId, code])
   @@schema("ref")
@@ -549,10 +550,31 @@ model CourseOffering {
   owningFaculty String?
 
   faculties  OfferingFaculty[]
+  sites      OfferingSite[]
   teachers   OfferingTeacher[]
   programmes ProgrammeOffering[]
 
   @@unique([courseId, year])
+  @@schema("ref")
+}
+
+/// WHERE A COURSE IS TAUGHT, and there can be more than one.
+///
+/// UCLouvain states the site on the PROGRAMME, so its courses have none here
+/// and inherit one. ULB states it on the COURSE, and a course is regularly
+/// taught on several: "Solbosch, Flagey", and one measured course lists five.
+/// A single column would have made each combination its own site, so a filter
+/// would have offered "Solbosch, Hors campus ULB, Flagey" as a place.
+///
+/// Many-to-many for the same reason OfferingFaculty is: the source says so.
+model OfferingSite {
+  offeringId String
+  offering   CourseOffering @relation(fields: [offeringId], references: [id])
+  siteId     String
+  site       Site           @relation(fields: [siteId], references: [id])
+
+  @@id([offeringId, siteId])
+  @@index([siteId])
   @@schema("ref")
 }
 

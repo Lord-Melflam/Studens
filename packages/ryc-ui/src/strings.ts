@@ -121,6 +121,7 @@ export const rycStrings: Bundle = {
     "ryc.filter.ects": "Crédits",
     "ryc.filter.language": "Langue",
     "ryc.filter.entity": "Entité en charge",
+    "ryc.filter.campus": "Campus",
     "ryc.filter.reviews": "Avis",
     "ryc.filter.reviewedOnly": "Seulement ceux qui en ont",
 
@@ -439,6 +440,7 @@ export const rycStrings: Bundle = {
     "ryc.filter.ects": "Studiepunten",
     "ryc.filter.language": "Taal",
     "ryc.filter.entity": "Verantwoordelijke entiteit",
+    "ryc.filter.campus": "Campus",
     "ryc.filter.reviews": "Beoordelingen",
     "ryc.filter.reviewedOnly": "Alleen die er hebben",
 
@@ -757,6 +759,7 @@ export const rycStrings: Bundle = {
     "ryc.filter.ects": "Credits",
     "ryc.filter.language": "Language",
     "ryc.filter.entity": "Entity in charge",
+    "ryc.filter.campus": "Campus",
     "ryc.filter.reviews": "Reviews",
     "ryc.filter.reviewedOnly": "Only those that have some",
 

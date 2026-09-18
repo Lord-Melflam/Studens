@@ -56,6 +56,7 @@ const course = (o: Partial<CourseSummary>): CourseSummary => ({
   external: false,
   mainLanguage: "Français",
   owningEntity: "BTCI",
+  campuses: [],
   ...o,
 });
 
@@ -90,6 +91,7 @@ describe("a filter survives the address bar", () => {
       languages: ["Français"],
       ects: [5, null],
       entities: ["BTCI"],
+      campuses: ["Solbosch"],
       reviewedOnly: true,
     };
     expect(courseFilterFromQuery(courseFilterToQuery(f))).toEqual(f);

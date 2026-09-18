@@ -261,19 +261,25 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
     say(`ulb: second pass for the prose, ${offerings.length} course pages`);
     let filled = 0;
     let failed = 0;
+    let withCampus = 0;
     for (const [i, o] of offerings.entries()) {
       try {
         const page = (await fetcher.get(courseUrl(o.year, o.code))).html;
         const prose = parseCourseProse(page);
         o.content = prose.content;
         o.assessment = prose.assessment;
+        o.campuses = prose.campuses;
         if (prose.content || prose.assessment) filled += 1;
+        if (prose.campuses.length > 0) withCampus += 1;
       } catch {
         failed += 1;
       }
       if ((i + 1) % 250 === 0) say(`ulb: prose ${i + 1}/${offerings.length}, ${filled} filled`);
     }
-    say(`ulb: prose done, ${filled} of ${offerings.length} filled, ${failed} pages unreachable`);
+    say(
+      `ulb: prose done, ${filled} of ${offerings.length} filled, ${withCampus} with a campus, ` +
+        `${failed} pages unreachable`,
+    );
   }
 
   say(`ulb: done, ${programmes.length} programmes and ${offerings.length} courses`);

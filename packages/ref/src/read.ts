@@ -87,6 +87,15 @@ export interface CourseSummary {
    */
   owningEntity: string | null;
   /**
+   * The campuses this course is taught on, where the source states them per
+   * course. A list, because a course is regularly taught on more than one.
+   *
+   * ULB does; UCLouvain states it on the programme instead, so this is empty
+   * for its courses and their site is still a fact about the programme. On the
+   * summary because it is what a filter groups on and what a row shows.
+   */
+  campuses: string[];
+  /**
    * WHICH CATALOGUE THIS CAME FROM, as an institution code.
    *
    * On the summary rather than only on the detail because every link to a
@@ -137,6 +146,7 @@ function summarise(o: ParsedOffering, institution: string): CourseSummary {
     external: o.teachers.length === 0 && o.assessment === null,
     mainLanguage: mainLanguage(o.language),
     owningEntity: o.owningFaculty,
+    campuses: o.campuses ?? [],
   };
 }
 
@@ -158,6 +168,7 @@ function summariseRow(
     language: string | null;
     owningFaculty: string | null;
     assessment: unknown;
+    sites: Array<{ site: { name: string } }>;
     teachers: Array<{ teacherName: string }>;
   },
   /** The catalogue's current year, so a stale offering can say it is stale. */
@@ -175,6 +186,7 @@ function summariseRow(
     external: row.teachers.length === 0 && row.assessment === null,
     mainLanguage: mainLanguage(row.language),
     owningEntity: row.owningFaculty,
+    campuses: row.sites.map((s) => s.site.name),
   };
 }
 
@@ -446,7 +458,11 @@ export class DatabaseCatalogue implements Catalogue {
           { title: { contains: q, mode: "insensitive" } },
         ],
       },
-      include: { course: { include: { institution: true } }, teachers: true },
+      include: {
+        course: { include: { institution: true } },
+        teachers: true,
+        sites: { include: { site: true } },
+      },
       orderBy: { year: "desc" },
       // Room for older editions of the same course before they are collapsed.
       take: limit * 4,
@@ -512,6 +528,7 @@ export class DatabaseCatalogue implements Catalogue {
     const include = {
       course: { include: { institution: true } },
       teachers: true,
+      sites: { include: { site: true } },
       faculties: { include: { faculty: true } },
     };
     const row =
@@ -600,7 +617,13 @@ export class DatabaseCatalogue implements Catalogue {
     const rows = await this.prisma.programmeOffering.findMany({
       where: { programmeId: programme.id },
       include: {
-        offering: { include: { course: { include: { institution: true } }, teachers: true } },
+        offering: {
+          include: {
+            course: { include: { institution: true } },
+            teachers: true,
+            sites: { include: { site: true } },
+          },
+        },
       },
     });
     return rows

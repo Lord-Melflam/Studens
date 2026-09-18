@@ -178,6 +178,25 @@ export async function loadSnapshot(
           domainIds.set(p.domain, row.id);
         }
       }
+      /**
+       * A site can also come from a COURSE, not only from a programme.
+       *
+       * UCLouvain states the site on the programme; ULB states it on the
+       * course. Both end up as the same `Site` rows for the same institution,
+       * upserted on a slug of the published name, so "Solbosch" is one row
+       * however it was reached and a filter can offer it once.
+       */
+      for (const o of snapshot.offerings) {
+        for (const campus of o.campuses ?? []) {
+          if (siteIds.has(campus)) continue;
+          const row = await tx.site.upsert({
+            where: { institutionId_code: { institutionId: institution.id, code: slug(campus) } },
+            update: { name: campus },
+            create: { institutionId: institution.id, code: slug(campus), name: campus },
+          });
+          siteIds.set(campus, row.id);
+        }
+      }
       result.sites = siteIds.size;
       result.domains = domainIds.size;
 
@@ -284,6 +303,19 @@ export async function loadSnapshot(
           },
         });
         result.offerings += 1;
+
+        // Campuses belong to THIS offering and are replaced with it, for the
+        // same reason as the teachers below: a load is a statement about the
+        // whole catalogue, so a campus the source has dropped must go.
+        await tx.offeringSite.deleteMany({ where: { offeringId: offering.id } });
+        const campusIds = [...new Set((o.campuses ?? []).map((c) => siteIds.get(c)))].filter(
+          (id): id is string => id !== undefined,
+        );
+        if (campusIds.length) {
+          await tx.offeringSite.createMany({
+            data: campusIds.map((siteId) => ({ offeringId: offering.id, siteId })),
+          });
+        }
 
         // Teachers and faculty links belong to THIS offering, so replacing
         // them is scoped and safe. Unlike courses, nothing references them.

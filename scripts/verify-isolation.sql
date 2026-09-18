@@ -132,6 +132,15 @@ SELECT pg_temp.expect_allowed('studens_ref',
 -- than trusted: this file checks tables one at a time, so a table nobody names
 -- here is a table whose grants are never verified, and it would fail first at
 -- ingestion instead of here.
+-- Added with the campuses (20260919_a_course_has_campuses). Probed by name like
+-- every other table here: one nobody names is one whose grants are never
+-- verified, and it would fail first at ingestion instead of here.
+SELECT pg_temp.expect_allowed('studens_ryc', 'SELECT 1 FROM ref."OfferingSite" LIMIT 1',
+  'read where a course is taught');
+SELECT pg_temp.expect_denied('studens_ryc',
+  $$INSERT INTO ref."OfferingSite"("offeringId","siteId") VALUES ('probe','probe')$$,
+  'write where a course is taught');
+
 SELECT pg_temp.expect_allowed('studens_ryc', 'SELECT 1 FROM ref."Site" LIMIT 1',
   'read the sites');
 SELECT pg_temp.expect_denied('studens_ryc',
