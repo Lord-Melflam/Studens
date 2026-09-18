@@ -11,6 +11,7 @@ you need it.
 | [`TIMELINE.md`](TIMELINE.md) | **Where the project stands, and how it got here.** The state table at the top is what matters day to day; the phase log below it records how each decision was reached, so a decision can be reopened with its reasoning attached rather than argued again from nothing. |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | **How we work and why.** Branching, review, the gates, and what each gate exists to prevent. Read it before your first pull request. |
 | [`COMMANDS.md`](COMMANDS.md) | **What to type.** Setup, running it, the database, the catalogue, mail, and a table of what to do when something breaks. Includes the things that are not npm scripts: `psql` one-liners, `gh`, worktrees. |
+| [`DEMO.md`](DEMO.md) | **How to show it to a room of students.** The script for a live demonstration: what to run first, what to show in what order, what is real and what is not, and the questions students ask with honest answers. Written for the first ULB session, 2026-09-18. |
 | [`LESSONS.md`](LESSONS.md) | **What has gone wrong, and what each failure changed.** Short, and it will save you repeating something. Every rule in `CONTRIBUTING.md` that looks arbitrary has an entry here explaining what produced it. |
 
 ## The specification
