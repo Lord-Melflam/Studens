@@ -7,7 +7,6 @@
 
 .module-intro { margin: 0 0 1.25rem; color: var(--muted); }
 
-.tabs { display: flex; gap: 0.4rem; margin-bottom: 1rem; }
 .tabs button {
   font: inherit;
   font-size: 0.9rem;
@@ -31,19 +30,77 @@
   background: #fff;
 }
 
-.search { display: block; font-size: 0.85rem; color: var(--muted); }
-.search input {
-  display: block;
-  width: 100%;
-  margin-top: 0.4rem;
-  padding: 0.7rem 0.85rem;
-  font-size: 1.05rem;
-  color: var(--ink);
+/* --- the search screen ---------------------------------------------------
+   It was a small label over a full width input, alone on an empty page, and
+   it read as a form field rather than as the point of the screen. The box is
+   the screen here, so it is sized like it: bounded rather than stretched to
+   the column, an icon so it is recognisable before the label is read, and a
+   ring on focus so pressing into it feels like something happened. */
+.tabs { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
+.tab-hint { margin: 0 0 1.4rem; font-size: 0.88rem; color: var(--muted); }
+
+.searchbox { margin: 0 0 1.5rem; }
+.searchbox label { display: block; margin-bottom: 0.4rem; font-size: 0.85rem; color: var(--muted); }
+.searchbox-field {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  /* Bounded. A course code is eight characters, and an input the width of the
+     page invites nobody to type into it. */
+  max-width: 30rem;
+  padding: 0 0.9rem;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
 }
-.search input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.searchbox-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.searchbox-icon { flex: none; width: 1.15rem; height: 1.15rem; color: var(--muted); }
+.searchbox-field:focus-within .searchbox-icon { color: var(--accent); }
+.searchbox input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.85rem 0;
+  font: inherit;
+  font-size: 1.05rem;
+  color: var(--ink);
+  background: none;
+  border: 0;
+}
+.searchbox input:focus { outline: none; }
+
+/* Nothing typed yet. Three words that certainly match, rather than an empty
+   page that teaches nothing. */
+.search-start { margin: 0 0 1.5rem; }
+.search-start p { margin: 0 0 0.6rem; font-size: 0.9rem; color: var(--muted); }
+.examples { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.examples button {
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 0.35rem 0.8rem;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.12s ease;
+}
+.examples button:hover { border-color: var(--accent); }
+
+/* Results arrive in one step rather than appearing. Short, and only on the
+   container, so a long list does not stagger itself into a slideshow. */
+@keyframes results-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.results-in { animation: results-in 0.18s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .results-in { animation: none; }
+  .searchbox-field { transition: none; }
+}
 
 .meta, .empty { color: var(--muted); font-size: 0.88rem; }
 .browse-title { margin: 0.5rem 0 0.2rem; font-size: 1.25rem; }

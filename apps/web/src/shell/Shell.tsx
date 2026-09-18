@@ -50,24 +50,34 @@ const SETTINGS = "moi";
 const MODERATION = "moderation";
 
 /**
- * Where signing out lands, given the screen it is done from.
+ * Where signing out lands. The public home, from anywhere.
  *
- * `undefined` means stay put and reload, which is right for every screen that
- * still makes sense signed out, a course page above all.
+ * IT USED TO STAY PUT, and to land on `/app` when the screen it was done from
+ * only existed for somebody signed in. François: "be careful that logging out
+ * should let us in the app as it's doing rn, otherwise someone might still be
+ * using our app when logged out". He is right, and the cost is not only
+ * appearances. A course page is public, so staying on one after signing out
+ * looked exactly like signing out had failed: same screen, same content, and
+ * the only difference a sign-in button somewhere in the corner. On a shared
+ * laptop that is the person who thinks they have left and has not checked.
+ *
+ * `/app` was no better. It is the application, which is the thing being left.
+ *
+ * So: out means out, to the public home in the reader's language. Coming back
+ * in is one click, and the one click is the point.
  *
  * SIGNING OUT IS A FULL PAGE LOAD, not a state change, which is why this is a
  * decision taken before leaving rather than a redirect taken after arriving.
- * The page comes back fresh on the same URL with nobody signed in, so a screen
- * that only exists for somebody signed in cannot get out of its own way by
- * reacting to the session: it never sees the change. That is exactly how
- * signing out of the console kept answering "Unknown module".
+ * The page comes back fresh with nobody signed in, so a screen that only
+ * exists for somebody signed in cannot get out of its own way by reacting to
+ * the session: it never sees the change. That is how signing out of the
+ * console kept answering "Unknown module".
  *
- * A pure function, and exported, because the version of this written inline was
- * wrong and nothing could reach it to say so.
+ * A pure function, and exported, because the version of this written inline
+ * was wrong and nothing could reach it to say so.
  */
-export function signOutDestination(routeId: string | null, locale: Locale): string | undefined {
-  if (routeId !== SETTINGS && routeId !== MODERATION) return undefined;
-  return localePath(APP_PREFIX, locale);
+export function signOutDestination(_routeId: string | null, locale: Locale): string {
+  return localePath("", locale);
 }
 
 function Home() {
