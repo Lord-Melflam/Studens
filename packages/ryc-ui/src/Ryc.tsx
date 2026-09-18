@@ -29,6 +29,30 @@ import { queryOf, settingsRoute } from "./urlstate.js";
  */
 export const OPEN_KEY = "ouvert";
 
+/**
+ * Which page of a course's reviews is on screen.
+ *
+ * In the address like everything else (FR-B21), so a refresh keeps it, Back
+ * leaves the course rather than walking back through it, and page 7 of a long
+ * course can be linked to. "Load more" was the alternative and it cannot do
+ * any of those: the number of times somebody pressed a button is not a thing a
+ * URL can hold.
+ */
+export const PAGE_KEY = "avis";
+
+/** The page named by an address, 1 when it says nothing or says nonsense. */
+export function reviewPageFrom(search: string): number {
+  const n = Number.parseInt(queryOf(search).get(PAGE_KEY) ?? "", 10);
+  return Number.isFinite(n) && n > 1 ? n : 1;
+}
+
+/** What `?avis=` should say. Page one says nothing, because it is the default. */
+export function reviewPageQuery(page: number): URLSearchParams {
+  const p = new URLSearchParams();
+  if (page > 1) p.set(PAGE_KEY, String(page));
+  return p;
+}
+
 /** The unfolded sections named by an address, in the order they were given. */
 export function openSectionsFrom(search: string): string[] {
   return (queryOf(search).get(OPEN_KEY) ?? "").split(",").filter((x) => x !== "");
@@ -167,6 +191,11 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
    * walk you back through your own unfolding.
    */
   const openSections = openSectionsFrom(search);
+  const reviewPage = reviewPageFrom(search);
+  const goToReviewPage = (n: number): void => {
+    const here = view.kind === "course" ? coursePath(view.institution, view.code) : "/";
+    navigate(settingsRoute(here, search, [PAGE_KEY], reviewPageQuery(n)), { replace: true });
+  };
   const onToggleSection = (slug: string): void => {
     const here = view.kind === "course" ? coursePath(view.institution, view.code) : "/";
     const next = openSectionsQuery(toggleSection(openSections, slug));
@@ -304,6 +333,8 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
         writing={view.writing}
         open={openSections}
         onToggleSection={onToggleSection}
+        reviewPage={reviewPage}
+        onReviewPage={goToReviewPage}
         onBack={() => navigate("/")}
         onWrite={() => navigate(coursePath(course.institution, course.code, true))}
         onCloseWriting={() => navigate(coursePath(course.institution, course.code))}

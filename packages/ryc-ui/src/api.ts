@@ -248,9 +248,19 @@ export const api = {
     json<{ institution: string; programme: string; courses: CourseSummary[] }>(
       `/api/programmes/${encodeURIComponent(institution)}/${encodeURIComponent(programme)}/courses`,
     ),
-  reviews: (institution: string, code: string) =>
-    json<{ aggregate: Aggregate; reviews: PublishedReview[]; sessionRequired: boolean }>(
-      `/api/courses/${encodeURIComponent(institution)}/${encodeURIComponent(code)}/reviews`,
+  reviews: (institution: string, code: string, page = 1) =>
+    json<{
+      aggregate: Aggregate;
+      reviews: PublishedReview[];
+      sessionRequired: boolean;
+      /** The page actually served, which is clamped: an out-of-range page in a
+          URL lands on a real one rather than on an empty screen. */
+      page: number;
+      pages: number;
+      total: number;
+    }>(
+      `/api/courses/${encodeURIComponent(institution)}/${encodeURIComponent(code)}/reviews` +
+        (page > 1 ? `?page=${page}` : ""),
     ),
   /**
    * How many published reviews each course has, for the whole catalogue.

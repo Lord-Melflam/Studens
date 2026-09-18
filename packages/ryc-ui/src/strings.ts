@@ -192,6 +192,10 @@ export const rycStrings: Bundle = {
     "ryc.reviews.failed": "Les avis n'ont pas pu être chargés.",
     "ryc.reviews.denominator": "Sur {count} avis : {named} nommés, {anonymous} anonymes.",
     "ryc.reviews.pass": "Réussite : {band}.",
+    "ryc.reviews.pager": "Pages d'avis",
+    "ryc.reviews.prev": "Précédent",
+    "ryc.reviews.next": "Suivant",
+    "ryc.reviews.page": "page {page} sur {pages}",
     "ryc.reviews.none":
       "Personne n'a encore donné son avis sur ce cours. Le premier avis est le plus utile, et le plus exposé : le choix entre votre nom et l'anonymat vous sera présenté avant l'envoi.",
     "ryc.reviews.locked":
@@ -524,6 +528,10 @@ export const rycStrings: Bundle = {
     "ryc.reviews.failed": "De beoordelingen konden niet geladen worden.",
     "ryc.reviews.denominator": "Op {count} beoordelingen: {named} met naam, {anonymous} anoniem.",
     "ryc.reviews.pass": "Slaagkans: {band}.",
+    "ryc.reviews.pager": "Pagina's met adviezen",
+    "ryc.reviews.prev": "Vorige",
+    "ryc.reviews.next": "Volgende",
+    "ryc.reviews.page": "pagina {page} van {pages}",
     "ryc.reviews.none":
       "Niemand heeft deze cursus al beoordeeld. De eerste beoordeling is de nuttigste, en ook de meest zichtbare: de keuze tussen uw naam en anonimiteit krijgt u vóór het verzenden.",
     "ryc.reviews.locked":
@@ -856,6 +864,10 @@ export const rycStrings: Bundle = {
     "ryc.reviews.failed": "The reviews could not be loaded.",
     "ryc.reviews.denominator": "Out of {count} reviews: {named} named, {anonymous} anonymous.",
     "ryc.reviews.pass": "Passing: {band}.",
+    "ryc.reviews.pager": "Review pages",
+    "ryc.reviews.prev": "Previous",
+    "ryc.reviews.next": "Next",
+    "ryc.reviews.page": "page {page} of {pages}",
     "ryc.reviews.none":
       "Nobody has reviewed this course yet. The first review is the most useful, and the most exposed: the choice between your name and anonymity is put to you before sending.",
     "ryc.reviews.locked":

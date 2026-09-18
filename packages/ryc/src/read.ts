@@ -74,9 +74,6 @@ function band(passed: number, answers: number): Aggregate["passBand"] {
   return "beaucoup ont échoué";
 }
 
-const mean = (xs: number[]): number | null =>
-  xs.length === 0 ? null : Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10;
-
 /**
  * How a name is resolved for an attributed review.
  *
@@ -91,20 +88,89 @@ const mean = (xs: number[]): number | null =>
  */
 export type NameResolver = (memberIds: string[]) => Promise<Map<string, string | null>>;
 
+/**
+ * How many reviews a page of them holds.
+ *
+ * A CONSTANT, NOT A SETTING. It was proposed as something an administrator
+ * could tune per installation, and that is a knob with no user: nobody would
+ * ever change it, it would become a second source of truth for a number the
+ * product should simply decide, and every screen would have to handle the case
+ * where it is absurd. If ten turns out to be wrong, this line changes. What
+ * would change the answer: evidence that different courses genuinely need
+ * different sizes, which nothing today suggests.
+ */
+export const REVIEWS_PER_PAGE = 10;
+
+/**
+ * READING REVIEWS IS PAGED, AND THE AGGREGATE IS NOT.
+ *
+ * The two have to be separated or the numbers lie. `count`, the averages and
+ * the named and anonymous tallies are computed over EVERY published review,
+ * whatever page is being read, and they are counted by the database rather
+ * than by summing the rows that happen to have been fetched. That is not a
+ * performance point. FR-C21 puts the named and anonymous counts in front of a
+ * contributor so they can judge their own exposure before choosing a path, and
+ * a count that silently meant "on page 2" would be wrong in the one place
+ * being wrong matters most. 3.3's arithmetic rests on the same figures.
+ *
+ * THE ROWS COME FROM THREE TABLES AND ARE MERGED HERE. That is the cost of
+ * FR-C2's structural separation: there is no single table to run LIMIT against.
+ * Each table is asked for at most `page * perPage` rows, which bounds the work
+ * without a raw UNION query against the two contribution tables. At ten a page
+ * and a few hundred reviews this is a few hundred rows at worst. What would
+ * change it: a course with thousands of reviews, where a `UNION ALL` ordered
+ * in SQL would be worth the raw query and the review that a raw query touching
+ * these two tables deserves.
+ *
+ * THE ORDER MUST BE TOTAL, or the same review appears on two pages or on none.
+ * Academic year is not: nor is year plus date, because `ReviewAnonymous.
+ * createdAt` is a DATE and not a timestamp, deliberately, so that it cannot
+ * serve as a join key against the quota counter (FR-C5). Every anonymous
+ * review submitted on one day therefore ties.
+ *
+ * The id breaks it. For an anonymous review that is a random uuid and nothing
+ * else, chosen so that it publishes no insertion order (FR-C18), which is
+ * exactly what makes it safe to sort by here: it is a stable arbitrary key
+ * that says nothing about when the row was written.
+ *
+ * The merge below sorts by the SAME three keys. If it did not, the rows a page
+ * slices out would not be the rows the database ordered.
+ */
 export async function reviewsFor(
   prisma: PrismaClient,
   courseId: string,
-  opts: { names?: NameResolver } = {},
-): Promise<{ reviews: PublishedReview[]; aggregate: Aggregate }> {
+  opts: { names?: NameResolver; page?: number; perPage?: number } = {},
+): Promise<{
+  reviews: PublishedReview[];
+  aggregate: Aggregate;
+  page: number;
+  pages: number;
+  total: number;
+}> {
   const where = { courseId, status: "published" };
+  const perPage = Math.max(1, opts.perPage ?? REVIEWS_PER_PAGE);
+  // Clamped below, once the total is known: a page number out of range must
+  // land on a real page rather than on an empty screen, because it arrives
+  // from a URL somebody may have edited or kept after reviews were removed.
+  const asked = Math.max(1, Math.floor(opts.page ?? 1));
+  const take = asked * perPage;
+  const by = [
+    { academicYear: "desc" as const },
+    { createdAt: "desc" as const },
+    { id: "asc" as const },
+  ];
   const [named, anon, imported] = await Promise.all([
-    prisma.reviewAttributed.findMany({ where, orderBy: { academicYear: "desc" } }),
-    prisma.reviewAnonymous.findMany({ where, orderBy: { academicYear: "desc" } }),
+    prisma.reviewAttributed.findMany({ where, orderBy: by, take }),
+    prisma.reviewAnonymous.findMany({ where, orderBy: by, take }),
     // `where` and not `{ courseId }`: imported reviews are filtered by status
     // like the other two. Until 2026-09-16 they were not, because the column
     // did not exist, which made them the one kind of contribution a moderator
     // could not hide.
-    prisma.reviewImported.findMany({ where, orderBy: { academicYear: "desc" } }),
+    prisma.reviewImported.findMany({
+      where,
+      orderBy: [{ academicYear: "desc" }, { importedAt: "desc" }, { id: "asc" }],
+      take,
+    }),
   ]);
 
   // FR-F6: the username, resolved through the caller's function rather than by
@@ -162,26 +228,87 @@ export async function reviewsFor(
       difficulty: null,
       source: r.source,
     })),
-  ].sort((a, b) => b.academicYear - a.academicYear);
+  ].sort(
+    (a, b) =>
+      b.academicYear - a.academicYear ||
+      (a.date < b.date ? 1 : a.date > b.date ? -1 : 0) ||
+      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  );
 
   // The aggregate uses the numbers from BOTH paths. That is the point of
   // FR-D15: the value of those numbers is the aggregate, so nothing is lost
   // by not showing them per anonymous review.
-  const scored = [...named, ...anon];
-  const answered = scored.filter((r) => r.passed !== null);
+  //
+  // COUNTED BY THE DATABASE, OVER EVERY PUBLISHED REVIEW. It used to be summed
+  // from the arrays above, which was the same thing while those arrays held
+  // everything and would have quietly become "on this page" the moment paging
+  // arrived. See the note on this function.
+  const [aggNamed, aggAnon, namedTotal, anonTotal, detachedTotal, importedTotal,
+         passedYes, passedAnswered] = await Promise.all([
+    prisma.reviewAttributed.aggregate({
+      where,
+      _count: { _all: true },
+      _avg: { recommendation: true, workloadVsEcts: true, difficulty: true },
+    }),
+    prisma.reviewAnonymous.aggregate({
+      where,
+      _count: { _all: true },
+      _avg: { recommendation: true, workloadVsEcts: true, difficulty: true },
+    }),
+    prisma.reviewAttributed.count({ where: { ...where, NOT: { memberId: null } } }),
+    prisma.reviewAnonymous.count({ where }),
+    prisma.reviewAttributed.count({ where: { ...where, memberId: null } }),
+    prisma.reviewImported.count({ where }),
+    Promise.all([
+      prisma.reviewAttributed.count({ where: { ...where, passed: true } }),
+      prisma.reviewAnonymous.count({ where: { ...where, passed: true } }),
+    ]).then(([a, b]) => a + b),
+    Promise.all([
+      prisma.reviewAttributed.count({ where: { ...where, NOT: { passed: null } } }),
+      prisma.reviewAnonymous.count({ where: { ...where, NOT: { passed: null } } }),
+    ]).then(([a, b]) => a + b),
+  ]);
+
+  const scoredCount = aggNamed._count._all + aggAnon._count._all;
+  /**
+   * A mean of the two paths' means, each weighted by how many rows it came
+   * from. Averaging the two averages unweighted would give one anonymous
+   * review the same pull as forty named ones.
+   */
+  const pooled = (key: "recommendation" | "workloadVsEcts" | "difficulty"): number | null => {
+    let sum = 0;
+    let n = 0;
+    for (const a of [aggNamed, aggAnon]) {
+      const avg = a._avg[key];
+      if (avg === null || a._count._all === 0) continue;
+      sum += avg * a._count._all;
+      n += a._count._all;
+    }
+    return n === 0 ? null : Math.round((sum / n) * 10) / 10;
+  };
+
+  // Every published review of this course, of any kind. `total` drives the
+  // pager; `count` stays what it has always been, the number carrying a score.
+  const total = scoredCount + importedTotal;
+  const pages = Math.max(1, Math.ceil(total / perPage));
+  const page = Math.min(asked, pages);
+  const start = (page - 1) * perPage;
 
   return {
-    reviews,
+    reviews: reviews.slice(start, start + perPage),
+    page,
+    pages,
+    total,
     aggregate: {
-      count: scored.length,
-      named: named.filter((r) => r.memberId !== null).length,
-      anonymous: anon.length,
-      detached: named.filter((r) => r.memberId === null).length,
-      recommendation: mean(scored.map((r) => r.recommendation)),
-      workloadVsEcts: mean(scored.map((r) => r.workloadVsEcts)),
-      difficulty: mean(scored.map((r) => r.difficulty)),
-      passBand: band(answered.filter((r) => r.passed === true).length, answered.length),
-      passAnswers: answered.length,
+      count: scoredCount,
+      named: namedTotal,
+      anonymous: anonTotal,
+      detached: detachedTotal,
+      recommendation: pooled("recommendation"),
+      workloadVsEcts: pooled("workloadVsEcts"),
+      difficulty: pooled("difficulty"),
+      passBand: band(passedYes, passedAnswered),
+      passAnswers: passedAnswered,
     },
   };
 }

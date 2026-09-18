@@ -19,7 +19,14 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { withQuota, QuotaExceeded, windowStartFor } from "@studens/platform";
-import { PASS_BAND_FLOOR, reviewsFor, submitAnonymous, submitAttributed, type ReviewInput } from "@studens/ryc";
+import {
+  PASS_BAND_FLOOR,
+  REVIEWS_PER_PAGE,
+  reviewsFor,
+  submitAnonymous,
+  submitAttributed,
+  type ReviewInput,
+} from "@studens/ryc";
 import { upsertCourse } from "../fixtures/catalogue.js";
 
 const prisma = new PrismaClient();
@@ -71,7 +78,11 @@ async function seed(): Promise<void> {
 async function reset(): Promise<void> {
   if (!reachable) return;
   await prisma.reviewAnonymous.deleteMany({ where: { courseId } });
-  await prisma.reviewAttributed.deleteMany({ where: { memberId } });
+  // BY COURSE AS WELL AS BY MEMBER. Deleting only this member's rows left
+  // behind any DETACHED one, whose memberId is null by definition, and those
+  // accumulated across tests until the counts in one test depended on how many
+  // had run before it.
+  await prisma.reviewAttributed.deleteMany({ where: { OR: [{ memberId }, { courseId }] } });
   await prisma.memberQuota.deleteMany({ where: { memberId } });
 }
 
@@ -356,5 +367,107 @@ describe("reading obeys FR-D15, FR-C16 and FR-D23 on the server", () => {
     // A number without its count invites being quoted without it.
     expect(aggregate.count).toBeGreaterThan(0);
     expect(aggregate.named + aggregate.anonymous).toBe(aggregate.count);
+  });
+});
+
+/**
+ * PAGING MUST NOT CHANGE THE NUMBERS, and that is an FR-C property, not a
+ * cosmetic one.
+ *
+ * FR-C21 puts the named and anonymous counts in front of a contributor so they
+ * can judge their own exposure before choosing a path, and 3.3's arithmetic
+ * about the complement rests on the same figures. The aggregate used to be
+ * summed from the array of reviews, which was the same thing while that array
+ * held every one of them; the moment a page held ten, the honest-looking
+ * number would have meant "on this page" and nobody would have seen it change.
+ */
+describe("reading reviews a page at a time", () => {
+  const PAGE_SIZE = REVIEWS_PER_PAGE;
+
+  /**
+   * Rows written straight in, not submitted.
+   *
+   * The quota is five a week per member (FR-C4) and this needs twenty three,
+   * and the thing under test is the READ path. Going through the kernel would
+   * be testing the quota instead, and would need twenty three members to get
+   * past it.
+   *
+   * Alternating paths on purpose, so a page boundary falls across both tables
+   * and the merge is exercised rather than one table being drained first. The
+   * same day on every row on purpose too: `ReviewAnonymous.createdAt` is a
+   * DATE, so a same-day tie is the normal case and not an edge one.
+   */
+  async function seedMany(n: number): Promise<void> {
+    for (let i = 0; i < n; i += 1) {
+      const common = {
+        courseId,
+        academicYear: 2020 + (i % 6),
+        recommendation: (i % 5) + 1,
+        workloadVsEcts: 3,
+        difficulty: 3,
+        body: `Avis numero ${i} assez long pour ressembler a un vrai avis publie.`,
+      };
+      if (i % 2 === 0) {
+        await prisma.reviewAttributed.create({
+          data: { ...common, memberId: null, createdAt: NOW },
+        });
+      } else {
+        await prisma.reviewAnonymous.create({
+          data: { ...common, createdAt: new Date("2026-09-10") },
+        });
+      }
+    }
+  }
+
+  dbit("returns at most one page, and says how many there are", async () => {
+    const n = PAGE_SIZE * 2 + 3;
+    await seedMany(n);
+    const first = await reviewsFor(prisma, courseId);
+    expect(first.reviews.length).toBe(PAGE_SIZE);
+    expect(first.total).toBe(n);
+    expect(first.pages).toBe(Math.ceil(n / PAGE_SIZE));
+    expect(first.page).toBe(1);
+  });
+
+  dbit("shows every review exactly once across the pages", async () => {
+    const n = PAGE_SIZE * 2 + 3;
+    await seedMany(n);
+    const seen: string[] = [];
+    const { pages } = await reviewsFor(prisma, courseId);
+    for (let p = 1; p <= pages; p += 1) {
+      const { reviews } = await reviewsFor(prisma, courseId, { page: p });
+      seen.push(...reviews.map((r) => r.id));
+    }
+    expect(seen.length, "no review lost between pages").toBe(n);
+    expect(new Set(seen).size, "and none shown on two pages").toBe(n);
+  });
+
+  dbit("gives the same aggregate on every page", async () => {
+    await seedMany(PAGE_SIZE * 2 + 3);
+    const first = await reviewsFor(prisma, courseId, { page: 1 });
+    for (const p of [2, 3]) {
+      const other = await reviewsFor(prisma, courseId, { page: p });
+      expect(other.aggregate, `page ${p} must describe the course, not the page`)
+        .toEqual(first.aggregate);
+    }
+  });
+
+  dbit("counts every review in the aggregate, not just the ones on screen", async () => {
+    const n = PAGE_SIZE * 2 + 3;
+    await seedMany(n);
+    const { aggregate, reviews } = await reviewsFor(prisma, courseId);
+    expect(reviews.length).toBe(PAGE_SIZE);
+    expect(aggregate.count, "FR-C21 reads this number").toBe(n);
+    // Seeded with memberId null, so the attributed half counts as detached.
+    expect(aggregate.named + aggregate.anonymous + aggregate.detached).toBe(n);
+  });
+
+  dbit("clamps a page number that is past the end onto a real page", async () => {
+    // It arrives from a URL, which somebody may have edited or kept after
+    // reviews were removed. An empty screen would look like a broken course.
+    await seedMany(3);
+    const far = await reviewsFor(prisma, courseId, { page: 99 });
+    expect(far.page).toBe(1);
+    expect(far.reviews.length).toBe(3);
   });
 });
