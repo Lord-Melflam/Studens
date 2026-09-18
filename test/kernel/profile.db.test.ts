@@ -206,7 +206,7 @@ describe("finishing, and doing it again (FR-F14)", () => {
 });
 
 describe("the institutions (FR-F10, FR-F12)", () => {
-  dbit("lists every institution, with one of them open", async () => {
+  dbit("lists every institution, and opens the ones whose catalogue is in", async () => {
     const all = await listInstitutions({ client: prisma });
     // Every Belgian university, because listing UCLouvain alone would read as
     // a UCLouvain product. Eleven, and Saint-Louis is deliberately not one of
@@ -214,22 +214,24 @@ describe("the institutions (FR-F10, FR-F12)", () => {
     expect(all.length).toBeGreaterThanOrEqual(11);
     expect(all.map((i) => i.code)).not.toContain("saint-louis");
 
-    // FR-F12 is about the RULE, not about the count. Asserting the open set
-    // was exactly ["uclouvain"] made a second catalogue look like a
-    // regression: it failed on the day ULB was ingested, which is the day it
-    // was supposed to pass.
+    // FR-F12 is about the RULE, not about the count. This used to assert the
+    // open set was exactly ["uclouvain"], which made adding a second catalogue
+    // look like a regression: the test failed on the day ULB was ingested,
+    // which is the day it was supposed to pass.
     const open = all.filter((i) => i.available).map((i) => i.code);
     expect(open).toContain("uclouvain");
     expect(open.length).toBeLessThan(all.length);
+    for (const code of open) expect(code).not.toBe("");
   });
 
   dbit("puts the ones that can be chosen first", async () => {
     const all = await listInstitutions({ client: prisma });
-    // Whatever the open set is, no closed institution may sort above an open
-    // one: something somebody can pick should not sit below a list of things
-    // they cannot.
-    const flags = all.map((i) => i.available);
-    expect(flags.indexOf(false)).toBeGreaterThan(flags.lastIndexOf(true));
+    // Whatever the open set is, none of the closed ones may come before an
+    // open one: an institution somebody can pick should not be below a list of
+    // institutions they cannot.
+    const lastOpen = all.map((i) => i.available).lastIndexOf(true);
+    const firstClosed = all.map((i) => i.available).indexOf(false);
+    expect(firstClosed).toBeGreaterThan(lastOpen);
   });
 
   /**
