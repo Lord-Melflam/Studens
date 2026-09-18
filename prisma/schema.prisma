@@ -124,8 +124,47 @@ model Member {
   sessions     Session[]
   institutions MemberInstitution[]
 
+  /// SUSPENSION BINDS AN ACCOUNT, NEVER A PERSON, and the wording everywhere
+  /// has to keep saying so. Registration is open by design (FR-A6) because no
+  /// student roster is obtainable, so anyone suspended can make another
+  /// account. It is a speed bump, which is exactly what OPEN-35 says must
+  /// never be described as more.
+  ///
+  /// It cannot reach the anonymous path either (FR-E7). Suspending an account
+  /// stops what it submits next; the anonymous reviews it already published
+  /// are not linked to it and cannot be found, gathered or removed as a set.
+  /// Individual content is still removable by a moderator (FR-C10).
+  ///
+  /// Suspended when `suspendedAt` is set, and until `suspendedUntil`, which is
+  /// NULL for a permanent suspension. Two columns rather than a far future
+  /// date, so that "permanent" is a state somebody chose and not a sentinel
+  /// that has to be recognised.
+  suspendedAt     DateTime?
+  suspendedUntil  DateTime?
+  suspendedReason String?
+
   @@unique([provider, providerSubject])
   @@index([tenantId])
+  @@schema("platform")
+}
+
+/// A setting an administrator may change while the platform is running.
+///
+/// KEYS ARE NAMESPACED BY MODULE, `ryc.reviewsPerPage`, and the platform never
+/// learns what they mean. It stores a string against a key and hands it back;
+/// deciding that ten is sensible and five is not belongs to the module that
+/// reads it (FR-B18: tier 0 must not depend on tier 1).
+///
+/// Every change is written to the audit log as well as here, because this
+/// table holds the value and the log holds who chose it and when.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+  /// The administrator who last set it. A plain id, not a relation: the same
+  /// rule the rest of this schema follows across concerns.
+  updatedBy String?
+
   @@schema("platform")
 }
 
