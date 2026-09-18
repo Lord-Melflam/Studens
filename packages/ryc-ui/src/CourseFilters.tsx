@@ -43,6 +43,7 @@ export function CourseFilters({
   reviewCounts,
   onOpen,
   emptyLabel,
+  textFilter = true,
   search,
   here,
   navigate,
@@ -52,6 +53,15 @@ export function CourseFilters({
   onOpen: (course: CourseSummary) => void;
   /** What to say when the list itself is empty, before any filter is applied. */
   emptyLabel: string;
+  /**
+   * Whether to draw the filter's own "code or word in the title" box.
+   *
+   * Off on the search screen, where the box above it asks the server the same
+   * question in almost the same words. Two inputs labelled "code ou mot du
+   * titre", stacked, one narrowing what the other returned: nobody could tell
+   * why there were two, and it was the first thing François called ugly.
+   */
+  textFilter?: boolean;
   /** The query string the shell handed the module. */
   search: string;
   /** The module-relative path of the screen this list is on, which the filter
@@ -93,13 +103,15 @@ export function CourseFilters({
         onClear={() => setFilter(NO_COURSE_FILTER)}
         summary={t("ryc.filter.count", { shown: shown.length, total: courses.length })}
       >
-        <FilterText
-          id="course-q"
-          label={t("ryc.filter.search")}
-          placeholder={t("ryc.filter.searchPlaceholder")}
-          value={filter.text}
-          onChange={(text) => setFilter({ ...filter, text })}
-        />
+        {textFilter && (
+          <FilterText
+            id="course-q"
+            label={t("ryc.filter.search")}
+            placeholder={t("ryc.filter.searchPlaceholder")}
+            value={filter.text}
+            onChange={(text) => setFilter({ ...filter, text })}
+          />
+        )}
         <FilterGroup
           legend={t("ryc.filter.quarter")}
           facets={facets.quarters}

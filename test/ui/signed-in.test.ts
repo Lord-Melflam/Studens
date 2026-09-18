@@ -194,13 +194,27 @@ describe("no screen leaks an untranslated key", () => {
  * console's URL, the change it was waiting for had already happened, and
  * François hit the same "Unknown module" a second time.
  */
-describe("signing out leaves a screen that needs a session", () => {
-  it("leaves the console and the account panel, and nothing else", () => {
-    expect(signOutDestination("moderation", "fr")).toBe("/fr/app");
-    expect(signOutDestination("moi", "en")).toBe("/en/app");
-    // A course page survives signing out and should stay where it is.
-    expect(signOutDestination("ryc", "fr")).toBeUndefined();
-    expect(signOutDestination(null, "fr")).toBeUndefined();
+describe("signing out leaves the application", () => {
+  it("lands on the public home, from every screen, in the reader's language", () => {
+    for (const [route, locale, expected] of [
+      ["moderation", "fr", "/fr"],
+      ["moi", "en", "/en"],
+      // A course page is public and survives signing out, which is exactly why
+      // staying on one looked like signing out had failed: same screen, same
+      // content, and on a shared laptop somebody who thinks they have left.
+      ["ryc", "fr", "/fr"],
+      [null, "nl", "/nl"],
+    ] as const) {
+      expect(signOutDestination(route, locale)).toBe(expected);
+    }
+  });
+
+  it("never lands inside the application", () => {
+    // `/app` was the old answer for the console and the account panel, and the
+    // application is the thing being left.
+    for (const route of ["moderation", "moi", "ryc", null] as const) {
+      expect(signOutDestination(route, "fr")).not.toContain("/app");
+    }
   });
 });
 
