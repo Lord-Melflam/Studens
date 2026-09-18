@@ -181,6 +181,16 @@ export const rycModule: ModuleRegistration = {
 };
 
 export { Ryc, parseView, type RycView } from "./Ryc.js";
+/**
+ * The course page's folded sections, as they travel in the address. Pure, so
+ * the round trip is checked directly in test/ui/url-state.test.ts.
+ */
+export {
+  OPEN_KEY,
+  openSectionsFrom,
+  openSectionsQuery,
+  toggleSection,
+} from "./Ryc.js";
 export type { CourseDetail, CourseSummary, ProgrammeSummary } from "./api.js";
 
 /**

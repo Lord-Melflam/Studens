@@ -24,17 +24,21 @@ import {
   CourseFilters,
   COURSE_FILTER_KEYS,
   NO_COURSE_FILTER,
+  OPEN_KEY,
   NO_PROGRAMME_FILTER,
   PROGRAMME_FILTER_KEYS,
   UNSTATED,
   courseFilterFromQuery,
   courseFilterToQuery,
+  openSectionsFrom,
+  openSectionsQuery,
   programmeFilterFromQuery,
   programmeFilterToQuery,
   pruneCourseFilter,
   pruneProgrammeFilter,
   queryOf,
   replaceKeys,
+  toggleSection,
   settingsRoute,
   withQuery,
   type CourseFilter,
@@ -373,3 +377,52 @@ describe("the address wins over the member's own preference", () => {
   });
 });
 
+
+/**
+ * WHICH SECTIONS OF A COURSE ARE UNFOLDED TRAVELS IN THE ADDRESS.
+ *
+ * It was component state for a day. That lost it on every refresh, and it
+ * meant there was no way to send somebody the bibliography of a course rather
+ * than the course, which is the same three failures this file opens with,
+ * one screen further in.
+ */
+describe("the unfolded sections of a course page", () => {
+  it("reads an empty address as nothing open", () => {
+    // Not one empty string. `"".split(",")` gives `[""]`, and that would open
+    // a section whose slug is the empty string, which is every `includes`
+    // check on the page answering wrongly.
+    expect(openSectionsFrom("")).toEqual([]);
+    expect(openSectionsFrom("?ouvert=")).toEqual([]);
+    expect(openSectionsFrom("?f=info")).toEqual([]);
+  });
+
+  it("round trips a set of sections", () => {
+    for (const open of [["evaluation"], ["evaluation", "biblio"], []]) {
+      const back = openSectionsFrom(`?${openSectionsQuery(open).toString()}`);
+      expect(back).toEqual(open);
+    }
+  });
+
+  it("says nothing at all when nothing is open", () => {
+    // A trailing `?ouvert=` on every course link would be noise in a URL that
+    // is read by people.
+    expect(openSectionsQuery([]).toString()).toBe("");
+  });
+
+  it("keeps the reader's order rather than sorting", () => {
+    // Sorting would rewrite the address on a press that changed nothing about
+    // the screen, so two identical screens would produce two different links.
+    expect(toggleSection(["biblio"], "evaluation")).toEqual(["biblio", "evaluation"]);
+  });
+
+  it("closes one that is already open", () => {
+    expect(toggleSection(["biblio", "evaluation"], "biblio")).toEqual(["evaluation"]);
+  });
+
+  it("leaves the rest of the query alone", () => {
+    // The course page carries `avis` and anything a screen behind it added.
+    const route = settingsRoute("/c/ulb/proj-p5314", "?q=archi", [OPEN_KEY], openSectionsQuery(["biblio"]));
+    expect(route).toContain("q=archi");
+    expect(route).toContain("ouvert=biblio");
+  });
+});

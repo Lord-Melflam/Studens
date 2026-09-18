@@ -12,6 +12,28 @@ import { CatalogueLanguageNote, FoldedField } from "./Prose.js";
 import { Reviews } from "./Reviews.js";
 import { SubmitFlow } from "./SubmitFlow.js";
 
+/**
+ * THE SLUG IN THE URL FOR EACH FOLDING FIELD, and it never changes.
+ *
+ * `?ouvert=evaluation,biblio`. French and short, like every other key this
+ * module puts in a query string (`quad`, `entite`, `domaine`), rather than the
+ * English names the storage uses: the address is read by people, and the
+ * mapping lives here where both halves are visible at once.
+ *
+ * A slug is part of every link anybody has ever shared, so renaming one breaks
+ * those links silently: the section it named simply comes back folded. Add,
+ * never rename.
+ */
+const SECTION = {
+  assessment: "evaluation",
+  themes: "themes",
+  content: "contenu",
+  objectives: "objectifs",
+  prerequisites: "prerequis",
+  teachingMethods: "methodes",
+  bibliography: "biblio",
+} as const;
+
 function Field({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
@@ -25,6 +47,8 @@ function Field({ label, value }: { label: string; value: string | null }) {
 export function CoursePage({
   course,
   writing,
+  open,
+  onToggleSection,
   onBack,
   onWrite,
   onCloseWriting,
@@ -32,6 +56,9 @@ export function CoursePage({
   course: CourseDetail;
   /** From the URL, not from state, so Back leaves the form and a link reopens it. */
   writing: boolean;
+  /** Which long fields are unfolded, by slug. From the URL, for the same reason. */
+  open: readonly string[];
+  onToggleSection: (slug: string) => void;
   onBack: () => void;
   onWrite: () => void;
   onCloseWriting: () => void;
@@ -125,9 +152,24 @@ export function CoursePage({
         {(course.assessment || course.themes || course.content) && (
           <CatalogueLanguageNote institution={course.institution} />
         )}
-        <FoldedField label={t("ryc.course.assessment")} blocks={course.assessment} />
-        <FoldedField label={t("ryc.course.themes")} blocks={course.themes} />
-        <FoldedField label={t("ryc.course.content")} blocks={course.content} />
+        <FoldedField
+          label={t("ryc.course.assessment")}
+          blocks={course.assessment}
+          open={open.includes(SECTION.assessment)}
+          onToggle={() => onToggleSection(SECTION.assessment)}
+        />
+        <FoldedField
+          label={t("ryc.course.themes")}
+          blocks={course.themes}
+          open={open.includes(SECTION.themes)}
+          onToggle={() => onToggleSection(SECTION.themes)}
+        />
+        <FoldedField
+          label={t("ryc.course.content")}
+          blocks={course.content}
+          open={open.includes(SECTION.content)}
+          onToggle={() => onToggleSection(SECTION.content)}
+        />
         {/*
           The order is the order a student reads in, not the order the source
           prints. What the course is about, what you should be able to do, what
@@ -135,10 +177,30 @@ export function CoursePage({
           the top because it is the thing FR-D19 exists for: the reviewer is
           not asked what the catalogue already publishes.
         */}
-        <FoldedField label={t("ryc.course.objectives")} blocks={course.objectives} />
-        <FoldedField label={t("ryc.course.prerequisites")} blocks={course.prerequisites} />
-        <FoldedField label={t("ryc.course.teachingMethods")} blocks={course.teachingMethods} />
-        <FoldedField label={t("ryc.course.bibliography")} blocks={course.bibliography} />
+        <FoldedField
+          label={t("ryc.course.objectives")}
+          blocks={course.objectives}
+          open={open.includes(SECTION.objectives)}
+          onToggle={() => onToggleSection(SECTION.objectives)}
+        />
+        <FoldedField
+          label={t("ryc.course.prerequisites")}
+          blocks={course.prerequisites}
+          open={open.includes(SECTION.prerequisites)}
+          onToggle={() => onToggleSection(SECTION.prerequisites)}
+        />
+        <FoldedField
+          label={t("ryc.course.teachingMethods")}
+          blocks={course.teachingMethods}
+          open={open.includes(SECTION.teachingMethods)}
+          onToggle={() => onToggleSection(SECTION.teachingMethods)}
+        />
+        <FoldedField
+          label={t("ryc.course.bibliography")}
+          blocks={course.bibliography}
+          open={open.includes(SECTION.bibliography)}
+          onToggle={() => onToggleSection(SECTION.bibliography)}
+        />
 
         <div className="field">
           <dt>{t("ryc.course.official")}</dt>
