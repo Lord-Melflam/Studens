@@ -48,6 +48,11 @@ a.cta:hover { background: #16407c; }
 
 /* A call to action that closes a section needs air above it. Inline by
    default, these sat flush against the paragraph or list they followed. */
+/* A SENTENCE MAY WRAP, A PILL LABEL MAY NOT. The `nowrap` above keeps a
+   two-word button in shape; it was also reaching a link whose label is a whole
+   sentence, and "Comment vos données sont traitées" is 299px that would not
+   break, so it hung off a 320px screen. */
+.band > a.ghost { white-space: normal; }
 .band > a.cta,
 .band > a.ghost {
   display: inline-block;
@@ -64,7 +69,17 @@ a.cta:hover { background: #16407c; }
    has been rendering a third narrower than it was written for, which is why
    the hero headline broke over five lines and the mock beside it was 225px
    wide. main.app carries the same override for the same reason. */
-.site-main { flex: 1; max-width: none; }
+/* `width: 100%` IS THE FIX FOR THE SIDEWAYS SCROLL, measured 2026-09-18.
+
+   `.site-main` is a flex item of `.site`. Without an explicit width it was
+   sized by its own content rather than by the column it sits in: 910px of
+   document inside a 375px phone, so every public page scrolled sideways.
+   Nothing on the descendants fixes it and neither does `min-width: 0`; the
+   item has to be told to take its container's width. A DOM probe found it
+   after screenshots had sent me to the header and then to the hero mock,
+   neither of which was the cause.
+   `max-width: none` is the older half of the rule, below. */
+.site-main { flex: 1; width: 100%; max-width: none; }
 .site-main > section {
   max-width: 68rem;
   margin: 0 auto;
@@ -142,7 +157,12 @@ a.cta:hover { background: #16407c; }
 /* --- highlights: what you get, titled by the benefit --------------------- */
 .highlights {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  /* `min(18rem, 100%)`, not `18rem`. A floor of 18rem is 288px and a 320px
+     phone has 272px inside the section's padding, so the track stayed 288 and
+     pushed the page 7px wider than the screen. `min()` lets the floor collapse
+     on anything narrower than the floor itself, which is the only case where
+     it was wrong. */
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
   gap: 1.6rem 2.5rem;
   list-style: none;
   margin: 2rem 0;
@@ -268,7 +288,8 @@ a.cta:hover { background: #16407c; }
 .mc-note { margin: 0; font-size: 0.86rem; color: var(--muted); }
 
 /* --- two up, callout ---------------------------------------------------- */
-.two-up { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 2rem; }
+/* The same collapsing floor as `.highlights`, for the same reason. */
+.two-up { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr)); gap: 2rem; }
 .two-up p { line-height: 1.65; margin: 0 0 1rem; }
 .callout {
   padding: 1.4rem;
