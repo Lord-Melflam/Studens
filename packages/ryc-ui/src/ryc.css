@@ -127,61 +127,93 @@ dl { margin: 0; }
    no padding of its own: the padding belongs to `.field` above, and the two
    together are what makes a closed field the same height as an open one's
    heading. */
-.field.fold { padding: 0; }
-/* The row is the control, so it fills the width and carries its own padding.
-   Rounded and inset by a little, so the hover is a shape rather than a band
-   running edge to edge. */
+/* A FOLDING SECTION HAS TO LOOK PRESSABLE WITHOUT BEING HOVERED.
+
+   It did not. The rows carried the same hairline, the same left edge and the
+   same label weight as the three facts above them, which are inert, so the
+   page read as nine headings of which six mysteriously had no text under
+   them. The chevron alone did not fix it: pale, small, and 600px from the word
+   it belongs to. François: "It just looks like simple text that might be
+   confusing."
+
+   Hover cannot be the answer either, because a phone has none, and most of
+   the people this is for are on one.
+
+   So a folding section is a bordered row on its own surface and the inert
+   facts are not, which is the difference a reader can see standing still. */
+.field.fold { padding: 0; border-top: 0; margin-top: 0.4rem; }
 .field.fold .fold-head {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  /* The row bleeds 0.6rem past the text column on each side, so the rounded
-     hover is a shape around the label rather than a band starting at it, and
-     the label still lines up with the fields above.
-     `calc` and not `100%`: 100% with these margins is a column-width box
-     shifted left, which put the label outside the column and the chevron short
-     of it. `auto` does not work either, because a button shrink-wraps whatever
-     its display says. Border-box is set globally, so this is the outer width.
-     The 0.6rem each side comes out of the 1.25rem the page already has. */
-  width: calc(100% + 1.2rem);
-  padding: 0.85rem 0.6rem;
-  margin: 0.05rem -0.6rem;
+  width: 100%;
+  padding: 0.7rem 0.55rem 0.7rem 0.85rem;
   font: inherit;
   text-align: left;
-  background: none;
-  border: 0;
+  color: inherit;
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 10px;
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: border-color 0.12s ease, background 0.12s ease;
 }
-.field.fold .fold-head:hover { background: var(--accent-soft); }
+.field.fold .fold-head:hover { background: var(--accent-soft); border-color: var(--accent); }
 .field.fold .fold-head:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  outline-offset: 1px;
 }
 /* The name of a section is a heading, so it is the size of one and not the
    size of a caption. */
 .field.fold .fold-name {
   flex: 1;
   min-width: 0;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.005em;
   color: var(--ink);
 }
+/* The chevron sits in a token of its own rather than floating at the far
+   right edge. A bare glyph reads as decoration; the same glyph on a surface
+   reads as the thing you press, which is the whole point of drawing it. */
 .field.fold .fold-chevron {
   flex: none;
-  width: 1.15rem;
-  height: 1.15rem;
-  color: var(--muted);
+  box-sizing: content-box;
+  width: 1.1rem;
+  height: 1.1rem;
+  padding: 0.2rem;
+  /* The accent, not grey. Blue is what everything actionable on this page
+     already uses, so a blue token says "press this" before anyone reads the
+     word beside it. Grey on a white card was invisible, which is how the
+     chevron came to be missed twice. */
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
   /* Pointing down when closed, up when open: the chevron says what pressing it
      will do, which is the reading people apply without being taught. */
-  transition: transform 0.18s ease;
+  transition: transform 0.18s ease, background 0.12s ease, color 0.12s ease;
 }
+.field.fold .fold-head:hover .fold-chevron { color: #fff; background: var(--accent); }
 .field.fold.open .fold-chevron { transform: rotate(180deg); }
-.field.fold.open .fold-name,
-.field.fold .fold-head:hover .fold-chevron { color: var(--accent); }
-.field.fold dd { margin: 0; padding: 0.1rem 0 1rem; }
+.field.fold.open .fold-name { color: var(--accent); }
+/* OPEN, THE ROW AND ITS BODY ARE ONE CARD. The head loses its bottom corners
+   and its bottom edge, the body carries the other three sides, and the two
+   meet. Left as a bordered row with the text hanging underneath, the body read
+   as page text that happened to follow rather than as the contents of the
+   thing just opened. */
+.field.fold.open .fold-head {
+  border-color: var(--accent);
+  border-bottom-color: var(--line);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.field.fold.open dd {
+  border: 1px solid var(--accent);
+  border-top: 0;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  background: #fff;
+}
+.field.fold dd { margin: 0; padding: 0.75rem 0.85rem 0.9rem; }
 
 .official { color: var(--accent); word-break: break-all; font-size: 0.92rem; }
 
