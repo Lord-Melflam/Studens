@@ -508,17 +508,54 @@ button.ghost {
 
 .filters {
   margin: 1.25rem 0 0;
-  padding: 0.9rem 1rem 0.75rem;
+  padding: 0;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
+  overflow: hidden;
 }
-.filters-groups { display: flex; flex-direction: column; gap: 0.75rem; }
+
+/* WHICH UNIVERSITIES THE CATALOGUE IS. Above the filters and visibly not one
+   of them: it says what you are looking at, where they say what you are
+   narrowing it to. Closed it is one line, which is the point at ten
+   institutions. */
+.scope { border-bottom: 1px solid var(--line); background: var(--accent-soft); }
+.scope-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.85rem;
+}
+.scope-what { font-weight: 600; color: var(--ink); }
+.scope-line .linkish { margin-left: auto; padding: 0; font-size: 0.8rem; }
+.scope-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0 0.9rem 0.8rem;
+}
+.scope-hint {
+  flex-basis: 100%;
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* THE GROUPS. Separated by a rule rather than by a gap, because eight of them
+   in a column with only whitespace between reads as one long thing: François,
+   "too many groups stacked (or not properly separated)". */
+.filters-groups { display: flex; flex-direction: column; }
 
 .filter-text {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  padding: 0.75rem 0.9rem 0.25rem;
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -538,17 +575,164 @@ button.ghost {
   border-color: var(--accent);
 }
 
-.filter-group { margin: 0; padding: 0; border: 0; }
-.filter-group legend {
+/* `min-width: 0` because this is a fieldset. A fieldset's default minimum
+   width is its content's min-content width, which no other element has, and it
+   ignores the column it is in: one row of options with a label that does not
+   wrap made every group as wide as its longest faculty name, and the panel
+   clipped the counts off the right edge. */
+.filter-group {
+  min-width: 0;
+  margin: 0;
   padding: 0;
-  margin-bottom: 0.35rem;
-  font-size: 0.78rem;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.filters-groups > .filter-group:first-child { border-top: 0; }
+
+/* The whole row is the control. At eight groups stacked, a target the width of
+   a word is the difference between a panel you use and one you poke at. */
+.filter-group .group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.filter-group .group-head:hover { background: var(--accent-soft); }
+.filter-group .group-name {
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.01em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+/* What is chosen, or how many there are to choose from. Truncated rather than
+   wrapped: the header is a summary, and a summary that grows to three lines
+   has stopped being one. */
+.filter-group .group-state {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  font-size: 0.8rem;
   color: var(--muted);
 }
+.filter-group .group-chevron {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 0.12s ease;
+}
+.filter-group.shut .group-chevron { transform: rotate(-45deg) translate(-1px, 1px); }
+.filter-group .group-body { min-width: 0; padding: 0 0.9rem 0.75rem; }
 
-.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.filter-group .group-search {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.filter-group .group-search:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+/* A long dimension is a list of rows, not a field of pills: one line each, one
+   left edge, the count always in the same place. It scrolls inside its own
+   group rather than pushing the programmes off the screen, which is what the
+   old "choose from 31" fold was trying to prevent by hiding it instead. */
+.optlist {
+  display: flex;
+  flex-direction: column;
+  max-height: 13rem;
+  overflow-y: auto;
+  /* Room for the scrollbar, so the last few pixels of a count are not under
+     it on the platforms that overlay one. */
+  padding-right: 0.15rem;
+}
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.3rem 0.35rem;
+  font: inherit;
+  font-size: 0.84rem;
+  color: var(--ink);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.opt:hover { background: var(--accent-soft); }
+/* A box rather than a tick, so an unchosen option still shows where the
+   answer goes. Twenty rows with nothing on the left read as text, not as a
+   control somebody may press. */
+.opt .opt-box {
+  flex: none;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: #fff;
+}
+.opt.on .opt-box {
+  background: var(--accent);
+  border-color: var(--accent);
+  /* The tick, drawn rather than typed: a character would inherit the font and
+     sit differently in each of the three languages' fallbacks. */
+  background-image: linear-gradient(45deg, transparent 45%, #fff 45%, #fff 58%, transparent 58%),
+    linear-gradient(-45deg, transparent 62%, #fff 62%, #fff 75%, transparent 75%);
+}
+/* One line. The full text is on `title`, and the group's search box is how you
+   find a row whose end is cut. */
+.opt .opt-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.opt.on .opt-label { font-weight: 600; }
+.opt .n {
+  flex: none;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.filter-group .group-none { margin: 0.4rem 0 0; font-size: 0.82rem; color: var(--muted); }
+
+/* `chipset` and not `chips`, which is what it was called until the filter
+   panel was rebuilt and every group of chips turned out to carry a 1.6rem gap
+   above it that no rule in this file asked for.
+
+   The shell's public zone has a `.chips` of its own, a row of `li` pills with
+   `margin: 1.6rem 0 0`. Both stylesheets are loaded into the same document, so
+   the two rules were one cascade, and the public one is later in it: at equal
+   specificity it supplied the margin whatever this file said. Adding
+   `margin: 0` here did not help, and winning by specificity would have meant a
+   selector whose only job is to beat a file this one should not know about.
+
+   They were never the same component, only the same word. Renaming ours costs
+   two class attributes and removes the collision instead of arbitrating it.
+   test/architecture/css-collisions.test.ts holds the names still shared. */
+.chipset { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0; padding: 0; }
 .chip {
   display: inline-flex;
   align-items: center;
@@ -575,9 +759,10 @@ button.ghost {
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
-  margin: 0.8rem 0 0;
-  padding-top: 0.6rem;
+  margin: 0;
+  padding: 0.65rem 0.9rem;
   border-top: 1px solid var(--line);
+  background: #fbfbfc;
   font-size: 0.83rem;
   color: var(--muted);
 }
@@ -746,7 +931,7 @@ button.ghost {
 @media (min-width: 60rem) {
   .browse-wide {
     display: grid;
-    grid-template-columns: 17rem minmax(0, 1fr);
+    grid-template-columns: 19rem minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
   }
@@ -777,11 +962,14 @@ button.ghost {
 }
 
 /* In the side column the chips have to pack, or a filter that was one row
-   across the top becomes eight rows down the side and nothing is gained. */
+   across the top becomes eight rows down the side and nothing is gained.
+
+   The panel's own padding is not set here any more. Each band inside it, the
+   scope, a group's header, the summary, carries its own and runs the full
+   width, so a padding on the panel would inset the separators and leave them
+   floating short of both edges. */
 @media (min-width: 60rem) {
-  .browse-wide .filters { padding: 0.8rem 0.85rem 0.65rem; }
-  .browse-wide .chips { gap: 0.3rem; }
+  .browse-wide .chipset { gap: 0.3rem; }
   .browse-wide .chip { padding: 0.2rem 0.5rem; font-size: 0.78rem; }
   .browse-wide .chip .n { margin-left: 0.3rem; font-size: 0.7rem; }
-  .browse-wide .filter-group legend { font-size: 0.72rem; }
 }

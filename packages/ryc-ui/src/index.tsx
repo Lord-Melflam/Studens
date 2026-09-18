@@ -264,4 +264,12 @@ export { REPORT_CATEGORIES, REPORT_DETAIL_MIN, type ReportCategory } from "./api
 
 /** The filter bar over a list of courses. Exported so it can be rendered in a test. */
 export { CourseFilters } from "./CourseFilters.js";
+/**
+ * The filter panel's two pieces, exported for test/ui/filter-panel.test.ts.
+ *
+ * Both are pure: given the options and what is chosen they render the same
+ * thing every time, so they are checked directly rather than through a browse
+ * screen that would have to be given a catalogue, a session and a router first.
+ */
+export { FilterGroup, ScopePicker } from "./Filters.js";
 export { CourseList } from "./CourseList.js";
