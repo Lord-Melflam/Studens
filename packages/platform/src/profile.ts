@@ -155,6 +155,21 @@ export async function writeProfile(
     if (!patch.onboardedAt) data["onboardingStep"] = 0;
   }
 
+  /**
+   * Choosing your institution also makes it the first catalogue you see.
+   *
+   * Otherwise the first run asks which university you belong to and RYC shows
+   * you all of them, which is the question being asked and then ignored.
+   *
+   * ADDED, NEVER REMOVED. Changing the answer later does not drop the old one:
+   * somebody who moves from UCLouvain to ULB probably wants both for a while,
+   * and taking one away is the kind of decision a person makes with a button,
+   * not something a profile edit does behind their back.
+   */
+  if (typeof patch.institutionCode === "string" && patch.institutionCode.trim() !== "") {
+    await addInstitution(prisma, memberId, patch.institutionCode);
+  }
+
   try {
     return await prisma.member.update({
       where: { id: memberId },
@@ -204,4 +219,59 @@ export async function usernamesFor(
     select: { id: true, username: true },
   });
   return new Map(rows.map((r) => [r.id, r.username]));
+}
+
+/**
+ * WHICH CATALOGUES A MEMBER WANTS IN FRONT OF THEM.
+ *
+ * Not the same question as `institutionCode`, which is where they study. This
+ * is what they want to see, it is a set, and it starts as the one they chose so
+ * that nobody is asked something they already answered.
+ *
+ * An EMPTY set means "everything", not "nothing". Somebody who never said which
+ * institution they belong to has not asked to be narrowed, and hiding every
+ * course from them would be reading silence as a preference.
+ */
+export async function institutionsOf(prisma: PrismaClient, memberId: string): Promise<string[]> {
+  const rows = await prisma.memberInstitution.findMany({
+    where: { memberId },
+    select: { institutionCode: true },
+    orderBy: { addedAt: "asc" },
+  });
+  return rows.map((r) => r.institutionCode);
+}
+
+/**
+ * Add one. Idempotent, because the button that calls it is pressed by people
+ * and a second press should not be an error.
+ */
+export async function addInstitution(
+  prisma: PrismaClient,
+  memberId: string,
+  institutionCode: string,
+): Promise<string[]> {
+  const code = institutionCode.trim().toLowerCase();
+  if (code === "") throw new Error("an institution code cannot be empty");
+  await prisma.memberInstitution.upsert({
+    where: { memberId_institutionCode: { memberId, institutionCode: code } },
+    update: {},
+    create: { memberId, institutionCode: code },
+  });
+  return institutionsOf(prisma, memberId);
+}
+
+/**
+ * Remove one. Removing the last is allowed: an empty set means "everything",
+ * which is a wider view rather than an empty screen, and refusing would make
+ * the narrowing one-way.
+ */
+export async function removeInstitution(
+  prisma: PrismaClient,
+  memberId: string,
+  institutionCode: string,
+): Promise<string[]> {
+  await prisma.memberInstitution.deleteMany({
+    where: { memberId, institutionCode: institutionCode.trim().toLowerCase() },
+  });
+  return institutionsOf(prisma, memberId);
 }

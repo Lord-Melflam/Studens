@@ -84,10 +84,60 @@ export function Browse({
    * loaded, so a link kept across a crawl drops the faculty that was renamed
    * rather than showing nothing with nothing to unclick.
    */
-  const filter = useMemo(
-    () => pruneProgrammeFilter(programmeFilterFromQuery(queryOf(search)), programmes),
-    [search, programmes],
-  );
+  /**
+   * WHICH CATALOGUES THIS MEMBER ASKED FOR, or null while nobody has answered.
+   *
+   * Null rather than an empty array, because they mean different things: null
+   * is "we have not been told", and an empty set is "told, and it is
+   * everything". Signing out, a 401, or a visitor with no account all leave it
+   * null, and browsing works for all three.
+   */
+  const [mine, setMine] = useState<string[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    api
+      .myInstitutions()
+      .then((r) => live && setMine(r.institutions))
+      .catch(() => live && setMine(null));
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  /**
+   * THE URL WINS, AND THE PREFERENCE IS THE DEFAULT.
+   *
+   * François asked for the catalogue to follow the university chosen at
+   * registration, and for a control to widen it. Both are satisfied by one
+   * rule: if the address says which institutions, use those; if it says
+   * nothing, use the member's.
+   *
+   * The order matters. Doing it the other way round, or writing the preference
+   * into the URL on load, would break the property FR-B21 exists for: a link
+   * to a filtered list must show its reader the list it names, not the list
+   * their own profile would have produced.
+   */
+  const filter = useMemo(() => {
+    const fromUrl = programmeFilterFromQuery(queryOf(search));
+    const chosen =
+      fromUrl.institutions.length === 0 && mine !== null && mine.length > 0
+        ? { ...fromUrl, institutions: mine }
+        : fromUrl;
+    return pruneProgrammeFilter(chosen, programmes);
+  }, [search, programmes, mine]);
+  const keep = (code: string): void => {
+    void api
+      .addInstitution(code)
+      .then((r) => setMine(r.institutions))
+      .catch(() => undefined);
+  };
+  const forget = (code: string): void => {
+    void api
+      .removeInstitution(code)
+      .then((r) => setMine(r.institutions))
+      .catch(() => undefined);
+  };
+
   const setFilter = (next: ProgrammeFilter): void => {
     navigate(settingsRoute("/", search, PROGRAMME_FILTER_KEYS, programmeFilterToQuery(next)), {
       replace: true,
@@ -273,6 +323,29 @@ export function Browse({
                 setFilter({ ...filter, institutions: toggle(filter.institutions, v) })
               }
             />
+            {/*
+              Keeping a university, rather than only filtering by one.
+              Offered only to somebody signed in with a preference to change,
+              and only when the filter names exactly one, because "keep this"
+              is a sentence about one thing. A press writes it to the profile,
+              so the next visit starts there and the URL is left alone: the
+              filter is the view and the preference is the default, and
+              conflating them would make every shared link rewrite the reader's
+              account.
+            */}
+            {mine !== null && filter.institutions.length === 1 && (
+              <p className="filters-summary">
+                {mine.includes(filter.institutions[0]!) ? (
+                  <button type="button" className="linkish" onClick={() => forget(filter.institutions[0]!)}>
+                    {t("ryc.institution.forget", { name: filter.institutions[0]!.toUpperCase() })}
+                  </button>
+                ) : (
+                  <button type="button" className="linkish" onClick={() => keep(filter.institutions[0]!)}>
+                    {t("ryc.institution.keep", { name: filter.institutions[0]!.toUpperCase() })}
+                  </button>
+                )}
+              </p>
+            )}
             <FilterGroup
               legend={t("ryc.filter.kind")}
               facets={facets.kinds}

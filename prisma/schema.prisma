@@ -120,8 +120,9 @@ model Member {
   /// account is being changed would hide the change from its owner.
   notifications NotificationPreference[]
 
-  quota    MemberQuota?
-  sessions Session[]
+  quota        MemberQuota?
+  sessions     Session[]
+  institutions MemberInstitution[]
 
   @@unique([provider, providerSubject])
   @@index([tenantId])
@@ -133,6 +134,37 @@ model Member {
 /// The consent record IS the row: `kind`, whether it is on, and when that was
 /// last decided. Article 7(1) asks a controller to demonstrate consent, which a
 /// boolean column with no date cannot do.
+/// WHICH INSTITUTIONS A MEMBER WANTS TO SEE, beyond the one they belong to.
+///
+/// `Member.institutionCode` answers "where do you study", which is one place
+/// and a preference rather than a tenant (FR-F13). This answers a different
+/// question: "whose catalogue do you want in front of you". They start the
+/// same, because the useful default for somebody at UCLouvain is UCLouvain,
+/// and they diverge the moment a student wants to look at a course they might
+/// take elsewhere, or an exchange student wants both.
+///
+/// A SET, not a second single choice. François: "if we choose UCL in that
+/// page, we've access to UCL catalog as default in RYC, if not we still have a
+/// button which can make us add/remove a different formation as our RYC
+/// favorite. A way to narrow and enlarge our experience as we go."
+///
+/// `institutionCode` is a plain string with NO foreign key, exactly as
+/// `Member.institutionCode` is and for the same reason: the platform is tier 0
+/// and `ref.Institution` is a tier 1 module's table, so a key here would be a
+/// dependency pointing the wrong way (FR-B11). The cost is referential
+/// integrity, and it is the same cost already accepted in institutions.ts: a
+/// code could name an institution later removed, and no row is ever deleted,
+/// only marked unavailable.
+model MemberInstitution {
+  memberId        String
+  member          Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  institutionCode String
+  addedAt         DateTime @default(now())
+
+  @@id([memberId, institutionCode])
+  @@schema("platform")
+}
+
 model NotificationPreference {
   memberId  String
   member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
