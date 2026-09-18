@@ -35,6 +35,20 @@ describe("the long fields on a ULB course page", () => {
     expect(blocksToText(prose.assessment!)).toMatch(/valuation|examen|Examen/i);
   });
 
+  it("reads the campus, which ULB states per course and UCLouvain does not", () => {
+    // ULB is multi-site the way UCLouvain is: Solbosch, Plaine, Erasme,
+    // Charleroi. It states it on the COURSE page, under an h3 inside "Autres
+    // renseignements", so it is found among siblings and not by position.
+    // François, who knows the university, is the reason this exists.
+    //
+    // A LIST, because a course is regularly taught on more than one. Measured
+    // on a 149-course slice: five read "Solbosch, Flagey" and one lists five
+    // campuses at once. Stored as one string, each combination becomes its own
+    // site and a filter offers "Flagey, Hors campus ULB, Autre campus, Plaine,
+    // Solbosch" as a place a student could go.
+    expect(prose.campuses).toEqual(["Plaine"]);
+  });
+
   it("leaves the objectives out, rather than putting them in themes", () => {
     // ULB publishes "Objectifs (et/ou acquis d'apprentissages spécifiques)".
     // `themes` is UCLouvain's "Thèmes abordés", the topics a course covers;

@@ -214,13 +214,22 @@ describe("the institutions (FR-F10, FR-F12)", () => {
     expect(all.length).toBeGreaterThanOrEqual(11);
     expect(all.map((i) => i.code)).not.toContain("saint-louis");
 
-    const open = all.filter((i) => i.available);
-    expect(open.map((i) => i.code)).toEqual(["uclouvain"]);
+    // FR-F12 is about the RULE, not about the count. Asserting the open set
+    // was exactly ["uclouvain"] made a second catalogue look like a
+    // regression: it failed on the day ULB was ingested, which is the day it
+    // was supposed to pass.
+    const open = all.filter((i) => i.available).map((i) => i.code);
+    expect(open).toContain("uclouvain");
+    expect(open.length).toBeLessThan(all.length);
   });
 
-  dbit("puts the one that can be chosen first", async () => {
+  dbit("puts the ones that can be chosen first", async () => {
     const all = await listInstitutions({ client: prisma });
-    expect(all[0]?.code).toBe("uclouvain");
+    // Whatever the open set is, no closed institution may sort above an open
+    // one: something somebody can pick should not sit below a list of things
+    // they cannot.
+    const flags = all.map((i) => i.available);
+    expect(flags.indexOf(false)).toBeGreaterThan(flags.lastIndexOf(true));
   });
 
   /**

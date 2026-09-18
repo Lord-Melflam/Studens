@@ -62,6 +62,17 @@ export interface ParsedOffering {
   themes: Block[] | null;
   content: Block[] | null;
   owningFaculty: string | null;
+  /**
+   * The campuses this course is taught on, where the source states them per
+   * course. A LIST, because a course is regularly taught on more than one.
+   *
+   * UCLouvain states the site on the programme, so this is empty for every one
+   * of its courses and their site still comes through the programme. ULB
+   * states it here: "Campus / Plaine", with Solbosch, Erasme, Flagey and
+   * Charleroi beside it. Optional so a parser that has never heard of it needs
+   * no change.
+   */
+  campuses?: string[];
 }
 
 /** Accent and case insensitive, whitespace collapsed. Labels carry <br /> and accents. */

@@ -40,6 +40,7 @@ const course = (over: Partial<CourseSummary>): CourseSummary => ({
   offeredThisYear: true,
   mainLanguage: "Français",
   owningEntity: "EPL",
+  campuses: [],
   ...over,
 });
 
@@ -575,3 +576,44 @@ describe("grouping a long list", () => {
     expect(groups.at(-1)?.[1]).toHaveLength(1);
   });
 });
+
+describe("filtering by campus, which a course can have several of", () => {
+  const multi = [
+    course({ code: "info-f101", campuses: ["Plaine"] }),
+    course({ code: "meca-h301", campuses: ["Solbosch"] }),
+    course({ code: "arch-p1000", campuses: ["Solbosch", "Flagey"] }),
+    course({ code: "lepl1503", campuses: [] }),
+  ];
+
+  it("matches a course on ANY of its campuses", () => {
+    // A course taught at Solbosch and Flagey belongs in both lists. A student
+    // filtering for Solbosch wants it, and one filtering for Flagey does too.
+    const at = (c: string) =>
+      applyCourseFilter(multi, { ...NO_COURSE_FILTER, campuses: [c] }, {}).map((x) => x.code);
+    expect(at("Solbosch").sort()).toEqual(["arch-p1000", "meca-h301"]);
+    expect(at("Flagey")).toEqual(["arch-p1000"]);
+  });
+
+  it("leaves out a course whose source states no campus", () => {
+    // Every UCLouvain course is in that case: its site is a fact about its
+    // programme, not about it, so it matches no campus rather than all of them.
+    expect(
+      applyCourseFilter(multi, { ...NO_COURSE_FILTER, campuses: ["Plaine"] }, {}).map((c) => c.code),
+    ).toEqual(["info-f101"]);
+  });
+
+  it("counts a two-campus course towards both, so the numbers add up", () => {
+    // The one thing a facet count must never do is disagree with the list
+    // beneath it. `facetsOf` increments once per course, which is right for
+    // every other dimension and wrong for this one.
+    const facets = courseFacets(multi, NO_COURSE_FILTER, {});
+    const byName = Object.fromEntries(facets.campuses.map((f) => [f.value, f.count]));
+    expect(byName).toEqual({ Plaine: 1, Solbosch: 2, Flagey: 1 });
+    for (const f of facets.campuses) {
+      expect(
+        applyCourseFilter(multi, { ...NO_COURSE_FILTER, campuses: [f.value] }, {}),
+      ).toHaveLength(f.count);
+    }
+  });
+});
+

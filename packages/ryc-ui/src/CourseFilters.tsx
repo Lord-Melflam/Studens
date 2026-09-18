@@ -118,6 +118,15 @@ export function CourseFilters({
           chosen={filter.languages}
           onToggle={(v) => setFilter({ ...filter, languages: toggle(filter.languages, v) })}
         />
+        {/* Where the class is. Self-effacing like every other dimension: a
+            filter with one option is not drawn, so this appears only for a
+            catalogue whose source states a campus per course. */}
+        <FilterGroup
+          legend={t("ryc.filter.campus")}
+          facets={facets.campuses}
+          chosen={filter.campuses}
+          onToggle={(v) => setFilter({ ...filter, campuses: toggle(filter.campuses, v) })}
+        />
         <FilterGroup
           legend={t("ryc.filter.entity")}
           facets={facets.entities}

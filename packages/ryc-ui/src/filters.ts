@@ -39,6 +39,14 @@ export interface CourseFilter {
   /** `null` means "the page does not state it", which is its own group. */
   ects: Array<number | null>;
   entities: string[];
+  /**
+   * WHERE THE CLASS IS, which ULB states per course and UCLouvain does not.
+   *
+   * A student picking electives cares: two courses of one programme can be on
+   * different campuses, and crossing Brussels between them is a real cost that
+   * no other field on the row expresses.
+   */
+  campuses: string[];
   /** FR-D24 is discovery: at launch 10 courses of 547 have anything to read. */
   reviewedOnly: boolean;
 }
@@ -49,6 +57,7 @@ export const NO_COURSE_FILTER: CourseFilter = {
   languages: [],
   ects: [],
   entities: [],
+  campuses: [],
   reviewedOnly: false,
 };
 
@@ -59,12 +68,20 @@ export function courseFilterIsEmpty(f: CourseFilter): boolean {
     f.languages.length === 0 &&
     f.ects.length === 0 &&
     f.entities.length === 0 &&
+    f.campuses.length === 0 &&
     !f.reviewedOnly
   );
 }
 
 /** The dimensions, so a facet can be counted with its own one ignored. */
-type Dimension = "text" | "quarters" | "languages" | "ects" | "entities" | "reviewedOnly";
+type Dimension =
+  | "text"
+  | "quarters"
+  | "languages"
+  | "ects"
+  | "entities"
+  | "campuses"
+  | "reviewedOnly";
 
 function matchesCourse(
   c: CourseSummary,
@@ -91,6 +108,14 @@ function matchesCourse(
   if (ignore !== "entities" && f.entities.length > 0) {
     if (!c.owningEntity || !f.entities.includes(c.owningEntity)) return false;
   }
+  if (ignore !== "campuses" && f.campuses.length > 0) {
+    // A course with no stated campus matches no campus, like the site and the
+    // field of study on a programme. Every UCLouvain course is in that case,
+    // and its site is a fact about its programme rather than about it.
+    // ANY of the course's campuses, not all: a course taught at Solbosch and
+    // Flagey belongs in both, and a student filtering for Solbosch wants it.
+    if (!c.campuses.some((x) => f.campuses.includes(x))) return false;
+  }
   if (ignore !== "reviewedOnly" && f.reviewedOnly) {
     // Keyed by institution AND code (OPEN-48). Keyed by code alone, one
     // university's review count would answer for another's course, and the
@@ -109,6 +134,31 @@ export function applyCourseFilter(
 }
 
 /** Group by one property, counting only what the OTHER filters already allow. */
+/**
+ * The campus facet, which cannot use `facetsOf` because a course has SEVERAL.
+ *
+ * Every other dimension picks one value per course, so the tally is one
+ * increment. A course taught at Solbosch and Flagey has to count towards both,
+ * or the numbers beside the chips do not add up to the list underneath them,
+ * which is the one thing a facet count must never do.
+ */
+function campusFacets(
+  courses: CourseSummary[],
+  f: CourseFilter,
+  counts: Record<string, number>,
+): Array<Facet<string>> {
+  const tally = new Map<string, number>();
+  for (const c of courses) {
+    if (!matchesCourse(c, f, counts, "campuses")) continue;
+    for (const campus of new Set(c.campuses)) {
+      tally.set(campus, (tally.get(campus) ?? 0) + 1);
+    }
+  }
+  return [...tally.entries()]
+    .map(([value, count]) => ({ value, label: value, count }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
 function facetsOf<T extends string | number>(
   courses: CourseSummary[],
   f: CourseFilter,
@@ -138,6 +188,7 @@ export interface CourseFacets {
   languages: Array<Facet<string>>;
   ects: Array<Facet<number | null>>;
   entities: Array<Facet<string>>;
+  campuses: Array<Facet<string>>;
   /** How many of the currently matching courses have anything to read. */
   reviewed: number;
 }
@@ -152,6 +203,7 @@ export function courseFacets(
     languages: facetsOf(courses, f, counts, "languages", (c) => c.mainLanguage),
     ects: facetsOf(courses, f, counts, "ects", (c) => c.ects),
     entities: facetsOf(courses, f, counts, "entities", (c) => c.owningEntity),
+    campuses: campusFacets(courses, f, counts),
     reviewed: courses.filter(
       (c) => matchesCourse(c, f, counts, "reviewedOnly") && (counts[courseKey(c)] ?? 0) > 0,
     ).length,
@@ -467,7 +519,15 @@ function put(params: URLSearchParams, key: string, values: readonly string[]): v
 }
 
 /** The parameters the course filter owns, so writing it leaves the rest alone. */
-export const COURSE_FILTER_KEYS = ["f", "quad", "langue", "credits", "entite", "avis"] as const;
+export const COURSE_FILTER_KEYS = [
+  "f",
+  "quad",
+  "langue",
+  "credits",
+  "entite",
+  "campus",
+  "avis",
+] as const;
 
 export function courseFilterToQuery(f: CourseFilter): URLSearchParams {
   const p = new URLSearchParams();
@@ -476,6 +536,7 @@ export function courseFilterToQuery(f: CourseFilter): URLSearchParams {
   put(p, "langue", f.languages);
   put(p, "credits", f.ects.map((e) => (e === null ? UNSTATED : String(e))));
   put(p, "entite", f.entities);
+  put(p, "campus", f.campuses);
   if (f.reviewedOnly) p.set("avis", "1");
   return p;
 }
@@ -491,6 +552,7 @@ export function courseFilterFromQuery(params: URLSearchParams): CourseFilter {
       .map((v) => (v === UNSTATED ? null : Number(v)))
       .filter((v) => v === null || Number.isFinite(v)),
     entities: list(params, "entite"),
+    campuses: list(params, "campus"),
     reviewedOnly: params.get("avis") === "1",
   };
 }
@@ -549,6 +611,7 @@ export function pruneCourseFilter(f: CourseFilter, courses: CourseSummary[]): Co
       new Set(courses.map((c) => c.owningEntity).filter((e): e is string => e !== null)),
       f.entities,
     ),
+    campuses: has(new Set(courses.flatMap((c) => c.campuses)), f.campuses),
   };
 }
 
