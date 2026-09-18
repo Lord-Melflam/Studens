@@ -57,11 +57,11 @@ export function Modules() {
             <div className="sources-inline">
               <h4>{m.presentation.sources.title}</h4>
               <p>{m.presentation.sources.body}</p>
-              <ul className="chips">
-                {m.presentation.sources.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+              {/* The module's own component. The shell places it and does not
+                  read it: what a catalogue contains is the module's
+                  vocabulary (FR-B16), and these are live numbers rather than
+                  copy, so that the page cannot go stale again. */}
+              <m.presentation.sources.facts />
             </div>
           )}
 

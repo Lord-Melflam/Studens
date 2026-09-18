@@ -10,6 +10,7 @@
 import type { Bundle, Translate } from "@studens/i18n";
 import { Ryc } from "./Ryc.js";
 import { Showcase } from "./Showcase.js";
+import { CatalogueFacts } from "./CatalogueFacts.js";
 import { rycStrings } from "./strings.js";
 import "./ryc.css";
 
@@ -133,7 +134,13 @@ export interface ModulePresentation {
    */
   highlights?: Array<{ title: string; body: string }>;
   /** Where the module's own data comes from, named in plain words. */
-  sources?: { title: string; body: string; items: string[] };
+  /**
+   * Where the module's data comes from. `facts` is a component rather than a
+   * list of strings because the answer contains numbers, and a number written
+   * into a translated string is stale the moment the crawler runs again. The
+   * shell places it and does not read it (FR-B16).
+   */
+  sources?: { title: string; body: string; facts: () => JSX.Element | null };
   /**
    * The last step of "getting started", which is the only one that is not the
    * platform's. Signing in and choosing a name are the same whatever module
@@ -173,7 +180,7 @@ export const rycModule: ModuleRegistration = {
     sources: {
       title: t("ryc.sources.title"),
       body: t("ryc.sources.body"),
-      items: [1, 2, 3, 4].map((n) => t(`ryc.sources.${n}`)),
+      facts: CatalogueFacts,
     },
     firstAction: { title: t("ryc.first.title"), body: t("ryc.first.body") },
     showcase: Showcase,

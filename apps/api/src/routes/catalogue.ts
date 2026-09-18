@@ -27,8 +27,27 @@ export async function catalogueRoutes(source: {
     : await DatabaseCatalogue.open();
   const router = Router();
 
+  /**
+   * WHAT THE CATALOGUE HOLDS, so that nothing has to write it into copy.
+   *
+   * The public page used to state "546 cours" and "43 programmes" as
+   * translated strings. The database holds 12,154 and 1,055, so the page was
+   * wrong by a factor of twenty and had been since the crawl widened. A number
+   * in a sentence is stale the moment the crawler runs again; a number fetched
+   * from here cannot be.
+   *
+   * The institutions come with it because the same page named one university
+   * as though it were the only one.
+   */
   router.get("/catalogue", (_req, res) => {
-    res.json({ year: catalogue.year, courses: catalogue.size });
+    void Promise.resolve(catalogue.programmes()).then((programmes) => {
+      res.json({
+        year: catalogue.year,
+        courses: catalogue.size,
+        programmes: programmes.length,
+        institutions: [...new Set(programmes.map((p) => p.institution))].sort(),
+      });
+    });
   });
 
   /** FR-D1 and FR-D2: search by code, then by words in the title. */

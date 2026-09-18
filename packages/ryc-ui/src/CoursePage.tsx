@@ -136,11 +136,15 @@ export function CoursePage({
           year's. A course the institution stopped offering keeps its reviews,
           and hiding the page took those with it (FR-D16). */}
       {!course.offeredThisYear && (
-        <p className="notice">{t("ryc.course.notOffered", { year: course.year, next: course.year + 1 })}</p>
+        <p className="notice">{t("ryc.course.notOffered", {
+            name: course.institution.toUpperCase(),
+            year: course.year,
+            next: course.year + 1,
+          })}</p>
       )}
 
       {course.external && (
-        <p className="notice">{t("ryc.course.external.note")}</p>
+        <p className="notice">{t("ryc.course.external.note", { name: course.institution.toUpperCase() })}</p>
       )}
 
       <dl>

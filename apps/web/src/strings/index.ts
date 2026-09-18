@@ -212,9 +212,9 @@ export const shellStrings: Bundle = {
     "firstrun.4.never":
       "Rien de cet écran n'apparaît à côté de ce que vous publiez, ni signé, ni anonyme.",
 
-    "firstrun.5.title": "Votre établissement",
+    "firstrun.5.title": "Vos établissements",
     "firstrun.5.lede":
-      "Seule l'UCLouvain peut être choisie : Studens n'est pas encore ouvert ailleurs. Les autres sont listées parce qu'elles viendront.",
+      "Choisissez-en une, ou plusieurs si vous étudiez dans plus d'un endroit. Celles qui ne peuvent pas encore être choisies sont listées parce qu'elles viendront.",
     "firstrun.5.soon": "pas encore ouvert",
     "firstrun.5.declared":
       "C'est une simple déclaration. Elle n'ouvre aucun accès et ne prouve rien.",
@@ -609,9 +609,9 @@ export const shellStrings: Bundle = {
     "firstrun.4.never":
       "Niets van dit scherm verschijnt naast wat u publiceert, ondertekend noch anoniem.",
 
-    "firstrun.5.title": "Uw instelling",
+    "firstrun.5.title": "Uw instellingen",
     "firstrun.5.lede":
-      "Alleen de UCLouvain kan gekozen worden: Studens is elders nog niet open. De andere staan erbij omdat ze komen.",
+      "Kies er een, of meerdere als u op meer dan een plek studeert. Wie nog niet gekozen kan worden staat erbij omdat ze komen.",
     "firstrun.5.soon": "nog niet open",
     "firstrun.5.declared":
       "Dit is enkel een verklaring. Ze opent geen toegang en bewijst niets.",
@@ -1006,9 +1006,9 @@ export const shellStrings: Bundle = {
     "firstrun.4.never":
       "Nothing on this screen appears beside what you publish, signed or anonymous.",
 
-    "firstrun.5.title": "Your institution",
+    "firstrun.5.title": "Your institutions",
     "firstrun.5.lede":
-      "Only UCLouvain can be chosen: Studens is not open anywhere else yet. The others are listed because they are coming.",
+      "Pick one, or several if you study in more than one place. The ones that cannot be chosen yet are listed because they are coming.",
     "firstrun.5.soon": "not open yet",
     "firstrun.5.declared": "This is a statement, nothing more. It opens no access and proves nothing.",
 

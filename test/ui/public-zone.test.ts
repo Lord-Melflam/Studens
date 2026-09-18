@@ -77,7 +77,13 @@ describe("the public pages say what the modules say", () => {
     // Detail belongs here rather than on the landing page: it is one module's,
     // and the landing page is the platform's.
     expect(body).toContain(presentationIn().sources!.title);
-    for (const item of presentationIn().sources!.items) expect(body).toContain(item);
+    // The facts under that heading are a module component that fetches the
+    // real counts, not a list of strings: they used to be written into the
+    // translations and were twenty times out of date. Nothing is asserted
+    // about their VALUES here, because a server render has no catalogue to
+    // read; that they are live at all is the point, and the component renders
+    // nothing until they arrive.
+    expect(typeof presentationIn().sources!.facts).toBe("function");
     for (const h of presentationIn().highlights!) expect(body).toContain(h.title);
   });
 });

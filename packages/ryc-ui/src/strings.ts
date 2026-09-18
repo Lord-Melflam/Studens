@@ -16,7 +16,7 @@ export const rycStrings: Bundle = {
     "ryc.summary":
       "Ce que valent vraiment les cours, d'après les étudiants qui les ont suivis.",
     "ryc.status.note":
-      "Utilisable aujourd'hui, avec les 546 cours accessibles depuis les programmes de l'EPL.",
+      "Utilisable aujourd'hui. Les chiffres ci-dessous disent ce que le catalogue contient en ce moment.",
 
     "ryc.problem.title": "Choisir un cours à l'aveugle",
     "ryc.problem.1":
@@ -51,11 +51,10 @@ export const rycStrings: Bundle = {
 
     "ryc.sources.title": "Le catalogue officiel, directement",
     "ryc.sources.body":
-      "Les fiches ne sont pas recopiées à la main : elles sont reprises du site de l'université et rafraîchies. Un lien vers la fiche officielle est affiché sur chaque cours, parce que c'est elle qui fait foi.",
-    "ryc.sources.1": "UCLouvain",
-    "ryc.sources.2": "546 cours",
-    "ryc.sources.3": "43 programmes",
-    "ryc.sources.4": "année académique en cours",
+      "Les fiches ne sont pas recopiées à la main : elles sont reprises du site de chaque université et rafraîchies. Un lien vers la fiche officielle est affiché sur chaque cours, parce que c'est elle qui fait foi.",
+    "ryc.sources.courses": "{n} cours",
+    "ryc.sources.programmes": "{n} programmes",
+    "ryc.sources.year": "année académique {from}-{to}",
 
     "ryc.first.title": "Vous cherchez un cours",
     "ryc.first.body":
@@ -65,7 +64,7 @@ export const rycStrings: Bundle = {
     "ryc.mock.explain":
       "Personne n'a encore publié d'avis. Ci-dessous, à quoi ressemblera cette partie.",
     "ryc.mock.caption":
-      "La fiche du cours est réelle, reprise du catalogue UCLouvain. Les deux avis sont fictifs : il n'y en a pas encore.",
+      "La fiche du cours est réelle, reprise du catalogue de l'UCLouvain. Les deux avis sont fictifs : il n'y en a pas encore.",
     "ryc.mock.year": "suivi en {years}",
 
     "ryc.intro":
@@ -107,10 +106,10 @@ export const rycStrings: Bundle = {
     "ryc.browse.searchPlaceholder": "informatique, mineure, sinf…",
     "ryc.browse.noMatch": "Aucun programme ne correspond.",
     "ryc.browse.noCourseList.flag": "pas de liste de cours",
-    "ryc.browse.noCourseList": "L'UCLouvain ne publie pas de liste de cours pour ce programme.",
+    "ryc.browse.noCourseList": "{name} ne publie pas de liste de cours pour ce programme.",
     "ryc.browse.noCourseList.why":
       "C'est le cas de la formation continue et des programmes organisés avec une autre institution, dont les cours sont hébergés chez elle. Le programme existe : ce qui manque ici manque aussi à la source.",
-    "ryc.browse.officialProgramme": "Voir le programme sur uclouvain.be",
+    "ryc.browse.officialProgramme": "Voir le programme sur le site de {name}",
     "ryc.browse.noSuchProgramme": "Aucun programme ne porte le code {code}.",
     "ryc.browse.noneInProgramme": "Aucun cours chargé pour ce programme.",
 
@@ -179,9 +178,9 @@ export const rycStrings: Bundle = {
     "ryc.course.official": "Fiche officielle",
     "ryc.course.notOffered.flag": "plus au programme",
     "ryc.course.notOffered":
-      "L'UCLouvain ne propose plus ce cours cette année. Ce qui suit est sa dernière description publiée, celle de {year}-{next}. Les avis le concernant restent lisibles, et vous pouvez toujours en écrire un si vous l'avez suivi.",
+      "{name} ne propose plus ce cours cette année. Ce qui suit est sa dernière description publiée, celle de {year}-{next}. Les avis le concernant restent lisibles, et vous pouvez toujours en écrire un si vous l'avez suivi.",
     "ryc.course.external.note":
-      "Ce cours est donné dans une autre institution. UCLouvain n'en publie que la référence, donc les détails ci-dessous sont incomplets.",
+      "Ce cours est donné dans une autre institution. {name} n'en publie que la référence, donc les détails ci-dessous sont incomplets.",
 
     "ryc.stat.of": "sur 5",
     "ryc.stat.recommendation": "recommandé",
@@ -352,7 +351,7 @@ export const rycStrings: Bundle = {
     "ryc.summary":
       "Wat vakken echt waard zijn, volgens de studenten die ze gevolgd hebben.",
     "ryc.status.note":
-      "Vandaag bruikbaar, met de 546 vakken die vanuit de EPL-opleidingen bereikbaar zijn.",
+      "Vandaag bruikbaar. De cijfers hieronder zeggen wat de catalogus op dit moment bevat.",
 
     "ryc.problem.title": "Blind een vak kiezen",
     "ryc.problem.1":
@@ -387,11 +386,10 @@ export const rycStrings: Bundle = {
 
     "ryc.sources.title": "De officiële catalogus, rechtstreeks",
     "ryc.sources.body":
-      "De fiches worden niet met de hand overgetikt: ze worden van de website van de universiteit overgenomen en ververst. Bij elk vak staat een link naar de officiële fiche, want die is doorslaggevend.",
-    "ryc.sources.1": "UCLouvain",
-    "ryc.sources.2": "546 vakken",
-    "ryc.sources.3": "43 opleidingen",
-    "ryc.sources.4": "lopend academiejaar",
+      "De fiches worden niet met de hand overgetikt: ze worden van de website van elke universiteit overgenomen en ververst. Bij elk vak staat een link naar de officiële fiche, want die is doorslaggevend.",
+    "ryc.sources.courses": "{n} cursussen",
+    "ryc.sources.programmes": "{n} programma's",
+    "ryc.sources.year": "academiejaar {from}-{to}",
 
     "ryc.first.title": "Je zoekt een vak",
     "ryc.first.body":
@@ -443,10 +441,10 @@ export const rycStrings: Bundle = {
     "ryc.browse.searchPlaceholder": "informatica, minor, sinf…",
     "ryc.browse.noMatch": "Geen enkele opleiding komt overeen.",
     "ryc.browse.noCourseList.flag": "geen cursuslijst",
-    "ryc.browse.noCourseList": "UCLouvain publiceert geen cursuslijst voor dit programma.",
+    "ryc.browse.noCourseList": "{name} publiceert geen cursuslijst voor dit programma.",
     "ryc.browse.noCourseList.why":
       "Dat is zo voor permanente vorming en voor programma's die samen met een andere instelling georganiseerd worden, waar de cursussen bij die instelling staan. Het programma bestaat: wat hier ontbreekt, ontbreekt ook bij de bron.",
-    "ryc.browse.officialProgramme": "Het programma op uclouvain.be bekijken",
+    "ryc.browse.officialProgramme": "Het programma op de site van {name} bekijken",
     "ryc.browse.noSuchProgramme": "Geen programma met de code {code}.",
     "ryc.browse.noneInProgramme": "Geen cursus geladen voor deze opleiding.",
 
@@ -515,9 +513,9 @@ export const rycStrings: Bundle = {
     "ryc.course.official": "Officiële fiche",
     "ryc.course.notOffered.flag": "niet meer aangeboden",
     "ryc.course.notOffered":
-      "UCLouvain biedt deze cursus dit jaar niet meer aan. Hieronder staat de laatste gepubliceerde beschrijving, die van {year}-{next}. De beoordelingen blijven leesbaar en u kunt er nog een schrijven als u de cursus gevolgd hebt.",
+      "{name} biedt deze cursus dit jaar niet meer aan. Hieronder staat de laatste gepubliceerde beschrijving, die van {year}-{next}. De beoordelingen blijven leesbaar en u kunt er nog een schrijven als u de cursus gevolgd hebt.",
     "ryc.course.external.note":
-      "Deze cursus wordt aan een andere instelling gegeven. UCLouvain publiceert er enkel de verwijzing van, dus de details hieronder zijn onvolledig.",
+      "Deze cursus wordt aan een andere instelling gegeven. {name} publiceert er enkel de verwijzing van, dus de details hieronder zijn onvolledig.",
 
     "ryc.stat.of": "op 5",
     "ryc.stat.recommendation": "aanbevolen",
@@ -688,7 +686,7 @@ export const rycStrings: Bundle = {
     "ryc.name": "Rate Your Courses",
     "ryc.summary": "What courses are really worth, according to the students who took them.",
     "ryc.status.note":
-      "Usable today, with the 546 courses reachable from the EPL programmes.",
+      "Usable today. The figures below say what the catalogue holds right now.",
 
     "ryc.problem.title": "Choosing a course blind",
     "ryc.problem.1":
@@ -723,11 +721,10 @@ export const rycStrings: Bundle = {
 
     "ryc.sources.title": "The official catalogue, directly",
     "ryc.sources.body":
-      "Course descriptions are not retyped by hand: they are taken from the university's site and refreshed. A link to the official page is shown on every course, because that is the one that counts.",
-    "ryc.sources.1": "UCLouvain",
-    "ryc.sources.2": "546 courses",
-    "ryc.sources.3": "43 programmes",
-    "ryc.sources.4": "current academic year",
+      "Course descriptions are not retyped by hand: they are taken from each university's site and refreshed. A link to the official page is shown on every course, because that is the one that counts.",
+    "ryc.sources.courses": "{n} courses",
+    "ryc.sources.programmes": "{n} programmes",
+    "ryc.sources.year": "{from}-{to} academic year",
 
     "ryc.first.title": "You look up a course",
     "ryc.first.body":
@@ -779,10 +776,10 @@ export const rycStrings: Bundle = {
     "ryc.browse.searchPlaceholder": "computer science, minor, sinf…",
     "ryc.browse.noMatch": "No programme matches.",
     "ryc.browse.noCourseList.flag": "no course list",
-    "ryc.browse.noCourseList": "UCLouvain publishes no course list for this programme.",
+    "ryc.browse.noCourseList": "{name} publishes no course list for this programme.",
     "ryc.browse.noCourseList.why":
       "That is the case for continuing education and for programmes run with another institution, whose courses are hosted there. The programme exists: what is missing here is missing from the source too.",
-    "ryc.browse.officialProgramme": "See the programme on uclouvain.be",
+    "ryc.browse.officialProgramme": "See the programme on the {name} site",
     "ryc.browse.noSuchProgramme": "No programme has the code {code}.",
     "ryc.browse.noneInProgramme": "No course loaded for this programme.",
 
@@ -851,9 +848,9 @@ export const rycStrings: Bundle = {
     "ryc.course.official": "Official page",
     "ryc.course.notOffered.flag": "no longer offered",
     "ryc.course.notOffered":
-      "UCLouvain no longer offers this course. What follows is its last published description, from {year}-{next}. Reviews of it stay readable, and you can still write one if you took it.",
+      "{name} no longer offers this course. What follows is its last published description, from {year}-{next}. Reviews of it stay readable, and you can still write one if you took it.",
     "ryc.course.external.note":
-      "This course is taught at another institution. UCLouvain publishes only the reference, so the details below are incomplete.",
+      "This course is taught at another institution. {name} publishes only the reference, so the details below are incomplete.",
 
     "ryc.stat.of": "out of 5",
     "ryc.stat.recommendation": "recommended",
