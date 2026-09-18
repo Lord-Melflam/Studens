@@ -169,3 +169,15 @@ export {
   type QueueEntry,
   type ReportOutcome as ReportDecisionOutcome,
 } from "./moderation.js";
+
+/** Settings an administrator changes while the platform runs. */
+export { readSetting, readNumberSetting, writeSetting, allSettings } from "./settings.js";
+
+/** Suspending an account, which binds an account and never a person. */
+export {
+  SUSPENSION_DAYS,
+  suspendMember,
+  liftSuspension,
+  suspensionOf,
+  type Suspension,
+} from "./suspension.js";
