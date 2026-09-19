@@ -350,3 +350,74 @@ describe("step 5 takes more than one university", () => {
     expect(wizard).toContain("addMyInstitution(code)");
   });
 });
+
+/**
+ * THE WIZARD MUST NOT FREEZE AFTER ONE STEP.
+ *
+ * Shipped broken and found by using it: press Commencer, land on step 2 with
+ * the username already filled in, and every control on that screen is
+ * disabled. Back too, which is the tell. Nothing failed, so there was no error
+ * to read; the screen simply stopped responding.
+ *
+ * `saving` disables every button while a save is in flight. Moving between
+ * steps does NOT unmount the component, it renders a different section of
+ * itself, so the flag survives the navigation and has to be cleared by hand.
+ * It was a `finally`, which did that for every path. Then finishing needed to
+ * stay busy, because clearing it before the session reload made the button
+ * live again while nothing visible was happening and it got pressed twice, so
+ * the reset moved into `catch`. That quietly took it away from the four steps
+ * that are not the finish.
+ *
+ * Both halves are pinned here, because fixing either one by reaching for a
+ * `finally` again breaks the other.
+ *
+ * READ FROM THE SOURCE, which is second best and is deliberate. Proving it by
+ * behaviour needs a DOM, and jsdom plus a rendering library is a large
+ * dependency for one assertion in a project that runs on two (CON-1). The
+ * same trade the mail templates and the stylesheet gates already make.
+ */
+describe("a step that is not the last one re-enables its buttons", () => {
+  const source = read("apps/web/src/firstrun/FirstRun.tsx");
+  const save = /const save = useCallback\(([\s\S]*?)\n {2}\);/.exec(source)?.[1] ?? "";
+
+  it("finds the save callback, so the checks below are not vacuous", () => {
+    expect(save).toContain("setSaving(true)");
+    expect(save).toContain("navigate(firstRunPath(next))");
+  });
+
+  it("clears the busy flag after moving to the next step", () => {
+    // Bounded at the catch on purpose. The failure path clears the flag too,
+    // so a search that ran to the end of the function passed with the bug
+    // still in place: the first version of this test did exactly that.
+    const from = save.indexOf("navigate(firstRunPath(next))");
+    const to = save.indexOf("} catch", from);
+    const after = save.slice(from, to === -1 ? undefined : to);
+    expect(
+      after,
+      "moving between steps leaves this component mounted, so `saving` " +
+        "survives the navigation. Without this the next screen renders with " +
+        "every button disabled and no error, which is what shipped.",
+    ).toContain("setSaving(false)");
+  });
+
+  /** The other half: the finish path stays busy on purpose. */
+  it("leaves it set when the screen is leaving for good", () => {
+    const branch = /if \(next > STEPS\) \{([\s\S]*?)\n {8}\}/.exec(save)?.[1] ?? "";
+    expect(branch, "the finish branch should be findable").toContain("onDone()");
+    expect(
+      branch.includes("setSaving(false)"),
+      "finishing is three round trips and the screen is leaving; re-enabling " +
+        "the button mid-way is what made it get pressed twice",
+    ).toBe(false);
+  });
+
+  /**
+   * And a failure must always give the controls back, whichever step it was
+   * on. This is the path that shows an error, and an error nobody can act on
+   * is worse than the freeze.
+   */
+  it("clears it when the save fails", () => {
+    const failure = save.slice(save.indexOf("} catch (err)"));
+    expect(failure).toContain("setSaving(false)");
+  });
+});
