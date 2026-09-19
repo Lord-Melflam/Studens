@@ -184,9 +184,9 @@ describe("a good sign-in", () => {
   /**
    * FR-A11, 2026-09-13. This used to assert that the address did NOT come back:
    * the local part was read and thrown away, on a reading of FR-A9 that was
-   * mine rather than François's. The provider sends it on every sign-in, so
-   * discarding it bought no privacy and cost every feature that has to reach a
-   * person.
+   * an assumption here and not a requirement. The provider sends it on every
+   * sign-in, so discarding it bought no privacy and cost every feature that
+   * has to reach a person.
    *
    * What matters now is that the two cannot disagree. A domain derived from one
    * claim and an address read from another would let the trust signal describe

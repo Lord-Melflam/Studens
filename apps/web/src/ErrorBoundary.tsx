@@ -4,7 +4,7 @@
  * WITHOUT THIS, THE ANSWER IS A BLANK PAGE. React 18 unmounts the whole tree
  * when a render or an effect throws, so a single mistake anywhere below the
  * root leaves an empty document and a line in a console nobody has open. That
- * is what François saw on 2026-09-13, and the worst part was not the bug: it
+ * happened on 2026-09-13, and the worst part was not the bug: it
  * was that the screen said nothing at all, so there was no way to tell a broken
  * build from a slow one from a wrong URL.
  *

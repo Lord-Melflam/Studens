@@ -155,9 +155,9 @@ export function ProseField({ label, blocks }: { label: string; blocks: Block[] |
  * In the filter panel, folding hid the controls somebody needs to use the
  * screen, and the groups are short. Here the content is long-form prose, and
  * what it pushes off the bottom of the page is the reviews, which are the
- * product. François: "it can be really exhaustive and take space for courses
- * having large descriptions ... otherwise the review will come only far away
- * at the bottom of the page". A UCLouvain assessment field alone runs to three
+ * product. These fields can be exhaustive and take a great deal of room on a
+ * course with a long description, and the reviews then arrive far down the
+ * page. A UCLouvain assessment field alone runs to three
  * items, a weighting list, a paragraph on generative AI and one on the second
  * session, and there are seven fields like it.
  *

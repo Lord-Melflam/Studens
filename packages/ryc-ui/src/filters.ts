@@ -487,8 +487,8 @@ export function toggle<T>(list: T[], value: T): T[] {
  * be worse than no link. That was true when it was written. The programme went
  * into the URL in phase 30, and nobody came back to this.
  *
- * What it cost, reported by François: select filters, open a course, press
- * Back, and the filters are gone. The same three failures the module already
+ * What it cost, as reported: select filters, open a course, press Back, and
+ * the filters are gone. The same three failures the module already
  * fixed for courses and programmes, one screen lower down. Back cannot restore
  * what was never written down, a refresh cannot either, and the third failure
  * is the quiet one: a link to a filtered list is a link that shows the reader

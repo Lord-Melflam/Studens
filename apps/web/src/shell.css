@@ -148,8 +148,8 @@ main { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
 
 header { margin-bottom: 1.75rem; }
 /* THE MARK. Small, because a header is not a billboard, but a mark rather
-   than a word: François, after the ULB session, "the text Studens is currently
-   that tiny we might not even know its the web app name". */
+   than a word: the name set as plain text was small enough that a visitor
+   could miss that it was the name of the application at all. */
 .brandmark {
   display: inline-flex;
   align-items: center;
@@ -328,8 +328,7 @@ a.brand {
 
    It had 182 lines of styling against the public site's 385, and it showed:
    one narrow column, every screen a stack of paragraphs with no landmarks.
-   François, accurately: "it just resembles a bunch of text following each
-   other."
+   It read as a stack of text with nothing to break it up.
 
    Three things fix most of it, and none of them is decoration. A bar that
    stays put, so you always know where you are and how to leave. A wider frame,
@@ -389,8 +388,8 @@ main.app {
 
    There was no `:active` state anywhere in this application, in any zone: a
    press changed nothing until the next screen arrived, so on a slow call the
-   only honest reading was that the click had missed. François: "the 2 buttons
-   don't distinguish or move when pressed on."
+   only honest reading was that the click had missed: the buttons neither
+   distinguished themselves nor moved when pressed.
 
    ONE RULE, HERE, for the same reason `.here` is here: three zones answering
    the same question three ways is what we just finished undoing. It selects
@@ -432,9 +431,8 @@ button.cta:not(:disabled):active {
    Hover told you where you were about to go and nothing told you where you
    were. The first fix gave the app bar its own treatment and left the public
    header with an underline and the sign-in buttons with nothing, so three
-   screens answered the same question three ways. François: "let's be
-   consistant."
-   Declared here because shell.css is loaded in every zone, and two rules that
+   screens answered the same question three ways, and one answer is the
+   requirement. Declared here because shell.css is loaded in every zone, and two rules that
    have to be kept in step are the mistake `.chips` already taught this project
    (design/module-boundaries.md 6.1). */
 .here {
@@ -664,9 +662,9 @@ a.ghost.here {
    That scoping was the whole reason the console looked like an admin page from
    2005: "Masquer", "Classer sans suite" and everything I added later fell
    through to the browser's default grey, because `button.ghost` was only
-   styled inside one wrapper. François: "even admin need nowadays rendering."
-   He is right, and it was never a decision to leave it, just a place nobody
-   had looked. */
+   styled inside one wrapper. A screen only administrators see still has to
+   be rendered like the rest of the product, and it was never a decision to
+   leave it, just a place nobody had looked. */
 .panel button {
   font: inherit;
   font-size: 0.9rem;

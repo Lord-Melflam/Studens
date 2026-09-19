@@ -6,10 +6,10 @@
  * `db:load` reads by default, and the load replaced 6,715 courses with 40 in
  * one clean transaction. Nothing was corrupt. Nothing failed.
  *
- * François asked the right question about the fix I had offered, which was a
- * line in a runbook: "how to prevent things from going brrr instead of just
- * relying on people good sense?" These are the two answers. The ingest stops
- * producing the hazard, and the load refuses to apply it.
+ * The fix first offered was a line in a runbook, and the right question about
+ * it was how anything is actually prevented rather than left to good sense.
+ * These are the two answers. The ingest stops producing the hazard, and the
+ * load refuses to apply it.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";

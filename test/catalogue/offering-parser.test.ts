@@ -109,7 +109,8 @@ describe("failing loudly rather than storing nulls", () => {
    * This asserted the opposite twice in one evening. First the parser refused
    * the page outright, which ended a crawl; then it refused it distinguishably
    * so the crawl could skip the course, which threw away every other field the
-   * page does publish. François: "Losing all the infos just for some fields?"
+   * page does publish: losing every other field for the sake of a few missing
+   * ones is the wrong trade.
    *
    * `cours-2026-wbcmm21021` is a real seminar with a title, a faculty, a
    * quarter and contact hours. We scrape a source we do not control, so a field

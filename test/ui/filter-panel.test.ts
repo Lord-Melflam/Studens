@@ -1,9 +1,9 @@
 /**
  * The filter panel, after the rebuild of 2026-09-18.
  *
- * François, on the version before it: "too many groups stacked (or not
- * properly separated), and the long ones hidden behind 'choose from'. And it's
- * ugly." Three of those four are visual and a test cannot hold them. The
+ * The version before it stacked too many groups without separating them,
+ * hid the long ones behind a "choose from" label, and was ugly with it.
+ * Three of those four are visual and a test cannot hold them. The
  * fourth is not: a group of 20 faculties that opens folded is a filter the
  * reader has to find before they can use it, and that is a rule.
  *
@@ -156,8 +156,8 @@ describe("the scope line", () => {
 /**
  * THE PAGER, which exists because reviews grow and the page cannot.
  *
- * François: "Imagine if review rises up to 1000... Will we scroll indefinetely?"
- * Ten a page, and the page is in the address. What is checked here is the part
+ * A course with a thousand reviews must not be a page somebody scrolls
+ * forever. Ten a page, and the page is in the address. What is checked here is the part
  * a reader can get wrong: a control that cannot do anything must not be drawn,
  * and the ends must not move under the finger reaching for them.
  */

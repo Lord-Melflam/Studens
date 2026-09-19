@@ -127,7 +127,7 @@ describe("deleting an account (FR-A15, Article 17)", () => {
   });
 
   /**
-   * OPEN-46, decided by François 2026-09-13: DETACH. The text stays, the name
+   * OPEN-46, decided 2026-09-13: DETACH. The text stays, the name
    * goes. The review is still readable by the students who were relying on it.
    */
   dbit("detaches attributed reviews rather than deleting them", async () => {

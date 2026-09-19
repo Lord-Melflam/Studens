@@ -1,6 +1,6 @@
 -- Deleting an account: what happens to what was published under it.
 --
--- OPEN-46 resolved by François on 2026-09-13: DETACH the attributed
+-- OPEN-46 resolved on 2026-09-13: DETACH the attributed
 -- contributions. The text stays, the name goes.
 --
 -- DETACHED IS A THIRD STATE, NOT THE ANONYMOUS PATH. A detached review renders

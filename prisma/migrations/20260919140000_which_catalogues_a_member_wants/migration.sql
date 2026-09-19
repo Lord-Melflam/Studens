@@ -7,10 +7,9 @@
 -- the moment a student wants to look at a course they might take elsewhere, or
 -- an exchange student wants both.
 --
--- François: "I prefer the catalogue is linked to the university we've choosen
--- in the 5th page of registering ... if not we still have a button which can
--- make us add/remove a different formation as our RYC favorite. A way to narrow
--- and enlarge our experience as we go."
+-- The catalogue is linked to the university chosen on the fifth page of the
+-- first run, and a control adds or removes another as an RYC favourite: a way
+-- to narrow and to widen as somebody goes.
 --
 -- A SET AND NOT A SECOND SINGLE CHOICE, because "narrow and enlarge" is not a
 -- thing one column can express.

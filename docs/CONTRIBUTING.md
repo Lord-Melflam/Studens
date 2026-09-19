@@ -141,8 +141,8 @@ and with two people mutual review is possible for the first time.
 | Conversations resolved | A review comment that is merged unanswered was not a review |
 | Linear history, no force push, no deletion | "Do not rewrite shared history" made mechanical |
 
-**One deliberate hole: administrators are not bound by any of it.** François can
-push straight to `main`. That is a choice made on 2026-09-11, not an oversight,
+**One deliberate hole: administrators are not bound by any of it.** An
+administrator can push straight to `main`. That is a choice made on 2026-09-11, not an oversight,
 and `docs/requirements.md` FR-B15 records it as a deviation with what would close
 it. Read it before concluding the rules are optional: they are not optional for
 anyone who is not an administrator, and the discipline is expected of
@@ -251,8 +251,8 @@ path would itself be a signal.
 
 ## Gates on what the product claims
 
-Added on 2026-09-13, after four bugs in a row reached François and none of them
-reached a test. Every one was a case of the product **saying** something that
+Added on 2026-09-13, after four bugs in a row reached a person using the
+product and none of them reached a test. Every one was a case of the product **saying** something that
 was not true, rather than doing something wrong, and nothing was looking at what
 it said.
 

@@ -428,8 +428,8 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
             ONE BOX, AND IT LOOKS LIKE THE POINT OF THE SCREEN.
             It was a full width input under a small label, floating in an empty
             page, with a second box under it once results arrived that asked
-            almost the same question. François: "it just feels like a simple
-            search bar from late years."
+            almost the same question, and the control read as a plain search
+            bar of a kind that looked dated years ago.
           */}
           <div className="searchbox">
             <label htmlFor="q">{t("ryc.search.label")}</label>
@@ -473,10 +473,10 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
           )}
           {results.length > 0 && (
             /*
-              THE FILTERS GO BESIDE THE RESULTS, not above them. François:
-              "quand on tape un mot, ce qui est directement en bas, c'est les
-              filtres, avant les cours", so on a short screen somebody typing a
-              course name saw five filter groups and no courses at all.
+              THE FILTERS GO BESIDE THE RESULTS, not above them. Typing a word
+              put the filters directly under the box and the courses below
+              them, so on a short screen somebody searching for a course saw
+              five filter groups and no courses at all.
 
               `browse-wide` is the same two column grid the programme screen
               has used since the catalogue went past one faculty, for the same

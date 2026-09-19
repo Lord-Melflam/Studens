@@ -4,7 +4,7 @@
 |---|---|
 | Status | **Accepted** 2026-09-10 |
 | Decision | **Option C: modular monolith with enforced boundaries, plus one worker process**, one Postgres with a schema per module and a role per schema, on the single Always Free VM. |
-| Decided by | François, 2026-09-10, after reviewing the concrete schema in section 12 |
+| Decided | 2026-09-10, after reviewing the concrete schema in section 12 |
 | Date | 2026-09-10 |
 | Decides | The open decision "Architecture style", recorded in requirements 1.7 |
 | Constrained by | FR-C2, FR-C6, FR-C13, FR-B3, FR-B9 to FR-B13, CON-1, CON-3, section 5.2 |
@@ -204,7 +204,7 @@ database. That is the CC-2 argument, and it is already recorded as a requirement
 
 ### 6.1 OPEN-16 resolved: trusted contributors
 
-**[VERIFIED]** François, 2026-09-10, taking the recommendation. FR-B14 and FR-B15.
+**[VERIFIED]** 2026-09-10, taking the recommendation. FR-B14 and FR-B15.
 
 **All module code lives in this repository and is admitted by review before merge.** No
 plugin loader, no registry, no third-party artifact loaded at runtime. Outside contributors

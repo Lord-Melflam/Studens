@@ -1,10 +1,9 @@
 /**
  * WHICH CATALOGUES A MEMBER WANTS IN FRONT OF THEM.
  *
- * François: "I prefer the catalogue is linked to the university we've choosen
- * in the 5th page of registering ... if not we still have a button which can
- * make us add/remove a different formation as our RYC favorite. A way to narrow
- * and enlarge our experience as we go."
+ * The catalogue follows the university chosen on the fifth page of the first
+ * run, and a control adds or removes another as an RYC favourite: a way to
+ * narrow and to widen as somebody goes.
  *
  * Not the same question as `Member.institutionCode`, which is where somebody
  * studies and is a preference rather than a tenant (FR-F13). This is what they

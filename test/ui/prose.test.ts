@@ -97,10 +97,10 @@ describe("nothing from the scraped page reaches the DOM as markup", () => {
  * A LONG FIELD STARTS FOLDED, so the reviews are not below a screenful of
  * catalogue prose.
  *
- * François, after loading the ULB crawl: "it can be really exhaustive and take
- * space for courses having large descriptions ... otherwise the review will
- * come only far away at the bottom of the page". Seven prose fields on a ULB
- * course, and the reviews are the reason anyone opened the page.
+ * After the ULB crawl loaded, these fields turned out to be exhaustive enough
+ * to take the whole screen on a course with a long description, pushing the
+ * reviews far down the page. Seven prose fields on a ULB course, and the
+ * reviews are the reason anyone opened it.
  */
 describe("a folded field", () => {
   const blocks: Block[] = [{ kind: "p", lines: [[{ t: "un contenu assez long" }]] }];

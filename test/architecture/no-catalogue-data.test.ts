@@ -4,9 +4,8 @@
  * The repository is public and now AGPL, which is a deliberate choice about
  * the CODE (requirements.md 7, OPEN-18). The catalogue is a different thing:
  * it is derived from two universities' websites, it took weeks of crawler
- * defects to make reliable, and it goes stale. François, asking for this
- * check: "crawler took too much time and logic, so we won't want the results
- * of it to just be there for everyone."
+ * defects to make reliable, and it goes stale. It took too much time and too
+ * much logic to earn for the results of it to sit in public for anybody.
  *
  * `data/` is in .gitignore, which is the intent. This is the mechanism, for
  * the same reason the shrink guard exists: a rule nobody enforces is a rule

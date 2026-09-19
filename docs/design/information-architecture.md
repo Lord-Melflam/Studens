@@ -4,7 +4,7 @@
 |---|---|
 | Status | **Proposed** 2026-09-12, for review before any of it is built |
 | Decision | Three zones in one deployable: a public site, sign-in and onboarding, then the app |
-| Prompted by | François, 2026-09-12: "I see our app like a really structured thing", and the current shell being "too blunt" |
+| Prompted by | A request on 2026-09-12 for a more structured application, the shell as it stood being too blunt |
 | Implements | FR-A1, FR-A6, and new FR-F |
 | Constrained by | 1.7 (one deployable), 3.3 (the complement problem), FR-C16, FR-A10, FR-C19, OPEN-14 |
 
@@ -128,7 +128,7 @@ Four rules:
 
 ## 4. What is collected, and what it costs
 
-**Decided by François, 2026-09-12**, over my recommendation. The recommendation
+**Decided 2026-09-12**, against the recommendation made here. The recommendation
 and the reason are kept because a decision without its cost recorded is a
 decision that gets re-made.
 
@@ -195,7 +195,7 @@ Hochschule Ostbelgien in the German-speaking Community. Hautes écoles and
 hogescholen are numerous and are not reliably enumerable from a general source,
 so they come as a later seed from the official registries.
 
-**All are shown; only the ingested ones are selectable.** Decided by François,
+**All are shown; only the ingested ones are selectable.** Decided
 and now two: UCLouvain and ULB, as of 2026-09-18. Choosing one whose catalogue
 is not loaded would land a member in an empty product, and the screen has no way
 to tell that from a filter that happens to match nothing. The rest are visible
@@ -210,9 +210,9 @@ there.
 
 **Your universities ARE the catalogue, not a filter over everybody's.**
 Decided 2026-09-18, after a first attempt that preselected a chip inside a list
-of every institution. François: "this is not the right move (fragile from my
-perspective and added noise not avoided). Imagine we have 5 or 10 university ?
-What would it look like." The objection is structural rather than visual:
+of every institution. That was rejected as fragile and as added noise, and it
+does not survive five or ten universities. The objection is structural rather
+than visual:
 preselecting inside "all of them" makes every university the default and yours
 the narrowing, when it is the other way round.
 

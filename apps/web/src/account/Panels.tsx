@@ -101,7 +101,7 @@ export function EmailPanel({
         And not "a message has gone to you" when nothing can go anywhere. With
         no relay configured the row is queued and cannot leave, so the screen
         says that instead of leaving somebody waiting for a link that is not
-        coming. Reported by François on 2026-09-13, who waited for one.
+        coming. Reported on 2026-09-13 by somebody who waited for one.
       */}
       {pending?.deliverable && (
         <p className="saved">{t("account.email.pending", { email: value.trim() })}</p>
@@ -264,8 +264,8 @@ export function LeavingPanel({ username }: { username: string | null }) {
           {/*
             What actually happens, said before the button and not after it.
             The third line is the one people do not expect: the text of a
-            signed review stays, without the name. It is what François chose
-            (OPEN-46) and it has to be stated, not discovered.
+            signed review stays, without the name. That is what OPEN-46
+            settled, and it has to be stated, not discovered.
           */}
           <ul className="plain">
             <li>{t("account.delete.what.account")}</li>

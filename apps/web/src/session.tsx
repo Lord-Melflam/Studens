@@ -52,7 +52,7 @@ export function SessionProvider({
    * The application never passes it: it starts at null and the fetch below
    * fills it in. It exists because every screen behind a session was
    * unreachable from a test, and the two worst bugs of 2026-09-13 were both on
-   * exactly that path, found by François and not by 350 tests.
+   * exactly that path, found by using the product and not by 350 tests.
    */
   initial?: SessionState | null;
 }) {

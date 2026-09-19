@@ -7,9 +7,9 @@
 -- ULB publishes it the other way round. Its course pages carry
 -- "Campus / Plaine", with Solbosch, Erasme, Flagey, Charleroi and Biopark
 -- Gosselies beside it, while its programme pages say nothing about a site at
--- all. François, who knows the university: "I believe ULB is a multi site
--- university (as UCL), but I dont see that here in the filters (I know for
--- example, erasme, plaine, solbosch, etc)".
+-- all. ULB is a multi-site university like UCLouvain, and its sites were
+-- missing from the filters entirely: Erasme, Plaine, Solbosch and the rest
+-- were nowhere a student could choose them.
 --
 -- MANY-TO-MANY, MEASURED. The first version of this was a single nullable
 -- column on CourseOffering, which is what a course looks like until you run it

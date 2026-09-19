@@ -21,7 +21,7 @@
 #
 # WHAT WOULD CHANGE THIS. A third developer who knows FR-C well enough to
 # review the kernel gets added here, and the bottleneck goes away. Until then
-# François is a bottleneck on these paths by choice, because a mistake in them
+# The owner is a bottleneck on these paths by choice, because a mistake in them
 # publishes rows that can never be unlinked or recalled.
 
 # The anonymity guarantee, in the places it actually lives

@@ -39,7 +39,7 @@ describe("the long fields on a ULB course page", () => {
     // ULB is multi-site the way UCLouvain is: Solbosch, Plaine, Erasme,
     // Charleroi. It states it on the COURSE page, under an h3 inside "Autres
     // renseignements", so it is found among siblings and not by position.
-    // François, who knows the university, is the reason this exists.
+    // Somebody who knows the university is the reason this exists.
     //
     // A LIST, because a course is regularly taught on more than one. Measured
     // on a 149-course slice: five read "Solbosch, Flagey" and one lists five
@@ -50,7 +50,7 @@ describe("the long fields on a ULB course page", () => {
   });
 
   it("reads the four fields both universities publish", () => {
-    // François asked for them by name. Each has a column of its own, so a
+    // Asked for by name. Each has a column of its own, so a
     // field never means two things depending on which university a row came
     // from: "Objectifs" here is "Acquis d'apprentissage" at UCLouvain, and
     // both land in `objectives`.

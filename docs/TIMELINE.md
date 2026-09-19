@@ -81,12 +81,12 @@ empty ratings panel would claim the platform does something it cannot.
 
 Grouped by who can answer them, because that is what decides when they close.
 
-**Needs François, and small:** OPEN-8 (how Moderators are appointed), OPEN-24
+**Needs a decision, and small:** OPEN-8 (how Moderators are appointed), OPEN-24
 (auto-removal threshold), OPEN-26 (the quota number), OPEN-36 (full name or
 username on attributed reviews), OPEN-7 (whether a 24 hour moderation target is
 sustainable).
 
-**Needs François, and consequential:** OPEN-35 (one person can hold many
+**Needs a decision, and consequential:** OPEN-35 (one person can hold many
 accounts, so per-member limits bound accounts rather than people), OPEN-45
 (courses taught at other institutions, which arrived inside a single-tenant v1).
 OPEN-18 closed on 2026-09-11, once there was a second person to review.
@@ -289,8 +289,8 @@ The data turned out not to be there: the crawl had been discarding the programme
 it traversed. Snapshot version 3 and a join table fixed it. Now 1,530 programme
 links for 546 courses, so a course sits in 2.8 programmes on average.
 
-And the frontend got the tiers it never had, after François asked whether a user
-would drop straight into RYC. `apps/web` **was** RYC. See `LESSONS.md`
+And the frontend got the tiers it never had, after the question of whether a
+user would drop straight into RYC. `apps/web` **was** RYC. See `LESSONS.md`
 section 5.
 
 ### Phase 12: drawing the target product
@@ -379,8 +379,8 @@ anonymous path returns no id (FR-C9), the attributed path returns one, and 400,
 
 ### Phase 15: the scraped fields get their structure back
 
-François, reading a course page: the evaluation, themes and content fields
-were "juste rempli tel quel", one unbroken blob with no line breaks, no
+Reported from reading a course page: the evaluation, themes and content fields
+were filled in as they came, one unbroken blob with no line breaks, no
 paragraphs and no bullets.
 
 The cause was one line in the parser. Labels on a course page carry `<br />`
@@ -479,8 +479,8 @@ and kernel tests, the lint boundary rule, the CI workflow). The second kind is
 there because `LESSONS.md` section 9 records that the instrument is the part
 taken on trust.
 
-**One deviation, recorded rather than hidden.** François chose to leave
-administrators exempt from the protection, so the owner can still push straight
+**One deviation, recorded rather than hidden.** Administrators were left
+exempt from the protection by decision, so the owner can still push straight
 to `main`. FR-B15 was not weakened to match: it now states the rule, the
 deviation, what it costs (on the owner's own changes review is self-review
 again, the exact condition FR-B15 exists to compensate for) and the two ways to
@@ -579,9 +579,8 @@ checked against the vendor documentation rather than recalled.
 202 tests to 241.
 ### Phase 20: the product had no shape, only a spine
 
-François, on the current screens: "Too basic. You're really too basic there."
-He was right, and the gap was structural rather than cosmetic. A visitor with no
-account saw nothing at all. A member landed on a list of two buttons. There was
+The screens as they stood were too basic, and the gap was structural rather
+than cosmetic. A visitor with no account saw nothing at all. A member landed on a list of two buttons. There was
 no public face, no path from stranger to member, and no moment where the product
 asked who someone is and what they want from it.
 
@@ -662,7 +661,7 @@ explained the complement problem in terms of courses; it now speaks the
 platform's own vocabulary, which is what FR-C already uses and what will still
 be true for the second module.
 
-**Reworked once François supplied procyo.be's structure**, which no automated
+**Reworked once the structure of a reference site was supplied**, which no automated
 client can read: Vercel's bot protection refuses every one of them, so it
 arrived pasted by hand.
 
@@ -684,7 +683,7 @@ switcher. The name was chosen precisely because it reads natively in all three,
 and the product is French-only with no internationalisation. Not papered over
 with a switcher that does nothing; raised as a gap instead.
 
-**Then two corrections from François, both structural.**
+**Then two corrections, both structural.**
 
 *"Studens is more than that. You're deeply referring to RYC."* Correct, and it
 was an over-correction from FR-B16: to keep the shell from knowing what a course
@@ -783,9 +782,9 @@ launched into: clumsy Dutch reads as "not for you".
 
 ### Phase 23: five open questions, prepared not decided
 
-François asked for OPEN-35, OPEN-45 and the moderation trio to be worked up
-while he rested. All five are **proposals**, with options, a recommendation and
-what it costs. None is marked resolved: that is his call.
+OPEN-35, OPEN-45 and the moderation trio were to be worked up in the meantime.
+All five are **proposals**, with options, a recommendation and what it costs.
+None is marked resolved: that is the owner's call.
 
 Two of them changed shape while being prepared, which is the argument for
 preparing them rather than answering from the armchair.
@@ -833,7 +832,7 @@ link between a member and what they wrote.
 
 ### Phase 24: five questions closed, one against the recommendation
 
-François ruled on all five prepared in phase 23. Four as recommended, one not,
+All five prepared in phase 23 were ruled on. Four as recommended, one not,
 and the one that went the other way is the interesting entry.
 
 **Moderation** (FR-E8 to FR-E14). Nothing is ever removed automatically:
@@ -864,8 +863,8 @@ recommendation. The mechanics were accepted: the page states the owning
 institution and the foreign course code, and the old heuristic guessed from
 missing fields and was wrong for 4 of the 66 it flagged. The policy was not: I
 proposed keeping those 62 courses read-only until their institution's catalogue
-was ingested, and François chose to make them contributable now, with the tenant
-being the owning institution.
+was ingested, and the decision was to make them contributable now, with the
+tenant being the owning institution.
 
 That is FR-C19 applied rather than excepted, and the argument for it is one I
 under-weighted: 1.5 lists tenancy among the few things cheap now and expensive
@@ -908,7 +907,7 @@ and never the address, so the platform cannot send mail to anybody. An unused
 field is one thing; a preference for something that cannot happen is a promise.
 Restoring it means first deciding to store addresses, which is a separate
 decision with its own weight. The amendment is recorded against FR-F8 and needs
-François's confirmation, because the original was his call.
+the owner's confirmation, because the original was theirs to make.
 
 **`programme` became `studies`, because FR-B6's frontend gate refused it.** The
 first run asked for a "programme" and `test/architecture/frontend-shell.test.ts`
@@ -1001,8 +1000,8 @@ and the review flow are still French, and that is the next piece of RYC work.
 ### Phase 27: the account, and four bugs found by using it
 
 The platform could not reach anybody. FR-A9 was read as "keep the domain, throw
-the address away", and that reading was mine rather than François's: the
-provider sends the address on every sign-in, so discarding it bought no privacy
+the address away", and that reading was an assumption here rather than a
+requirement: the provider sends the address on every sign-in, so discarding it bought no privacy
 and cost every feature that needs to contact a person.
 
 **The wider point, which is the one to keep.** FR-C's guarantees are about
@@ -1029,8 +1028,8 @@ Folding it into the anonymous count would inflate the figure FR-C21 puts in
 front of the next contributor, so the number somebody uses to judge their own
 exposure, and 3.3's arithmetic with it, would be wrong.
 
-Then four bugs, every one of them found by François using the product, and none
-of them findable by the tests that existed.
+Then four bugs, every one of them found by using the product, and none of them
+findable by the tests that existed.
 
 **"A message has gone to you", when none could.** The confirmation was queued
 correctly and no relay was configured, so it could never leave. He waited for a
@@ -1240,9 +1239,9 @@ and nothing except use will.
 
 ### Phase 30: the catalogue stops being one faculty, and starts saying what it lost
 
-François read the first-run screen and said the thing nobody had: "UCLouvain is
-not only in LLN even if it's the main location". The institution row carried a
-city, and the screen printed it. Counted from UCLouvain's own catalogue, **268 of
+Reading the first-run screen turned up the thing nobody had said: UCLouvain is
+not only in Louvain-la-Neuve, even if that is its main location. The
+institution row carried a city, and the screen printed it. Counted from UCLouvain's own catalogue, **268 of
 692 programmes are taught somewhere else**, across eight campuses. The column is
 gone, and not merely emptied: ULiege names Gembloux and Arlon beside Liege, so a
 column that has to stay null everywhere it is not wrong is one the next person
@@ -1280,10 +1279,10 @@ a thing one faculty could not have shown:
   edition is fine. **A page we could not GET is tolerated, a page we could not
   UNDERSTAND is not.** One is a course missing, the other is a course wrong.
 
-**Then the question that mattered more than any of it.** François: "we should
-have a way to check data consistency after the full crawl and even log what
-happens bad ... so that we don't get a message from someone later like 'I can
-see my course in RYC'". He was right that it did not exist. 22 of 79 programmes
+**Then the question that mattered more than any of it.** There should be a way
+to check data consistency after a full crawl, and to log what goes wrong, so
+that nobody has to hear about it later as "I cannot see my course in RYC". No
+such check existed. 22 of 79 programmes
 had no courses, and nothing said whether that was a joint programme with none to
 list or a page that failed to load. Answering it meant opening the site by hand,
 which does not scale to 692. A programme now records `listed`, `empty` or
@@ -1300,8 +1299,8 @@ person who will do exactly that.
 
 ### Phase 31: the home page was showing French to everybody
 
-François, on the English home page: the assessment text in the mock "is still
-hardcoded". It was. Behind it sat a larger fact that nothing on screen admitted.
+On the English home page, the assessment text in the mock was still hardcoded.
+Behind it sat a larger fact that nothing on screen admitted.
 
 **The catalogue is French, because the crawl fetches the French edition.** Every
 block in `ref.CourseOffering` comes from `uclouvain.be/cours-<year>-<code>`, so
@@ -1320,7 +1319,7 @@ English edition at `en-cours-...`, and no Dutch one at all: `nl-cours-...` is 40
 On 80 random courses, 53 publish an assessment in French and 38 in English, with
 18 in French only and 3 in English only. So an English crawl cannot replace the
 French one, it has to sit beside it with a per-field fallback, and that is a
-second 78-minute run and a second snapshot per year. Deferred on François's call.
+second 78-minute run and a second snapshot per year. Deferred on the owner's call.
 `design/catalogue-ingestion.md` 12.15.
 
 **Three things found by looking at the screen while fixing it.**
@@ -1338,16 +1337,16 @@ the thing the product adds to a course page, never came into frame at all.
 `main.app` already carried the override; the public layout never did.
 
 And the prose gate, widened three days ago to read fields as well as markup,
-could not have caught the sentence François pointed at: it sits in a `Span`,
+could not have caught the sentence that was pointed at: it sits in a `Span`,
 under a field called `t`. It reads that now. The one file allowed to hold a
 quotation is listed by name, and a second test charges it for the privilege by
 requiring both the `lang` attribute and the note.
 
 ### Phase 32: what is on screen goes in the address
 
-François: "when I select filters then go to a course, when I go back I lose the
-filters I've selected... Isn't it better to save the steps so that a back won't
-lose already saved fields?" And then the part that made it a phase rather than a
+Reported from use: select filters, open a course, press Back, and the filters
+are gone. The steps should survive, so that going back does not lose what was
+already chosen. And then the part that made it a phase rather than a
 fix: "I don't think it's only a matter of filters. Maybe we should adopt that way
 of working."
 
@@ -1364,8 +1363,8 @@ what was never written down. A refresh cannot either. And a link to a filtered
 list shows its reader a different list, which fails silently, because the link
 works.
 
-Written up as FR-B21 rather than as a bug fix, because François asked for the
-rule and not the patch. The rule has a second half that is not decoration:
+Written up as FR-B21 rather than as a bug fix, because what was asked for was
+the rule and not the patch. The rule has a second half that is not decoration:
 **nothing unpublished goes in a URL**, and the text of a review being written
 above all. History, bookmark sync and anybody looking at the screen all read an
 address bar, and FR-C9's promise about an anonymous contribution reaches none of
@@ -1433,11 +1432,11 @@ assets that no longer exist would otherwise get 200s for all of them.
 
 ### Phase 33: a code belongs to a catalogue
 
-Two decisions from François, and the second is what made the first urgent.
+Two decisions, and the second is what made the first urgent.
 
-**No EPL import, and no affiliation.** "I choose we don't affiliate with them.
-We must stay out of any administrative stuffs for now. We accept the first
-student to see the app as mostly new (in term of reviews)." OPEN-42 closes as
+**No EPL import, and no affiliation.** Stay unaffiliated, stay out of any
+administrative process for now, and accept that the first students arrive at a
+product that is mostly new in review terms. OPEN-42 closes as
 declined rather than staying open. The cost is real and is written into the
 requirement rather than softened: 6,715 courses and 13 reviews, so the first
 cohort arrives at an almost empty product. What is bought is owing nothing to a
@@ -1504,7 +1503,7 @@ than the schema.
 
 ### Phase 34: the institution goes in the path
 
-OPEN-48, answered by François: `/app/ryc/c/uclouvain/lepl1503`. The alternative
+OPEN-48, answered: `/app/ryc/c/uclouvain/lepl1503`. The alternative
 was keeping bare codes and disambiguating only when two catalogues collide,
 which would have let one URL mean different things as the catalogue grew, and a
 link is a promise about what the reader will see.
@@ -1553,7 +1552,7 @@ honest file failed. It pairs each call with its own option now.
 ### Phase 35: ULB, crawled
 
 The source seam from phase 34 gets its second implementation, and it needed one
-schema change, which François approved: **a programme may have no faculty.**
+schema change, which was approved: **a programme may have no faculty.**
 
 Measured on 80 of ULB's 286 French-language 2025 programmes: 64 name an ULB
 faculty, 9 publish no organisers at all, and 7 name only "Pôle éducation" or a
@@ -1616,7 +1615,7 @@ correct with one catalogue and would have been wrong the hour this one loaded.
 
 ### Phase 36: six things wrong on screen, found by using it
 
-François opened the app after phase 35 and listed six. None was found by a
+The app was opened after phase 35 and six were listed. None was found by a
 test, and one of them had been wrong for days.
 
 **ULB was crawled and not choosable.** The first run listed institutions from
@@ -1662,11 +1661,10 @@ the columns were.
 ### Phase 38: your universities are the catalogue
 
 The first answer to "the catalogue should follow the university I chose" was to
-preselect a chip in a list of every institution. François rejected it: "this is
-not the right move (fragile from my perspective and added noise not avoided).
-Imagine we have 5 or 10 university ? What would it look like."
+preselect a chip in a list of every institution. That was rejected as fragile
+and as added noise, and it does not survive five or ten universities.
 
-He is right, and the objection is structural rather than visual. Preselecting
+The objection is structural rather than visual. Preselecting
 inside "all of them" makes every university the default and yours the
 narrowing, when it is the other way round. So the member's set is applied
 BEFORE anything else and every count is computed inside it: 690 programmes, not
@@ -1758,7 +1756,7 @@ not the picture of it.**
 ### Phase 41: reviews are paged, and the aggregate is not
 
 A course page fetched every review it had. At fourteen that is invisible;
-François asked what happens at a thousand.
+The question was what happens at a thousand.
 
 Ten a page, in the address, because "load more" cannot survive a refresh, a
 Back or a shared link.
@@ -1781,8 +1779,8 @@ insertion order (FR-C18), which is exactly what makes it safe to sort by.
 The public page said "546 cours" and "43 programmes" while the database held
 12,093 and 976. Nobody had lied; the numbers were true when they were typed.
 
-François named the fix: "you see why it would have been interesting to have
-global variable? It would avoid things to be stale." `/api/catalogue` reports
+The fix was named in the asking: a figure held in one place and read from
+there cannot go stale. `/api/catalogue` reports
 the courses, the programmes and the institutions, and the page renders what
 comes back. `test/architecture/no-stale-counts.test.ts` fails if a figure of
 three digits or more is typed back into a translated string; a four digit year
@@ -1826,8 +1824,9 @@ administrator may suspend themselves or another administrator.
 
 ### Phase 45: the licence, reversed
 
-Asked directly: people around François had warned him his idea could be taken,
-and he wanted to know whether to make the repository private until it works.
+Asked directly: the owner had been warned by people around him that the idea
+could be taken, and wanted to know whether to make the repository private until
+it works.
 
 THE TWO FACTS THAT DECIDED IT. Going private retracts nothing: MIT is
 irrevocable for copies already distributed, and the link had already been
@@ -1846,8 +1845,8 @@ strongest differentiator into an ordinary assertion, aimed at the audience
 least likely to take one on faith.
 
 SO THE MISMATCH WAS THE LICENCE, NOT THE VISIBILITY. MIT explicitly grants what
-he was afraid of: take it, close it, run it commercially, give nothing back.
-AGPL-3.0-or-later grants everything he wanted to give, reading, learning,
+was feared: take it, close it, run it commercially, give nothing back.
+AGPL-3.0-or-later grants everything that was meant to be given, reading, learning,
 forking, running it for students, and requires somebody running a modified
 Studens as a service to publish their modifications.
 
@@ -2065,7 +2064,7 @@ an intruder signed in.
    Two values in `providers.ts` were written from documentation and have never
    been observed, the `preferred_username` fallback and
    `requireEmailVerified: false`. **It is to be registered from a personal
-   account, never a company tenant**, and François's own
+   account, never a company tenant**, and a real
    `student.uclouvain.be` account is what tests the path that matters.
 2. ~~FR-E8, the notice and action mechanism~~ done, phase 28.
 3. ~~The moderator's console~~ done, phase 29. What is left of FR-E is

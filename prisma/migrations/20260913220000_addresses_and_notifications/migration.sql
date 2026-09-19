@@ -1,9 +1,9 @@
 -- Storing the email address, and what a Member agreed to be sent.
 --
 -- FR-A11 to FR-A13, FR-H1, FR-H2. This reverses the domain-only reading of
--- FR-A9, which was mine and not François's. The provider sends the address on
--- every sign-in, so refusing to keep it bought no privacy and cost the product
--- every feature that has to reach a person.
+-- FR-A9, which was an assumption here and not a requirement. The provider
+-- sends the address on every sign-in, so refusing to keep it bought no privacy
+-- and cost the product every feature that has to reach a person.
 --
 -- TWO ADDRESS COLUMNS, ON PURPOSE (FR-A12). `providerEmail` is identity and is
 -- never editable; `contactEmail` is where the member asks to be reached. One

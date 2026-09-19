@@ -11,8 +11,8 @@
  * It used to hold it here, on the ground that a filter is a refinement of a
  * screen rather than a screen, and that the programme being browsed was itself
  * not yet in the URL. The second half stopped being true when the programme
- * moved into the path, and the first half was answered by François pressing
- * Back after opening a course and finding his filters gone. A refinement of a
+ * moved into the path, and the first half was answered by pressing Back
+ * after opening a course and finding the filters gone. A refinement of a
  * screen is still part of what you are looking at.
  *
  * Derived on every render rather than copied into state, because a copy is
@@ -59,7 +59,7 @@ export function CourseFilters({
    * Off on the search screen, where the box above it asks the server the same
    * question in almost the same words. Two inputs labelled "code ou mot du
    * titre", stacked, one narrowing what the other returned: nobody could tell
-   * why there were two, and it was the first thing François called ugly.
+   * why there were two, and it was the first thing anybody called ugly.
    */
   textFilter?: boolean;
   /** The query string the shell handed the module. */

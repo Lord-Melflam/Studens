@@ -7,8 +7,8 @@
  * product was not built for them.
  *
  * This exists because that is what happened. i18n shipped in phase 22 and was
- * reported as done, and on 2026-09-13 François pointed out he was still seeing
- * French buttons with `en` and `nl` selected. The audit found 125 hardcoded
+ * reported as done, and on 2026-09-13 French buttons were still showing with
+ * `en` and `nl` selected. The audit found 125 hardcoded
  * strings across 13 files, including the privacy page, which is the one page
  * that carries the product's central promise. Nothing had caught it because
  * nothing was looking: `missingKeys` checks that the three catalogues agree

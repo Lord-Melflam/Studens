@@ -4,8 +4,8 @@
  * The module's public page said "546 cours" and "43 programmes" while the
  * database held 12,154 and 1,055. Nobody had lied: the numbers were true when
  * they were typed, and then the crawl widened to a second university and
- * nothing updates a sentence. François: "you see why it would have been
- * interesting to have global variable? It would avoid things to be stale."
+ * nothing updates a sentence. A figure held in one place and read from there
+ * cannot go stale; a figure typed into a sentence always can.
  *
  * The version of that which cannot rot is to fetch the number rather than to
  * keep it anywhere, which is what `CatalogueFacts` does. This stops the next

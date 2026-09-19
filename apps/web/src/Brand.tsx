@@ -2,7 +2,7 @@
  * The Studens mark: a course sheet with something added under it, beside the
  * name spelled the way the name is actually spelled.
  *
- * WHY THIS ONE. Six directions were drawn and François chose this. The sheet
+ * WHY THIS ONE. Six directions were drawn and this one was chosen. The sheet
  * is literally what the product does to a catalogue, it publishes the record
  * and adds something underneath it, and the long e is not decoration: Studens
  * is Latin, `studēns`, and the macron is the one graphic idea the name already
