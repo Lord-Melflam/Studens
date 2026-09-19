@@ -18,6 +18,7 @@ import {
   IDLE_DAYS,
   listSessions,
   NoSession,
+  revokeOtherSessions,
   revokeSession,
   verifySession,
 } from "@studens/platform";
@@ -216,5 +217,91 @@ describe("FR-A4: a failure says nothing about what failed", () => {
     // The reason exists for logs and for these tests. The API turns all of
     // them into one response, which is where FR-A4 actually lands.
     expect(new Set(failures.map((f) => (f as NoSession).reason)).size).toBe(3);
+  });
+});
+
+/**
+ * FR-A5: ending every session but this one.
+ *
+ * The list this screen shows cannot be read once it is long, because a session
+ * records only its dates: no address, no device, deliberately. On the
+ * development account it reached 79 rows, all identical but for a timestamp.
+ * Choosing between them is not a choice, so the useful operation is "keep this
+ * one, end the rest".
+ */
+describe("revoking every other session", () => {
+  /** A second member, so the scoping can be checked against a real neighbour. */
+  async function neighbour(): Promise<string> {
+    const m = await prisma.member.upsert({
+      where: { provider_providerSubject: { provider: "test", providerSubject: "session-other" } },
+      update: {},
+      create: {
+        provider: "test",
+        providerSubject: "session-other",
+        emailDomain: "student.example.invalid",
+        tenantId: "00000000-0000-0000-0000-0000000000t2",
+      },
+    });
+    await prisma.session.deleteMany({ where: { memberId: m.id } });
+    return m.id;
+  }
+
+  dbit("ends the others and keeps the one asking", async () => {
+    const keep = await createSession(memberId, { client: prisma, now: NOW });
+    const a = await createSession(memberId, { client: prisma, now: NOW });
+    const b = await createSession(memberId, { client: prisma, now: NOW });
+
+    const ended = await revokeOtherSessions(memberId, keep.sessionId, { client: prisma, now: NOW });
+    expect(ended).toBe(2);
+
+    const live = await listSessions(memberId, keep.sessionId, { client: prisma, now: NOW });
+    expect(live.map((s) => s.id)).toEqual([keep.sessionId]);
+
+    // And the tokens really stop working, rather than merely stopping being
+    // listed. A row hidden from a screen is not a revocation.
+    for (const gone of [a, b]) {
+      await expect(
+        verifySession(gone.token, { client: prisma, now: NOW }),
+      ).rejects.toBeInstanceOf(NoSession);
+    }
+    await expect(
+      verifySession(keep.token, { client: prisma, now: NOW }),
+    ).resolves.toMatchObject({ memberId });
+  });
+
+  dbit("touches nobody else's sessions", async () => {
+    const other = await neighbour();
+    const keep = await createSession(memberId, { client: prisma, now: NOW });
+    await createSession(memberId, { client: prisma, now: NOW });
+    const untouched = await createSession(other, { client: prisma, now: NOW });
+
+    await revokeOtherSessions(memberId, keep.sessionId, { client: prisma, now: NOW });
+
+    const still = await listSessions(other, untouched.sessionId, { client: prisma, now: NOW });
+    expect(still).toHaveLength(1);
+    await prisma.session.deleteMany({ where: { memberId: other } });
+  });
+
+  dbit("is a no-op when there is only this one", async () => {
+    const keep = await createSession(memberId, { client: prisma, now: NOW });
+    expect(await revokeOtherSessions(memberId, keep.sessionId, { client: prisma, now: NOW })).toBe(0);
+    expect(await listSessions(memberId, keep.sessionId, { client: prisma, now: NOW })).toHaveLength(1);
+  });
+
+  /**
+   * An id that is not this member's keeps nothing: every row of theirs ends,
+   * including the one they are using. That is the safe direction to fail in,
+   * because the other one leaves an intruder signed in.
+   */
+  dbit("keeps nothing when the id to keep is not theirs", async () => {
+    const other = await neighbour();
+    const ours = await createSession(memberId, { client: prisma, now: NOW });
+    const notOurs = await createSession(other, { client: prisma, now: NOW });
+
+    expect(await revokeOtherSessions(memberId, notOurs.sessionId, { client: prisma, now: NOW })).toBe(1);
+    await expect(
+      verifySession(ours.token, { client: prisma, now: NOW }),
+    ).rejects.toBeInstanceOf(NoSession);
+    await prisma.session.deleteMany({ where: { memberId: other } });
   });
 });

@@ -2000,6 +2000,54 @@ them without anybody maintaining them. Until that exists, a command is the
 honest form.
 
 
+### Phase 48: a list of eighty identical rows
+
+The account screen listed every live sign-in. On the development account that
+reached 79, and the panel became most of the page: each row read "another
+device" and a date, and there were seventy-eight of them.
+
+**The rows are identical on purpose, and that is the part worth keeping.** A
+session records when it started and when it was last used, and nothing else.
+No address, no device, no user agent, because that would be a per-session
+record of where a member was and on what. The screen exists so somebody can
+spot a session they do not recognise, and the thing that would make a row
+recognisable is exactly the thing we decided not to keep.
+
+So the honest response is not to make the list readable, which is impossible
+here, but to stop pretending it can be read.
+
+What the panel does now: this session first and marked, the four most recent
+others, a count beside the heading so the scale is visible without drawing it,
+the rest one press away, and one button that ends every session but this one.
+
+**That last is the act somebody actually wants.** The fear that brings a person
+to this screen is that somebody else is signed in as them. They do not need to
+identify the intruder's row among eighty; they need every row but their own to
+stop working. Revoking one at a time was seventy-eight presses and a choice
+between rows that carry nothing to choose between.
+
+**Rejected: a scrolling box at a threshold.** It was the first suggestion and
+it hides how much is in it, behaves badly on a phone, nests a scrolling region
+inside a scrolling page, and still asks somebody to read eighty identical rows.
+It makes the panel shorter without making it useful.
+
+**Cost accepted.** Somebody with a genuine reason to keep two of six sessions
+and end the rest has to press four times, because the bulk action keeps exactly
+one. That case is rare and the alternative, a checkbox on every row, is a
+selection interface over items nobody can tell apart.
+
+**What would change it.** Recording something that distinguishes a session,
+which is a privacy decision and not a screen decision, and would have to be
+argued on its own terms: a device label the member types themselves would do
+it without storing anything observed.
+
+**The id to keep is named by the server from the cookie**, never by the caller.
+A caller-supplied id would let somebody keep a session that is not theirs, and
+the failure direction matters: passing an id that belongs to another member
+ends every one of yours, including the one you are using, rather than leaving
+an intruder signed in.
+
+
 ---
 
 ## Next

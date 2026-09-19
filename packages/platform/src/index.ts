@@ -25,6 +25,7 @@ export {
   createSession,
   verifySession,
   revokeSession,
+  revokeOtherSessions,
   listSessions,
   hashToken,
   newToken,

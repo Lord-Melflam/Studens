@@ -45,6 +45,123 @@ function when(iso: string, locale: string): string {
   );
 }
 
+/** How many other sign-ins are drawn before the rest are one press away. */
+const VISIBLE_SESSIONS = 4;
+
+/**
+ * FR-A5: your live sign-ins, and ending them.
+ *
+ * WHY THIS IS NOT JUST A LIST. It was one, and on an account that signs in
+ * often it reached 79 rows, each reading "another sign-in" and a date. That is
+ * not a long list, it is a broken screen: the panel exists so somebody can
+ * spot a session they do not recognise, and nothing here distinguishes one row
+ * from another.
+ *
+ * That is deliberate and is not going to change. A session records when it
+ * started and when it was last used, and nothing else: no address, no device,
+ * no user agent, because that would be a per-session record of where a member
+ * was and on what (see `listSessions` in the platform). The cost of not
+ * keeping it is exactly this screen, and the honest response is to stop
+ * pretending the list can be read.
+ *
+ * So: this one first and marked, the few most recent others, a count so the
+ * scale is visible without drawing it, the rest one press away, and one button
+ * that ends every session but this one. That last is the act somebody actually
+ * wants, and it is the right answer to the fear that brings them here, which
+ * is that somebody else is signed in as them. They do not need to identify the
+ * intruder's row. They need every row but their own to stop working.
+ *
+ * NOT SCROLLED INSIDE A BOX, which was the other option. A scrolling region
+ * inside a scrolling page hides how much is in it, behaves badly on a phone,
+ * and would still ask somebody to read 79 identical rows. Capping says what is
+ * there and offers the one useful decision instead.
+ */
+function SessionsPanel({
+  sessions,
+  busy,
+  onRevoke,
+  onRevokeOthers,
+}: {
+  sessions: LiveSession[] | null;
+  busy: string | null;
+  onRevoke: (id: string, isCurrent: boolean) => void;
+  onRevokeOthers: () => void;
+}) {
+  const t = useT();
+  const locale = useLocale();
+  const [expanded, setExpanded] = useState(false);
+
+  if (sessions === null) {
+    return (
+      <section className="panel">
+        <h3>{t("settings.sessions")}</h3>
+        <p className="hint">…</p>
+      </section>
+    );
+  }
+
+  // The current one first whatever the server's order, which is by last use.
+  const current = sessions.filter((s) => s.current);
+  const others = sessions.filter((s) => !s.current);
+  const shown = expanded ? others : others.slice(0, VISIBLE_SESSIONS);
+  const hidden = others.length - shown.length;
+
+  const row = (s: LiveSession) => (
+    <li key={s.id} className={s.current ? "current" : ""}>
+      <div>
+        <strong>{s.current ? t("settings.sessions.this") : t("settings.sessions.other")}</strong>
+        <span className="hint">
+          {t("settings.sessions.since", { when: when(s.startedAt, locale) })}
+        </span>
+      </div>
+      <button
+        type="button"
+        className="ghost"
+        disabled={busy === s.id}
+        onClick={() => onRevoke(s.id, s.current)}
+      >
+        {s.current ? t("settings.sessions.endthis") : t("settings.sessions.end")}
+      </button>
+    </li>
+  );
+
+  return (
+    <section className="panel">
+      <h3>
+        {t("settings.sessions")} <span className="count">{sessions.length}</span>
+      </h3>
+      <p className="hint">{t("settings.sessions.hint")}</p>
+      {/* Said out loud, because otherwise the rows look like a screen that
+          failed to load its details rather than one that never had any. */}
+      {others.length > 1 && <p className="hint">{t("settings.sessions.alike")}</p>}
+
+      <ul className="sessions">
+        {current.map(row)}
+        {shown.map(row)}
+      </ul>
+
+      {hidden > 0 && (
+        <button type="button" className="linkish" onClick={() => setExpanded(true)}>
+          {t("settings.sessions.more", { n: hidden })}
+        </button>
+      )}
+
+      {others.length > 0 && (
+        <div className="panel-actions">
+          <button
+            type="button"
+            className="danger"
+            disabled={busy === "others"}
+            onClick={onRevokeOthers}
+          >
+            {t("settings.sessions.endothers", { n: others.length })}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function Settings() {
   const t = useT();
   const locale = useLocale();
@@ -110,6 +227,16 @@ export function Settings() {
   }
 
   useEffect(load, [load]);
+
+  async function revokeOthers() {
+    setBusy("others");
+    try {
+      await fetch("/api/sessions", { method: "DELETE" });
+      load();
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function revoke(id: string, isCurrent: boolean) {
     setBusy(id);
@@ -278,36 +405,12 @@ export function Settings() {
       </section>
 
       {/* FR-A5. The API has had this since the session layer; nothing showed it. */}
-      <section className="panel">
-        <h3>{t("settings.sessions")}</h3>
-        <p className="hint">{t("settings.sessions.hint")}</p>
-        {sessions === null ? (
-          <p className="hint">…</p>
-        ) : (
-          <ul className="sessions">
-            {sessions.map((s) => (
-              <li key={s.id} className={s.current ? "current" : ""}>
-                <div>
-                  <strong>
-                    {s.current ? t("settings.sessions.this") : t("settings.sessions.other")}
-                  </strong>
-                  <span className="hint">
-                    {t("settings.sessions.since", { when: when(s.startedAt, locale) })}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="ghost"
-                  disabled={busy === s.id}
-                  onClick={() => void revoke(s.id, s.current)}
-                >
-                  {s.current ? t("settings.sessions.endthis") : t("settings.sessions.end")}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <SessionsPanel
+        sessions={sessions}
+        busy={busy}
+        onRevoke={revoke}
+        onRevokeOthers={() => void revokeOthers()}
+      />
 
       {/* FR-A12, FR-A13. */}
       <EmailPanel
