@@ -23,6 +23,13 @@
   --muted: #5b6470;
   --line: #dfe3e8;
   --bg: #fbfbfc;
+  /* The page is --bg; a card, an input or a chip sits ON it. They were all
+     literal #fff, which is the same colour in this palette and a different one
+     in any other, so dark mode could not exist until they had a name. */
+  --surface: #ffffff;
+  /* Text on a filled --accent. Also a literal #fff until now, and it stops
+     being white the moment --accent becomes light enough to need dark text. */
+  --on-accent: #ffffff;
 }
 
 /* --- GROUP 2: meaning. A theme MUST NOT override any of these. ----------
@@ -36,6 +43,94 @@
   --warn: #b5820e;
   --warn-soft: #fbf2d9;
   --danger: #9e2b20;
+}
+
+
+/* --- DARK, AND WHY IT RESTATES THE PROTECTED COLOURS TOO -----------------
+
+   The rule above says a THEME may recolour chrome and may never touch the two
+   path colours, because a per-institution theme that recoloured --named or
+   --anon could make an attributed contribution and an anonymous one look
+   alike, which is the one thing the interface must never do (FR-C15, FR-C16,
+   requirements 3.3).
+
+   A colour scheme is not a theme, and the difference is the whole reason this
+   block is allowed to exist. A theme is somebody's branding applied over a
+   fixed design; a scheme is the same design rendered for a different surface.
+   #1e7a5f green and #6b3fa0 purple are chosen to be legible on white. On a
+   near-black page they are mud, and two colours nobody can read are not two
+   colours anybody can tell apart, so refusing to restate them here would
+   defeat FR-C15 rather than defend it.
+
+   So the rule is kept and sharpened. The property that matters is not "these
+   hex codes never change"; it is "the two paths stay legible and stay
+   distinguishable from each other, in every scheme we ship". That property is
+   now measured, in both schemes, by test/architecture/design-tokens.test.ts,
+   which is a stronger guarantee than the one it replaces: it would catch a
+   light-mode edit that made them similar, and the old rule would not have.
+
+   What would change this: a third scheme, or a per-institution theme that
+   wants its own dark values. Both are fine provided they pass the same
+   measurement, which is the point of measuring it rather than freezing it.
+
+   The values below are hand-picked, not lightened programmatically, and the
+   first pair I picked FAILED that test: a green and a purple of nearly equal
+   lightness, 1.08 apart, which a colour-sighted reader tells apart instantly
+   and a colour-blind one does not tell apart at all. The pair here is 1.45
+   apart, which is what the light palette has always been, so the two schemes
+   ask the same of a reader rather than the dark one asking more. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #7fb3ee;
+    --accent-soft: #1a2b3f;
+    --sky: #5eb3e4;
+    --ink: #e7eaee;
+    --muted: #9aa5b3;
+    --line: #2b323b;
+    --bg: #13161a;
+    --surface: #1b1f25;
+    /* Dark text on a light accent, which is the inversion the light palette
+       never needed. */
+    --on-accent: #0d1117;
+    --named: #35b083;
+    --named-soft: #10362c;
+    --anon: #cdb0f5;
+    --anon-soft: #2c2140;
+    --warn: #e3b64a;
+    --warn-soft: #362b12;
+    --danger: #f2796c;
+  }
+}
+
+/* The same values when somebody has chosen dark explicitly, whatever their
+   system says. Duplicated rather than shared because a media query cannot be
+   combined with an attribute selector in plain CSS, and a preprocessor is not
+   worth adding for one block. */
+:root[data-theme="dark"] {
+  --accent: #7fb3ee;
+  --accent-soft: #1a2b3f;
+  --sky: #5eb3e4;
+  --ink: #e7eaee;
+  --muted: #9aa5b3;
+  --line: #2b323b;
+  --bg: #13161a;
+  --surface: #1b1f25;
+  --on-accent: #0d1117;
+  --named: #35b083;
+  --named-soft: #10362c;
+  --anon: #cdb0f5;
+  --anon-soft: #2c2140;
+  --warn: #e3b64a;
+  --warn-soft: #362b12;
+  --danger: #f2796c;
+}
+
+/* Tells the browser which scheme is live, so form controls, scrollbars and
+   the caret follow. Without it a dark page grows white dropdowns. */
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; }
 }
 
 * { box-sizing: border-box; }
@@ -114,7 +209,7 @@ header { margin-bottom: 1.75rem; }
   text-align: left;
   font: inherit;
   color: inherit;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   cursor: pointer;
@@ -170,7 +265,7 @@ header { margin-bottom: 1.75rem; }
   line-height: 1.4;
   padding: 0.25rem 0.6rem;
   color: var(--ink);
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 999px;
   cursor: pointer;
@@ -199,7 +294,7 @@ header { margin-bottom: 1.75rem; }
   padding: 0.25rem 0.6rem;
   color: var(--ink);
   text-decoration: none;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 999px;
 }
@@ -265,7 +360,11 @@ main.app {
   row-gap: 0.6rem;
   margin: 0;
   padding: 0.8rem 1.5rem;
-  background: rgba(255, 255, 255, 0.92);
+  /* The bar's own surface, not a literal white. It was `rgba(255,255,255,.92)`
+     and stayed white when everything under it went dark, which left the mark
+     and the breadcrumb unreadable against it. `color-mix` keeps the
+     translucency that the blur below depends on. */
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
 }
@@ -377,7 +476,7 @@ a.ghost.here {
   font-size: 0.84rem;
   font-weight: 600;
   color: var(--ink);
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 999px;
 }
@@ -388,7 +487,7 @@ a.ghost.here {
   width: 1.35rem;
   height: 1.35rem;
   font-size: 0.72rem;
-  color: #fff;
+  color: var(--on-accent);
   background: var(--accent);
   border-radius: 999px;
 }
@@ -434,7 +533,7 @@ a.ghost.here {
   text-align: left;
   font: inherit;
   color: inherit;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
   cursor: pointer;
@@ -456,7 +555,7 @@ a.ghost.here {
 .panel-title { margin: 0 0 0.5rem; font-size: 1.7rem; letter-spacing: -0.02em; }
 .panel {
   padding: 1.3rem 1.4rem;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
 }
@@ -476,12 +575,12 @@ a.ghost.here {
   font-size: 0.9rem;
   color: var(--ink);
   text-decoration: none;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 999px;
 }
 .choice:hover { border-color: var(--accent); }
-.choice.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+.choice.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
 
 .sessions { list-style: none; margin: 0; padding: 0; }
 .sessions li {
@@ -500,7 +599,7 @@ a.ghost.here {
   font-size: 0.85rem;
   padding: 0.35rem 0.8rem;
   color: var(--muted);
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 999px;
   cursor: pointer;
@@ -597,7 +696,7 @@ a.ghost.here {
 .queue { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
 .queue-entry {
   padding: 0.9rem 1rem;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
 }
@@ -621,7 +720,7 @@ a.ghost.here {
   border-radius: 999px;
 }
 .chip-cat { color: var(--danger); background: #f7ecea; }
-.chip-held { color: var(--warn); background: #fff; border: 1px solid var(--warn); }
+.chip-held { color: var(--warn); background: var(--surface); border: 1px solid var(--warn); }
 /* Which path it was published on, which is also a statement of what a
    moderator can and cannot know about who wrote it. */
 .queue-path { margin: 0 0 0.4rem; font-size: 0.8rem; color: var(--muted); }
@@ -775,3 +874,18 @@ a.ghost.here {
 .planned .name { display: block; font-weight: 600; font-size: 0.95rem; }
 .planned .summary { display: block; margin-top: 0.15rem; font-size: 0.9rem; color: var(--muted); }
 .planned .note { display: block; margin-top: 0.3rem; font-size: 0.82rem; color: var(--muted); }
+
+/* The scheme choice: three buttons, one of them current. Uses `.here` for the
+   chosen one, like everything else that answers "which of these am I on". */
+.choices { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem; }
+.choice {
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 0.4rem 0.9rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.choice:hover { border-color: var(--accent); }

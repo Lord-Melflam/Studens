@@ -45,7 +45,7 @@ a.ghost, a.cta, button.provider {
 }
 a.ghost { color: var(--ink); background: transparent; border: 1px solid var(--line); }
 a.ghost:hover { border-color: var(--accent); }
-a.cta { color: #fff; background: var(--accent); border: 1px solid var(--accent); }
+a.cta { color: var(--on-accent); background: var(--accent); border: 1px solid var(--accent); }
 a.cta:hover { background: #16407c; }
 
 /* A call to action that closes a section needs air above it. Inline by
@@ -180,7 +180,7 @@ a.cta:hover { background: #16407c; }
   padding: 0.35rem 0.8rem;
   font-size: 0.85rem;
   color: var(--muted);
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 999px;
 }
@@ -269,7 +269,7 @@ a.cta:hover { background: #16407c; }
 }
 .module-cards li {
   padding: 1.3rem;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
 }
@@ -295,7 +295,7 @@ a.cta:hover { background: #16407c; }
 .two-up p { line-height: 1.65; margin: 0 0 1rem; }
 .callout {
   padding: 1.4rem;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-left: 3px solid var(--warn);
   border-radius: 8px;
@@ -359,7 +359,7 @@ a.cta:hover { background: #16407c; }
   padding: 0.8rem 1.2rem;
   font-size: 1rem;
   color: var(--ink);
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   text-decoration: none;
