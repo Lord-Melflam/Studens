@@ -290,6 +290,31 @@ and two cases had silently decayed to plain `"ab"`.
 screen that lies about it. When something claims a thing happened, has happened,
 or will happen, that claim is what needs the test.
 
+## Adding a test that touches the database
+
+Vitest runs test **files** in parallel against one database, so a file owns its
+rows and must not be able to touch another file's. Two things to get right, and
+`test/architecture/test-isolation.test.ts` fails the build on both.
+
+**Your seeded ids are yours.** A tenant, a course, anything upserted by a fixed
+id: pick one nobody else uses. The convention is a zero-filled uuid ending in
+two characters of your choosing.
+
+**Your generated names are yours too**, and this is the one that bit. Usernames
+are globally unique, and three kernel files all built theirs as
+`` `ztst.${subject}` ``: two of them used the subject `author`, so the same
+username was created twice whenever those files happened to run together. It
+survived months of green runs and then went red on a pull request that touched
+none of them. Build under your own prefix, as `ztst.acct`, `ztst.mod`,
+`ztst.rep` and `ztst.susp` do.
+
+**Scope your cleanup to your own rows**, by a `provider` value only your file
+uses. A cleanup written as "delete everything of this kind" is a statement
+about every other test file, and it will delete their rows mid-run.
+
+**And never write to the working database to make a test pass.** It holds real
+accounts and real reviews. If a test needs a row, it creates it and removes it.
+
 ## Where a file goes
 
 Settled 2026-09-16, after `docs/design/` had grown to fourteen files mixing

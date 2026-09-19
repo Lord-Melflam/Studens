@@ -4,7 +4,7 @@ A modular web platform for students in higher education. People log in securely,
 **modules**: self-contained tools covering the things that make student life better.
 
 **Status: working software, one module, nothing deployed.** The specification came first
-and still leads: 135 requirements, each with the reasoning that produced it, and 8
+and still leads: 156 requirements, each with the reasoning that produced it, and 8
 questions still open rather than guessed.
 
 ## What runs today
@@ -14,21 +14,28 @@ Google followed by a five screen **first run**, and the **app** itself, where mo
 mounted. Three languages throughout, with the language in the URL, and a gate that fails
 the build if a sentence is hardcoded in a component.
 
-**RYC**, Rate Your Courses, is the first module, and it holds **the whole UCLouvain
-catalogue for 2026-2027**: 6,654 courses through 690 programmes of 20 faculties, across 8
-campuses and 22 fields of study. All of it scraped, with the faculty, programme and course
-structure discovered at runtime rather than listed anywhere in the source.
+**RYC**, Rate Your Courses, is the first module, and it holds **two whole catalogues for
+2026-2027**, UCLouvain and ULB: 12,154 courses through 1,055 programmes of 32 faculties,
+counted in the database on 2026-09-19. Eleven institutions are known and two are open for
+choosing, because a student picks theirs and everything they see is scoped to it. All of
+it scraped, with the faculty, programme and course structure discovered at runtime rather
+than listed anywhere in the source. The two universities publish different shapes, so the
+parser is per source and the vocabularies are mapped onto one set of keys rather than
+shown twice.
 
-A full crawl is about 10,000 requests and an hour and a quarter, run once a year.
-Afterwards `npm run catalogue:report` compares the crawl against the database and ends with
-one line saying whether anything was lost, because the things that go wrong in a run that
-size are individually small and each one is a student who cannot find their course.
+A full crawl is run once a year, per university: about 10,000 requests and an hour and a
+quarter for UCLouvain, 5,290 requests and 75 minutes for ULB. Afterwards
+`npm run catalogue:report` compares the crawl against the database and ends with one line
+saying whether anything was lost, because the things that go wrong in a run that size are
+individually small and each one is a student who cannot find their course. A crawl that
+comes back much smaller than the last one refuses to load at all until somebody says it
+was meant to.
 
-The catalogue is read from **two sources that are reconciled rather than trusted in turn**.
-The per-faculty index decides which programmes exist, because it lists the minors the
-search application drops; the search decides what they are, because it publishes the site
-and the field of study as fields where the index only implies them inside a title. Where
-the two disagree, both values are kept.
+At UCLouvain the catalogue is read from **two sources that are reconciled rather than
+trusted in turn**. The per-faculty index decides which programmes exist, because it lists
+the minors the search application drops; the search decides what they are, because it
+publishes the site and the field of study as fields where the index only implies them
+inside a title. Where the two disagree, both values are kept.
 
 - **Browse** a programme, or **search** a course by code or title. Both lists
   filter: programmes by kind, site, faculty, field of study and text; courses by
@@ -74,6 +81,14 @@ sorting by the count puts at the top whatever a group decided to target. A decis
 transaction: act on the content, close every notice about it, record who decided and why.
 What a moderator sees is what a reader sees: an anonymous contribution arrives with no
 author, because there is none to arrive with.
+
+**A suspension is explained to the person it is about.** It used to be silent: sessions
+closed, the next sign-in refused like any other failure, which from outside looks exactly
+like the site being down. Now a message goes out when the decision is taken, and the next
+sign-in shows a screen, and both carry the reason in the moderator's own words, the end
+date or that there is none, and somewhere to write. An administrator sees who is currently
+suspended, for what, and whether a message could actually be sent. None of it reaches the
+anonymous path: nothing links those contributions to an account, in either direction.
 
 Three roles in a straight line, member, moderator and administrator, each holding
 everything the one before it holds plus one thing. Only an administrator appoints, and a

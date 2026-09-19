@@ -616,3 +616,61 @@ which is now worth doing after any change to a route that reads member state.
 `dev:api:anon` exists for exactly this and had not been used.
 
 ---
+
+## 11. A gate that matched the literal and missed the built name
+
+`test/architecture/test-isolation.test.ts` exists because Vitest runs test
+files in parallel against one database, and two files seeding the same row both
+insert and one fails. It checked literal fixture ids: a zero-filled uuid, a
+`ztst` code in quotes.
+
+Three kernel test files generated usernames as `` `ztst.${subject}` ``. Not a
+literal, so the gate never saw them, and all three spent months creating
+accounts in one shared namespace on a column that is globally unique. Two used
+the subject `author` and two used `reporter`. Their cleanup is scoped by
+`provider`, so each file tidied its own rows and neither noticed the other.
+
+It stayed invisible until an unrelated change added a test file, which altered
+which files overlap, and CI went red on `account.db.test.ts` in a pull request
+that did not touch it. That is the exact failure mode the gate was written to
+stop, landing on the wrong person, one shape away from the shape it knew.
+
+Two rules were added. A template prefix is a namespace with one owner. And no
+generated name may be able to produce another file's literal one, which
+`ztst.` plus the subject `one` could have done to `profile.db.test.ts` at any
+time. Both were confirmed to fail before being satisfied.
+
+**The pattern.** A gate is written against the form the problem took the first
+time. The second form is not caught by more vigilance; it is caught by asking
+what else produces the same row, which is a different question from what else
+looks like the thing already banned. Compare section 1, "A gate that does not
+cover the files it is meant to cover".
+
+---
+
+## 12. The cascade is one document, and the later rule wins
+
+A tab bar in the moderation console marked the current section with a class,
+`.console-tab`, and the project's settled "you are here" pill is `.here`. Both
+are one class, so they have equal specificity, and `.console-tab` is declared
+eight hundred lines further down `shell.css`. Its plain `color` and
+`background` therefore beat `.here`, and the current tab rendered exactly like
+the other three. The mark was not wrong, it was absent.
+
+This is the second time: `.chips` in a module stylesheet lost its `margin: 0`
+to the shell's rule for the same reason, which is why the class was renamed to
+`chipset` and why `test/architecture/css-collisions.test.ts` freezes the names
+the two stylesheets share.
+
+The collision gate did not apply here, because nothing collided: one file, two
+rules, one of them later. The fix is not higher specificity, which starts an
+arms race inside one file. It is to stop the base rule competing:
+`.console-tab:not(.here)` carries the colours, so the state rule is the only
+one declaring them.
+
+**What made it visible** was a screenshot, not reading. The first one showed
+the wrong mark, the second showed no mark at all. Reasoning about which rule
+wins across eight hundred lines is exactly the thing a picture answers in a
+second, and this repeats section 6's rule from the other direction: measure the
+document when the question is layout, look at the render when the question is
+which rule applied.

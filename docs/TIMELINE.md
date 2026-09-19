@@ -10,19 +10,19 @@ gone wrong and what each failure changed.
 
 ---
 
-## State, as of 2026-09-18
+## State, as of 2026-09-19
 
 | | |
 |---|---|
-| Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted, read and paged on both paths, moderation end to end, and an administrator who can change settings and suspend an account. The web process serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
-| Commits | 87 |
-| Requirements | **154**: 136 functional and 18 non-functional. Counted, not carried forward |
+| Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted, read and paged on both paths, moderation end to end, and an administrator who can change settings, suspend an account, and see who is suspended and why. A suspended person is told, which they were not until phase 46. The web process serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
+| Commits | 99 |
+| Requirements | **156**: 138 functional and 18 non-functional. Counted, not carried forward |
 | Open questions | **8** open, 40 resolved. Counted across both tables in requirements.md section 7, since a question resolved in place is struck there and one resolved with a long argument is written out in 7.1 |
-| Tests | **746**, plus 32 database isolation assertions |
-| Code | 23,192 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 10,622 of tests. Measured over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts` |
-| Data | **Two catalogues in PostgreSQL**, counted 2026-09-18: 12,154 courses, 1,055 programmes, 32 faculties, and 11 institutions of which 2 are open for choosing. UCLouvain is 769 programmes and 6,715 courses; ULB is 286 and 5,439. **No figure is written into the interface**: `/api/catalogue` reports them and the pages read it |
-| Reviews | **99, all written by us while testing**, seeded onto two courses so that paging and the aggregate can be shown. No student has used this yet, and the product does not pretend otherwise |
-| Not sent | **No mail leaves this installation.** Messages are queued and printed; five `STUDENS_SMTP_*` variables turn that into delivery |
+| Tests | **816**, plus 32 database isolation assertions |
+| Code | 24,912 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 11,403 of tests. Measured over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts` |
+| Data | **Two catalogues in PostgreSQL**, counted 2026-09-19: 12,154 courses, 1,055 programmes, 32 faculties, and 11 institutions of which 2 are open for choosing. UCLouvain is 769 programmes and 6,715 courses; ULB is 286 and 5,439. **No figure is written into the interface**: `/api/catalogue` reports them and the pages read it |
+| Reviews | **101, all written by us while testing**, seeded onto two courses so that paging and the aggregate can be shown. No student has used this yet, and the product does not pretend otherwise |
+| Not sent | **No mail leaves this installation**, and that now costs something. Messages are queued and printed; five `STUDENS_SMTP_*` variables turn that into delivery. Since phase 46 the queue also holds the message telling somebody their account was suspended, so half of FR-E15 is waiting on a relay |
 
 ### What runs today
 
@@ -2014,8 +2014,10 @@ code and lint refused the relative path, correctly.
    OPEN-47 and is measured in `design/catalogue-ingestion.md` 12.15: a second
    crawl of the English edition, a language per field, a per-field fallback,
    and no Dutch source at all.
-7b. ~~The full catalogue~~ done, phase 30. 20 faculties, 769 programmes and
-   6,715 courses are loaded, counted in the database on 2026-09-17.
+7b. ~~The full catalogue~~ done, phase 30 for UCLouvain and phase 35 for ULB.
+   Both are loaded: 32 faculties, 1,055 programmes and 12,154 courses across
+   11 institutions, of which 2 are open for choosing, counted in the database
+   on 2026-09-19.
    `npm run catalogue:report` compares the snapshot against the database in
    both directions and exits 1 on a gap.
 8. ~~A programme is not in the URL~~ done, phase 30, and the filters and the

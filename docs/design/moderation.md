@@ -177,3 +177,56 @@ rather than handled by a general threshold.
 3. **The `status` column already supports this** (`published`, held, removed)
    and nothing writes anything but `published` yet.
 4. **`AuditLog` needs the appointment events**, which it does not have.
+
+---
+
+## 5. Added 2026-09-19: the other half of Article 17
+
+This note was written about **content**. Article 17 is not only about content:
+it also covers restricting or suspending the service itself to a recipient, and
+Studens acquired that power after this note was accepted, as the account
+suspension built in phase 44.
+
+**And suspension does not collide with FR-C9 at all.** That is what makes it
+worth recording here beside 0.1. A suspension binds an account, the account has
+an identity behind it, and there is somebody to inform. The whole difficulty in
+0.1, that the affected recipient is unknowable, simply does not arise, so the
+obligation can be met in the ordinary way: tell them, state the reason, say how
+long it lasts and where to write. FR-E15.
+
+It shipped silent, which is worth writing down rather than glossing. Sessions
+closed and the next sign-in was refused like any other failure, because FR-A4
+gives one message whatever went wrong. That is right for an API and wrong for a
+person standing in front of the screen: the two states a visitor cannot tell
+apart are "we decided this" and "the site is down". A tester reached the second
+conclusion, which is the reasonable one.
+
+**Two channels, because each fails alone.** A message when the decision is
+taken, to a confirmed address only (FR-A13), and a screen at the next sign-in.
+Most accounts have no confirmed address, so the message reaches a minority;
+somebody who gives up after one refused attempt never reaches the screen.
+
+**The message is transactional, not a preference** (FR-H2). The optional kind
+`moderation.outcome` is about somebody else's content. This is the account
+itself being stopped, which belongs with the deletion receipt, and making it
+opt-in would mean the people who never opened the notification screen learn
+nothing.
+
+**What it still cannot do**, and FR-E7 has not moved: none of this reaches the
+anonymous path. An anonymous contribution is not linked to the account, in
+either direction, so a suspension cannot gather, withdraw or annotate what that
+account published anonymously. Individual content remains removable on its own
+merits (FR-C10), one piece at a time, and the removal statement of reasons is
+still 0.1's unresolved question.
+
+**Still to be checked by the same qualified person as 0.1 and requirements
+5.1.** Saying a suspension notice discharges Article 17 for a service
+restriction is, again, a non-lawyer reading a regulation.
+
+**And a register.** FR-E16: who is currently suspended, for what, until when,
+decided by whom, and whether a message could be sent. Not part of the
+obligation, and the reason is internal rather than legal: the suspend form
+takes a username, so without a register the only way to learn whether somebody
+was already suspended was to suspend them again. A power whose use leaves no
+readable record is one nobody can review, which is the same argument FR-E14
+makes about appointments.
