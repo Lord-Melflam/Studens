@@ -38,6 +38,10 @@ const course = (over: Partial<CourseSummary>): CourseSummary => ({
   teachers: ["Quelqu'un"],
   external: false,
   offeredThisYear: true,
+  /* The university's own word, on purpose: what is stored is what was
+     published, and the filter speaks in canonical keys instead, so these
+     fixtures exercise the mapping rather than bypassing it. See
+     packages/ryc-ui/src/normalise.ts. */
   mainLanguage: "Français",
   owningEntity: "EPL",
   campuses: [],
@@ -91,7 +95,7 @@ describe("filtering courses", () => {
   it("combines dimensions as AND", () => {
     const out = applyCourseFilter(
       catalogue,
-      { ...NO_COURSE_FILTER, quarters: ["Q1"], languages: ["Anglais"] },
+      { ...NO_COURSE_FILTER, quarters: ["Q1"], languages: ["en"] },
       counts,
     );
     expect(out.map((c) => c.code)).toEqual(["lepl1401", "linfo2145"]);
@@ -110,7 +114,7 @@ describe("filtering courses", () => {
   it("excludes a course whose value is missing, rather than matching it", () => {
     const q = applyCourseFilter(catalogue, { ...NO_COURSE_FILTER, quarters: ["Q1"] }, counts);
     expect(q.map((c) => c.code)).not.toContain("lelec2990");
-    const l = applyCourseFilter(catalogue, { ...NO_COURSE_FILTER, languages: ["Français"] }, counts);
+    const l = applyCourseFilter(catalogue, { ...NO_COURSE_FILTER, languages: ["fr"] }, counts);
     expect(l.map((c) => c.code)).not.toContain("lelec2990");
   });
 
@@ -124,7 +128,7 @@ describe("the facets are the data, not a list somebody wrote", () => {
   it("offers only values that are present", () => {
     const f = courseFacets(catalogue, NO_COURSE_FILTER, counts);
     expect(f.quarters.map((x) => x.value)).toEqual(["Q1", "Q2"]);
-    expect(f.languages.map((x) => x.value)).toEqual(["Anglais", "Français"]);
+    expect(f.languages.map((x) => x.value)).toEqual(["en", "fr"]);
     expect(f.ects.map((x) => x.value)).toEqual([3, 4, 5, 25]);
     expect(f.entities.map((x) => x.value)).toEqual(["BTCI", "EPL", "INFO", "PHYS"]);
   });
@@ -142,7 +146,7 @@ describe("the facets are the data, not a list somebody wrote", () => {
    * "Q1 (3)" next to a list that empties when pressed.
    */
   it("counts each facet against the OTHER filters", () => {
-    const f = courseFacets(catalogue, { ...NO_COURSE_FILTER, languages: ["Anglais"] }, counts);
+    const f = courseFacets(catalogue, { ...NO_COURSE_FILTER, languages: ["en"] }, counts);
     // Two English courses, one in each quarter... and in this fixture both are Q1.
     const q1 = f.quarters.find((x) => x.value === "Q1");
     expect(q1?.count).toBe(2);
@@ -151,7 +155,7 @@ describe("the facets are the data, not a list somebody wrote", () => {
     // The language facet itself still shows every language, because its own
     // dimension is the one being ignored. Otherwise choosing a language would
     // hide every other language and there would be no way back.
-    expect(f.languages.map((x) => x.value)).toEqual(["Anglais", "Français"]);
+    expect(f.languages.map((x) => x.value)).toEqual(["en", "fr"]);
   });
 
   it("a facet count always equals what selecting it returns", () => {

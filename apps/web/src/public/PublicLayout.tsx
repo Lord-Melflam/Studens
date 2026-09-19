@@ -10,6 +10,7 @@
  * exists, applied one zone further out.
  */
 import { useT } from "@studens/i18n";
+import { ThemeToggle } from "../ThemeToggle.js";
 import { Brand } from "../Brand.js";
 import { linkProps } from "../router.js";
 import { Account } from "../Account.js";
@@ -50,6 +51,7 @@ export function PublicLayout({ path, children }: { path: string; children: React
             back look for different words, which is the only reason both exist.
           */}
           <LanguageSwitcher route={path} />
+          <ThemeToggle />
           {/*
             Session aware. Signed out it offers the two labels FR-F3 explains;
             signed in it offers the way into the app and the way out. A header
