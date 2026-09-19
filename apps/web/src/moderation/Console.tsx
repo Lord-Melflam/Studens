@@ -352,14 +352,16 @@ function Settings() {
       <h3>{t("mod.settings")}</h3>
       <p className="hint">{t("mod.settings.hint")}</p>
       {rows.map((row) => (
-        <div key={row.key} className="inline-field">
+        <div key={row.key} className="field-row narrow">
           {/* THE KEY IS THE LABEL. Translating it would mean the shell
               holding a phrase like "reviews per page", which is the module's
               vocabulary and exactly what FR-B16 keeps out of here; the gate
               caught the first attempt. A key is also what an administrator
               reading the audit log will see, and a new setting needs no change
               to this screen at all. */}
-          <label htmlFor={row.key}><code>{row.key}</code></label>
+          <label htmlFor={row.key}>
+            <code>{row.key}</code>
+          </label>
           <input
             id={row.key}
             className="text-input"
@@ -369,12 +371,14 @@ function Settings() {
             value={draft[row.key] ?? ""}
             onChange={(e) => setDraft({ ...draft, [row.key]: e.target.value })}
           />
-          <button type="button" onClick={() => save(row)}>
-            {t("mod.settings.save")}
-          </button>
           <span className="hint">
             {t("mod.settings.range", { min: row.min, max: row.max, fallback: row.fallback })}
           </span>
+          <div className="panel-actions">
+            <button type="button" className="go" onClick={() => save(row)}>
+              {t("mod.settings.save")}
+            </button>
+          </div>
         </div>
       ))}
       {saved && <p className="hint">{t("mod.settings.saved")}</p>}
@@ -427,7 +431,7 @@ function Suspensions() {
       <p className="hint">{t("mod.suspend.account")}</p>
       <p className="hint">{t("mod.suspend.anonymous")}</p>
 
-      <div className="inline-field">
+      <div className="field-row">
         <label htmlFor="susp-user">{t("mod.suspend.username")}</label>
         <input
           id="susp-user"
@@ -437,7 +441,7 @@ function Suspensions() {
           autoComplete="off"
         />
       </div>
-      <div className="inline-field">
+      <div className="field-row narrow">
         <label htmlFor="susp-days">{t("mod.suspend.length")}</label>
         <select id="susp-days" value={days} onChange={(e) => setDays(e.target.value)}>
           {SUSPENSION_LENGTHS.map((d) => (
@@ -447,7 +451,7 @@ function Suspensions() {
           ))}
         </select>
       </div>
-      <div className="inline-field">
+      <div className="field-row">
         <label htmlFor="susp-why">{t("mod.suspend.reason")}</label>
         <input
           id="susp-why"
@@ -458,7 +462,7 @@ function Suspensions() {
         />
       </div>
 
-      <div className="inline-field">
+      <div className="panel-actions">
         <button type="button" className="danger" disabled={busy || username.trim() === ""} onClick={() => act(false)}>
           {t("mod.suspend.do")}
         </button>
