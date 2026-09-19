@@ -270,6 +270,13 @@ export interface ProgrammeSummary {
  * two universities publish the same string, a reader asking by code alone gets
  * one of them and cannot tell which.
  */
+/** One institution's share of the catalogue. */
+export interface InstitutionCounts {
+  code: string;
+  courses: number;
+  programmes: number;
+}
+
 export interface Catalogue {
   readonly year: number;
   readonly size: number;
@@ -288,6 +295,15 @@ export interface Catalogue {
   faculties(): FacultySummary[] | Promise<FacultySummary[]>;
   /** Every programme of the year, or only one faculty's. */
   programmes(facultyCode?: string): ProgrammeSummary[] | Promise<ProgrammeSummary[]>;
+  /**
+   * How much each institution contributes to this year's catalogue.
+   *
+   * Counted the same way `size` is, one row per offering, because the obvious
+   * shortcut is wrong: summing each programme's course count double counts
+   * every course reachable from more than one programme, and most are. Doing
+   * that gave 28,870 against a real total of 12,093.
+   */
+  countsByInstitution(): InstitutionCounts[] | Promise<InstitutionCounts[]>;
   coursesOfProgramme(
     institution: string,
     programmeCode: string,
@@ -343,6 +359,18 @@ export class SnapshotCatalogue implements Catalogue {
     // course whose description mentions it.
     return [...byCode, ...byTitle].slice(0, limit)
       .map((o) => summarise(o, this.institution));
+  }
+
+  countsByInstitution(): InstitutionCounts[] {
+    // A snapshot holds exactly one institution's crawl (version 9), so this
+    // is that institution and nothing else.
+    return [
+      {
+        code: this.snapshot.institution ?? "uclouvain",
+        courses: this.snapshot.offerings.length,
+        programmes: this.snapshot.programmes.length,
+      },
+    ];
   }
 
   faculties(): FacultySummary[] {
@@ -453,6 +481,30 @@ export class DatabaseCatalogue implements Catalogue {
       );
     }
     return new DatabaseCatalogue(prisma, latest, size);
+  }
+
+  async countsByInstitution(): Promise<InstitutionCounts[]> {
+    // Grouped in the database, one row per offering of this year, so a course
+    // reachable from six programmes is counted once. The programme tally is a
+    // second count because the two live on different tables.
+    const rows = await this.prisma.institution.findMany({
+      select: {
+        code: true,
+        courses: {
+          select: { id: true },
+          where: { offerings: { some: { year: this.year } } },
+        },
+        programmes: { select: { id: true } },
+      },
+      orderBy: { code: "asc" },
+    });
+    return rows
+      .map((i) => ({
+        code: i.code,
+        courses: i.courses.length,
+        programmes: i.programmes.length,
+      }))
+      .filter((i) => i.courses > 0 || i.programmes > 0);
   }
 
   async search(query: string, limit = 25): Promise<CourseSummary[]> {

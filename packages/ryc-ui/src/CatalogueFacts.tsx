@@ -28,7 +28,7 @@ export function CatalogueFacts() {
     year: number;
     courses: number;
     programmes: number;
-    institutions: string[];
+    institutions: Array<{ code: string; courses: number; programmes: number }>;
   } | null>(null);
 
   useEffect(() => {
@@ -52,8 +52,8 @@ export function CatalogueFacts() {
     <ul className="chips">
       {/* The universities by name, however many there are. Naming one was the
           bug; hardcoding two would be the same bug a year later. */}
-      {facts.institutions.map((code) => (
-        <li key={code}>{code.toUpperCase()}</li>
+      {facts.institutions.map((i) => (
+        <li key={i.code}>{i.code.toUpperCase()}</li>
       ))}
       <li>{t("ryc.sources.courses", { n: n(facts.courses) })}</li>
       <li>{t("ryc.sources.programmes", { n: n(facts.programmes) })}</li>

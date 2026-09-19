@@ -820,7 +820,33 @@ a.ghost.here {
    A row per person, grouped by role, because the list is the thing being
    managed: changing somebody's role used to mean retyping their name into a
    form that sat under it. */
-.holder-group { margin-top: 1.2rem; }
+/* A SUB BLOCK PER ROLE, delimited rather than merely spaced. The groups were
+   a heading and a list, run together, so an administrator and a moderator read
+   as one list with a word in the middle. They are the two sets that must never
+   be confused: one can remove content, the other can also appoint. */
+.holder-group {
+  margin-top: 1rem;
+  padding: 0.85rem 0.95rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+/* The strongest set first, and marked, because it is the one with the power
+   to grow itself. */
+.holder-group.admins { border-color: var(--accent); background: var(--accent-soft); }
+.holder-group .sub { margin: 0; font-size: 0.85rem; }
+/* A list that will grow: capped, with the rest one press away. */
+.holder-more {
+  margin-top: 0.6rem;
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
 .holder-group .sub .count {
   margin-left: 0.4rem;
   padding: 0 0.4rem;
@@ -832,6 +858,8 @@ a.ghost.here {
   border-radius: 999px;
 }
 .holders { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+.holder-group .holder { background: var(--surface); padding: 0.5rem 0.6rem; border-radius: 6px; }
+.holder-group .holder + .holder { margin-top: 0.3rem; border-top: 0; }
 .holder {
   display: flex;
   align-items: center;

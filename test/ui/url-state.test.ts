@@ -375,8 +375,18 @@ describe("the address wins over the member's own preference", () => {
     // null and [] are different states: nobody has told us, against told us
     // and the answer is no narrowing. Collapsed into one, a signed-out visitor
     // would be narrowed to nothing or a member's choice would be ignored.
-    expect(browse).toContain("useState<string[] | null>(null)");
+    //
+    // The state is declared in Ryc, which owns it, and read in Browse. It used
+    // to live in Browse alone, and the line above the tabs, which is drawn
+    // outside Browse, therefore reported the whole catalogue whatever was
+    // selected.
+    const ryc = readFileSync(
+      new URL("../../packages/ryc-ui/src/Ryc.tsx", import.meta.url).pathname,
+      "utf8",
+    );
+    expect(ryc).toContain("useState<string[] | null>(null)");
     expect(browse).toContain("mine === null");
+    expect(ryc).toContain("mine === null");
   });
 });
 

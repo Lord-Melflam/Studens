@@ -40,12 +40,27 @@ export async function catalogueRoutes(source: {
    * as though it were the only one.
    */
   router.get("/catalogue", (_req, res) => {
-    void Promise.resolve(catalogue.programmes()).then((programmes) => {
+    void Promise.all([
+      Promise.resolve(catalogue.programmes()),
+      Promise.resolve(catalogue.countsByInstitution()),
+    ]).then(([programmes, institutions]) => {
       res.json({
         year: catalogue.year,
         courses: catalogue.size,
         programmes: programmes.length,
-        institutions: [...new Set(programmes.map((p) => p.institution))].sort(),
+        // BROKEN DOWN BY INSTITUTION, because the app zone scopes the
+        // catalogue to the member's universities and was still reporting the
+        // whole thing: the same figure whether one university was chosen or
+        // both. The totals stay for the public page, which is scoped to
+        // nobody.
+        // The PROGRAMME tally comes from this year's list, the same list the
+        // total above is the length of, so the parts add up to the whole. The
+        // institution table holds every programme ever loaded, which is a
+        // different and larger number and would not.
+        institutions: institutions.map((i) => ({
+          ...i,
+          programmes: programmes.filter((p) => p.institution === i.code).length,
+        })),
       });
     });
   });

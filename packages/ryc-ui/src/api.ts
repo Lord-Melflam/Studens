@@ -227,8 +227,8 @@ export const api = {
       year: number;
       courses: number;
       programmes: number;
-      /** The institution codes actually present in the catalogue. */
-      institutions: string[];
+      /** What each institution contributes. The parts sum to the totals. */
+      institutions: Array<{ code: string; courses: number; programmes: number }>;
     }>("/api/catalogue"),
   search: (q: string) =>
     json<{ query: string; results: CourseSummary[] }>(`/api/courses?q=${encodeURIComponent(q)}`),

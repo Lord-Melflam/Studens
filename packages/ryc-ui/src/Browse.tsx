@@ -46,6 +46,8 @@ export function Browse({
   onOpenProgramme,
   onOpen,
   reviewCounts,
+  mine,
+  setMine,
   search,
   navigate,
 }: {
@@ -68,6 +70,15 @@ export function Browse({
   onOpenProgramme: (programme: { institution: string; code: string } | null) => void;
   onOpen: (course: CourseSummary) => void;
   reviewCounts: Record<string, number>;
+  /**
+   * Which catalogues this member asked for, or null while nobody has answered.
+   *
+   * Null rather than an empty array, because they mean different things: null
+   * is "we have not been told", and empty is "told, and it is everything".
+   * Signing out, a 401, or a visitor with no account all leave it null.
+   */
+  mine: string[] | null;
+  setMine: (institutions: string[]) => void;
   /** The query string, carried down unread from the shell. */
   search: string;
   navigate: (to: string, opts?: { replace?: boolean }) => void;
@@ -92,17 +103,14 @@ export function Browse({
    * everything". Signing out, a 401, or a visitor with no account all leave it
    * null, and browsing works for all three.
    */
-  const [mine, setMine] = useState<string[] | null>(null);
-  useEffect(() => {
-    let live = true;
-    api
-      .myInstitutions()
-      .then((r) => live && setMine(r.institutions))
-      .catch(() => live && setMine(null));
-    return () => {
-      live = false;
-    };
-  }, []);
+  /**
+   * Owned by Ryc, not here.
+   *
+   * The line above the tabs says how large the catalogue is, and it was saying
+   * the whole catalogue whatever the scope, because the scope lived in this
+   * component and that line is drawn outside it. One fetch, one owner, two
+   * readers.
+   */
 
   /**
    * THE URL WINS, AND THE PREFERENCE IS THE DEFAULT.
