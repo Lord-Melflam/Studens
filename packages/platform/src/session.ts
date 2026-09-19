@@ -209,6 +209,45 @@ export async function revokeSession(
   }
 }
 
+/**
+ * FR-A5: end every session except the one asking.
+ *
+ * WHY THIS EXISTS AS ITS OWN OPERATION. The list cannot be scanned once it is
+ * long, and it is long for anybody who signs in from several places or who
+ * simply signs in often: 79 live sessions on the development account by
+ * 2026-09-19, each row reading "another sign-in" and a date, because that is
+ * all a session records (see `listSessions` on why there is no device and no
+ * address). Revoking them one at a time is 78 presses of a button, and
+ * choosing between rows that carry nothing to tell them apart is not a choice.
+ *
+ * So the useful act is "keep this one, end the rest", which is a single
+ * decision somebody can actually make. It is also the right response to the
+ * fear that brings a person to this screen, which is that somebody else is
+ * signed in as them: they do not need to identify the intruder's row, they
+ * need every row but their own to stop working.
+ *
+ * The current session is excluded by id rather than by the caller filtering
+ * first, so a mistake here signs somebody out of their own screen rather than
+ * quietly leaving an attacker's session alive.
+ */
+export async function revokeOtherSessions(
+  memberId: string,
+  keepSessionId: string,
+  opts: SessionOptions = {},
+): Promise<number> {
+  const prisma = opts.client ?? new PrismaClient();
+  const now = opts.now ?? new Date();
+  try {
+    const { count } = await prisma.session.updateMany({
+      where: { memberId, revokedAt: null, NOT: { id: keepSessionId } },
+      data: { revokedAt: now },
+    });
+    return count;
+  } finally {
+    if (!opts.client) await prisma.$disconnect();
+  }
+}
+
 export interface ListedSession {
   id: string;
   issuedAt: Date;

@@ -18,7 +18,12 @@ import {
   readSuspensionNotice,
   setSuspensionNotice,
 } from "../suspensionnotice.js";
-import { createSession, listSessions, revokeSession } from "@studens/platform";
+import {
+  createSession,
+  listSessions,
+  revokeOtherSessions,
+  revokeSession,
+} from "@studens/platform";
 import { clearSessionCookie, setSessionCookie } from "../cookies.js";
 import { devIdentityEnabled, identifyIfAny } from "../identity.js";
 
@@ -196,6 +201,26 @@ export function sessionRoutes(prisma: PrismaClient): Router {
           current: s.current,
         })),
       });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
+   * FR-A5: end every session except this one.
+   *
+   * A DELETE on the collection, where the single revoke is a DELETE on a
+   * member of it. The current session is named by the server from the cookie
+   * and never by the caller, so this cannot be pointed at somebody else's
+   * session, and it cannot accidentally keep one that is not yours.
+   */
+  router.delete("/sessions", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who) {
+        res.status(401).json({ error: "sign in required" });
+        return;
+      }
+      const ended = await revokeOtherSessions(who.memberId, who.sessionId, { client: prisma });
+      res.json({ ended });
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
 
