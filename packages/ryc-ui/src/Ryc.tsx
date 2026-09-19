@@ -433,7 +433,18 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
             <p className="empty">{t("ryc.search.none", { query })}</p>
           )}
           {results.length > 0 && (
-            <div className="results-in">
+            /*
+              THE FILTERS GO BESIDE THE RESULTS, not above them. François:
+              "quand on tape un mot, ce qui est directement en bas, c'est les
+              filtres, avant les cours", so on a short screen somebody typing a
+              course name saw five filter groups and no courses at all.
+
+              `browse-wide` is the same two column grid the programme screen
+              has used since the catalogue went past one faculty, for the same
+              reason. Reused rather than rebuilt: a second layout that has to
+              agree with this one is a second layout that will stop agreeing.
+            */
+            <div className="results-in browse-wide">
               <CourseFilters
                 courses={results}
                 reviewCounts={reviewCounts}
