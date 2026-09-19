@@ -115,8 +115,8 @@ export function Browse({
   /**
    * THE URL WINS, AND THE PREFERENCE IS THE DEFAULT.
    *
-   * François asked for the catalogue to follow the university chosen at
-   * registration, and for a control to widen it. Both are satisfied by one
+   * The catalogue follows the university chosen at registration, with a
+   * control to widen it. Both are satisfied by one
    * rule: if the address says which institutions, use those; if it says
    * nothing, use the member's.
    *
@@ -129,10 +129,9 @@ export function Browse({
    * YOUR UNIVERSITIES ARE THE CATALOGUE, not a filter over everybody's.
    *
    * The first version preselected a chip inside a list of every institution.
-   * François: "this is not the right move (fragile from my perspective and
-   * added noise not avoided). Imagine we have 5 or 10 university ? What would
-   * it look like." He is right, and the objection is structural rather than
-   * visual: preselecting inside "all of them" treats every university as the
+   * That was rejected as fragile, and it does not survive five or ten
+   * universities. The objection is structural rather than visual:
+   * preselecting inside "all of them" treats every university as the
    * default and yours as a narrowing, when it is the other way round.
    *
    * So the member's set is applied BEFORE anything else, and every count below

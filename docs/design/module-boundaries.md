@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Status | **Proposed**, needs François's call |
+| Status | **Proposed**, needs the owner's call |
 | Proposal | **Three tiers** (platform services, reference modules, feature modules) plus one access rule. **Reject** a global shared module. |
-| Raised by | François, 2026-09-10: "some aspects might be shared between modules ... or make a global module that holds most of the globally shared data?" |
+| Raised | 2026-09-10, asking whether aspects shared between modules belong in a global module holding the shared data |
 | Date | 2026-09-10 |
 | Implements | `requirements.md` 1.5 items 3 and 4, FR-B |
 | Constrained by | FR-C1, FR-C2, FR-C5, FR-C6 |
@@ -138,7 +138,7 @@ rule below.
 
 Keep one database, let modules read each other's tables where convenient.
 
-Rejected. This is the coupling François wanted to avoid, in its least visible form. Nothing
+Rejected. This is the coupling the question set out to avoid, in its least visible form. Nothing
 in the code declares the dependency, so it is discovered at migration time, when a column
 rename breaks a module nobody was looking at. It also destroys the one property that makes
 later extraction cheap. A module's storage is private to it; sharing happens through a

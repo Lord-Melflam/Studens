@@ -1,13 +1,13 @@
 /**
  * What a person may type, and the two implementations agreeing about it.
  *
- * FOUND BY USING IT, 2026-09-13. François was stuck on the last screen of the
- * first run and reasonably suspected the emoji he had typed. They were not the
- * cause, but probing the endpoint to find out turned up what was: the free text
+ * FOUND BY USING IT, 2026-09-13. The last screen of the first run refused to
+ * save, and the emoji in the field were the reasonable suspect. They were not
+ * the cause, but probing the endpoint turned up what was: the free text
  * fields accepted control characters, bidirectional overrides and zero-width
  * characters, counted emoji as two characters each against a limit of 120, and
- * said nothing on screen about any of it. His words: "Input sanitization and
- * clear visual warning should be visible for bad inputs."
+ * said nothing on screen about any of it. Input sanitisation and a clear
+ * visual warning both have to be visible when an input is refused.
  *
  * TWO IMPLEMENTATIONS, ONE BEHAVIOUR. The server decides and the browser
  * mirrors, so a mistake is visible while it is made. A mirror that has drifted

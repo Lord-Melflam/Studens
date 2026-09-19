@@ -4,10 +4,9 @@
  * This replaced three translated strings: "UCLouvain", "546 cours",
  * "43 programmes". Every one of them was false by the time anybody read it,
  * because the crawl had widened to two universities and twenty times the
- * courses and nothing updates a sentence. François, seeing it: "the main page
- * is stale, still talk uclouvain only ... you see why it would have been
- * interesting to have global variable?" He is right, and the version of that
- * which cannot rot is to fetch the numbers rather than to keep them anywhere.
+ * courses and nothing updates a sentence. The home page went on naming one
+ * university for weeks after there were two. The version of that which cannot
+ * rot is to fetch the numbers rather than to keep them anywhere.
  *
  * OWNED BY THE MODULE, like the mock beside it. The public zone places this
  * and never reads it, because what a module's catalogue contains is the

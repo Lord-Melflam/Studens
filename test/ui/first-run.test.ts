@@ -188,8 +188,8 @@ describe("declaring an institution grants nothing (FR-F13)", () => {
  * public home, and the public home's way in went to /app, which diverted again.
  * There was no path into the product that did not pass through finishing the
  * setup, and nothing on screen said why: clicking a module simply put you
- * somewhere else. François hit it as "ryc is gone ... when I click on ryc, it
- * stops", which is exactly what it looks like from outside.
+ * somewhere else. From outside it looks like the module disappearing:
+ * pressing RYC simply stops.
  *
  * These read the source rather than a rendered screen because the property is
  * about which states can reach which, and there are four files involved.
@@ -319,9 +319,9 @@ describe("finishing lands in the app, not back in the wizard", () => {
 /**
  * STEP 5 IS A MULTIPLE CHOICE, and the choice is not exclusive.
  *
- * François: "I also see some people followig courses in 2 different
- * universities, so it should be better if in /5 we make the choice non
- * exclusive." A student registered at one university and taking a minor at
+ * Students do follow courses at two universities at once, so this screen may
+ * not ask for one answer. A student registered at one university and taking a
+ * minor at
  * another is not an edge case here, it is two of the three institutions this
  * product launches with, twenty kilometres apart.
  *

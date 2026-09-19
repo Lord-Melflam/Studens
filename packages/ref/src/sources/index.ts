@@ -1,7 +1,7 @@
 /**
  * ONE INSTITUTION'S CATALOGUE, AND HOW TO READ IT.
  *
- * Studens starts with UCLouvain and ULB (François, 2026-09-17), and those two
+ * Studens starts with UCLouvain and ULB (decided 2026-09-17), and those two
  * publish their catalogues in shapes that have nothing in common. UCLouvain
  * walks faculty indexes and has a search application beside them; ULB has a
  * sitemap, a programme endpoint that returns rendered HTML inside JSON, and
@@ -15,8 +15,8 @@
  * run could not reach. Duplicated, the second copy gets the lessons the first
  * one learned only if somebody remembers to copy them across.
  *
- * WHY THE UCLOUVAIN CRAWLER IS NOT MOVED INTO IT. François, 2026-09-18: "keep
- * the uclouvain crawler untouched". It is the only crawler here that has ever
+ * WHY THE UCLOUVAIN CRAWLER IS NOT MOVED INTO IT. It was to be left untouched,
+ * decided 2026-09-18. It is the only crawler here that has ever
  * completed a full run, 78 minutes and about ten thousand requests, and every
  * defect it has met is written into it. So `uclouvain.ts` DELEGATES to it and
  * changes nothing: `crawl.ts`, `urls.ts` and `parse/` are byte for byte what

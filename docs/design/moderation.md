@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Status | **Accepted** 2026-09-13 by François. Three questions, one system, so one note. |
+| Status | **Accepted** 2026-09-13. Three questions, one system, so one note. |
 | Resolves | OPEN-7, OPEN-8, OPEN-24. Implemented as FR-E8 to FR-E14. |
 | Implements | FR-E1 to FR-E7, constrained by FR-C9, FR-C10, FR-C16, FR-B12 |
-| Prompted by | François, 2026-09-12: prepare the moderation trio |
+| Prompted by | A request on 2026-09-12 to prepare the moderation trio |
 
 ## 0. What changed while preparing this
 

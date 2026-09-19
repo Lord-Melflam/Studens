@@ -182,10 +182,9 @@ model Setting {
 /// and they diverge the moment a student wants to look at a course they might
 /// take elsewhere, or an exchange student wants both.
 ///
-/// A SET, not a second single choice. François: "if we choose UCL in that
-/// page, we've access to UCL catalog as default in RYC, if not we still have a
-/// button which can make us add/remove a different formation as our RYC
-/// favorite. A way to narrow and enlarge our experience as we go."
+/// A SET, not a second single choice. The university picked at registration
+/// is the default catalogue in RYC, and a control adds or removes another, so
+/// the scope narrows and widens as somebody goes.
 ///
 /// `institutionCode` is a plain string with NO foreign key, exactly as
 /// `Member.institutionCode` is and for the same reason: the platform is tier 0
@@ -304,7 +303,7 @@ model Session {
 ///
 /// This table is in the platform schema, so no module can read it: a module
 /// that could see who reported what could correlate reporters with contributions
-/// it stores. **[VERIFIED]** François, 2026-09-16.
+/// it stores. **[VERIFIED]** 2026-09-16.
 model Report {
   id               String    @id @default(uuid())
   /// Who owns the reported thing, for example "ryc.review". Opaque here.
@@ -616,10 +615,10 @@ model CourseOffering {
   content      Json?
   /// FOUR MORE THAT BOTH UNIVERSITIES PUBLISH AND NEITHER OF US WAS KEEPING.
   ///
-  /// François asked for them by name: "look at the courses page and see the
-  /// field we can have such as : Contenu du cours, Objectifs (et/ou acquis
-  /// d'apprentissages spécifiques), Méthodes d'enseignement et activités
-  /// d'apprentissages, Références, bibliographie et lectures recommandées".
+  /// Asked for by name, from what a course page publishes: Contenu du cours,
+  /// Objectifs (et/ou acquis d'apprentissages spécifiques), Méthodes
+  /// d'enseignement et activités d'apprentissages, Références, bibliographie
+  /// et lectures recommandées.
   ///
   /// Each is its own column rather than folded into an existing one, because
   /// the two sources name them differently and a column that means two things

@@ -119,7 +119,7 @@ export function FilterGroup<T extends string | number | null>({
    *
    * Two of them used to start folded, the two long ones, because 20 faculties
    * and 22 fields of study put 57 chips above the first programme. That fixed
-   * the crowding by removing the filters, which is the thing François
+   * the crowding by removing the filters, which is the thing that was
    * objected to. The crowding is fixed below instead, by a search box and a
    * list that scrolls inside its own group, and then there is nothing left for
    * the fold to buy.
@@ -136,8 +136,8 @@ export function FilterGroup<T extends string | number | null>({
   /**
    * A LONG GROUP IS SEARCHABLE, NOT HIDDEN.
    *
-   * It used to fold behind "choose from 31", which is what François objected
-   * to: "the long ones hidden behind 'choose from'". Folding was an answer to
+   * It used to fold behind "choose from 31", which is what was objected to:
+   * the long lists were hidden behind a label. Folding was an answer to
    * crowding and it answered it by removing the thing rather than making it
    * usable, so 31 faculties and 22 fields of study were one click away from
    * being visible at all and no click away from being findable.
@@ -290,9 +290,8 @@ export function kindLabel(t: Translate, kind: string | null): string {
  *
  * Not a filter. The member's universities ARE the catalogue, and everything
  * below counts inside them: 690 programmes rather than 976 with one chip lit.
- * François, on the first version: "this is not the right move (fragile from my
- * perspective and added noise not avoided). Imagine we have 5 or 10 university
- * ? What would it look like."
+ * The first version was rejected as fragile and as noise, and it does not
+ * survive five or ten universities.
  *
  * So this sits above the filters, says what the scope is in a line, and hides
  * the rest until asked. Adding a university is a deliberate act with its own

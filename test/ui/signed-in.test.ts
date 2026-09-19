@@ -3,8 +3,8 @@
  *
  * THIS TEST EXISTS BECAUSE TWO BUGS IN A ROW GOT PAST 350 OTHERS.
  *
- * On 2026-09-13 the app was shipped twice in a state François hit immediately
- * and no test could: first a redirect that made the whole app unreachable while
+ * On 2026-09-13 the app was shipped twice in a state anybody using it hit
+ * immediately and no test could: first a redirect that made the whole app unreachable while
  * the setup was unfinished, then a blank page. Both were on the signed-in path,
  * and every existing test rendered either the public zone or a component in
  * isolation with no session at all. `/api/session` answers "nobody" without a
@@ -124,8 +124,8 @@ describe("the app renders for a signed-in member", () => {
 
   /**
    * Signing out does not empty the app, it changes who is looking at it, and
-   * the header has to follow. It did not: François signed out of the console
-   * and the page kept offering an account screen that can only fail, while the
+   * the header has to follow. It did not: signing out of the console left the
+   * page offering an account screen that can only fail, while the
    * console's own URL answered with the message meant for a stranger guessing
    * it. What is drawn comes from the session now, so the header is right the
    * moment the session changes rather than the next time the page is loaded.
@@ -194,7 +194,7 @@ describe("no screen leaks an untranslated key", () => {
  * out has to be left before it happens, not after. The first attempt reacted to
  * the session instead and did nothing at all: the page came back fresh on the
  * console's URL, the change it was waiting for had already happened, and
- * François hit the same "Unknown module" a second time.
+ * The same "Unknown module" turned up a second time.
  */
 describe("signing out leaves the application", () => {
   it("lands on the public home, from every screen, in the reader's language", () => {

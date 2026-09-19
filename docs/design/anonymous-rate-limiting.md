@@ -4,7 +4,7 @@
 |---|---|
 | Status | **Accepted** 2026-09-09 |
 | Decision | **Option A**, fixed window. Live database adversary **out of scope**. |
-| Decided by | François, 2026-09-09 |
+| Decided | 2026-09-09 |
 | Date | 2026-09-09 |
 | Resolves | `requirements.md` OPEN-6, OPEN-27 |
 | Still open | OPEN-26 (quota and period), OPEN-35 (one person, many accounts) |
@@ -167,8 +167,8 @@ design, an acceptable one. It should still be stated rather than discovered.
 
 **RESOLVED 2026-09-10: Option 1.** Per target uniqueness applies to the **attributed path
 only** (`requirements.md` FR-C13, FR-D9). On the anonymous path the quota is the only limit,
-and a determined Member can spend several of their allowance on one course. François,
-2026-09-10, closing OPEN-25 and OPEN-31.
+and a determined Member can spend several of their allowance on one course.
+Decided 2026-09-10, closing OPEN-25 and OPEN-31.
 
 "One review per course per person" cannot be enforced anonymously without a per member, per
 course marker, which is Option C and is rejected.

@@ -1,8 +1,8 @@
 /**
  * A SCREEN'S SETTINGS LIVE IN THE URL.
  *
- * Reported by François: "when I select filters then go to a course, when I go
- * back I lose the filters I've selected." The filters were component state, so
+ * Reported from use: select filters, open a course, press Back, and the
+ * filters are gone. They were component state, so
  * the component unmounting took them with it.
  *
  * Three things fail when a setting is held in state, and only the first is
@@ -330,7 +330,7 @@ describe("what is not published does not go in the address", () => {
 describe("the address wins over the member's own preference", () => {
   /**
    * RYC defaults its university filter to the catalogues a member asked for,
-   * which is what François wanted: the catalogue follows the university chosen
+   * which is the requirement: the catalogue follows the university chosen
    * at registration, and a control widens it.
    *
    * The rule that makes that safe is the ORDER. A link that names institutions
@@ -349,7 +349,7 @@ describe("the address wins over the member's own preference", () => {
 
   it("scopes the catalogue to the member before any filter is applied", () => {
     // The preference used to be a fallback INSIDE the filter, which put it in
-    // two places at once. François rejected the shape it produced: a chip
+    // two places at once. The shape it produced was rejected: a chip
     // preselected inside a list of every institution, which treats all of them
     // as the default and yours as a narrowing, and which is a wall at ten.
     //

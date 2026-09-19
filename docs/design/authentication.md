@@ -97,7 +97,7 @@ development identity.
 
 ### 6. A username chosen at first sign-in, and the provider's real name is never stored
 
-**Resolves OPEN-36.** François, 2026-09-11.
+**Resolves OPEN-36.** Decided 2026-09-11.
 
 **Serves** FR-C15, and 3.3. A pseudonym narrows the candidate set for the
 complement problem less than a real name does: every attributed reviewer is a
@@ -161,7 +161,7 @@ security boundary here (FR-B14).
 2. **The OIDC flow against a fake provider.** Authorize, callback, PKCE, state,
    nonce, claim validation, sign out. Testable end to end with no credentials.
 3. **Microsoft and Google as configuration.** Needs registered applications and
-   their secrets, which only François can create.
+   their secrets, which only the owner of the accounts can create.
 4. **Usernames**, and rendering them where `read.ts` currently returns the
    placeholder `"membre"`.
 

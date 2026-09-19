@@ -3,8 +3,8 @@
  *
  * There is no list of faculties, programmes or course codes anywhere in this
  * package: every one of them is DISCOVERED by following links from the single
- * root below. That is François's requirement of 2026-09-10, and the reason is
- * that a hardcoded list is wrong within a year.
+ * root below. That is the requirement of 2026-09-10, and the reason is that a
+ * hardcoded list is wrong within a year.
  * docs/design/catalogue-ingestion.md section 0.
  */
 

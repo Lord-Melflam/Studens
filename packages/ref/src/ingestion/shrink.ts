@@ -6,10 +6,10 @@
  * courses with 40. Every step succeeded. Nothing was corrupt, nothing failed,
  * and the catalogue was gone.
  *
- * François, on being told the answer was a warning in a document: "It can
- * happen, either my mistake or purpose (for good reason of course), so how to
- * prevent things from going brrr instead of just relying on people good
- * sense?" He is right. A note in a runbook is not a mechanism, and this
+ * A SHRUNKEN CRAWL USED TO BE ANSWERED BY A WARNING IN A DOCUMENT. It can
+ * happen by mistake or on purpose and for a good reason, and either way
+ * nothing stood between it and the database except somebody remembering. A
+ * note in a runbook is not a mechanism, and this
  * project already records that a rule written is not a rule applied
  * (LESSONS.md section 9).
  *

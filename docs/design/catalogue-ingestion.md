@@ -4,7 +4,7 @@
 |---|---|
 | Status | **Accepted** 2026-09-10 for the method. Built for one faculty; see section 10 for what the catalogue actually contains. |
 | Decision | **Scrape uclouvain.be**, with the whole structure discovered at runtime and nothing hardcoded. |
-| Decided by | François, 2026-09-10 |
+| Decided | 2026-09-10 |
 | Resolves | `requirements.md` OPEN-33 |
 | Implements | FR-B9 (the catalogue is a reference module), supports FR-D1 to FR-D4 |
 | Raises | OPEN-38, OPEN-45 |
@@ -17,7 +17,7 @@ There is no UCLouvain API, so the catalogue is built by scraping the public cour
 
 The structure is **discovered, not configured**. One root URL yields the faculties, each
 faculty yields its programmes, each programme yields its courses. No list of faculties,
-programmes or course codes is written into the source. François's requirement, 2026-09-10:
+programmes or course codes is written into the source. The requirement of 2026-09-10:
 "Things need to be automated as much as possible to avoid hardcoding stuffs. For evolution
 purpose, it's a must."
 
@@ -99,7 +99,7 @@ does.
 
 ## 3. The year in the URL
 
-**[VERIFIED]** François, 2026-09-10.
+**[VERIFIED]** 2026-09-10.
 
 The URL carries **one** year, and it is the **first** year of the academic year: academic
 year *x to y* appears as `x`. So 2025-2026 is `cours-2025-...`. The academic year starts in
@@ -123,7 +123,7 @@ year. That was a derivation on 2026-09-10; the URL structure makes it an observa
 
 ### 3.1 Historical years, verified
 
-**[VERIFIED]** by direct request, 2026-09-10. François asked for historical scraping and
+**[VERIFIED]** by direct request, 2026-09-10. Historical scraping was asked for, and
 doubted it would work. It does.
 
 **Current years are served directly. Older years redirect to an archive portal.**
@@ -305,7 +305,7 @@ Concretely, the verification obligations:
 
 ## 7. Scrape everything, launch narrow
 
-**[VERIFIED]** François, 2026-09-10, on the scope of the crawl. The launch scoping is a
+**[VERIFIED]** 2026-09-10, on the scope of the crawl. The launch scoping is a
 recommendation, marked **[DERIVED]**, awaiting confirmation.
 
 The crawl covers **all 20 faculties**, because with a discovered chain that costs nothing
@@ -393,7 +393,7 @@ inferred from a students' document.
 
 ## 8.2 The long fields are lists, and were being stored as one line
 
-Found 2026-09-10, on a course page François was reading.
+Found 2026-09-10, on a course page somebody was reading.
 
 `Modes d'évaluation`, `Thèmes abordés` and `Contenu` were scraped with
 `.text()`, which threw away every list, line break and heading the source had.
@@ -445,7 +445,7 @@ control.
 
 ## 8.3 OPEN-45 resolved, and a heuristic that was wrong
 
-**Decided 2026-09-13 by François**, and not as recommended. The mechanics below
+**Decided 2026-09-13**, and not as recommended. The mechanics below
 were accepted in full; the policy was not, and the difference is recorded in the
 section that follows rather than quietly edited away.
 
@@ -547,7 +547,7 @@ it should cost one migration and no rethinking.
 
 ## 10. A second source: the catalogue search application
 
-Explored 2026-09-16, after François pointed out that the product was calling UCLouvain a
+Explored 2026-09-16, after it was pointed out that the product was calling UCLouvain a
 Louvain-la-Neuve institution. Everything in this section was fetched and counted on that
 date, against the 2025-2026 year. **Section 11 is what was then built from it.**
 
@@ -919,7 +919,7 @@ five state `0.00`, which is the `bmeta` family from 12.6.
 ### 12.8 A missing field must never cost the course
 
 No course currently lacks credits, and the column is nullable anyway. That is a
-decision about what the catalogue is, taken by François after the first answer
+decision about what the catalogue is, taken by the owner after the first answer
 to 12.7 was to skip such courses:
 
 > "instead of suppressing those course or not considering them, we should accept
@@ -1144,15 +1144,14 @@ So the shape of the work is not "crawl English instead". It is:
    ended up in,
 4. accept that Dutch has no source and will fall back to French always.
 
-**Deferred, on François's call, 2026-09-17.** The cost is a second full crawl and
+**Deferred, on the owner's call, 2026-09-17.** The cost is a second full crawl and
 a second snapshot per year for a partial gain, and the note now on screen is
 what makes the current state honest rather than broken. Recorded as OPEN-47.
 
 ## 13. A second institution: ULB
 
-Decided 2026-09-18. François: "For now I want to fetch also ULB stuffs. These
-are the 2 univs I want to start with (they are potential tester candidates with
-huge added values)."
+Decided 2026-09-18: ULB is crawled as well. These are the two universities to
+start with, both holding likely testers, and covering them adds a great deal.
 
 ### 13.1 What ULB publishes, measured
 
@@ -1248,7 +1247,7 @@ guessing sends a reader to a university they never asked about.
 The crawler needed a source adapter, the old one being UCLouvain-shaped
 throughout. It has one: `CatalogueSource`, with UCLouvain wrapping the existing
 crawler by delegation and ULB as a second implementation. The UCLouvain crawler
-itself was not moved or rewritten, on François's instruction, because it is the
+itself was not moved or rewritten, on instruction, because it is the
 only one here that has ever met the real site and every defect it has met is
 written into it.
 

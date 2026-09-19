@@ -179,9 +179,9 @@ export interface ProviderIdentity {
    * FR-A11: the whole address, from the verified claim.
    *
    * It used to be read here and deliberately thrown away, on a reading of FR-A9
-   * that was mine rather than François's. The provider sends it on every
-   * sign-in, so discarding it bought no privacy and cost every feature that has
-   * to reach a person. It becomes `Member.providerEmail` and is never editable
+   * that was an assumption here and not a requirement. The provider sends it
+   * on every sign-in, so discarding it bought no privacy and cost every
+   * feature that has to reach a person. It becomes `Member.providerEmail` and is never editable
    * (FR-A12), because it is how the same person is recognised next time.
    */
   email: string;

@@ -3,8 +3,8 @@
  *
  * It lived only on the account panel, which meant a visitor reading the public
  * pages at night could not reach it at all, and somebody with an account had
- * to know it was there. François looked for it and did not find it, which is
- * the whole argument.
+ * to know it was there. Somebody went looking for it and did not find it,
+ * which is the whole argument.
  *
  * ONE BUTTON, TWO STATES, and "follow the device" is not one of them. Most
  * people want the opposite of what they are looking at; the third choice is

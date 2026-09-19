@@ -165,7 +165,7 @@ consequences were all the same bug:
 
 The app zone had the mirror image: the brand went to the app home, so once
 inside there was **no route out** to what Studens is, who runs it, or what
-anonymity does not protect. François reported that half; the other half turned
+anonymity does not protect. That half was reported from use; the other half turned
 up while looking for its cause, which is the usual way round.
 
 **What made it invisible.** None of it is an error. Every page returns 200,
@@ -188,9 +188,9 @@ ever show up as an error.
 ### Sign-in worked, and the product said nothing
 
 The first real Google sign-in succeeded on the first try: the member was
-created, the session was issued, the cookie was set. François saw the public
-home page, still offering "Se connecter" and "Créer un compte", and reasonably
-concluded it had failed.
+created, the session was issued, the cookie was set. What came back on screen was
+the public home page, still offering "Se connecter" and "Créer un compte", so the
+reasonable conclusion was that it had failed.
 
 Two gaps, one symptom, and neither was in the part that was hard.
 
@@ -228,7 +228,7 @@ module changed the URL and left the screen on the module list.
 
 **A dead button is not an error.** Nothing threw, nothing logged, CI was green,
 and the page returned 200 because the SPA shell loads whatever the path. It was
-found by François clicking it.
+found by somebody clicking it.
 
 The tests did not catch it because every one of them called `isAppPath` and
 `moduleIdFrom` with paths that had **already been stripped**, which is the form
@@ -264,7 +264,7 @@ became a space, and those fields shipped as one unbroken blob of up to two
 thousand characters. Nothing failed. The parser tests passed, because they
 assert that `35%` and `55%` appear in the assessment text, and they did.
 
-Caught by François reading a course page, not by any gate.
+Caught by reading a course page, not by any gate.
 
 **The fix**: the substitution now runs on a clone of the one node being read,
 so it applies where it is wanted and nowhere else.
@@ -293,7 +293,7 @@ pushes the decision toward the branch making it, and here that was the branch
 that is **not** anonymous. Copy on that screen is not decoration, it is part of
 the mechanism FR-C exists to protect.
 
-Caught by François asking for polish, not by any gate.
+Caught by a request for polish, not by any gate.
 
 **Rule now in force.** FR-D28 and `test/ui/path-claims.test.ts`: the two cards
 may not name a capability that is not built, and the planned edit is mentioned
@@ -430,7 +430,7 @@ RYC's course search **was** `apps/web/src/App.tsx`. Adding a second module would
 have meant editing the first one's files, which FR-B4 forbids and which 1.5 item
 3 calls the load-bearing decision of the project.
 
-Caught by François asking whether a user would drop straight into RYC, not by
+Caught by the question of whether a user would drop straight into RYC, not by
 any gate.
 
 **Rule now in force.** FR-B16 to FR-B18, plus

@@ -152,9 +152,9 @@ export function reviewRoutes(prisma: PrismaClient): Router {
       // constant and the client does not get a say.
       const asked = Number.parseInt(String(req.query["page"] ?? "1"), 10);
       // HOW MANY FIT ON A PAGE IS AN ADMINISTRATOR'S CHOICE, read here rather
-      // than baked in. François asked for it: "the 10 reviews per page could
-      // change. Could be 5 or less according to what the admin will judge fine
-      // for users." The bounds are the module's, not the setting's: a stored
+      // than baked in. Ten per page is a guess, not a fact: five may suit
+      // better, and whoever runs the platform is the one who can tell. The
+      // bounds are the module's, not the setting's: a stored
       // value of zero or of a million must not be a way to take a page down,
       // and a row can be edited by somebody who never saw the form.
       const perPage = await readNumberSetting(prisma, "ryc.reviewsPerPage", {

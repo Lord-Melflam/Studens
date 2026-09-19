@@ -55,10 +55,9 @@ const MODERATION = "moderation";
  * Where signing out lands. The public home, from anywhere.
  *
  * IT USED TO STAY PUT, and to land on `/app` when the screen it was done from
- * only existed for somebody signed in. François: "be careful that logging out
- * should let us in the app as it's doing rn, otherwise someone might still be
- * using our app when logged out". He is right, and the cost is not only
- * appearances. A course page is public, so staying on one after signing out
+ * only existed for somebody signed in. Signing out has to leave the app, or
+ * somebody is still standing inside it with no session, and the cost is not
+ * only appearances. A course page is public, so staying on one after signing out
  * looked exactly like signing out had failed: same screen, same content, and
  * the only difference a sign-in button somewhere in the corner. On a shared
  * laptop that is the person who thinks they have left and has not checked.
@@ -170,8 +169,8 @@ function SetupPrompt() {
    * specific claim, and it is wrong for anybody who pressed "redo the setup"
    * from their account: that deliberately clears `onboardedAt`, so somebody
    * cannot wander out of the wizard half-answered, and the banner then told a
-   * member with a perfectly good username that they had none. François hit it
-   * on an account that only wanted to change its language.
+   * member with a perfectly good username that they had none. It was hit on
+   * an account that only wanted to change its language.
    *
    * The session already carries the username, so the banner can say the thing
    * that is true rather than the thing that is usually true.

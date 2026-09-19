@@ -126,7 +126,7 @@ export interface CourseDetail extends CourseSummary {
   content: Block[] | null;
   /**
    * Four more that both universities publish, under different names. Added
-   * 2026-09-19 on François's request, each with a column of its own so a field
+   * 2026-09-19 on request, each with a column of its own so a field
    * does not mean two things depending on which university a row came from.
    */
   objectives: Block[] | null;

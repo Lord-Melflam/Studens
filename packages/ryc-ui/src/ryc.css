@@ -190,8 +190,8 @@ dl { margin: 0; }
    same label weight as the three facts above them, which are inert, so the
    page read as nine headings of which six mysteriously had no text under
    them. The chevron alone did not fix it: pale, small, and 600px from the word
-   it belongs to. François: "It just looks like simple text that might be
-   confusing."
+   it belongs to: it read as plain text, which is confusing rather than
+   merely plain.
 
    Hover cannot be the answer either, because a phone has none, and most of
    the people this is for are on one.
@@ -701,8 +701,8 @@ button.ghost {
 }
 
 /* THE GROUPS. Separated by a rule rather than by a gap, because eight of them
-   in a column with only whitespace between reads as one long thing: François,
-   "too many groups stacked (or not properly separated)". */
+   in a column with only whitespace between reads as one long thing: too many
+   groups stacked, and not properly separated. */
 .filters-groups { display: flex; flex-direction: column; }
 
 .filter-text {

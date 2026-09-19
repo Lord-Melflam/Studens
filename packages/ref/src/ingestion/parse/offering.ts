@@ -331,7 +331,7 @@ export function parseOffering(
     ),
     themes: richField($, fields, ["themes abordes"], url, "themes"),
     content: richField($, fields, ["contenu"], url, "content"),
-    // Added 2026-09-19, on François's request. Four lines, and no logic above
+    // Added 2026-09-19, on request. Four lines, and no logic above
     // them is touched: the labels are read exactly as the six already here
     // are, through the same `richField` and the same label map.
     objectives: richField($, fields, ["acquisd'apprentissage", "acquis d'apprentissage"], url, "objectives"),

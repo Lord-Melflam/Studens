@@ -1,8 +1,8 @@
 /**
  * What RYC does when a Member deletes their account.
  *
- * OPEN-46, resolved by François on 2026-09-13: DETACH. The text stays, the name
- * goes. The alternative he chose against was deleting the reviews outright,
+ * OPEN-46, resolved on 2026-09-13: DETACH. The text stays, the name goes.
+ * The alternative rejected was deleting the reviews outright,
  * which is the cleanest reading of Article 17 and removes work other students
  * are relying on, which is the loss this platform exists to prevent.
  *

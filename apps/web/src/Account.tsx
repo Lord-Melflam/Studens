@@ -1,10 +1,10 @@
 /**
  * The account control, used in BOTH headers.
  *
- * It used to live only in the app shell, which produced the thing François hit
- * the first time he signed in with a real Google account: the callback landed
- * him on the public home page, the public header knew nothing about sessions,
- * so it still offered "Se connecter" and "Créer un compte" and gave no way in.
+ * It used to live only in the app shell, which broke the first real sign-in
+ * with a Google account: the callback landed on the public home page, the
+ * public header knew nothing about sessions, so it still offered
+ * "Se connecter" and "Créer un compte" and gave no way in.
  * He had signed in successfully and the product said nothing.
  *
  * A public page must never REQUIRE a session (FR-F2). Reflecting one is a
@@ -125,10 +125,9 @@ export function Account({
         {/*
           A NAME IS NOT A DOMAIN, and it used to be drawn as one: both went
           through `.domain`, which is muted grey text, so somebody's own
-          username sat in the bar looking like a caption. François, after the
-          ULB session: "The pseudo on every pages, for example lordmelflam, has
-          a look issue. Just sitting there like a simple text (might be
-          confusing)."
+          username sat in the bar looking like a caption: plain text with
+          nothing to say it was a name, which reads as a stray label rather
+          than as who you are signed in as.
 
           The name is who you are here, so it is drawn as a thing rather than
           as a label: an initial and the name. The domain keeps the quiet

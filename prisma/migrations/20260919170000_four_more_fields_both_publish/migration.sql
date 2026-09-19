@@ -1,10 +1,9 @@
 -- Four more fields both universities publish and neither of us was keeping.
 --
--- François, having read a ULB course page: "look at the courses page and see
--- the field we can have such as : Contenu du cours, Objectifs (et/ou acquis
--- d'apprentissages spécifiques), Méthodes d'enseignement et activités
--- d'apprentissages, Références, bibliographie et lectures recommandées, etc ...
--- Whatever can help us."
+-- Asked for after reading a ULB course page and listing what it publishes:
+-- Contenu du cours, Objectifs (et/ou acquis d'apprentissages spécifiques),
+-- Méthodes d'enseignement et activités d'apprentissages, Références,
+-- bibliographie et lectures recommandées, and whatever else helps.
 --
 -- Checked against both sources before choosing the columns, because a field
 -- only one of them publishes would be a column empty for half the catalogue.
