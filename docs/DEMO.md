@@ -299,10 +299,18 @@ Then the fork, which is the part worth slowing down for:
 Any review, **Signaler**. It works signed out, which the Digital Services Act
 requires.
 
-Then `http://localhost:5173/fr/app/moderation` as an administrator: the queue
-oldest first (never most-reported, which is what a pile-on buys), the decision
-with a reason, the appointment of moderators, the settings, and the suspension
-of an account.
+Then `http://localhost:5173/fr/app/moderation` as an administrator. It is in
+four sections: **Signalements**, the queue, oldest first and never
+most-reported, which is what a pile-on buys; **Comptes**, suspending an account
+and the register of who currently is; **Rôles**, appointing a moderator;
+**Réglages**, the settings.
+
+Worth showing in Comptes, because it is the question a room asks: the person
+suspended is **told**. A message goes out when the decision is taken, and the
+next sign-in shows a screen carrying the reason in the moderator's own words,
+the end date, and somewhere to write. The register says whether a message could
+actually be sent, because most accounts have no confirmed address and the
+screen is then the only notice they get.
 
 ---
 
@@ -359,8 +367,10 @@ it, which is the point of signing it.
 
 **Then how do you stop abuse if you cannot identify anyone?**
 Content can be reported, held and removed, one piece at a time. An account can
-be suspended. What cannot be done is sanctioning the author of an anonymous
-review, because nobody knows who they are. That is a real cost of the design
+be suspended, and the person is told why rather than left to think the site is
+down. What cannot be done is sanctioning the author of an anonymous review,
+because nobody knows who they are: a suspension cannot reach what that account
+published anonymously, in either direction. That is a real cost of the design
 and we would rather state it than pretend.
 
 **What stops someone writing fifty fake reviews?**

@@ -507,6 +507,22 @@ The account screen says this too rather than claiming a message is on its way.
 That was a real bug: it said "A message has gone to ..." while the row sat
 queued and undeliverable, so somebody waited for a link that was never coming.
 
+**The queue also holds moderation messages**, `account.suspended` and
+`account.reinstated`, and those go to somebody who has just lost access. With
+no relay they are printed like the rest, so the screen at the next sign-in is
+the only half of FR-E15 that reaches anybody. The console says which of the two
+happened rather than claiming the person was told, and this is the same answer
+from the other side:
+
+```bash
+psql -d studens -c "select kind, \"createdAt\" from platform.\"MailOutbox\" \
+  where kind like 'account.%' order by \"createdAt\" desc limit 5;"
+```
+
+Nothing is queued at all for an account with no confirmed contact address, by
+FR-A13: an unconfirmed address is as likely to be a typo pointing at a stranger
+as it is to be theirs.
+
 To actually deliver, set the five `STUDENS_SMTP_*` variables in `.env`. Any
 plain SMTP relay works; `.env.example` walks through the zero-budget starting
 point, which is a Gmail account with an app password.
@@ -564,6 +580,7 @@ into a chat or a pull request.**
 | `STUDENS_APP_ORIGIN` | Where a visitor lands after signing in |
 | `STUDENS_SECURE_COOKIES` | `1` when served over HTTPS: adds `Secure` and the `__Host-` prefix |
 | `STUDENS_WEB_ROOT` | Where the built application is. Defaults to `apps/web/dist` beside the API, and is skipped when it is not there |
+| `STUDENS_CONTACT_EMAIL` | Where somebody writes about a moderation decision. Printed in the suspension message and shown on the suspension screen. Unset means both state the reason and offer nowhere to write, which beats an address that bounces |
 | `CATALOGUE_SNAPSHOT` | Read the catalogue from a file instead of the database |
 | `STUDENS_REQUIRE_DB` | Tests only. `1` makes an unreachable database a failure rather than a skip |
 

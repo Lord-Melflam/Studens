@@ -4,7 +4,7 @@ Where to start, and what each document is for. **New here? Read `TIMELINE.md`
 first**, then `CONTRIBUTING.md`. Everything else is reference you reach for when
 you need it.
 
-## The four you will actually open
+## The five you will actually open
 
 | | |
 |---|---|
