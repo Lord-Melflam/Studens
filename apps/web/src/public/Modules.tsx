@@ -79,9 +79,11 @@ export function Modules() {
       ))}
 
       <section className="band final">
-        <a className="cta big" {...linkProps("/connexion")}>
-          {t("nav.register")}
-        </a>
+        <p className="band-action">
+          <a className="cta big" {...linkProps("/connexion")}>
+            {t("nav.register")}
+          </a>
+        </p>
       </section>
     </>
   );

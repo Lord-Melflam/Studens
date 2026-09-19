@@ -463,6 +463,35 @@ a.ghost.here {
   border-color: transparent;
 }
 
+/* EVERY CLASS THAT CAN BE CURRENT RESTATES THE MARK, and the redundancy is the
+   point.
+
+   `.here` is one class. Anything more specific beats it wherever it is
+   declared, and anything equally specific beats it if it is declared later.
+   Both have happened, three times between them:
+
+     - `.console-tab` sets its own colours and is declared eight hundred lines
+       below `.here`, so the current console section had no mark at all.
+     - `.choice` did the same to the display scheme, under a comment claiming
+       it used `.here`.
+     - and once `.choice` was guarded, the scheme buttons still came out wrong,
+       because they sit inside a panel and `.panel button` is a class plus an
+       element, which outranks `.here` whatever the order. That one cannot be
+       fixed by moving rules around at all.
+
+   So the state is declared at two classes, per class that can hold it. Nothing
+   single-class and nothing element-qualified can reach it, and the order in
+   the file stops mattering. `test/architecture/here-wins.test.ts` requires one
+   of these for every class the markup ever renders with `here`. */
+.settings-link.here,
+.console-tab.here,
+.choice.here {
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+.choice.here { border-color: var(--accent); }
+
 /* A NAME IS NOT A CAPTION. This used to go through `.domain`, which is muted
    grey, so somebody's own username sat in the bar looking like fine print.
    The initial is drawn rather than fetched: there are no avatars here and
@@ -570,17 +599,9 @@ a.ghost.here {
 .rows code { font-size: 0.95em; }
 
 .choice-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.choice {
-  padding: 0.4rem 0.9rem;
-  font-size: 0.9rem;
-  color: var(--ink);
-  text-decoration: none;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-}
-.choice:hover { border-color: var(--accent); }
-.choice.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+/* `.choice` itself is defined once, further down, beside `.choices`. It used to
+   be defined here as well, and the two disagreed: this one marked the current
+   item with `.on`, the other with `.here`, and the later one won. */
 
 .sessions { list-style: none; margin: 0; padding: 0; }
 .sessions li {
@@ -970,20 +991,31 @@ a.ghost.here {
 .planned .summary { display: block; margin-top: 0.15rem; font-size: 0.9rem; color: var(--muted); }
 .planned .note { display: block; margin-top: 0.3rem; font-size: 0.82rem; color: var(--muted); }
 
-/* The scheme choice: three buttons, one of them current. Uses `.here` for the
-   chosen one, like everything else that answers "which of these am I on". */
+/* A row of choices with one of them current: the display scheme, and the
+   language. `.here` marks the current one, like everything else that answers
+   "which of these am I on".
+   
+   `:not(.here)` ON THE COLOURS, and it is the whole reason the mark works.
+   `.here` and `.choice` are both one class, so specificity is equal and the one
+   declared later wins. This rule sits five hundred lines below `.here`, so a
+   plain `color` and `background` here silently un-marked the chosen scheme:
+   the comment above this rule claimed `.here` was used, the rule underneath it
+   made that false, and all three buttons rendered the same. Reported as the
+   scheme choice not staying selected. Third time in this stylesheet after
+   `.chips` and `.console-tab`, which is why there is now a gate for it:
+   test/architecture/here-wins.test.ts. */
 .choices { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem; }
 .choice {
   font: inherit;
   font-size: 0.88rem;
   padding: 0.4rem 0.9rem;
-  color: var(--ink);
-  background: var(--surface);
+  text-decoration: none;
   border: 1px solid var(--line);
   border-radius: 999px;
   cursor: pointer;
 }
-.choice:hover { border-color: var(--accent); }
+.choice:not(.here) { color: var(--ink); background: var(--surface); }
+.choice:hover:not(.here) { border-color: var(--accent); }
 
 /* The scheme button, beside the language switcher in both headers: the two are
    the same kind of thing, a display preference belonging to this device. */
