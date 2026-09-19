@@ -16,6 +16,7 @@
  * made (FR-D28).
  */
 import { useCallback, useEffect, useState } from "react";
+import { applyTheme, readTheme, type Theme } from "./theme.js";
 import { LOCALES, LOCALE_NAMES, localePath, useLocale, useT } from "@studens/i18n";
 import { currentRoute, linkProps, navigate } from "./router.js";
 import { useSession } from "./session.js";
@@ -48,6 +49,7 @@ export function Settings() {
   const t = useT();
   const locale = useLocale();
   const { session: me, reload: reloadSession } = useSession();
+  const [theme, setTheme] = useState<Theme>(() => readTheme());
   const [sessions, setSessions] = useState<LiveSession[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -136,6 +138,34 @@ export function Settings() {
   return (
     <div className="panel-stack">
       <h2 className="panel-title">{t("settings.title")}</h2>
+
+      {/*
+        THE SCHEME, ABOVE THE ACCOUNT, because it applies to everybody who can
+        see this screen and needs no account to be useful. Three choices and
+        not a switch: a switch has two states and the honest default is a
+        third, following the device, which is what somebody who has never
+        thought about it already wants.
+      */}
+      <section className="panel">
+        <h3>{t("settings.theme")}</h3>
+        <p className="hint">{t("settings.theme.hint")}</p>
+        <div className="choices">
+          {(["system", "light", "dark"] as const).map((choice) => (
+            <button
+              key={choice}
+              type="button"
+              className={theme === choice ? "choice here" : "choice"}
+              aria-pressed={theme === choice}
+              onClick={() => {
+                setTheme(choice);
+                applyTheme(choice);
+              }}
+            >
+              {t(`settings.theme.${choice}`)}
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="panel">
         <h3>{t("settings.account")}</h3>

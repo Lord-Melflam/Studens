@@ -56,7 +56,7 @@
   padding: 0.65rem 0.75rem;
   font: inherit;
   color: var(--ink);
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 7px;
 }
@@ -83,7 +83,7 @@
   border-radius: 7px;
   cursor: pointer;
 }
-.firstrun button.cta { color: #fff; background: var(--accent); border: 1px solid var(--accent); }
+.firstrun button.cta { color: var(--on-accent); background: var(--accent); border: 1px solid var(--accent); }
 .firstrun button.cta:hover:not(:disabled) { background: #16407c; }
 .firstrun button.ghost { color: var(--ink); background: transparent; border: 1px solid var(--line); }
 .firstrun button.ghost:hover:not(:disabled) { border-color: var(--accent); }
@@ -103,13 +103,13 @@
   padding: 0.55rem 1rem;
   font: inherit;
   color: var(--ink);
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 7px;
   cursor: pointer;
 }
 .firstrun button.choice:hover { border-color: var(--accent); }
-.firstrun button.choice.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+.firstrun button.choice.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
 
 /* The institution list. Two columns where there is room, one on a phone. */
 .institutions {
@@ -128,7 +128,7 @@
   padding: 0.7rem 0.8rem;
   font: inherit;
   text-align: left;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 9px;
   cursor: pointer;
@@ -154,7 +154,7 @@
   height: 2rem;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--on-accent);
   background: var(--mark, var(--muted));
   border-radius: 6px;
 }

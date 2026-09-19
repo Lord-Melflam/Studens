@@ -4,6 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Studens</title>
+    <script>
+      /* Before the first paint. Reading this in React would mean a light page
+         appearing and then turning dark, which is worse than no dark mode. */
+      try {
+        var t = localStorage.getItem("studens.theme");
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) { /* blocked storage: follow the system, which the CSS does */ }
+    </script>
   </head>
   <body>
     <div id="root"></div>
