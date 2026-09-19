@@ -66,9 +66,9 @@ export function firstRunPath(step: number): string {
  *
  * THE WARNING APPEARS WHILE THE MISTAKE IS BEING MADE, not after the button is
  * pressed. Before this there was no limit on screen, no counter, and no message
- * for a refused value: François typed emoji, the save was refused for reasons
- * nobody could see, and the reasonable conclusion was that the emoji were to
- * blame. They were not. Nothing said what was.
+ * for a refused value. Emoji in the field were refused for reasons nobody
+ * could see, and the reasonable conclusion was that the emoji were to blame.
+ * They were not. Nothing said what was.
  *
  * The rules come from `text.ts`, which mirrors the server, and a test fails if
  * the two ever disagree. A warning that is wrong is worse than none.
@@ -153,9 +153,8 @@ export function FirstRun({
   const [year, setYear] = useState<number | null>(null);
   const [interests, setInterests] = useState("");
   /**
-   * SEVERAL, NOT ONE. François: "I also see some people followig courses in 2
-   * different universities, so it should be better if in /5 we make the choice
-   * non exclusive."
+   * SEVERAL, NOT ONE. Students do follow courses at two universities at once,
+   * so this screen may not ask for a single answer.
    *
    * The storage has been a set since `MemberInstitution` existed; this screen
    * was the last thing still asking for one answer. `institutionCode` keeps the
@@ -197,20 +196,35 @@ export function FirstRun({
         const saved = await patchProfile({ ...patch, onboardingStep: Math.min(next, STEPS) });
         setProfile(saved);
         if (next > STEPS) {
-          // AWAITED, AND `saving` IS NOT CLEARED AFTERWARDS. Finishing is three
-          // round trips, not one: the institutions, the profile, and then the
-          // session reload inside `onDone` that stops the app bouncing us
-          // straight back here. Clearing the flag before that last one made the
-          // button live again while nothing visible was happening, so people
-          // pressed it a second time. François, after the ULB session: "I click
-          // on finish button twice each time."
-          //
-          // The screen is leaving, so there is nothing to re-enable. Leaving it
-          // busy is what makes the wait legible instead of dead.
+          // FINISHING IS AWAITED AND `saving` IS DELIBERATELY NOT CLEARED.
+          // It is three round trips, not one: the institutions, the profile,
+          // and then the session reload inside `onDone` that stops the app
+          // bouncing straight back here. Clearing the flag before that last
+          // one made the button live again while nothing visible was
+          // happening, so it was pressed a second time. The screen is leaving,
+          // so there is nothing to re-enable, and staying busy is what makes
+          // the wait legible instead of dead.
           await onDone();
           return;
         }
+
         navigate(firstRunPath(next));
+        /*
+          AND EVERY OTHER STEP MUST CLEAR IT, which is the half that was lost.
+
+          Moving between steps does NOT unmount this component: it renders a
+          different section of itself. So `saving` survives the navigation, and
+          when it was left set, every control on the next screen was disabled
+          for good. Back too, which is the tell: a first run that advances once
+          and then freezes, with no error, because nothing failed.
+
+          It was a `finally` until the finish path needed to stay busy, and the
+          fix moved the reset into `catch`, which quietly took it away from the
+          four steps that are not the finish. Hence two explicit calls rather
+          than one convenient block: the two paths want opposite things, and
+          the control flow should say so.
+        */
+        setSaving(false);
       } catch (err) {
         if (err instanceof PatchFailed && err.field === "username") {
           setProblem(err.reason ?? "other");
