@@ -9,6 +9,7 @@
  * own its URLs while the shell stays ignorant of what they mean.
  */
 import { useEffect, useRef, useState } from "react";
+import { Brand } from "../Brand.js";
 import { localePath, useT, type Locale } from "@studens/i18n";
 import { Account } from "../Account.js";
 import { LanguageSwitcher } from "../LanguageSwitcher.js";
@@ -252,7 +253,7 @@ export function Shell() {
           what Studens is, who runs it, or what anonymity does not protect.
         */}
         <a className="brand" {...linkProps("/")}>
-          Studens
+          <Brand />
         </a>
         <nav className="crumbs">
           <button type="button" onClick={() => navigate(APP_PREFIX)}>

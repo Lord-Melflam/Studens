@@ -1161,3 +1161,8 @@ button.ghost {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* The press affordance for this module's own filled button. The shell gives
+   every button the one pixel of travel; the colour belongs to whoever owns the
+   button, and `.primary` is ours. */
+.primary:not(:disabled):active { background: #123769; }
