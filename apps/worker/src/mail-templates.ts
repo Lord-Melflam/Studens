@@ -27,12 +27,57 @@
  * paths, and a subject line.
  */
 
+import { contactAddress } from "@studens/platform";
+
 type Vars = Record<string, unknown>;
 
 interface Template {
   subject: string;
   /** A function, because every one of these interpolates something. */
   body: (v: Vars) => string;
+}
+
+/**
+ * "Until <date>", or that there is no date.
+ *
+ * The date arrives as an ISO instant and is formatted HERE, in the reader's
+ * language, because a date formatted where it was decided would be formatted
+ * in the server's language: 09/07 means two different days either side of the
+ * Channel, and a suspension is exactly the wrong thing to be vague about.
+ *
+ * Null is permanent, and permanent is stated as having no end rather than as a
+ * date far away. Same rule as the column it comes from.
+ */
+function until(v: Vars, locale: string): string {
+  const iso = v["until"];
+  const lines: Record<string, [string, (d: string) => string]> = {
+    fr: ["Cette décision n'a pas de date de fin.", (d) => `Elle prend fin le ${d}.`],
+    nl: ["Deze beslissing heeft geen einddatum.", (d) => `Ze loopt af op ${d}.`],
+    en: ["This decision has no end date.", (d) => `It ends on ${d}.`],
+  };
+  const [none, dated] = lines[locale] ?? lines["fr"]!;
+  if (typeof iso !== "string" || iso === "") return none;
+  const when = new Date(iso);
+  if (Number.isNaN(when.getTime())) return none;
+  return dated(new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(when));
+}
+
+/**
+ * Where to write about the decision, when there is anywhere.
+ *
+ * Empty when no address is configured, rather than a placeholder: an address
+ * that does not exist turns a person trying to appeal into a bounce message,
+ * which is worse than the screen and the mail both simply stating the reason.
+ */
+function contact(locale: string): string {
+  const to = contactAddress();
+  if (!to) return "";
+  const lead: Record<string, string> = {
+    fr: "\nPour en discuter, écrivez à ",
+    nl: "\nOm erover te praten, schrijf naar ",
+    en: "\nTo discuss it, write to ",
+  };
+  return `${lead[locale] ?? lead["fr"]!}${to}.`;
 }
 
 const SIGNATURE: Record<string, string> = {
@@ -142,6 +187,79 @@ const TEMPLATES: Record<string, Record<string, Template>> = {
         "and still is.",
     },
   },
+
+  /**
+   * SENT THE MOMENT THE DECISION IS TAKEN, not at the next sign-in.
+   *
+   * The screen at sign-in is the other half of this and neither replaces the
+   * other: somebody who gives up after one refused attempt never reaches the
+   * screen, and somebody who never confirmed a contact address never gets this
+   * message. Two ways in, both saying the same thing.
+   *
+   * IT CARRIES THE REASON IN FULL. A message saying "your account has been
+   * suspended, sign in to find out why" asks somebody to go to the one place
+   * they have just been shut out of, and reads like the phishing it resembles.
+   *
+   * IT CONTAINS NO LINK AND ASKS FOR NO ACTION, for the same reason
+   * email.changed does not: this is the shape a message about losing access
+   * takes, and every phishing mail in the world takes it too.
+   */
+  "account.suspended": {
+    fr: {
+      subject: "Votre compte Studens est suspendu",
+      body: (v) =>
+        "L'accès à votre compte a été retiré par une décision de modération.\n\n" +
+        `Motif : ${String(v["reason"])}\n\n` +
+        until(v, "fr") +
+        "\n\nCe que vous avez publié anonymement n'est pas concerné : rien ne " +
+        "relie ces publications à un compte, dans un sens comme dans l'autre.\n" +
+        contact("fr"),
+    },
+    nl: {
+      subject: "Uw Studens-account is geschorst",
+      body: (v) =>
+        "De toegang tot uw account is ingetrokken door een moderatiebeslissing.\n\n" +
+        `Reden: ${String(v["reason"])}\n\n` +
+        until(v, "nl") +
+        "\n\nWat u anoniem publiceerde valt hier niet onder: niets verbindt zulke " +
+        "publicaties met een account, in geen van beide richtingen.\n" +
+        contact("nl"),
+    },
+    en: {
+      subject: "Your Studens account is suspended",
+      body: (v) =>
+        "Access to your account was withdrawn by a moderation decision.\n\n" +
+        `Reason: ${String(v["reason"])}\n\n` +
+        until(v, "en") +
+        "\n\nWhat you published anonymously is not affected: nothing ties it to an " +
+        "account, in either direction.\n" +
+        contact("en"),
+    },
+  },
+
+  "account.reinstated": {
+    fr: {
+      subject: "Votre compte Studens est de nouveau accessible",
+      body: () =>
+        "La suspension de votre compte a été levée. Vous pouvez vous reconnecter.\n\n" +
+        "Vos sessions ont été fermées au moment de la suspension, il faut donc " +
+        "vous authentifier à nouveau.",
+    },
+    nl: {
+      subject: "Uw Studens-account is weer toegankelijk",
+      body: () =>
+        "De schorsing van uw account is opgeheven. U kunt zich opnieuw aanmelden.\n\n" +
+        "Uw sessies werden bij de schorsing afgesloten, u moet zich dus opnieuw " +
+        "authenticeren.",
+    },
+    en: {
+      subject: "Your Studens account is reachable again",
+      body: () =>
+        "The suspension on your account has been lifted. You can sign in again.\n\n" +
+        "Your sessions were closed when it began, so you will have to " +
+        "authenticate once more.",
+    },
+  },
 };
 
 export function renderMail(
@@ -164,5 +282,7 @@ export function renderMail(
   };
 }
 
-/** The kinds that have a template, for the test that checks none is missing. */
+/** The kinds that have a template. Every one is rendered by a test, in each
+ *  of the three languages, because a kind whose body throws does it in the
+ *  worker at send time with nobody watching. */
 export const TEMPLATED_KINDS = Object.keys(TEMPLATES);

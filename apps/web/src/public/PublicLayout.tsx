@@ -59,8 +59,18 @@ export function PublicLayout({ path, children }: { path: string; children: React
             nothing happened.
           */}
           {/* `here` so the sign-in buttons can say so too: they lead to the
-              page a visitor may already be standing on. */}
-          <Account variant="public" here={path === "/connexion"} />
+              page a visitor may already be standing on.
+
+              NOT ON THE SUSPENSION SCREEN. Somebody who has just been told
+              their account is stopped does not need a header inviting them to
+              sign in again, and "Créer un compte" beside that message is the
+              platform suggesting the one move the decision was meant to
+              answer. Registration stays open (FR-A6) and this changes nothing
+              about that; it is about not proposing it at that moment. The
+              language and theme controls stay, because they are the page's
+              own and the message should be readable in the reader's
+              language. */}
+          {path !== "/suspendu" && <Account variant="public" here={path === "/connexion"} />}
         </div>
       </header>
 

@@ -1002,3 +1002,96 @@ a.ghost.here {
 }
 .theme-toggle svg { width: 1.15rem; height: 1.15rem; }
 .theme-toggle:hover { color: var(--accent); background: var(--accent-soft); }
+
+/* --- the console's sections ----------------------------------------------
+   A row of destinations, not buttons that do something: pressing one changes
+   what is on screen and the address.
+
+   THE CURRENT ONE IS MARKED BY `.here` AND NOTHING ELSE. The first version
+   underlined it, which was a fourth answer to a question this project settled
+   once: the pill says "this is where you are" in the app bar, in the public
+   header and on a call to action, and a tab bar inventing its own mark is how
+   three screens end up answering it three ways again. The rule above owns the
+   colour, the weight and the shape; this only owns the spacing. */
+.console-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.console-tab {
+  padding: 0.4rem 0.8rem;
+  font: inherit;
+  font-size: 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+/* `:not(.here)` ON THE COLOURS, and it is load bearing. `.here` and
+   `.console-tab` are both one class, so specificity is equal and the one
+   declared later wins: this rule sits eight hundred lines below `.here`, so a
+   plain `color` and `background` here silently un-styled the current tab. It
+   rendered exactly like the other three, which is the whole mark gone. The
+   same cascade-order trap `.chips` taught this project; the fix is to stop the
+   base rule competing rather than to raise its specificity. */
+.console-tab:not(.here) { color: var(--muted); background: none; }
+.console-tab:hover:not(.here) { color: var(--ink); background: var(--bg); }
+.console-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* --- the register of suspended accounts ----------------------------------
+   One block per account rather than a table: the reason is a sentence
+   somebody wrote and a table column turns it into a truncated cell, which is
+   exactly the part nobody may lose. */
+/* The same chip as the role groups carry, because it answers the same
+   question: how many are in this list before you read it. */
+.panel h3 .count {
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.suspended-list { list-style: none; margin: 1rem 0 0; padding: 0; }
+.suspended-list > li + li { margin-top: 0.5rem; }
+.suspended-row {
+  padding: 0.7rem 0.8rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.suspended-who { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.suspended-name { font-weight: 600; font-size: 0.92rem; }
+.suspended-tag {
+  padding: 0.1rem 0.45rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+/* Permanent reads differently from a date, because it is a different
+   decision and the two must not be skimmed as one. */
+.suspended-tag-hard { color: var(--danger); border-color: var(--danger); background: transparent; }
+/* Nobody could be written to. Marked as a warning rather than a fault: it is
+   ordinary, and it is the row where the sign-in screen is the only notice. */
+.suspended-tag-quiet { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+.suspended-why {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  /* A reason is a sentence somebody wrote, and it is shown whole. */
+  overflow-wrap: anywhere;
+}
+.suspended-meta { margin: 0.35rem 0 0; font-size: 0.78rem; color: var(--muted); }
+
+/* A page count and two steps, never a row of numbered links: at thirteen
+   pages the numbers are wider than the panel and none of them is the one you
+   want. The same reasoning as the reviews pager, which is a separate rule in
+   a separate stylesheet on purpose (see the collision test). */
+.paging { display: flex; align-items: center; gap: 0.6rem; margin-top: 1rem; }
+.paging-where { font-size: 0.8rem; color: var(--muted); }

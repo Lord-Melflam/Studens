@@ -12,6 +12,12 @@
  */
 import { Router, json } from "express";
 import { PrismaClient } from "@prisma/client";
+import { contactAddress, suspensionOf } from "@studens/platform";
+import {
+  clearSuspensionNotice,
+  readSuspensionNotice,
+  setSuspensionNotice,
+} from "../suspensionnotice.js";
 import { createSession, listSessions, revokeSession } from "@studens/platform";
 import { clearSessionCookie, setSessionCookie } from "../cookies.js";
 import { devIdentityEnabled, identifyIfAny } from "../identity.js";
@@ -54,6 +60,59 @@ export function sessionRoutes(prisma: PrismaClient): Router {
    * FR-A7 permits no self-managed credentials, and this takes none: it signs in
    * one fixed member, and only where the fence allows it.
    */
+  /**
+   * WHAT THE SUSPENSION SCREEN READS.
+   *
+   * Answers only about the member whose sign-in this browser just completed,
+   * proved by the short lived signed notice the callback set. No session is
+   * needed and none is granted: a suspended person is not signed in, and the
+   * one thing they are entitled to is the explanation.
+   *
+   * 404 when there is no notice, rather than an empty answer, so that the
+   * address is not a way to ask about anybody in general.
+   */
+  router.get("/suspension", (req, res) => {
+    void (async () => {
+      const memberId = readSuspensionNotice(req);
+      if (!memberId) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const member = await prisma.member.findUnique({
+        where: { id: memberId },
+        select: {
+          suspendedAt: true,
+          suspendedUntil: true,
+          suspendedReason: true,
+        },
+      });
+      if (!member) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const state = suspensionOf(member);
+      if (!state.suspended) {
+        // Lifted between the redirect and this request, or expired. Clearing
+        // the notice stops the screen insisting on something already over.
+        clearSuspensionNotice(res);
+        res.json({ suspended: false });
+        return;
+      }
+      res.json({
+        suspended: true,
+        // Null means permanent, which the screen says in words rather than
+        // leaving a reader to infer it from a missing date.
+        until: state.until ? state.until.toISOString() : null,
+        reason: state.reason,
+        /* Where to write. The administrators' own addresses are not published
+           here: FR-B12 lets a moderator be named to a member, but handing out
+           a mailbox on a page anybody can reach after one sign-in is a
+           different thing. One address, answered by whoever holds it. */
+        contact: contactAddress(),
+      });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
   router.post("/session/dev", (_req, res) => {
     void (async () => {
       if (!devIdentityEnabled()) {
@@ -80,6 +139,24 @@ export function sessionRoutes(prisma: PrismaClient): Router {
           tenantId: tenant.id,
         },
       });
+      /*
+        THE SAME DIVERSION AS THE REAL PATH, and for two reasons.
+
+        The development sign-in exists so that everything downstream is
+        production's code path; a suspension that this door walked straight
+        past would make it a different door, and the screen it is supposed to
+        reach would be unreachable on the only machine anybody can test it on.
+
+        It answers 403 with a destination rather than redirecting, because the
+        caller is a fetch and not a navigation: the browser would follow a 302
+        here and hand the page JSON.
+      */
+      const state = suspensionOf(member);
+      if (state.suspended) {
+        setSuspensionNotice(res, member.id);
+        res.status(403).json({ suspended: true, goTo: "/suspendu" });
+        return;
+      }
       const { token } = await createSession(member.id, { client: prisma });
       setSessionCookie(res, token);
       res.status(201).json({ signedIn: true, emailDomain: member.emailDomain });

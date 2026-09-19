@@ -22,11 +22,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useT, useLocale } from "@studens/i18n";
 import { useSession } from "../session.js";
+import { navigate, useSearch } from "../router.js";
 import {
   decide,
   fetchAppointments,
   fetchQueue,
   fetchSettings,
+  fetchSuspensions,
   setSetting,
   suspend,
   appoint,
@@ -34,6 +36,7 @@ import {
   type AppointmentEvent,
   type QueueEntry,
   type SettingRow,
+  type SuspendedAccount,
 } from "./api.js";
 
 function ago(iso: string, locale: string): string {
@@ -397,18 +400,22 @@ function Settings() {
  * not linked to it and cannot be gathered or withdrawn as a set. A moderator
  * pressing this button is entitled to know both before pressing it.
  */
-function Suspensions() {
+function Suspensions({ onChanged }: { onChanged: () => void }) {
   const t = useT();
   const [username, setUsername] = useState("");
   const [reason, setReason] = useState("");
   const [days, setDays] = useState<string>("30");
   const [problem, setProblem] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  // Null until something has been done, then whether the person was actually
+  // sent a message. Two outcomes, not one, because "done" hides the case that
+  // matters: no confirmed address, so the screen at their next sign-in is the
+  // only way they will ever learn of this.
+  const [done, setDone] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
   const act = (lift: boolean): void => {
     setProblem(null);
-    setDone(false);
+    setDone(null);
     setBusy(true);
     void suspend({
       username: username.trim(),
@@ -416,10 +423,11 @@ function Suspensions() {
       reason: reason.trim(),
       lift,
     })
-      .then(() => {
-        setDone(true);
+      .then((r) => {
+        setDone(r.notified);
         setUsername("");
         setReason("");
+        onChanged();
       })
       .catch((e: Error) => setProblem(e.message))
       .finally(() => setBusy(false));
@@ -470,8 +478,134 @@ function Suspensions() {
           {t("mod.suspend.lift")}
         </button>
       </div>
-      {done && <p className="hint">{t("mod.suspend.done")}</p>}
+      {done !== null && (
+        <p className="hint">{t(done ? "mod.suspend.done" : "mod.suspend.done.unmailed")}</p>
+      )}
       {problem && <p className="bad">{t(problem === "refused" ? "mod.suspend.refused" : "mod.suspend.failed")}</p>}
+    </section>
+  );
+}
+
+/**
+ * WHO IS SUSPENDED, on the same screen as the button that suspends.
+ *
+ * Without it the suspend form was write-only: the only way to find out whether
+ * somebody was already suspended, or what for, or when it ends, was to suspend
+ * them again and read the answer back. That is not a register, it is a guess
+ * with side effects.
+ *
+ * PAGED AND SEARCHABLE NOW, NOT WHEN IT HURTS. Two names today. The shape has
+ * to be the one it will have at two hundred, because the moment a list stops
+ * fitting is never the moment anybody has time to rebuild the screen. Twenty a
+ * page, from the server, so the browser is never handed the whole set.
+ *
+ * THE FILTER AND THE PAGE STAY OUT OF THE ADDRESS, and that is a deliberate
+ * exception to FR-B21 rather than an oversight. The address holds which
+ * section you are in, because that is what you are looking at. It does not
+ * hold the name of an account under sanction: that would put it in browser
+ * history and in whatever syncs bookmarks, for a screen nobody without the
+ * power can open anyway, so the link is unshareable and the cost is all
+ * downside.
+ */
+function Register({ reload }: { reload: number }) {
+  const t = useT();
+  const locale = useLocale();
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<{
+    suspensions: SuspendedAccount[];
+    page: number;
+    pages: number;
+    total: number;
+  } | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    void fetchSuspensions(q.trim().toLowerCase(), page).then((d) => live && setData(d));
+    return () => {
+      live = false;
+    };
+  }, [q, page, reload]);
+
+  if (!data) return null;
+
+  return (
+    <section className="panel">
+      <h3>
+        {t("mod.suspended")} <span className="count">{data.total}</span>
+      </h3>
+
+      {/* Shown once there is enough for a name to be quicker than reading.
+          Below that it is a control with nothing to do. */}
+      {(data.total > 8 || q !== "") && (
+        <div className="field-row">
+          <label htmlFor="susp-find">{t("mod.suspended.find")}</label>
+          <input
+            id="susp-find"
+            className="text-input"
+            value={q}
+            autoComplete="off"
+            onChange={(e) => {
+              setQ(e.target.value);
+              // Page 3 of a different question is somebody else's answer.
+              setPage(1);
+            }}
+          />
+        </div>
+      )}
+
+      {data.suspensions.length === 0 ? (
+        <p className="hint">{t(q === "" ? "mod.suspended.none" : "mod.suspended.nomatch")}</p>
+      ) : (
+        <ul className="suspended-list">
+          {data.suspensions.map((s) => (
+            <li key={s.username ?? s.since} className="suspended-row">
+              <div className="suspended-who">
+                <span className="suspended-name">{s.username ?? "?"}</span>
+                <span className={s.until === null ? "suspended-tag suspended-tag-hard" : "suspended-tag"}>
+                  {s.until === null
+                    ? t("mod.suspended.permanent")
+                    : t("mod.suspended.until", {
+                        date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
+                          new Date(s.until),
+                        ),
+                      })}
+                </span>
+                {/* Said on the row, because it is the difference between a
+                    person who was told and a person who will find out by
+                    finding the door locked. */}
+                {!s.reachable && <span className="suspended-tag suspended-tag-quiet">{t("mod.suspended.unmailed")}</span>}
+              </div>
+              {/* The moderator's own words. A reason summarised by the
+                  interface is a reason nobody can be held to, here as on the
+                  screen the suspended person sees. */}
+              {s.reason && <p className="suspended-why">{s.reason}</p>}
+              <p className="suspended-meta">
+                {t("mod.suspended.since", { date: ago(s.since, locale) })}
+                {s.by && ` · ${t("mod.suspended.by", { who: s.by })}`}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {data.pages > 1 && (
+        <nav className="paging" aria-label={t("mod.suspended")}>
+          <button type="button" onClick={() => setPage(data.page - 1)} disabled={data.page <= 1}>
+            {t("mod.page.prev")}
+          </button>
+          <span className="paging-where">
+            {t("mod.page.where", { page: data.page, pages: data.pages })}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage(data.page + 1)}
+            disabled={data.page >= data.pages}
+          >
+            {t("mod.page.next")}
+          </button>
+        </nav>
+      )}
     </section>
   );
 }
@@ -635,42 +769,120 @@ function Appointments() {
   );
 }
 
-export function ModerationConsole({ canAppoint }: { canAppoint: boolean }) {
+/**
+ * THE SECTIONS, and why the console stopped being one column.
+ *
+ * It was four panels stacked: the queue, suspending, settings, appointments.
+ * That worked while it was four. It is five with the register of suspensions,
+ * and the ones that grow are the administrator's: every setting anybody ever
+ * makes configurable lands in one of them, and each arrival pushes the queue,
+ * which is the daily work, further from the top of a page somebody scrolls
+ * past it to reach. A screen that gets worse every time it gains a feature is
+ * the wrong screen.
+ *
+ * THE SPLIT IS BY WHO AND HOW OFTEN, not by what the API calls things.
+ * Reports are read daily by every moderator. Accounts, roles and settings are
+ * an administrator's, opened when something has happened. So reports are the
+ * section you land on, and the other three are one press away each.
+ *
+ * IT IS IN THE ADDRESS (FR-B21). A section is what you are looking at, so it
+ * survives a refresh, comes back on Back, and can be linked to; `replace`,
+ * because moving between sections is not going anywhere and six presses should
+ * not be six steps to walk back through.
+ *
+ * A MODERATOR WITHOUT THE ADMINISTRATOR'S POWERS SEES NO BAR AT ALL. They have
+ * one section, and a row of one tab is a control that can never do anything.
+ */
+export const SECTIONS = ["signalements", "comptes", "roles", "reglages"] as const;
+export type Section = (typeof SECTIONS)[number];
+
+/**
+ * Which section the address asks for, and which one it gets.
+ *
+ * Exported so the fallback can be tested without a browser. An unknown name
+ * and an administrator-only name both land on the queue rather than on an
+ * error: a URL outlives the powers of whoever opens it, and an address shared
+ * by an administrator is opened by a moderator who holds less. Showing them
+ * the screen they can use beats telling them they cannot use this one.
+ */
+export function sectionFrom(search: string, canAppoint: boolean): Section {
+  const asked = new URLSearchParams(search).get("section");
+  if (!SECTIONS.includes(asked as Section)) return "signalements";
+  if (asked !== "signalements" && !canAppoint) return "signalements";
+  return asked as Section;
+}
+
+export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; here: string }) {
   const t = useT();
+  const search = useSearch();
   const [queue, setQueue] = useState<QueueEntry[] | null>(null);
+  // Bumped when a suspension is taken or lifted, so the register beside the
+  // form is never one decision out of date.
+  const [changed, setChanged] = useState(0);
 
   const load = useCallback(() => {
     void fetchQueue().then(setQueue);
   }, []);
   useEffect(load, [load]);
 
+  const section = sectionFrom(search, canAppoint);
+
+  const go = (to: Section): void =>
+    navigate(to === "signalements" ? here : `${here}?section=${to}`, { replace: true });
+
   return (
     <div className="panel-stack">
       <h2 className="panel-title">{t("mod.title")}</h2>
 
-      <section className="panel">
-        <h3>{t("mod.queue")}</h3>
-        {/* Oldest first, never most reported: sorting by count would put
-            whatever a group piled onto at the top, which is what a brigade is
-            trying to buy (FR-E12). */}
-        <p className="hint">{t("mod.queue.hint")}</p>
+      {canAppoint && (
+        <nav className="console-tabs" aria-label={t("mod.title")}>
+          {SECTIONS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              className={id === section ? "console-tab here" : "console-tab"}
+              aria-current={id === section ? "page" : undefined}
+              onClick={() => go(id)}
+            >
+              {t(`mod.section.${id}`)}
+            </button>
+          ))}
+        </nav>
+      )}
 
-        {queue === null ? (
-          <p className="hint">…</p>
-        ) : queue.length === 0 ? (
-          <p className="hint">{t("mod.queue.empty")}</p>
-        ) : (
-          <div className="queue">
-            {queue.map((e) => (
-              <Entry key={`${e.targetKind}:${e.targetId}`} entry={e} onDone={load} />
-            ))}
-          </div>
-        )}
-      </section>
+      {section === "signalements" && (
+        <section className="panel">
+          <h3>{t("mod.queue")}</h3>
+          {/* Oldest first, never most reported: sorting by count would put
+              whatever a group piled onto at the top, which is what a brigade is
+              trying to buy (FR-E12). */}
+          <p className="hint">{t("mod.queue.hint")}</p>
 
-      {canAppoint && <Suspensions />}
-      {canAppoint && <Settings />}
-      {canAppoint && <Appointments />}
+          {queue === null ? (
+            <p className="hint">…</p>
+          ) : queue.length === 0 ? (
+            <p className="hint">{t("mod.queue.empty")}</p>
+          ) : (
+            <div className="queue">
+              {queue.map((e) => (
+                <Entry key={`${e.targetKind}:${e.targetId}`} entry={e} onDone={load} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* The form and the register together, because they are one question
+          asked in two directions: who should be stopped, and who is. */}
+      {canAppoint && section === "comptes" && (
+        <>
+          <Suspensions onChanged={() => setChanged(changed + 1)} />
+          <Register reload={changed} />
+        </>
+      )}
+
+      {canAppoint && section === "roles" && <Appointments />}
+      {canAppoint && section === "reglages" && <Settings />}
     </div>
   );
 }

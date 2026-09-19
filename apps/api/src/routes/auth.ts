@@ -31,8 +31,10 @@ import {
   completeAuthorization,
   configuredProviders,
   createSession,
+  suspensionOf,
   providerById,
 } from "@studens/platform";
+import { setSuspensionNotice } from "../suspensionnotice.js";
 import { setSessionCookie } from "../cookies.js";
 import { clearAuthState, readAuthState, setAuthState } from "../authstate.js";
 import { appUrl, publicOrigin } from "../origins.js";
@@ -90,11 +92,11 @@ export function authRoutes(prisma: PrismaClient): Router {
 
       const provider = providerById(req.params.provider);
       const code = typeof req.query["code"] === "string" ? req.query["code"] : null;
-      const state = typeof req.query["state"] === "string" ? req.query["state"] : null;
+      const oauthState = typeof req.query["state"] === "string" ? req.query["state"] : null;
 
       if (!provider || saved.provider !== provider.id) throw new Error("provider mismatch");
       if (!code) throw new Error("no code");
-      if (!state || state !== saved.state) throw new Error("state mismatch");
+      if (!oauthState || oauthState !== saved.state) throw new Error("state mismatch");
 
       const who = await completeAuthorization(provider, {
         code,
@@ -137,6 +139,26 @@ export function authRoutes(prisma: PrismaClient): Router {
           tenantId: tenant.id,
         },
       });
+
+      /**
+       * SUSPENDED: TOLD, NOT LET IN.
+       *
+       * Checked here and not in `verifySession`, which refuses a suspended
+       * session the same way it refuses every other (FR-A4). That is right
+       * for a request and wrong for a person: it made a suspension look
+       * exactly like the site being down, so somebody would conclude the app
+       * was temporarily unreachable and keep trying.
+       *
+       * This is the one moment we know who they are and they are watching.
+       * No session is issued; a short lived signed notice says which
+       * suspension this browser may be told about, and the screen reads it.
+       */
+      const state = suspensionOf(member);
+      if (state.suspended) {
+        setSuspensionNotice(res, member.id);
+        res.redirect(302, appUrl("/suspendu"));
+        return;
+      }
 
       const { token } = await createSession(member.id, { client: prisma });
       setSessionCookie(res, token);

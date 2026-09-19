@@ -37,7 +37,6 @@ import {
   allSettings,
   liftSuspension,
   suspendMember,
-  suspensionOf,
   writeSetting,
   type ModeratableContent,
 } from "@studens/platform";
@@ -350,11 +349,9 @@ export function moderationRoutes(prisma: PrismaClient): Router {
         res.status(409).json({ error: "refused" });
         return;
       }
-      if (lift) {
-        await liftSuspension(prisma, member.id);
-      } else {
-        await suspendMember(prisma, member.id, { days: days === null ? null : days, reason });
-      }
+      const outcome = lift
+        ? await liftSuspension(prisma, member.id)
+        : await suspendMember(prisma, member.id, { days: days === null ? null : days, reason });
       await prisma.auditLog.create({
         data: {
           actorMemberId: who.memberId,
@@ -364,11 +361,122 @@ export function moderationRoutes(prisma: PrismaClient): Router {
           at: new Date(),
         },
       });
-      const after = await prisma.member.findUnique({
-        where: { id: member.id },
-        select: { suspendedAt: true, suspendedUntil: true, suspendedReason: true },
+      // `notified` travels back to the screen, because whether the person was
+      // actually told is the first thing the administrator needs to know and
+      // the one thing they cannot find out later: there is no confirmed
+      // address on most accounts, and a console that stayed quiet about it
+      // would leave somebody believing a message went out.
+      res.json({ username, suspension: outcome, notified: outcome.notified });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
+   * WHO IS SUSPENDED RIGHT NOW, and why.
+   *
+   * WHY IT IS A LIST AND NOT A COUNT. The suspend form takes a username, which
+   * means the only way to check whether somebody is already suspended, or what
+   * they were suspended for, or when it ends, was to suspend them again and
+   * read the answer. A power with no register is a power nobody can review,
+   * and FR-E14's reasoning about appointments applies here at least as hard:
+   * this one stops a person using the platform.
+   *
+   * PAGED FROM THE FIRST DAY, WITH A SEARCH. There are two suspended accounts
+   * today and the shape of the screen has to be the shape it will have at two
+   * hundred; a list that is fine until it is not is a rewrite scheduled for
+   * the least convenient moment. Twenty a page, and a filter by name, because
+   * past a page the question stops being "who is suspended" and becomes "is
+   * this person suspended".
+   *
+   * ONLY CURRENT ONES. An expired suspension is over, and the columns are left
+   * behind only so the history stays readable; listing them here would turn a
+   * register of who is stopped into a permanent record of who ever was, which
+   * is a different and much worse thing to keep. What happened is in the audit
+   * log, which is where a record of the past belongs.
+   */
+  const SUSPENDED_PER_PAGE = 20;
+
+  router.get("/moderation/suspensions", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canAppoint(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const q = typeof req.query["q"] === "string" ? req.query["q"].trim().toLowerCase() : "";
+      const asked = Number.parseInt(String(req.query["page"] ?? "1"), 10);
+      const page = Number.isFinite(asked) && asked > 0 ? asked : 1;
+      const now = new Date();
+      const where = {
+        suspendedAt: { not: null },
+        // Expired ones are not suspensions any more, and the same arithmetic
+        // decides it here and in suspensionOf: one rule, two readers.
+        OR: [{ suspendedUntil: null }, { suspendedUntil: { gt: now } }],
+        ...(q === "" ? {} : { username: { contains: q } }),
+      };
+      const total = await prisma.member.count({ where });
+      const pages = Math.max(1, Math.ceil(total / SUSPENDED_PER_PAGE));
+      const rows = await prisma.member.findMany({
+        where,
+        // Most recent first: the decision somebody is asking about is almost
+        // always the one just taken.
+        orderBy: [{ suspendedAt: "desc" }, { username: "asc" }],
+        skip: (Math.min(page, pages) - 1) * SUSPENDED_PER_PAGE,
+        take: SUSPENDED_PER_PAGE,
+        select: {
+          id: true,
+          username: true,
+          suspendedAt: true,
+          suspendedUntil: true,
+          suspendedReason: true,
+          contactEmail: true,
+          contactVerifiedAt: true,
+        },
       });
-      res.json({ username, suspension: after ? suspensionOf(after) : null });
+
+      // Who decided, from the audit log rather than from a column on the
+      // member. The log is the record (FR-E14) and duplicating the actor onto
+      // the account would give two answers that can disagree.
+      const entries = await prisma.auditLog.findMany({
+        where: {
+          targetKind: "member",
+          targetId: { in: rows.map((r) => r.id) },
+          action: { startsWith: "suspend:" },
+        },
+        orderBy: { at: "desc" },
+        select: { targetId: true, actorMemberId: true },
+      });
+      const actorIds = [...new Set(entries.map((e) => e.actorMemberId))];
+      const actors = new Map(
+        (
+          await prisma.member.findMany({
+            where: { id: { in: actorIds } },
+            select: { id: true, username: true },
+          })
+        ).map((m) => [m.id, m.username]),
+      );
+      const decidedBy = new Map<string, string | null>();
+      for (const e of entries) {
+        // Newest first, so the first one seen for a member is the current one.
+        if (!decidedBy.has(e.targetId)) decidedBy.set(e.targetId, actors.get(e.actorMemberId) ?? null);
+      }
+
+      res.json({
+        page: Math.min(page, pages),
+        pages,
+        total,
+        suspensions: rows.map((r) => ({
+          username: r.username,
+          since: r.suspendedAt,
+          until: r.suspendedUntil,
+          reason: r.suspendedReason,
+          by: decidedBy.get(r.id) ?? null,
+          // Not the address itself, only whether one exists that may be
+          // written to. The console has no business reading somebody's mail
+          // address to answer the question it actually has, which is whether
+          // this person was reachable when the decision was taken.
+          reachable: Boolean(r.contactEmail && r.contactVerifiedAt !== null),
+        })),
+      });
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
 

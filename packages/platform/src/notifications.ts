@@ -30,6 +30,17 @@ export const TRANSACTIONAL = new Set([
   "email.changed",
   "account.deleted",
   "account.export",
+  // A suspension and its end are transactional, NOT "moderation.outcome".
+  //
+  // The optional kind is about somebody else's content: a report they filed,
+  // a review they wrote, an outcome they may reasonably not want in their
+  // inbox. This is the account itself being stopped and started again, which
+  // is the same class of event as the account being deleted. Making it a
+  // preference would mean the people who never opened the notification screen,
+  // which is most of them, learn about it by finding the door locked. That is
+  // the failure this whole path exists to fix, so it cannot be opt-in.
+  "account.suspended",
+  "account.reinstated",
 ]);
 
 /**
@@ -112,6 +123,24 @@ export async function wants(
  */
 export function mailRelayConfigured(): boolean {
   return Boolean(process.env["STUDENS_SMTP_HOST"] && process.env["STUDENS_MAIL_FROM"]);
+}
+
+/**
+ * Where somebody writes to argue with a decision, or null if nowhere.
+ *
+ * ONE FUNCTION BECAUSE TWO SURFACES SAY IT. The suspension screen shows it and
+ * the suspension mail prints it, and they are rendered by different processes;
+ * an address that differed between them would send half the appeals into a
+ * mailbox nobody reads.
+ *
+ * Null is a legitimate state and both surfaces handle it: this is a project
+ * with no domain yet, and inventing contact@studens.be before it exists would
+ * be worse than saying nothing. Nothing is blocked by its absence, because the
+ * reason itself is on the screen either way.
+ */
+export function contactAddress(): string | null {
+  const raw = process.env["STUDENS_CONTACT_EMAIL"]?.trim();
+  return raw ? raw : null;
 }
 
 export interface QueuedMail {

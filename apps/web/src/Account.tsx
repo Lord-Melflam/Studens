@@ -69,7 +69,12 @@ export function Account({
   async function signIn() {
     setBusy(true);
     try {
-      await fetch("/api/session/dev", { method: "POST" });
+      const r = await fetch("/api/session/dev", { method: "POST" });
+      // Suspended: no session, and the screen that says why.
+      if (r.status === 403) {
+        window.location.assign("/suspendu");
+        return;
+      }
       reload();
       // The catalogue is public, but what a signed-in member sees is not
       // (FR-D13), so the page is reloaded rather than patched in place.

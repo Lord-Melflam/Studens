@@ -139,11 +139,44 @@ export async function suspend(input: {
   days: number | null;
   reason: string;
   lift?: boolean;
-}): Promise<void> {
+}): Promise<{ notified: boolean }> {
   const r = await fetch("/api/moderation/suspend", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
   if (!r.ok) throw new Error(r.status === 409 ? "refused" : "failed");
+  // Whether a message actually went out. The screen says which of the two
+  // happened rather than claiming the person was told either way.
+  return (await r.json()) as { notified: boolean };
+}
+
+export interface SuspendedAccount {
+  username: string | null;
+  since: string;
+  /** Null is permanent, here as everywhere else. */
+  until: string | null;
+  reason: string | null;
+  /** The administrator who decided, from the audit log. Null if it predates it. */
+  by: string | null;
+  /** Whether a confirmed address existed to write to when it was decided. */
+  reachable: boolean;
+}
+
+export async function fetchSuspensions(
+  q: string,
+  page: number,
+): Promise<{ suspensions: SuspendedAccount[]; page: number; pages: number; total: number }> {
+  const params = new URLSearchParams();
+  if (q !== "") params.set("q", q);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  const r = await fetch(`/api/moderation/suspensions${query === "" ? "" : `?${query}`}`);
+  if (!r.ok) return { suspensions: [], page: 1, pages: 1, total: 0 };
+  return (await r.json()) as {
+    suspensions: SuspendedAccount[];
+    page: number;
+    pages: number;
+    total: number;
+  };
 }
