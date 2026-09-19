@@ -11,6 +11,7 @@ import { Modules } from "./Modules.js";
 import { Privacy } from "./Privacy.js";
 import { About } from "./About.js";
 import { SignIn } from "./SignIn.js";
+import { Suspended } from "./Suspended.js";
 
 export function PublicZone({ path }: { path: string }) {
   const page =
@@ -22,6 +23,10 @@ export function PublicZone({ path }: { path: string }) {
       <About />
     ) : path === "/connexion" ? (
       <SignIn />
+    ) : path === "/suspendu" ? (
+      /* In the PUBLIC zone, because somebody suspended has no session and the
+         app zone is exactly what they cannot reach. */
+      <Suspended />
     ) : (
       <Landing />
     );

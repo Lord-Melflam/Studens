@@ -38,7 +38,7 @@ export {
  * component with no session. See test/ui/signed-in.test.ts.
  */
 export { Shell, signOutDestination } from "./shell/Shell.js";
-export { takesPowerAway } from "./moderation/Console.js";
+export { takesPowerAway, sectionFrom, SECTIONS } from "./moderation/Console.js";
 export { Settings } from "./Settings.js";
 export { SessionProvider, useSession, type SessionState } from "./session.js";
 

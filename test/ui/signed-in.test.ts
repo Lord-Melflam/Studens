@@ -26,6 +26,8 @@ import {
   bundle,
   signOutDestination,
   takesPowerAway,
+  sectionFrom,
+  SECTIONS,
   type SessionState,
 } from "@studens/web";
 
@@ -248,5 +250,50 @@ describe("a demotion is confirmed, a promotion is not", () => {
   it("follows the order it is given, not one written into the screen", () => {
     // The same two roles, ordered the other way round, reverse the answer.
     expect(takesPowerAway(["admin", "member"], "member", "admin")).toBe(true);
+  });
+});
+
+/**
+ * THE CONSOLE'S SECTIONS, and the address that picks one.
+ *
+ * The console was one column of panels: the queue, then suspending, then
+ * settings, then appointments. Each new administrator power was another panel
+ * pushing the queue, which is the daily work, further down a page somebody
+ * scrolls past to reach. Sections absorb that growth, and the section is in
+ * the address (FR-B21) so it survives a refresh and can be linked to.
+ */
+describe("which section the address asks for", () => {
+  it("lands on the reports queue by default", () => {
+    expect(sectionFrom("", true)).toBe("signalements");
+    expect(sectionFrom("?", false)).toBe("signalements");
+  });
+
+  it("opens the one named, for somebody who holds the powers", () => {
+    for (const id of SECTIONS) {
+      expect(sectionFrom(`?section=${id}`, true)).toBe(id);
+    }
+  });
+
+  /**
+   * A moderator who is not an administrator opens an administrator's link and
+   * gets the screen they can use, not an error. The API answers 404 to every
+   * request behind those sections anyway, so this is about not showing
+   * somebody an empty panel, never about keeping them out.
+   */
+  it("sends a moderator back to the queue, whatever the link said", () => {
+    expect(sectionFrom("?section=comptes", false)).toBe("signalements");
+    expect(sectionFrom("?section=roles", false)).toBe("signalements");
+    expect(sectionFrom("?section=reglages", false)).toBe("signalements");
+  });
+
+  it("ignores a name it does not know rather than drawing nothing", () => {
+    expect(sectionFrom("?section=comptez", true)).toBe("signalements");
+    expect(sectionFrom("?section=", true)).toBe("signalements");
+  });
+
+  it("leaves the other settings in the address alone", () => {
+    // The console shares a query string with nothing today, and will not be
+    // the reason that stops being true.
+    expect(sectionFrom("?q=lepl&section=roles", true)).toBe("roles");
   });
 });

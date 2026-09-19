@@ -94,6 +94,7 @@ export {
 export {
   OPTIONAL_KINDS,
   TRANSACTIONAL,
+  contactAddress,
   enqueueMail,
   isSendableKind,
   mailRelayConfigured,
@@ -180,4 +181,5 @@ export {
   liftSuspension,
   suspensionOf,
   type Suspension,
+  type SuspensionOutcome,
 } from "./suspension.js";

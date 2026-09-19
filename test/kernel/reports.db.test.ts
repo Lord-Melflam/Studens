@@ -97,7 +97,7 @@ async function freshMember(subject: string) {
       provider: "report-test",
       providerSubject: subject,
       emailDomain: "example.invalid",
-      username: `ztst.${subject}`,
+      username: `ztst.rep.${subject}`,
       tenantId,
     },
   });

@@ -1866,6 +1866,90 @@ cannot be undone: everything published between 2026-09-09 and today stays MIT
 for whoever received it, and the file says so rather than pretending otherwise.
 
 
+### Phase 46: a suspension nobody was told about
+
+A tester found it by being on the receiving end. Suspending an account worked:
+the sessions closed, the next sign-in was refused. Refused exactly like every
+other failure, because FR-A4 gives one message whatever went wrong, and from
+outside that is indistinguishable from the site being down. The reasonable
+conclusion is that the app is temporarily unreachable, so you try again
+tomorrow. Nothing on any screen said a decision had been taken, what it was
+for, or who to ask.
+
+TWO WAYS, BECAUSE EACH FAILS ALONE. A message goes out the moment the decision
+is taken, and a screen says the same thing at the next sign-in. Neither is
+enough by itself: most accounts have no confirmed contact address, and FR-A13
+forbids writing to an unconfirmed one, so the message reaches a minority; and
+somebody who gives up after one refused attempt never reaches the screen. Both
+carry the reason in the moderator's own words, the end date or that there is
+none, and an address to write to. FR-E15.
+
+THE MESSAGE IS TRANSACTIONAL, NOT A PREFERENCE. `moderation.outcome` already
+existed as an opt-in kind and would have been the obvious place to hang this.
+It is the wrong place: that kind is about somebody else's content, and this is
+the account itself being stopped, which is the same class of event as the
+account being deleted. Opt-in would mean the people who never opened the
+notification screen, which is most of them, find the door locked and learn
+nothing.
+
+IT IS QUEUED IN THE SAME TRANSACTION as the suspension, so a failure to record
+the notice rolls the suspension back rather than committing the silent state
+the whole phase exists to remove. The console is told whether a message
+actually went out, and says which of the two happened: "not notified" is an
+ordinary outcome and hiding it would leave an administrator believing somebody
+had been informed.
+
+THE SCREEN CARRIES NO SESSION. A suspended sign-in gets a short-lived signed
+cookie saying "this browser completed a sign-in as this member, a moment ago",
+and the suspension endpoint answers questions about that member and nothing
+else. Ten minutes, no session, no member id in a URL, and the reason is fetched
+rather than put in the address: browser history, bookmark sync and whoever is
+looking at the screen all read a URL, and this is nobody's business but theirs.
+The same reasoning FR-C9 applies to draft text.
+
+The header on that page drops the sign-in and create-account buttons. They are
+right everywhere else and wrong there: "Créer un compte" beside a suspension
+notice is the platform proposing the one move the decision was meant to answer.
+Registration stays open (FR-A6) and nothing about that changed.
+
+AND A REGISTER, because the power had no record of its own use. The suspend
+form takes a username, so the only way to find out whether somebody was already
+suspended, or what for, or when it ends, was to suspend them again and read the
+answer back. Current suspensions are now listed with the reason, the end date,
+who decided it and whether a message could be sent, paged twenty at a time and
+searchable by name from the first day rather than the day it stops fitting.
+Only current ones: an expired suspension is over, and a permanent list of
+everybody ever stopped is a different and worse thing to keep. Who decided is
+read from the audit log rather than stored on the account, so there are not two
+answers that can disagree. FR-E16.
+
+THE CONSOLE STOPPED BEING ONE COLUMN. It was four panels stacked, and the
+register made five. The ones that grow are the administrator's: every setting
+anybody ever makes configurable lands in one of them, and each arrival pushes
+the reports queue, which is the daily work, further down a page somebody
+scrolls past to reach. Four sections now, split by who reads them and how
+often, with reports as the one you land on. The section is in the address
+(FR-B21), and a moderator without the administrator's powers sees no bar at
+all, because a row of one tab is a control that can never do anything.
+
+TWO THINGS THE SCREENSHOTS CAUGHT AND REASONING HAD NOT. The tab bar first
+marked the current section with an underline, which was a fourth answer to a
+question this project settled once: the accent pill says "this is where you
+are" in the app bar, in the public header and on a call to action. Then the
+pill did not appear at all, because `.console-tab` and `.here` are both one
+class and the later rule wins: eight hundred lines below, a plain `color` and
+`background` silently un-styled the current tab. The same cascade-order trap
+`.chips` taught in phase 32, and the fix is the same shape: stop the base rule
+competing rather than raise its specificity.
+
+The mail templates are now rendered by a test, in all three languages, rather
+than read as source. A kind with no template throws in the worker at send time
+with nobody watching, which would be this phase's own bug wearing a different
+hat. Reaching them needed the worker to have an entry point like the other two
+apps, because the deep-import ban applies to tests as hard as to application
+code and lint refused the relative path, correctly.
+
+
 ---
 
 ## Next
@@ -1897,13 +1981,23 @@ for whoever received it, and the file says so rather than pretending otherwise.
    which the fork already promises on screen.
 4b. ~~An administrator can change how the product behaves~~ done, phase 44:
    settings in a table, changed from the console, namespaced by module.
-   Suspension came with it. What it deliberately cannot do is sanction the
-   author of an anonymous contribution (FR-E7), and the console says so above
-   the button rather than leaving a moderator to find out.
-5. **A mail relay.** Nothing is delivered until the five `STUDENS_SMTP_*`
-   variables are set: messages queue correctly and the worker prints them. The
-   zero-budget start is a Gmail app password; the exit is a relay on the real
-   domain. François's to supply, and it blocks nothing else.
+   Suspension came with it, and phase 46 made it visible to the person it is
+   about: a message when the decision is taken, a screen at the next sign-in,
+   and a register of who is currently suspended (FR-E15, FR-E16). What it
+   deliberately cannot do is sanction the author of an anonymous contribution
+   (FR-E7), and the console says so above the button rather than leaving a
+   moderator to find out.
+5. **A mail relay, and it now blocks half of FR-E15.** Nothing is delivered
+   until the five `STUDENS_SMTP_*` variables are set: messages queue correctly
+   and the worker prints them. That was tolerable while the queue held address
+   confirmations; it now also holds the message telling somebody their account
+   was suspended, and until a relay exists the sign-in screen is the only half
+   of that requirement actually working. `STUDENS_CONTACT_EMAIL` is the other
+   unset variable: with it empty, the screen and the message state the reason
+   and offer nowhere to write, which is better than an address that bounces.
+   The zero-budget start is a Gmail app password; the exit is a relay on the
+   real domain. To supply from a personal account, never a company one, and it
+   blocks nothing else.
 6. **Deployment, and it is now the only thing between this and a tester.**
    The web process serves the built application as well as the API since phase
    32b, in one process, mounted after the `/api` 404 so a mistyped API path

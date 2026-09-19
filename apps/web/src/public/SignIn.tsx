@@ -32,8 +32,10 @@ export function SignIn() {
   }, []);
 
   async function devSignIn() {
-    await fetch("/api/session/dev", { method: "POST" });
-    window.location.assign("/app");
+    const r = await fetch("/api/session/dev", { method: "POST" });
+    // Suspended: no session, and the screen that says why, exactly as the
+    // provider path does.
+    window.location.assign(r.status === 403 ? "/suspendu" : "/app");
   }
 
   return (

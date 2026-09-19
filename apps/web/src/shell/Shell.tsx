@@ -314,7 +314,7 @@ export function Shell() {
         // it gets the unknown-screen message, and the API answers 404 to every
         // request behind it anyway, so nothing here is the only guard.
         powers?.canModerate ? (
-          <ModerationConsole canAppoint={powers.canAppoint} />
+          <ModerationConsole canAppoint={powers.canAppoint} here={`${APP_PREFIX}/${MODERATION}`} />
         ) : (
           <p className="error">{t("app.unknown", { id: MODERATION })}</p>
         )

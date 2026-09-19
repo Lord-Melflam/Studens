@@ -439,3 +439,52 @@ a.cta:hover { background: #16407c; }
 .lang a { border-radius: 999px; }
 .lang a.on { color: var(--accent); background: var(--accent-soft); font-weight: 700; }
 .lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+/* --- the suspension screen ----------------------------------------------
+   Motion that arrives once and stops. It exists so the screen reads as
+   something that happened rather than a page that failed to load; it does not
+   loop and does not pulse, because performing the severity at somebody who is
+   already being told bad news is the wrong register. */
+.suspended { max-width: 34rem; padding: 3rem 0 4rem; }
+.suspended-mark {
+  width: 3.5rem;
+  height: 3.5rem;
+  color: var(--danger);
+  animation: suspended-mark 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.suspended-mark svg { width: 100%; height: 100%; }
+@keyframes suspended-mark {
+  from { opacity: 0; transform: scale(0.8) rotate(-12deg); }
+  to { opacity: 1; transform: none; }
+}
+.suspended h1 { margin: 1.2rem 0 0.6rem; }
+.suspended > * { animation: suspended-in 0.45s ease-out both; }
+.suspended > *:nth-child(2) { animation-delay: 0.06s; }
+.suspended > *:nth-child(3) { animation-delay: 0.1s; }
+.suspended > *:nth-child(4) { animation-delay: 0.14s; }
+.suspended > *:nth-child(5) { animation-delay: 0.18s; }
+@keyframes suspended-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+/* The moderator's own words, set apart so they are read as a quotation of a
+   decision rather than as the interface's own voice. */
+.suspended-reason {
+  margin: 1.5rem 0;
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--danger);
+  border-radius: 8px;
+}
+.suspended-reason h2 { margin: 0 0 0.4rem; font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+.suspended-reason p { margin: 0; }
+.suspended-facts { margin: 1.5rem 0; }
+.suspended-facts > div + div { margin-top: 0.9rem; }
+.suspended-facts dt { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+.suspended-facts dd { margin: 0.2rem 0 0; }
+.suspended .hint { display: block; margin-top: 1.8rem; font-size: 0.88rem; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) {
+  .suspended-mark,
+  .suspended > * { animation: none; }
+}
