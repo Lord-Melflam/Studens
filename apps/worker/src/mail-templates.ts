@@ -6,10 +6,18 @@
  * in whatever the copy said the day it was queued, and fixing a sentence fixes
  * every message still waiting.
  *
- * PLAIN TEXT ONLY. An HTML mail needs a plain-text alternative anyway, styling
- * is stripped by half the clients that matter, and the whole point of these
- * messages is that they are short and say one thing. It also means there is no
- * tracking pixel, because there is nowhere to put one.
+ * WRITTEN AS PLAIN TEXT, SENT AS BOTH. These templates produce text and only
+ * text, which is the source of every word; `mime.ts` renders that same text
+ * into the HTML part beside it. One set of words, so the two parts cannot
+ * disagree about why somebody was suspended.
+ *
+ * It was plain text alone until 2026-09-19, on the reasoning that styling is
+ * stripped by half the clients that matter and that a text-only message has
+ * nowhere to put a tracking pixel. The second half still holds and is still
+ * enforced, by tests: no image, no remote asset, no stylesheet. What changed
+ * is the first half. A bare wall of text from an address nobody recognises is
+ * the shape of a phishing mail, and for somebody whose account was suspended
+ * that message may be the only notice they get.
  *
  * THE LIFETIME IS STATED IN THREE PLACES AND MUST AGREE. These three templates
  * say how long the confirmation link lasts, and `CONFIRM_MAX_AGE_SECONDS`
