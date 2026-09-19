@@ -264,6 +264,43 @@ main.app {
   border-radius: 999px;
 }
 .settings-link:hover { color: var(--ink); background: var(--accent-soft); }
+/* WHERE YOU ARE. Hover told you where you were about to go and nothing told
+   you where you were, so the console and the account panel looked identical to
+   every other screen once you arrived. */
+.settings-link.on {
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+/* A NAME IS NOT A CAPTION. This used to go through `.domain`, which is muted
+   grey, so somebody's own username sat in the bar looking like fine print.
+   The initial is drawn rather than fetched: there are no avatars here and
+   there will not be, because an avatar is an author attribute and FR-C16
+   keeps those off anything anonymous. */
+.whoami {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.6rem 0.15rem 0.15rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.whoami-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  font-size: 0.72rem;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 999px;
+}
 
 .app-body {
   flex: 1;

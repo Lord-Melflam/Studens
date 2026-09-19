@@ -108,9 +108,31 @@ export function Account({
           FR-A10: the domain is evidence of holding an address there, and is
           never described as proof of enrolment, here or anywhere.
         */}
-        <span className="domain" title={t("nav.domain.hint")}>
-          {state.username ?? state.emailDomain}
-        </span>
+        {/*
+          A NAME IS NOT A DOMAIN, and it used to be drawn as one: both went
+          through `.domain`, which is muted grey text, so somebody's own
+          username sat in the bar looking like a caption. François, after the
+          ULB session: "The pseudo on every pages, for example lordmelflam, has
+          a look issue. Just sitting there like a simple text (might be
+          confusing)."
+
+          The name is who you are here, so it is drawn as a thing rather than
+          as a label: an initial and the name. The domain keeps the quiet
+          treatment, because it IS a caption, and FR-A10 wants it read as weak
+          evidence rather than as an identity.
+        */}
+        {state.username ? (
+          <span className="whoami" title={t("nav.whoami.hint")}>
+            <span className="whoami-mark" aria-hidden="true">
+              {state.username.slice(0, 1).toUpperCase()}
+            </span>
+            {state.username}
+          </span>
+        ) : (
+          <span className="domain" title={t("nav.domain.hint")}>
+            {state.emailDomain}
+          </span>
+        )}
         <button type="button" onClick={() => void signOut()} disabled={busy}>
           {t("nav.signout")}
         </button>
