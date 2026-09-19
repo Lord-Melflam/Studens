@@ -41,7 +41,25 @@ function testFiles(dir: string): string[] {
  * The seeded ids these suites use, which are written to be recognisable rather
  * than random: a zero-filled uuid ending in two characters, or a `ztst` code.
  */
-const FIXTURE_ID = /['"`](?:0{8}-0{4}-0{4}-0{4}-0{10}[a-z0-9]{2}|ztst[a-z0-9-]+)['"`]/g;
+const FIXTURE_ID = /['"`](?:0{8}-0{4}-0{4}-0{4}-0{10}[a-z0-9]{2}|ztst[a-z0-9.-]+)['"`]/g;
+
+/**
+ * A fixture name BUILT from a template, and the prefix it builds them under.
+ *
+ * `` `ztst.${subject}` `` is not a literal, so the rule above never saw it, and
+ * three files spent months each generating usernames in one shared namespace.
+ * Two of them used the subject "author" and two used "reporter": the same
+ * username, on a column that is globally unique, from files whose cleanup is
+ * scoped by provider and therefore never noticed.
+ *
+ * It went red on 2026-09-19 on a change that touched none of them, which is
+ * the signature this whole file exists to stop: adding one test file altered
+ * which files overlap, and the failure landed on the wrong person. The gate
+ * caught the shape it knew and missed the shape one character away from it.
+ *
+ * So a template prefix is a namespace, and a namespace has one owner.
+ */
+const FIXTURE_PREFIX = /['"`]?`(ztst[a-z0-9.-]*)\$\{/g;
 
 describe("parallel test files do not fight over the same row", () => {
   const files = testFiles(join(root, "test"));
@@ -69,5 +87,50 @@ describe("parallel test files do not fight over the same row", () => {
         "files in parallel, so both will insert and one will fail, on whichever " +
         "day the two happen to overlap. Give each file its own id.",
     ).toEqual([]);
+  });
+
+  it("no fixture name is BUILT under a prefix two files share", () => {
+    const owners = new Map<string, string[]>();
+    for (const file of files) {
+      const rel = file.slice(root.length);
+      const code = stripComments(readFileSync(file, "utf8"));
+      const prefixes = new Set([...code.matchAll(FIXTURE_PREFIX)].map((m) => m[1]!));
+      for (const p of prefixes) owners.set(p, [...(owners.get(p) ?? []), rel]);
+    }
+    const shared = [...owners.entries()]
+      .filter(([, who]) => who.length > 1)
+      .map(([p, who]) => `${p}* is built by ${who.join(" and ")}`);
+    expect(
+      shared,
+      "two test files generate names under the same prefix. Whether they " +
+        "collide depends on the argument each happens to pass, which is not a " +
+        "thing to leave to luck on a unique column. Give each file its own " +
+        "prefix, as ztst.acct, ztst.mod and ztst.rep do.",
+    ).toEqual([]);
+  });
+
+  /**
+   * And a generated name must not be able to land on another file's literal
+   * one. `ztst.` as a prefix plus the subject "one" is exactly the name
+   * profile.db.test.ts writes by hand, and neither rule above would see it.
+   */
+  it("no built prefix can produce another file's literal fixture id", () => {
+    const literals = new Map<string, string>();
+    const prefixes = new Map<string, string>();
+    for (const file of files) {
+      const rel = file.slice(root.length);
+      const code = stripComments(readFileSync(file, "utf8"));
+      for (const m of code.matchAll(FIXTURE_ID)) literals.set(m[0].slice(1, -1), rel);
+      for (const m of code.matchAll(FIXTURE_PREFIX)) prefixes.set(m[1]!, rel);
+    }
+    const reachable: string[] = [];
+    for (const [prefix, owner] of prefixes) {
+      for (const [id, holder] of literals) {
+        if (holder !== owner && id.startsWith(prefix)) {
+          reachable.push(`${owner} can generate ${id}, which ${holder} writes by hand`);
+        }
+      }
+    }
+    expect(reachable).toEqual([]);
   });
 });

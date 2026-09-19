@@ -131,7 +131,7 @@ async function member(subject: string, role = "member") {
       provider: "mod-test",
       providerSubject: subject,
       emailDomain: "example.invalid",
-      username: `ztst.${subject}`,
+      username: `ztst.mod.${subject}`,
       role,
       tenantId,
     },
@@ -605,7 +605,7 @@ describe("the first administrator (FR-E14)", () => {
 
   dbit("appoints by username, and records the operator rather than a member", async () => {
     const target = await member("firstadmin");
-    const appointed = await withNoAdmins(() => grantFirstAdmin(prisma, "ztst.firstadmin"));
+    const appointed = await withNoAdmins(() => grantFirstAdmin(prisma, "ztst.mod.firstadmin"));
     expect(appointed.role).toBe("admin");
     expect(appointed.memberId).toBe(target.memberId);
 
@@ -624,25 +624,25 @@ describe("the first administrator (FR-E14)", () => {
   dbit("refuses once there is an administrator, so it cannot appoint a second", async () => {
     await member("secondadmin");
     await member("sitting", "admin");
-    await expect(grantFirstAdmin(prisma, "ztst.secondadmin")).rejects.toMatchObject({
+    await expect(grantFirstAdmin(prisma, "ztst.mod.secondadmin")).rejects.toMatchObject({
       reason: "admin-exists",
     });
-    const still = await prisma.member.findFirst({ where: { username: "ztst.secondadmin" } });
+    const still = await prisma.member.findFirst({ where: { username: "ztst.mod.secondadmin" } });
     expect(still?.role).toBe("member");
   });
 
   dbit("refuses a username nobody has, without creating one", async () => {
     await withNoAdmins(async () => {
-      await expect(grantFirstAdmin(prisma, "ztst.nobody.at.all")).rejects.toMatchObject({
+      await expect(grantFirstAdmin(prisma, "ztst.mod.nobody.at.all")).rejects.toMatchObject({
         reason: "unknown-member",
       });
     });
-    expect(await prisma.member.findFirst({ where: { username: "ztst.nobody.at.all" } })).toBeNull();
+    expect(await prisma.member.findFirst({ where: { username: "ztst.mod.nobody.at.all" } })).toBeNull();
   });
 
   dbit("matches the username as it is stored, whatever case it is typed in", async () => {
     const target = await member("casedadmin");
-    const appointed = await withNoAdmins(() => grantFirstAdmin(prisma, "  ZTST.CasedAdmin  "));
+    const appointed = await withNoAdmins(() => grantFirstAdmin(prisma, "  ZTST.MOD.CasedAdmin  "));
     expect(appointed.memberId).toBe(target.memberId);
   });
 });

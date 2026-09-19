@@ -63,7 +63,7 @@ async function freshMember(subject: string, email = `${subject}@example.invalid`
       providerEmail: email,
       contactEmail: email,
       contactVerifiedAt: new Date(),
-      username: `ztst.${subject}`,
+      username: `ztst.acct.${subject}`,
       tenantId,
     },
   });
@@ -206,7 +206,7 @@ describe("the export (FR-A15, Article 20)", () => {
     await setPreference(prisma, id, "digest.weekly", true);
 
     const data = await exportAccount(prisma, id, { erasures: ERASURES });
-    expect(data.account["username"]).toBe("ztst.exporter");
+    expect(data.account["username"]).toBe("ztst.acct.exporter");
     expect(data.account["providerEmail"]).toBe("exporter@example.invalid");
     expect(data.notifications.some((n) => n.kind === "digest.weekly" && n.enabled)).toBe(true);
     const ryc = data.modules[RYC_MODULE] as { attributedReviews: unknown[] };

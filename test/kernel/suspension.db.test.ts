@@ -79,7 +79,7 @@ async function member(
       provider: PROVIDER,
       providerSubject: subject,
       emailDomain: "example.invalid",
-      username: `zsus.${subject}`,
+      username: `ztst.susp.${subject}`,
       role: "member",
       tenantId,
       contactEmail: contact.address,
@@ -156,7 +156,7 @@ describe("what else a suspension does", () => {
   dbit("closes the open sessions in the same transaction", async () => {
     const m = await member("f", { address: "f@example.invalid", verified: true });
     await prisma.session.create({
-      data: { memberId: m.id, tokenHash: `zsus-${m.id}` },
+      data: { memberId: m.id, tokenHash: `ztst-susp-${m.id}` },
     });
     await suspendMember(prisma, m.id, { days: 7, reason: "R" });
     expect(await prisma.session.count({ where: { memberId: m.id } })).toBe(0);
