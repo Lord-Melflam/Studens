@@ -9,7 +9,7 @@ exist; that one is what to type, including the things that are not `npm` scripts
 `psql` one-liners, `gh`, worktrees, and a table of what to do when something
 breaks.
 
-Studens is MIT licensed, inbound equals outbound, so no contributor agreement is
+Studens is AGPL-3.0-or-later, inbound equals outbound, so no contributor agreement is
 needed. Outside contributors are welcome as contributors: open a pull request.
 
 All module code lives in this repository and is admitted by review before merge

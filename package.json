@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "description": "Modular web platform for students in higher education",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "engines": {
     "node": ">=22"

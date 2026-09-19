@@ -1,0 +1,42 @@
+Studens
+Copyright (C) 2026 François Meli
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+
+ON THE EARLIER MIT VERSIONS
+---------------------------
+
+Studens was published under the MIT licence from 2026-09-09 until 2026-09-19.
+That grant cannot be withdrawn: anyone who received a copy during that period
+keeps an MIT licence to THAT copy, for good. This file does not pretend
+otherwise, and it is not trying to.
+
+Everything from 2026-09-19 onward is under the AGPL above.
+
+The whole history is one author's work, so there was nobody to ask: `git
+shortlog -sne --all` lists a single contributor, under two addresses that are
+both his.
+
+WHY IT CHANGED, in one line, with the long version in docs/requirements.md
+section 7 under OPEN-18: MIT was chosen over AGPL on 2026-09-09 in exchange for
+the lowest possible barrier to outside contributors, and that exchange did not
+pay. There are no outside contributors 112 commits in, and the cost accepted at
+the time, that anyone may run a derivative commercially without contributing
+anything back, turned out to be the one cost the author was not willing to
+carry.
+
+What the AGPL changes in practice: someone running a modified Studens as a
+public service has to publish their modifications. Reading the code, learning
+from it, forking it and running it for students remain exactly as free as they
+were.

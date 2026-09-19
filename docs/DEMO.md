@@ -391,7 +391,7 @@ account works. That is the next work.
 
 **How much does it cost, and who pays?**
 Nothing to use. It is one person's project on a personal budget, with no
-advertising and no selling of data, and the code is public under MIT so that
+advertising and no selling of data, and the code is public under the AGPL so that
 claim is checkable.
 
 ---

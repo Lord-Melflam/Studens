@@ -240,7 +240,7 @@ of anything technical.
 **Its code cannot be used.** The repository has **no licence** (`license: null` on the GitHub
 API), which means all rights are reserved by default. Publishing a link, in Discord or
 anywhere else, is publication and not permission; GitHub's terms grant viewing and forking
-within GitHub, not use or redistribution outside it. Since Studens is public and MIT,
+within GitHub, not use or redistribution outside it. Since Studens is public and AGPL,
 incorporating unlicensed code would make our own licence statement false and would promise
 downstream users rights we do not hold. Attribution does not cure that: a credit is a
 courtesy, a licence is permission.

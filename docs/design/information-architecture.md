@@ -169,7 +169,7 @@ already exists.
 
 **Name and colour, never the mark.** Confirmed 2026-09-12, consistent with
 `frontend-design.tex` 2.3: the marks are trademarked whatever their copyright
-status, and EPL's CC BY-SA fights our MIT licence. A grid of university logos on
+status, and EPL's CC BY-SA fights our own licence. A grid of university logos on
 a sign-up page is the sharpest possible implied endorsement, and the footer
 disclaimer is weaker there than anywhere else on the site. Each institution is a
 card with its name, its city and its colours, which also feeds the

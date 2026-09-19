@@ -151,7 +151,9 @@ A race condition was found in the accepted rate-limiting design (read-then-write
 on the quota) with the one-line atomic fix.
 
 The product was named **Studens** after four rounds of verified `.be`
-availability checks, and published under MIT.
+availability checks, and published under MIT. (The licence changed to
+AGPL-3.0-or-later on 2026-09-19, phase 45. The MIT grant on everything
+published before that date stands and cannot be withdrawn.)
 
 ### Phase 2: reading the academic material
 
@@ -1824,6 +1826,44 @@ account and never a person (FR-A6, OPEN-35), and it cannot reach the anonymous
 path (FR-E7). Fixed lengths rather than a free date, permanent as a null rather
 than a far future sentinel, sessions revoked in the same transaction, and no
 administrator may suspend themselves or another administrator.
+
+
+### Phase 45: the licence, reversed
+
+Asked directly: people around François had warned him his idea could be taken,
+and he wanted to know whether to make the repository private until it works.
+
+THE TWO FACTS THAT DECIDED IT. Going private retracts nothing: MIT is
+irrevocable for copies already distributed, and the link had already been
+shared with two people building the same thing at the same faculty. And
+copyright never protected the idea, only the expression, so private would have
+guarded the code, which is the least defensible asset here. The catalogue took
+weeks of crawler defects to earn, the reviews compound, and a clone starts with
+an empty database.
+
+Private would also have made the product lie. "Le code est public" is a claim
+on the home page in three languages, on the About page, in the footer and in
+the privacy page, and it is not decoration: the central promise is that an
+anonymous review cannot be traced, and the reason to believe it is that anybody
+can check the schema has no column to join on. Closing the repository turns the
+strongest differentiator into an ordinary assertion, aimed at the audience
+least likely to take one on faith.
+
+SO THE MISMATCH WAS THE LICENCE, NOT THE VISIBILITY. MIT explicitly grants what
+he was afraid of: take it, close it, run it commercially, give nothing back.
+AGPL-3.0-or-later grants everything he wanted to give, reading, learning,
+forking, running it for students, and requires somebody running a modified
+Studens as a service to publish their modifications.
+
+It reverses OPEN-18's licence half, decided 2026-09-09. The requirement did not
+change; the exchange failed. MIT bought the lowest possible barrier to outside
+contributors, and 112 commits in `git shortlog` lists one author, so the
+benefit was zero and only the cost remained.
+
+ONE AUTHOR MADE IT SIMPLE. Nobody else holds copyright here, so there was no
+permission to ask and no contributor agreement to unwind. `NOTICE` records what
+cannot be undone: everything published between 2026-09-09 and today stays MIT
+for whoever received it, and the file says so rather than pretending otherwise.
 
 
 ---
