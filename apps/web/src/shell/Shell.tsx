@@ -277,7 +277,7 @@ export function Shell() {
                  nowhere else, so standing on the console looked the same as
                  standing anywhere. `aria-current` says it to a screen reader
                  and the class says it to everybody else. */
-              className={routeId === MODERATION ? "settings-link on" : "settings-link"}
+              className={routeId === MODERATION ? "settings-link here" : "settings-link"}
               aria-current={routeId === MODERATION ? "page" : undefined}
               {...linkProps(`${APP_PREFIX}/${MODERATION}`)}
             >
@@ -288,7 +288,7 @@ export function Shell() {
               somebody signed out sends them to a page that can only fail. */}
           {session?.signedIn && (
             <a
-              className={routeId === SETTINGS ? "settings-link on" : "settings-link"}
+              className={routeId === SETTINGS ? "settings-link here" : "settings-link"}
               aria-current={routeId === SETTINGS ? "page" : undefined}
               {...linkProps(`${APP_PREFIX}/${SETTINGS}`)}
             >

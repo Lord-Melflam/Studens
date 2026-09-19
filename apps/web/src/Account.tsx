@@ -26,9 +26,18 @@ interface Provider {
 
 export function Account({
   variant = "app",
+  here = false,
   signOutTo,
 }: {
   variant?: "app" | "public";
+  /**
+   * Whether these buttons lead to the page already on screen.
+   *
+   * Both go to `/connexion`, so on that page they were two invitations to go
+   * where the visitor already was, and the filled one was the loudest thing in
+   * the header. Marked current, they stop asking.
+   */
+  here?: boolean;
   /**
    * Where to land after signing out, when staying put would be wrong.
    *
@@ -145,10 +154,18 @@ export function Account({
   if (variant === "public") {
     return (
       <div className="account">
-        <a className="ghost" {...linkProps("/connexion")}>
+        <a
+          className={here ? "ghost here" : "ghost"}
+          aria-current={here ? "page" : undefined}
+          {...linkProps("/connexion")}
+        >
           {t("nav.signin")}
         </a>
-        <a className="cta" {...linkProps("/connexion")}>
+        <a
+          className={here ? "cta here" : "cta"}
+          aria-current={here ? "page" : undefined}
+          {...linkProps("/connexion")}
+        >
           {t("nav.register")}
         </a>
       </div>

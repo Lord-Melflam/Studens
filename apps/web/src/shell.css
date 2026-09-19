@@ -264,13 +264,29 @@ main.app {
   border-radius: 999px;
 }
 .settings-link:hover { color: var(--ink); background: var(--accent-soft); }
-/* WHERE YOU ARE. Hover told you where you were about to go and nothing told
-   you where you were, so the console and the account panel looked identical to
-   every other screen once you arrived. */
-.settings-link.on {
+/* WHERE YOU ARE, DEFINED ONCE AND USED IN EVERY ZONE.
+   Hover told you where you were about to go and nothing told you where you
+   were. The first fix gave the app bar its own treatment and left the public
+   header with an underline and the sign-in buttons with nothing, so three
+   screens answered the same question three ways. François: "let's be
+   consistant."
+   Declared here because shell.css is loaded in every zone, and two rules that
+   have to be kept in step are the mistake `.chips` already taught this project
+   (design/module-boundaries.md 6.1). */
+.here {
   color: var(--accent);
   background: var(--accent-soft);
   font-weight: 600;
+  border-radius: 999px;
+}
+/* A LINK TO WHERE YOU ALREADY ARE IS NOT A CALL TO ACTION. "Créer un compte"
+   is a filled button, and on the sign-in page it was shouting go here at
+   somebody who was already here. Current wins over prominent. */
+a.cta.here,
+a.ghost.here {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: transparent;
 }
 
 /* A NAME IS NOT A CAPTION. This used to go through `.domain`, which is muted
