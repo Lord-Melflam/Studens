@@ -33,7 +33,7 @@ export function PublicLayout({ path, children }: { path: string; children: React
           {NAV.map((item) => (
             <a
               key={item.to}
-              className={path === item.to ? "on" : ""}
+              className={path === item.to ? "here" : ""}
               aria-current={path === item.to ? "page" : undefined}
               {...linkProps(item.to)}
             >
@@ -55,7 +55,9 @@ export function PublicLayout({ path, children }: { path: string; children: React
             that ignores the session tells someone who has just joined that
             nothing happened.
           */}
-          <Account variant="public" />
+          {/* `here` so the sign-in buttons can say so too: they lead to the
+              page a visitor may already be standing on. */}
+          <Account variant="public" here={path === "/connexion"} />
         </div>
       </header>
 

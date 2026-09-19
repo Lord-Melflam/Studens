@@ -125,7 +125,18 @@ function FreeTextField({
   );
 }
 
-export function FirstRun({ route, onDone }: { route: string; onDone: () => void }) {
+export function FirstRun({
+  route,
+  onDone,
+}: {
+  route: string;
+  /**
+   * Awaited. It reloads the session before it navigates, which is a round trip
+   * of its own, and the button has to stay busy until it finishes or the
+   * screen is asking to be pressed again while it works.
+   */
+  onDone: () => void | Promise<void>;
+}) {
   const t = useT();
   const locale = useLocale();
   const step = stepFrom(route);
@@ -185,15 +196,27 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
       try {
         const saved = await patchProfile({ ...patch, onboardingStep: Math.min(next, STEPS) });
         setProfile(saved);
-        if (next > STEPS) onDone();
-        else navigate(firstRunPath(next));
+        if (next > STEPS) {
+          // AWAITED, AND `saving` IS NOT CLEARED AFTERWARDS. Finishing is three
+          // round trips, not one: the institutions, the profile, and then the
+          // session reload inside `onDone` that stops the app bouncing us
+          // straight back here. Clearing the flag before that last one made the
+          // button live again while nothing visible was happening, so people
+          // pressed it a second time. François, after the ULB session: "I click
+          // on finish button twice each time."
+          //
+          // The screen is leaving, so there is nothing to re-enable. Leaving it
+          // busy is what makes the wait legible instead of dead.
+          await onDone();
+          return;
+        }
+        navigate(firstRunPath(next));
       } catch (err) {
         if (err instanceof PatchFailed && err.field === "username") {
           setProblem(err.reason ?? "other");
         } else {
           setProblem("other");
         }
-      } finally {
         setSaving(false);
       }
     },
@@ -224,7 +247,9 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
         setSaving(false);
         return;
       }
-      setSaving(false);
+      // Straight on, still busy. Clearing it here and letting `save` set it
+      // again left one render where the button was enabled and the work was
+      // not done.
       await save({ institutionCode: codes[0] ?? null, onboardedAt: true }, STEPS + 1);
     },
     [save],
@@ -543,11 +568,11 @@ export function FirstRun({ route, onDone }: { route: string; onDone: () => void 
               type="button"
               className="cta"
               disabled={saving}
-              onClick={() =>
-                void saveInstitutions(chosen)
-              }
+              onClick={() => void saveInstitutions(chosen)}
             >
-              {t("firstrun.finish")}
+              {/* Says what it is doing. A button that only greys out reads as
+                  broken when the wait is three round trips long. */}
+              {saving ? t("firstrun.finishing") : t("firstrun.finish")}
             </button>
           </div>
         </section>

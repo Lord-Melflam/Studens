@@ -31,6 +31,7 @@ export const shellStrings: Bundle = {
     "nav.enter": "Ouvrir l'application",
     "nav.signout": "se déconnecter",
     "nav.domain.hint": "adresse vérifiée chez ce domaine",
+    "nav.whoami.hint": "Votre pseudonyme sur Studens.",
     "app.home.lede": "Studens rassemble des outils pour les étudiants. Choisissez un module.",
     "app.modules": "modules",
     "app.home.planned": "Annoncé, pas encore construit",
@@ -158,6 +159,7 @@ export const shellStrings: Bundle = {
     "firstrun.next": "Suivant",
     "firstrun.skip": "Passer",
     "firstrun.finish": "Terminer",
+    "firstrun.finishing": "Un instant\u2026",
 
     "firstrun.1.title": "Bienvenue sur Studens",
     "firstrun.1.lede":
@@ -446,6 +448,7 @@ export const shellStrings: Bundle = {
     "nav.enter": "Open de app",
     "nav.signout": "afmelden",
     "nav.domain.hint": "adres geverifieerd bij dit domein",
+    "nav.whoami.hint": "Uw pseudoniem op Studens.",
     "app.home.lede": "Studens bundelt hulpmiddelen voor studenten. Kies een module.",
     "app.modules": "modules",
     "app.home.planned": "Aangekondigd, nog niet gebouwd",
@@ -573,6 +576,7 @@ export const shellStrings: Bundle = {
     "firstrun.next": "Volgende",
     "firstrun.skip": "Overslaan",
     "firstrun.finish": "Afronden",
+    "firstrun.finishing": "Een ogenblik\u2026",
 
     "firstrun.1.title": "Welkom bij Studens",
     "firstrun.1.lede":
@@ -862,6 +866,7 @@ export const shellStrings: Bundle = {
     "nav.enter": "Open the app",
     "nav.signout": "sign out",
     "nav.domain.hint": "address verified at this domain",
+    "nav.whoami.hint": "Your username on Studens.",
     "app.home.lede": "Studens brings together tools for students. Choose a module.",
     "app.modules": "modules",
     "app.home.planned": "Announced, not built yet",
@@ -989,6 +994,7 @@ export const shellStrings: Bundle = {
     "firstrun.next": "Next",
     "firstrun.skip": "Skip",
     "firstrun.finish": "Finish",
+    "firstrun.finishing": "One moment\u2026",
 
     "firstrun.1.title": "Welcome to Studens",
     "firstrun.1.lede":

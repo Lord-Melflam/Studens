@@ -29,7 +29,9 @@
 .site-nav { display: flex; gap: 1.4rem; font-size: 0.9rem; }
 .site-nav a { color: var(--muted); text-decoration: none; padding-bottom: 2px; }
 .site-nav a:hover { color: var(--ink); }
-.site-nav a.on { color: var(--ink); border-bottom: 2px solid var(--accent); }
+/* The current page is marked by `.here` in shell.css, one definition for
+   every zone. This rule stays only to give the nav link room for it. */
+.site-nav a.here { padding: 0.25rem 0.7rem; }
 .site-actions { margin-left: auto; display: flex; align-items: center; gap: 0.6rem; }
 
 a.ghost, a.cta, button.provider {
@@ -419,5 +421,9 @@ a.cta:hover { background: #16407c; }
   border-radius: 4px;
 }
 .lang a:hover { color: var(--ink); background: var(--accent-soft); }
-.lang a.on { color: var(--accent); background: var(--accent-soft); }
+/* Rounded like every other current marker. It was a square box, which made
+   the one control that is ALWAYS showing a current state the one that looked
+   unlike the rest. */
+.lang a { border-radius: 999px; }
+.lang a.on { color: var(--accent); background: var(--accent-soft); font-weight: 700; }
 .lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

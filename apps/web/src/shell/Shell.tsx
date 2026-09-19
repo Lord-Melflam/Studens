@@ -272,14 +272,26 @@ export function Shell() {
           {/* Only where there is one. A link to a console somebody cannot open
               is a link that teaches them the console exists. */}
           {powers?.canModerate && (
-            <a className="settings-link" {...linkProps(`${APP_PREFIX}/${MODERATION}`)}>
+            <a
+              /* WHERE YOU ARE, SHOWN. The link changed colour on hover and
+                 nowhere else, so standing on the console looked the same as
+                 standing anywhere. `aria-current` says it to a screen reader
+                 and the class says it to everybody else. */
+              className={routeId === MODERATION ? "settings-link here" : "settings-link"}
+              aria-current={routeId === MODERATION ? "page" : undefined}
+              {...linkProps(`${APP_PREFIX}/${MODERATION}`)}
+            >
               {t("mod.title")}
             </a>
           )}
           {/* An account screen is no use without an account, and offering it to
               somebody signed out sends them to a page that can only fail. */}
           {session?.signedIn && (
-            <a className="settings-link" {...linkProps(`${APP_PREFIX}/${SETTINGS}`)}>
+            <a
+              className={routeId === SETTINGS ? "settings-link here" : "settings-link"}
+              aria-current={routeId === SETTINGS ? "page" : undefined}
+              {...linkProps(`${APP_PREFIX}/${SETTINGS}`)}
+            >
               {t("settings.title")}
             </a>
           )}
