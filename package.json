@@ -31,6 +31,7 @@
     "db:reset": "prisma migrate reset --force",
     "db:grant-local": "psql -d \"${PGDATABASE:-studens}\" -q -c \"GRANT studens_platform, studens_ref, studens_ryc TO CURRENT_USER\"",
     "db:verify-isolation": "psql -v ON_ERROR_STOP=1 -d \"${PGDATABASE:-studens}\" -f scripts/verify-isolation.sql",
+    "state": "node scripts/state.mjs",
     "gates:db": "npm run db:migrate && npm run db:grant-local && npm run db:verify-isolation && npm run test:db",
     "db:load": "npm run --silent build:worker && node apps/worker/dist/load-catalogue.js",
     "catalogue:report": "npm run --silent build:worker && node apps/worker/dist/report-catalogue.js",

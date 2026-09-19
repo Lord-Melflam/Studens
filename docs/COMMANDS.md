@@ -227,6 +227,32 @@ named failure. Use it when you expect them to run.
 
 ---
 
+## Where the project stands
+
+```bash
+npm run state                 # counts everything countable, about 20 seconds
+npm run state -- --quick      # same, without running the test suite
+```
+
+Commits, requirements, open questions, tests, lines, and the catalogue and
+review figures. Counted when you ask, from the repository and the database.
+
+**None of these numbers is written down anywhere**, and that is deliberate.
+The state table in `TIMELINE.md` used to hold six of them; it was corrected by
+hand on 2026-09-19 and was wrong again two merges later, which is what a
+maintained number does. Phase 47 has the reasoning.
+
+It runs the test suite rather than counting `it(` in the source, because tests
+are generated in loops in two files and a static count would be a guess that
+looks like a fact. `--quick` skips that and says so instead of printing a
+number from nowhere.
+
+With no database reachable it prints the repository figures and says the
+catalogue and review ones are not shown. There is no cache: a figure from the
+last run is the problem this command exists to remove.
+
+---
+
 ## The database
 
 ```bash
