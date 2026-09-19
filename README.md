@@ -195,7 +195,10 @@ nothing that way, and `docs/LESSONS.md` records both.
 
 ## Licence
 
-[MIT](LICENSE). Use it, modify it, build on it.
+[AGPL-3.0-or-later](LICENSE). Read it, learn from it, fork it, run it for
+your own students. If you run a modified version as a service, publish your
+modifications. Versions published before 2026-09-19 were MIT and stay MIT;
+see [NOTICE](NOTICE).
 
 Contributions are accepted on the same terms: what comes in is licensed the way what goes
 out is, so no separate contributor agreement is needed.
