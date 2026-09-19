@@ -22,3 +22,6 @@ export const process_role = "worker" as const;
  * checked rather than assumed.
  */
 export { TEMPLATED_KINDS, renderMail } from "./mail-templates.js";
+
+/** How a rendered message becomes something a server accepts, for its tests. */
+export { encodeHeader, mimeMessage, textToHtml } from "./mime.js";

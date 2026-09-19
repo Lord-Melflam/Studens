@@ -26,6 +26,7 @@ import { PrismaClient } from "@prisma/client";
 import { mailRelayConfigured } from "@studens/platform";
 import { loadDotEnv } from "./env.js";
 import { renderMail } from "./mail-templates.js";
+import { mimeMessage } from "./mime.js";
 
 const BATCH = 25;
 /** After this many failures a row is left alone, to be looked at by a person. */
@@ -89,10 +90,20 @@ async function say(
   return res;
 }
 
-/** Dot-stuffing: a line that is a single dot would otherwise end the message. */
+/**
+ * Dot-stuffing: a line that is a single dot would otherwise end the message.
+ *
+ * It splits on `\r?\n` rather than on `\n`. The message now arrives with CRLF
+ * endings already, and splitting that on `\n` alone leaves a carriage return
+ * on the end of every line, which the join then turns into `\r\r\n`. Harmless
+ * looking, and enough to make a strict server reject the whole message.
+ *
+ * In practice base64 bodies cannot produce a leading dot at all, since the
+ * alphabet excludes it. The header block can, in a subject, so this stays.
+ */
 function stuff(body: string): string {
   return body
-    .split("\n")
+    .split(/\r?\n/)
     .map((l) => (l.startsWith(".") ? `.${l}` : l))
     .join("\r\n");
 }
@@ -125,17 +136,12 @@ async function deliver(r: Relay, to: string, subject: string, body: string): Pro
     await say(socket, `MAIL FROM:<${r.from}>`, [250]);
     await say(socket, `RCPT TO:<${to}>`, [250, 251]);
     await say(socket, "DATA", [354]);
-    const headers = [
-      `From: ${r.from}`,
-      `To: ${to}`,
-      `Subject: ${subject}`,
-      "MIME-Version: 1.0",
-      'Content-Type: text/plain; charset="utf-8"',
-      // Nothing in this product's mail is worth tracking, and a recipient who
-      // replies should reach a person rather than a void.
-      "Auto-Submitted: auto-generated",
-    ].join("\r\n");
-    await say(socket, `${headers}\r\n\r\n${stuff(body)}\r\n.`, [250]);
+    // The message itself is built in mime.ts, which knows nothing about
+    // sockets and is therefore testable without one. Everything that used to
+    // be assembled inline here, including a subject written raw into a header
+    // that may only hold ASCII, lives there now.
+    const message = mimeMessage({ from: r.from, to, subject, body });
+    await say(socket, `${stuff(message)}\r\n.`, [250]);
     await say(socket, "QUIT", [221]);
   } finally {
     socket.destroy();
