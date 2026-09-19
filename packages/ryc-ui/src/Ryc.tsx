@@ -153,7 +153,11 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
   const t = useT();
   const locale = useLocale();
   const view = parseView(path);
-  const [meta, setMeta] = useState<{ year: number; courses: number } | null>(null);
+  const [meta, setMeta] = useState<{
+    year: number;
+    courses: number;
+    institutions: Array<{ code: string; courses: number }>;
+  } | null>(null);
   /**
    * How many published reviews each course has, fetched once for the module.
    *
@@ -202,6 +206,24 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
     const next = openSectionsQuery(toggleSection(openSections, slug));
     navigate(settingsRoute(here, search, [OPEN_KEY], next), { replace: true });
   };
+
+  /**
+   * WHICH CATALOGUES THIS MEMBER ASKED FOR. Held here rather than in Browse
+   * because two screens read it: the browse list scopes itself to it, and the
+   * line above the tabs says how large that scope is. It used to live in
+   * Browse, so that line reported the whole catalogue whatever was selected.
+   */
+  const [mine, setMine] = useState<string[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    api
+      .myInstitutions()
+      .then((r) => live && setMine(r.institutions))
+      .catch(() => live && setMine(null));
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const [results, setResults] = useState<CourseSummary[]>([]);
   const [course, setCourse] = useState<CourseDetail | null>(null);
@@ -374,8 +396,25 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
 
       {meta && (
         <p className="meta">
+          {/*
+            THE SIZE OF THE CATALOGUE IN FRONT OF YOU, not of the whole thing.
+            It reported the total whatever was selected, so choosing one
+            university and choosing both said the same number, which made the
+            scope look like it had not worked.
+
+            Summed from the institutions the member asked for. `mine` null or
+            empty means nothing was asked for, which is a signed-out visitor or
+            somebody who widened to everything, and the whole catalogue is then
+            the honest answer.
+          */}
           {t("ryc.meta", {
-            n: new Intl.NumberFormat(locale).format(meta.courses),
+            n: new Intl.NumberFormat(locale).format(
+              mine === null || mine.length === 0
+                ? meta.courses
+                : meta.institutions
+                    .filter((i) => mine.includes(i.code))
+                    .reduce((sum, i) => sum + i.courses, 0),
+            ),
             from: meta.year,
             to: meta.year + 1,
           })}
@@ -468,6 +507,8 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
           onOpenProgramme={(p) => navigate(p === null ? "/" : programmePath(p.institution, p.code))}
           onOpen={(c) => navigate(coursePath(c.institution, c.code))}
           reviewCounts={reviewCounts}
+          mine={mine}
+          setMine={setMine}
           search={search}
           navigate={navigate}
         />

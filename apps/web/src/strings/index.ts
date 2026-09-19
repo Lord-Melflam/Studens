@@ -418,6 +418,7 @@ export const shellStrings: Bundle = {
       "Masquer retire de la vue publique et se défait. La suppression définitive n'existe pas encore : elle doit publier un motif à la place du contenu, et ce point attend une lecture juridique.",
 
     "mod.appointments": "Qui peut modérer",
+    "mod.group.more": "Afficher les {n} autres",
     "mod.appointments.hint":
       "Nommé par un administrateur, un à la fois, et consigné. Un modérateur ne peut pas en nommer un autre.",
     "mod.group.member": "Membres",
@@ -844,6 +845,7 @@ export const shellStrings: Bundle = {
       "Verbergen haalt het uit het publieke zicht en is omkeerbaar. Definitief verwijderen bestaat nog niet: daarvoor moet een reden in de plaats van de inhoud gepubliceerd worden, en dat punt wacht op een juridische lezing.",
 
     "mod.appointments": "Wie mag modereren",
+    "mod.group.more": "De {n} andere tonen",
     "mod.appointments.hint":
       "Aangesteld door een beheerder, één tegelijk, en geregistreerd. Een moderator kan er geen andere aanstellen.",
     "mod.group.member": "Leden",
@@ -1268,6 +1270,7 @@ export const shellStrings: Bundle = {
       "Hiding takes it out of public view and can be undone. Permanent removal does not exist yet: it has to publish a reason in place of the content, and that point is waiting on a legal reading.",
 
     "mod.appointments": "Who may moderate",
+    "mod.group.more": "Show the other {n}",
     "mod.appointments.hint":
       "Appointed by an administrator, one at a time, and recorded. A moderator cannot appoint another.",
     "mod.group.member": "Members",

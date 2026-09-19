@@ -479,8 +479,12 @@ function Suspensions() {
 /** Offered lengths. Fixed, because a free date invites "until 2099". */
 const SUSPENSION_LENGTHS = ["7", "30", "90", "permanent"] as const;
 
+/** How many holders a role shows before the rest are one press away. */
+const VISIBLE_HOLDERS = 8;
+
 function Appointments() {
   const t = useT();
+  const [expanded, setExpanded] = useState<string[]>([]);
   const locale = useLocale();
   const { session } = useSession();
   const [data, setData] = useState<{
@@ -529,13 +533,30 @@ function Appointments() {
       {strongestFirst.map((r) => {
         const holders = data.appointments.filter((a) => a.role === r);
         if (holders.length === 0) return null;
+        /**
+         * CAPPED, BECAUSE THIS LIST ONLY GROWS. Appointing is one at a time
+         * and nothing ever removes a row except another appointment, so the
+         * panel that is four names today is forty the year a faculty takes
+         * this seriously, and every one of them sits above the form used to
+         * add the next.
+         *
+         * Eight, which is more moderators than this has ever had, and the
+         * rest are one press away rather than hidden: a list that hides names
+         * from the person responsible for them would be worse than a long one.
+         *
+         * What this is NOT yet: searchable. Past a few dozen the right answer
+         * is a filter rather than a taller list, and that is worth building
+         * when somebody actually has a few dozen.
+         */
+        const shown = expanded.includes(r) ? holders : holders.slice(0, VISIBLE_HOLDERS);
+        const hidden = holders.length - shown.length;
         return (
-          <div className="holder-group" key={r}>
+          <div className={r === "admin" ? "holder-group admins" : "holder-group"} key={r}>
             <h4 className="sub">
               {t(`mod.group.${r}`)} <span className="count">{holders.length}</span>
             </h4>
             <ul className="holders">
-              {holders.map((a) => (
+              {shown.map((a) => (
                 <Holder
                   key={a.memberId}
                   who={a}
@@ -546,6 +567,15 @@ function Appointments() {
                 />
               ))}
             </ul>
+            {hidden > 0 && (
+              <button
+                type="button"
+                className="holder-more"
+                onClick={() => setExpanded([...expanded, r])}
+              >
+                {t("mod.group.more", { n: hidden })}
+              </button>
+            )}
           </div>
         );
       })}
