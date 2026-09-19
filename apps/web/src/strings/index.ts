@@ -84,7 +84,7 @@ export const shellStrings: Bundle = {
     "foot.tagline":
       "Un projet indépendant, sans but lucratif, affilié à aucune université ni haute école.",
     "foot.fine":
-      "Le code est ouvert, sous licence MIT. Ce qui est publié ici vient des étudiants, pas des institutions.",
+      "Le code est ouvert, sous licence AGPL. Ce qui est publié ici vient des étudiants, pas des institutions.",
 
     "hero.kicker": "Pour les étudiants de l'enseignement supérieur",
     "hero.title.1": "Ce que les étudiants savent,",
@@ -296,7 +296,7 @@ export const shellStrings: Bundle = {
     "about.not.commercial.body": "Pas de publicité, pas de revente de données, pas d'abonnement.",
     "about.open.title": "Ouvert, et vérifiable",
     "about.open.1":
-      "Le code est public sous licence MIT. La spécification aussi, avec le raisonnement derrière chaque décision : ce qui a été rejeté, ce que ça coûte, et ce qui ferait reconsidérer le choix.",
+      "Le code est public sous licence AGPL. La spécification aussi, avec le raisonnement derrière chaque décision : ce qui a été rejeté, ce que ça coûte, et ce qui ferait reconsidérer le choix.",
     "about.open.2":
       "Cela vaut en particulier pour les garanties de vie privée. Une promesse qu'on ne peut pas vérifier ne vaut que la confiance qu'on accorde à celui qui la fait.",
     "about.contribute.title": "Contribuer",
@@ -509,7 +509,7 @@ export const shellStrings: Bundle = {
     "foot.tagline":
       "Een onafhankelijk project zonder winstoogmerk, niet verbonden aan enige universiteit of hogeschool.",
     "foot.fine":
-      "De code is open, onder MIT-licentie. Wat hier verschijnt komt van studenten, niet van instellingen.",
+      "De code is open, onder AGPL-licentie. Wat hier verschijnt komt van studenten, niet van instellingen.",
 
     "hero.kicker": "Voor studenten in het hoger onderwijs",
     "hero.title.1": "Wat studenten weten,",
@@ -722,7 +722,7 @@ export const shellStrings: Bundle = {
     "about.not.commercial.body": "Geen reclame, geen doorverkoop van gegevens, geen abonnement.",
     "about.open.title": "Open, en na te gaan",
     "about.open.1":
-      "De code is publiek onder de MIT-licentie. De specificatie ook, met de redenering achter elke beslissing: wat verworpen is, wat het kost, en wat de keuze zou doen herzien.",
+      "De code is publiek onder de AGPL-licentie. De specificatie ook, met de redenering achter elke beslissing: wat verworpen is, wat het kost, en wat de keuze zou doen herzien.",
     "about.open.2":
       "Dat geldt in het bijzonder voor de privacygaranties. Een belofte die niet na te gaan is, is niet meer waard dan het vertrouwen in wie ze doet.",
     "about.contribute.title": "Meewerken",
@@ -935,7 +935,7 @@ export const shellStrings: Bundle = {
     "foot.tagline":
       "An independent, not-for-profit project, affiliated with no university or university college.",
     "foot.fine":
-      "The code is open, under the MIT licence. What is published here comes from students, not from institutions.",
+      "The code is open, under the AGPL licence. What is published here comes from students, not from institutions.",
 
     "hero.kicker": "For students in higher education",
     "hero.title.1": "What students know,",
@@ -1147,7 +1147,7 @@ export const shellStrings: Bundle = {
     "about.not.commercial.body": "No advertising, no selling of data, no subscription.",
     "about.open.title": "Open, and checkable",
     "about.open.1":
-      "The code is public under the MIT licence. So is the specification, with the reasoning behind every decision: what was rejected, what it costs, and what would change the answer.",
+      "The code is public under the AGPL licence. So is the specification, with the reasoning behind every decision: what was rejected, what it costs, and what would change the answer.",
     "about.open.2":
       "That matters most for the privacy guarantees. A promise you cannot check is worth only the trust you place in whoever made it.",
     "about.contribute.title": "Contributing",
