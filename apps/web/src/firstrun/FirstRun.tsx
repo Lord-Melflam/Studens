@@ -403,7 +403,8 @@ export function FirstRun({
                 key={l}
                 type="button"
                 lang={l}
-                className={l === locale ? "choice on" : "choice"}
+                className={l === locale ? "choice here" : "choice"}
+                aria-pressed={l === locale}
                 onClick={() => {
                   // Two things at once, on purpose: the URL carries the language
                   // so the change is visible immediately, and the profile

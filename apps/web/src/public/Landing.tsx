@@ -109,9 +109,16 @@ export function Landing() {
               ))}
             </ol>
           )}
-          <a className="cta" {...linkProps("/modules")}>
-            {t("first.cta", { name: first?.name ?? "" })}
-          </a>
+          {/* Demoted from a filled call to action. The page had three of them
+              in the body plus a permanent one in the header, all the same
+              weight, so none of them read as the thing to do; this one leads
+              to a page that explains a module, which is a second step and not
+              the point of the site. */}
+          <p className="band-action">
+            <a className="ghost" {...linkProps("/modules")}>
+              {t("first.cta", { name: first?.name ?? "" })}
+            </a>
+          </p>
         </section>
       )}
 
@@ -136,9 +143,11 @@ export function Landing() {
             <p>{t("promises.open.body")}</p>
           </li>
         </ul>
-        <a className="ghost" {...linkProps("/confidentialite")}>
-          {t("promises.limits")}
-        </a>
+        <p className="band-action">
+          <a className="ghost" {...linkProps("/confidentialite")}>
+            {t("promises.limits")}
+          </a>
+        </p>
       </section>
 
       <section className="band alt">
@@ -163,9 +172,13 @@ export function Landing() {
             </li>
           )}
         </ol>
-        <a className="cta big" {...linkProps("/connexion")}>
-          {t("nav.register")}
-        </a>
+        {/* The page's one call to action in the body, and the only filled
+            one left below the hero. */}
+        <p className="band-action">
+          <a className="cta big" {...linkProps("/connexion")}>
+            {t("nav.register")}
+          </a>
+        </p>
       </section>
     </>
   );

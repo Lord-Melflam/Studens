@@ -663,10 +663,32 @@ to the shell's rule for the same reason, which is why the class was renamed to
 the two stylesheets share.
 
 The collision gate did not apply here, because nothing collided: one file, two
-rules, one of them later. The fix is not higher specificity, which starts an
-arms race inside one file. It is to stop the base rule competing:
-`.console-tab:not(.here)` carries the colours, so the state rule is the only
-one declaring them.
+rules, one of them later. The first fix was to stop the base rule competing,
+`.console-tab:not(.here)`, so the state rule is the only one declaring them.
+
+### And a third time, which showed that ordering was not the whole rule
+
+`.choice`, the row of scheme and language buttons in the account, did the same
+thing to the chosen scheme, under a comment that said it used `.here`. Reported
+as the choice not staying selected after a click.
+
+Guarding it with `:not(.here)` was not enough. The scheme buttons sit inside a
+panel, and `.panel button` is a class plus an element, which **outranks**
+`.here` wherever either is declared. Ordering could not fix that one at all: it
+is a specificity loss, not a cascade-order loss, and the two look identical
+from the screen.
+
+So the rule is now stated positively and checked. Every class the markup ever
+renders with `here` carries its own `.class.here` rule declaring the mark, at
+two-class specificity, which beats a later single-class rule and beats
+`.panel button` alike. `test/architecture/here-wins.test.ts` reads the class
+names out of the JSX, so a new one is covered without touching the test, and
+it fails if the pair is missing.
+
+**The pattern.** Two failures that look the same on screen had different
+causes, and the fix for the first did not cover the second. A state that must
+win should be declared so that it wins by construction, not so that it happens
+to win given where the file's rules currently sit.
 
 **What made it visible** was a screenshot, not reading. The first one showed
 the wrong mark, the second showed no mark at all. Reasoning about which rule

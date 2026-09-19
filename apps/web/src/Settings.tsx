@@ -266,7 +266,8 @@ export function Settings() {
           {LOCALES.map((l) => (
             <a
               key={l}
-              className={l === locale ? "choice on" : "choice"}
+              className={l === locale ? "choice here" : "choice"}
+              aria-current={l === locale ? "true" : undefined}
               href={localePath(currentRoute(), l)}
               lang={l}
             >

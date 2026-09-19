@@ -48,20 +48,35 @@ a.ghost:hover { border-color: var(--accent); }
 a.cta { color: var(--on-accent); background: var(--accent); border: 1px solid var(--accent); }
 a.cta:hover { background: #16407c; }
 
-/* A call to action that closes a section needs air above it. Inline by
-   default, these sat flush against the paragraph or list they followed. */
+/* THE ROW THAT CLOSES A SECTION, and it is a block for a reason.
+   
+   These were bare `inline-block` anchors sitting directly in the band. On a
+   plain `.band` that was fine. On a tinted `.band.alt` it was not: that band
+   is full bleed, `max-width: none`, and it holds its children on the measure
+   with `.band.alt > * { max-width: 68rem; margin-inline: auto }`. Auto margins
+   do nothing to an inline-level box, so the anchor ignored the measure and sat
+   against the band's own padding edge instead: 44px, where every other element
+   in the section started at 89px. Two buttons on the home page were 45px
+   further left than the heading above them, which reads as a control that
+   belongs to nothing.
+   
+   A block-level wrapper takes the measure like any other child, and the anchor
+   sits at its left edge. It also gives the row somewhere to grow if a section
+   ever closes with two controls. */
+.band-action {
+  margin: 2.2rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
 /* A SENTENCE MAY WRAP, A PILL LABEL MAY NOT. The `nowrap` above keeps a
    two-word button in shape; it was also reaching a link whose label is a whole
    sentence, and "Comment vos données sont traitées" is 299px that would not
    break, so it hung off a 320px screen. */
-.band > a.ghost { white-space: normal; }
-.band > a.cta,
-.band > a.ghost {
-  display: inline-block;
-  margin-top: 2.2rem;
-}
-.band.final > a.cta,
-.band.final > a.ghost { margin-top: 1.5rem; }
+.band-action > a.ghost { white-space: normal; }
+/* The closing band centres its text, so the row centres with it. */
+.band.final .band-action { justify-content: center; margin-top: 1.5rem; }
 .big { font-size: 0.98rem !important; padding: 0.7rem 1.5rem !important; }
 
 /* --- main --------------------------------------------------------------- */
