@@ -10,19 +10,15 @@ gone wrong and what each failure changed.
 
 ---
 
-## State, as of 2026-09-19
+## State
 
 | | |
 |---|---|
 | Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted, read and paged on both paths, moderation end to end, and an administrator who can change settings, suspend an account, and see who is suspended and why. A suspended person is told, which they were not until phase 46. The web process serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
-| Commits | 99 |
-| Requirements | **156**: 138 functional and 18 non-functional. Counted, not carried forward |
-| Open questions | **8** open, 40 resolved. Counted across both tables in requirements.md section 7, since a question resolved in place is struck there and one resolved with a long argument is written out in 7.1 |
-| Tests | **816**, plus 32 database isolation assertions |
-| Code | 24,912 lines of TypeScript and TSX across `packages`, `apps` and `scripts`, 11,403 of tests. Measured over every `.ts` and `.tsx` outside `node_modules` and `dist`, excluding generated `.d.ts` |
-| Data | **Two catalogues in PostgreSQL**, counted 2026-09-19: 12,154 courses, 1,055 programmes, 32 faculties, and 11 institutions of which 2 are open for choosing. UCLouvain is 769 programmes and 6,715 courses; ULB is 286 and 5,439. **No figure is written into the interface**: `/api/catalogue` reports them and the pages read it |
-| Reviews | **101, all written by us while testing**, seeded onto two courses so that paging and the aggregate can be shown. No student has used this yet, and the product does not pretend otherwise |
+| Data | **Two catalogues in PostgreSQL**, UCLouvain and ULB, with eleven institutions known and two open for choosing. **No figure is written into the interface**: `/api/catalogue` reports them and the pages read it |
+| Reviews | **All written by us while testing**, seeded onto two courses so that paging and the aggregate can be shown. No student has used this yet, and the product does not pretend otherwise |
 | Not sent | **No mail leaves this installation**, and that now costs something. Messages are queued and printed; five `STUDENS_SMTP_*` variables turn that into delivery. Since phase 46 the queue also holds the message telling somebody their account was suspended, so half of FR-E15 is waiting on a relay |
+| Counted | `npm run state` prints the commits, the requirements, the open questions, the tests, the lines and the catalogue and review figures, from the repository and the database. **Deliberately not written here**, see phase 47: six of this table's cells used to be numbers that move on nearly every merge, and they were wrong again two merges after being corrected by hand |
 
 ### What runs today
 
@@ -1948,6 +1944,60 @@ with nobody watching, which would be this phase's own bug wearing a different
 hat. Reaching them needed the worker to have an entry point like the other two
 apps, because the deep-import ban applies to tests as hard as to application
 code and lint refused the relative path, correctly.
+
+
+### Phase 47: a number nobody has to remember
+
+The state table at the top of this file was corrected on 2026-09-19, every
+figure recounted rather than carried forward. It was wrong again two merges
+later: 99 commits had become 101 and 816 tests had become 821, because two
+pull requests merged in between and nothing updates a table.
+
+**That is a design failure, not a documentation one.** Six of the table's ten
+cells were numbers that move on nearly every merge. A number a person has to
+remember to update is wrong from the first time somebody forgets, and it is
+wrong silently: the document still reads fine, so nobody looks. The same
+failure the interface already had, when a public page said "546 cours" for
+weeks after the crawl widened to a second university, and the same fix:
+`CatalogueFacts` fetches the figure instead of holding a sentence that contains
+it.
+
+**The requirement it serves** is rule 9 of `CLAUDE.md`, that the repository
+stays truthful about itself, and this file's own promise that its table is what
+matters day to day. A table nobody can trust is worse than no table, because it
+is read.
+
+**Alternatives.** A gate that recounts and fails the build on drift was the
+first idea and was rejected: it turns an unrelated pull request red over a
+commit count, which teaches people to edit the number to get green rather than
+to care about it, and a gate that is routinely satisfied by editing a number is
+theatre. Updating the table on every merge was rejected because that is exactly
+what had just failed, twice. Keeping the numbers with an "as of" date was
+rejected because a dated wrong number is still what somebody quotes.
+
+**So the volatile figures moved out of the document and into `npm run state`**,
+which counts commits, requirements, open questions, tests, lines, and the
+catalogue and review figures, from the repository and the database at the
+moment it is asked. The table keeps what does not rot: what stage this is at,
+what shape the data has, what is not sent yet.
+
+Two things the script does deliberately. **It runs the test suite** rather than
+reading a number out of the source, which takes about twenty seconds, because
+tests are generated in loops in at least two files and anything counted
+statically would be a guess that looks like a fact; `--quick` skips it and says
+so rather than printing a stale number. And **it has no fallback when the
+database is absent**: it prints a line saying the figures are not shown, since
+a figure cached from the last run is the problem this exists to remove.
+
+**Cost accepted.** Somebody reading `TIMELINE.md` on GitHub, without a
+checkout, no longer sees the size of the project at a glance. That is a real
+loss and it is smaller than the alternative, which is seeing a number that is
+wrong.
+
+**What would change it.** A place where the numbers are produced by the build
+rather than by a person, a generated page or a CI comment, which could hold
+them without anybody maintaining them. Until that exists, a command is the
+honest form.
 
 
 ---
