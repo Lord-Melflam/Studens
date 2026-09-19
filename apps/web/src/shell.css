@@ -52,6 +52,28 @@ main { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
 /* The app zone overrides the above: see the block at the end of this file. */
 
 header { margin-bottom: 1.75rem; }
+/* THE MARK. Small, because a header is not a billboard, but a mark rather
+   than a word: François, after the ULB session, "the text Studens is currently
+   that tiny we might not even know its the web app name". */
+.brandmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--accent);
+}
+.brandmark-icon { width: 1.35rem; height: 1.75rem; flex: none; }
+.brandmark-faint { fill: var(--muted); }
+.brandmark-added { fill: var(--sky); }
+.brandmark-word {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+/* The long e is the name's own idea, so it is the one thing in colour. */
+.brandmark-e { color: var(--accent); }
+.brandmark.compact .brandmark-word { display: none; }
+
 .brand {
   font: inherit;
   font-size: 1.9rem;
@@ -264,6 +286,49 @@ main.app {
   border-radius: 999px;
 }
 .settings-link:hover { color: var(--ink); background: var(--accent-soft); }
+/* PRESSING SOMETHING SHOULD FEEL LIKE PRESSING SOMETHING.
+
+   There was no `:active` state anywhere in this application, in any zone: a
+   press changed nothing until the next screen arrived, so on a slow call the
+   only honest reading was that the click had missed. François: "the 2 buttons
+   don't distinguish or move when pressed on."
+
+   ONE RULE, HERE, for the same reason `.here` is here: three zones answering
+   the same question three ways is what we just finished undoing. It selects
+   the `button` element and the two link classes that are drawn as buttons,
+   which is chrome rather than anything a module owns, so it does not reach
+   into a module's vocabulary (FR-B16).
+
+   A pixel down and nothing else. It has no transition on purpose: a press is
+   instant, and easing it would make it feel like lag, which is the opposite of
+   what it is for. */
+button:not(:disabled):active,
+a.cta:active,
+a.ghost:active,
+.settings-link:active,
+.site-nav a:active,
+.lang a:active {
+  transform: translateY(1px);
+}
+/* Filled things also darken, because a pixel is hard to see on a solid block.
+   Only the shell's own: a module's filled button darkens in the module's
+   stylesheet, because naming its classes here is how the shell starts styling
+   screens it is not supposed to know about, and the collision gate says so. */
+a.cta:active,
+button.cta:not(:disabled):active {
+  background: #123769;
+}
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active,
+  a.cta:active,
+  a.ghost:active,
+  .settings-link:active,
+  .site-nav a:active,
+  .lang a:active {
+    transform: none;
+  }
+}
+
 /* WHERE YOU ARE, DEFINED ONCE AND USED IN EVERY ZONE.
    Hover told you where you were about to go and nothing told you where you
    were. The first fix gave the app bar its own treatment and left the public
@@ -278,6 +343,16 @@ main.app {
   background: var(--accent-soft);
   font-weight: 600;
   border-radius: 999px;
+}
+/* EXCEPT IN THE BREADCRUMB, where the last segment is not a link. The pill
+   means "this link leads to the page you are on", which is worth saying about
+   a thing you could press and pointless about a thing you could not: a
+   breadcrumb's tail is already current by position. It keeps the weight and
+   drops the pill. */
+.crumbs .here {
+  background: none;
+  color: var(--ink);
+  border-radius: 0;
 }
 /* A LINK TO WHERE YOU ALREADY ARE IS NOT A CALL TO ACTION. "Créer un compte"
    is a filled button, and on the sign-in page it was shouting go here at

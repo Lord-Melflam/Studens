@@ -10,6 +10,7 @@
  * exists, applied one zone further out.
  */
 import { useT } from "@studens/i18n";
+import { Brand } from "../Brand.js";
 import { linkProps } from "../router.js";
 import { Account } from "../Account.js";
 import { LanguageSwitcher } from "../LanguageSwitcher.js";
@@ -27,7 +28,7 @@ export function PublicLayout({ path, children }: { path: string; children: React
     <div className="site">
       <header className="site-header">
         <a className="site-brand" {...linkProps("/")}>
-          Studens
+          <Brand />
         </a>
         <nav className="site-nav">
           {NAV.map((item) => (
