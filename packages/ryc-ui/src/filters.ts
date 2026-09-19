@@ -19,6 +19,7 @@
  * screen. A count here is what you get if you click it.
  */
 import type { CourseSummary, ProgrammeSummary } from "./api.js";
+import { languageKey, quarterKey } from "./normalise.js";
 import { courseKey } from "./Ryc.js";
 
 /** One option in a facet, with what choosing it would leave. */
@@ -97,10 +98,15 @@ function matchesCourse(
     if (!c.code.toLowerCase().includes(q) && !c.title.toLowerCase().includes(q)) return false;
   }
   if (ignore !== "quarters" && f.quarters.length > 0) {
-    if (!c.quarter || !f.quarters.includes(c.quarter)) return false;
+    // The CANONICAL term, the same one the facet is built from. Matching on
+    // the raw string here and faceting on the key there would give chips that
+    // select nothing.
+    const q = quarterKey(c.quarter);
+    if (!q || !f.quarters.includes(q)) return false;
   }
   if (ignore !== "languages" && f.languages.length > 0) {
-    if (!c.mainLanguage || !f.languages.includes(c.mainLanguage)) return false;
+    const l = languageKey(c.mainLanguage);
+    if (!l || !f.languages.includes(l)) return false;
   }
   if (ignore !== "ects" && f.ects.length > 0) {
     if (!f.ects.includes(c.ects)) return false;
@@ -199,8 +205,8 @@ export function courseFacets(
   counts: Record<string, number> = {},
 ): CourseFacets {
   return {
-    quarters: facetsOf(courses, f, counts, "quarters", (c) => c.quarter),
-    languages: facetsOf(courses, f, counts, "languages", (c) => c.mainLanguage),
+    quarters: facetsOf(courses, f, counts, "quarters", (c) => quarterKey(c.quarter)),
+    languages: facetsOf(courses, f, counts, "languages", (c) => languageKey(c.mainLanguage)),
     ects: facetsOf(courses, f, counts, "ects", (c) => c.ects),
     entities: facetsOf(courses, f, counts, "entities", (c) => c.owningEntity),
     campuses: campusFacets(courses, f, counts),
@@ -603,7 +609,7 @@ export function pruneCourseFilter(f: CourseFilter, courses: CourseSummary[]): Co
     ...f,
     quarters: has(new Set(courses.map((c) => c.quarter).filter((q): q is string => q !== null)), f.quarters),
     languages: has(
-      new Set(courses.map((c) => c.mainLanguage).filter((l): l is string => l !== null)),
+      new Set(courses.map((c) => languageKey(c.mainLanguage)).filter((l): l is string => l !== null)),
       f.languages,
     ),
     ects: has(new Set(courses.map((c) => c.ects)), f.ects),

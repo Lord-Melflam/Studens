@@ -129,6 +129,12 @@ export function CourseFilters({
           facets={facets.languages}
           chosen={filter.languages}
           onToggle={(v) => setFilter({ ...filter, languages: toggle(filter.languages, v) })}
+          /* `FR` rather than `fr`: a two letter code in lower case reads as a
+             typo next to a course row saying "Français", and in upper case it
+             reads as what it is, a language tag. Anything longer is a value
+             this normaliser did not recognise, so it is shown exactly as the
+             university published it. */
+          labelFor={(f) => (f.value.length <= 3 ? f.value.toUpperCase() : f.value)}
         />
         {/* Where the class is. Self-effacing like every other dimension: a
             filter with one option is not drawn, so this appears only for a

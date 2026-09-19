@@ -956,3 +956,21 @@ a.ghost.here {
   cursor: pointer;
 }
 .choice:hover { border-color: var(--accent); }
+
+/* The scheme button, beside the language switcher in both headers: the two are
+   the same kind of thing, a display preference belonging to this device. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.theme-toggle svg { width: 1.15rem; height: 1.15rem; }
+.theme-toggle:hover { color: var(--accent); background: var(--accent-soft); }

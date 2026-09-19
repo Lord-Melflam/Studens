@@ -9,6 +9,7 @@
  * own its URLs while the shell stays ignorant of what they mean.
  */
 import { useEffect, useRef, useState } from "react";
+import { ThemeToggle } from "../ThemeToggle.js";
 import { Brand } from "../Brand.js";
 import { localePath, useT, type Locale } from "@studens/i18n";
 import { Account } from "../Account.js";
@@ -270,6 +271,7 @@ export function Shell() {
         </nav>
         <div className="app-bar-right">
           <LanguageSwitcher route={route} />
+          <ThemeToggle />
           {/* Only where there is one. A link to a console somebody cannot open
               is a link that teaches them the console exists. */}
           {powers?.canModerate && (
