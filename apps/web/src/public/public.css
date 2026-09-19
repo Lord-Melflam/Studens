@@ -341,6 +341,18 @@ a.cta:hover { background: #16407c; }
 .signin-page { max-width: 30rem !important; text-align: center; padding-top: 4.5rem !important; }
 .signin-page h1 { margin: 0 0 1rem; font-size: 2rem; }
 .signin-page .lede { font-size: 1rem; margin-bottom: 2.2rem; }
+/* The one line that stops two header buttons looking like a mistake. Quiet,
+   because it is an explanation and not an instruction. */
+.signin-both {
+  max-width: 34rem;
+  margin: 0 0 1.6rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  background: var(--accent-soft);
+  border-radius: 10px;
+}
+
 .signin-buttons { display: flex; flex-direction: column; gap: 0.7rem; }
 .provider {
   display: block;

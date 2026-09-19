@@ -142,6 +142,7 @@ export const shellStrings: Bundle = {
     "signin.title": "Entrer",
     "signin.lede":
       "Pas de mot de passe à créer ni à retenir. Vous utilisez un compte que vous avez déjà, et nous n'en voyons jamais le mot de passe.",
+    "signin.both": "Se connecter et créer un compte sont la même chose ici : si nous ne connaissons pas encore le compte que vous choisissez, il devient le vôtre sur Studens. Il n'y a pas de second formulaire.",
     "signin.with": "Continuer avec {provider}",
     "signin.dev": "Continuer en mode développement",
     "signin.none": "La connexion n'est pas encore ouverte sur cette installation.",
@@ -559,6 +560,7 @@ export const shellStrings: Bundle = {
     "signin.title": "Binnenkomen",
     "signin.lede":
       "Geen wachtwoord aan te maken of te onthouden. Je gebruikt een account dat je al hebt, en wij zien het wachtwoord ervan nooit.",
+    "signin.both": "Aanmelden en een account aanmaken zijn hier hetzelfde: kennen we het account dat u kiest nog niet, dan wordt het uw account op Studens. Er is geen tweede formulier.",
     "signin.with": "Doorgaan met {provider}",
     "signin.dev": "Doorgaan in ontwikkelmodus",
     "signin.none": "Aanmelden is op deze installatie nog niet opengesteld.",
@@ -977,6 +979,7 @@ export const shellStrings: Bundle = {
     "signin.title": "Come in",
     "signin.lede":
       "No password to create or remember. You use an account you already have, and we never see its password.",
+    "signin.both": "Signing in and creating an account are the same thing here: if we have not seen the account you choose, it becomes yours on Studens. There is no second form.",
     "signin.with": "Continue with {provider}",
     "signin.dev": "Continue in development mode",
     "signin.none": "Signing in is not open yet on this installation.",

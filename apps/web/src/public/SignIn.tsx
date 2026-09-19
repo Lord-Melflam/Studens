@@ -40,6 +40,16 @@ export function SignIn() {
     <section className="signin-page">
       <h1>{t("signin.title")}</h1>
       <p className="lede">{t("signin.lede")}</p>
+      {/*
+        SAID OUT LOUD, because two buttons leading here looked like a mistake.
+        FR-F3 is right that there is one act: FR-A6 makes registration open and
+        FR-A7 removes passwords, so a provider subject we have not seen simply
+        becomes a Member, and a second flow would be inventing a difference
+        that does not exist. What was missing was telling anybody that.
+        Somebody who pressed "Créer un compte" arrived at a page titled
+        "Entrer" with no confirmation they were in the right place.
+      */}
+      <p className="signin-both">{t("signin.both")}</p>
 
       <div className="signin-buttons">
         {providers?.map((p) => (
