@@ -6,7 +6,12 @@
  * will sit behind a session. Nothing here needs one.
  */
 import { Router } from "express";
+import type { PrismaClient } from "@prisma/client";
+import { readNumberSetting } from "@studens/platform";
 import { DatabaseCatalogue, SnapshotCatalogue, type Catalogue } from "@studens/ref";
+
+/** What a search returns per step when nothing has been configured. */
+const DEFAULT_SEARCH_RESULTS = 25;
 
 /**
  * The database is the default. A snapshot file is available for running with
@@ -18,6 +23,8 @@ import { DatabaseCatalogue, SnapshotCatalogue, type Catalogue } from "@studens/r
  */
 export async function catalogueRoutes(source: {
   snapshotPath?: string;
+  /** Absent in snapshot mode, where there are no settings to read. */
+  prisma?: PrismaClient | undefined;
 }): Promise<Router> {
   // Opened once at startup. A failure here stops the process rather than
   // serving an empty catalogue, which is the same fail-loudly rule the
@@ -90,9 +97,47 @@ export async function catalogueRoutes(source: {
       .split(",")
       .map((c) => c.trim().toLowerCase())
       .filter((c) => c !== "");
-    void Promise.resolve(catalogue.search(q, { institutions })).then((results) =>
-      res.json({ query: q, results }),
-    );
+    // `total` is the catalogue's answer, `results` is the window. The page
+    // said "25 of 25" without it, which is true about the array and false
+    // about the catalogue: 25 is the limit, and the same query can match
+    // hundreds. The real number is also the useful one, because it is what
+    // tells somebody to narrow rather than scroll.
+    /*
+      HOW MANY COME BACK IS A PAGE SIZE, NOT A CEILING.
+
+      It was a fixed 25 with no way past it, and the page said "25 of 25",
+      which told somebody the search was complete when it was not. Telling
+      them to narrow instead is no answer either: a student looking for a
+      course often does not know its name, which is why they are searching.
+
+      So `limit` lengthens the window on request, `ryc.searchResults` sets the
+      step an administrator thinks is right, and the bounds are the module's
+      rather than the setting's: a stored value of zero or a million must not
+      be a way to take the search down, and a row can be edited by somebody
+      who never saw the form.
+    */
+    void (async () => {
+      const step = source.prisma
+        ? await readNumberSetting(source.prisma, "ryc.searchResults", {
+            fallback: DEFAULT_SEARCH_RESULTS,
+            min: 5,
+            max: 100,
+          })
+        : DEFAULT_SEARCH_RESULTS;
+      const asked = Number.parseInt(String(req.query["limit"] ?? ""), 10);
+      const limit = Math.min(
+        Number.isFinite(asked) && asked > 0 ? asked : step,
+        // A hard ceiling on one response, whatever the setting or the caller
+        // asks for. The list grows a step at a time; it does not become a way
+        // to pull the catalogue down in one request.
+        500,
+      );
+      const [results, total] = await Promise.all([
+        catalogue.search(q, { institutions, limit }),
+        catalogue.searchCount(q, { institutions }),
+      ]);
+      res.json({ query: q, results, total, step });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
 
   /** FR-D24 and FR-D25: browsing, for the student who does not know the code. */

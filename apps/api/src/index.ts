@@ -51,12 +51,19 @@ export async function createApp(source: AppSource = {}) {
     res.json({ ok: true });
   });
 
-  app.use("/api", await catalogueRoutes(source));
+  /*
+    The catalogue routes take the client when there is one, so the search can
+    read its page size from the settings an administrator edits. There is
+    none in snapshot mode, and the routes fall back to the module's own
+    default rather than requiring a database they were written to do without.
+  */
+  const db = source.snapshotPath ? undefined : new PrismaClient();
+  app.use("/api", await catalogueRoutes({ ...source, prisma: db }));
 
   // Reviews need a member, and a member needs FR-A. Mounted only when the
   // catalogue is database-backed, since the kernel writes to the same database.
   if (!source.snapshotPath) {
-    const prisma = new PrismaClient();
+    const prisma = db ?? new PrismaClient();
     app.use("/api", authRoutes(prisma));
     app.use("/api", sessionRoutes(prisma));
     app.use("/api", profileRoutes(prisma));

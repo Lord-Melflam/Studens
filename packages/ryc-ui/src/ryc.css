@@ -1168,3 +1168,106 @@ button.ghost {
    every button the one pixel of travel; the colour belongs to whoever owns the
    button, and `.primary` is ours. */
 .primary:not(:disabled):active { background: #123769; }
+
+/* --- the module on a narrow screen ---------------------------------------
+   MEASURED, NOT GUESSED. At 375px the first search result began at y=805 on
+   an 812px screen: 805 pixels of chrome before anything the reader asked for.
+   The app bar took 102, the module's tagline 99, the tabs 37, the line
+   explaining the tabs 44, the catalogue size 22, the search box 83, and the
+   filter panel 297.
+
+   Four of those blocks describe the screen you are already standing on. On a
+   wide screen they cost nothing, because the results sit beside or below them
+   with room to spare. On a phone they are the whole first screen, and the
+   product looks like it returned nothing.
+
+   So below 700px the explanations go and the results come up. Nothing that
+   DOES anything is removed: the tabs, the search box and the filters all
+   stay. What goes is text about them. */
+@media (max-width: 700px) {
+  .module-intro,
+  .tab-hint {
+    display: none;
+  }
+  /* The catalogue size stays, because it is the one line that changes with
+     the scope and is how somebody notices the scope is wrong. It just stops
+     taking a line of its own. */
+  .tabs { margin-bottom: 0.75rem; }
+  .searchbox { margin-bottom: 1rem; }
+}
+
+/* --- the filter panel, folded only where it has to be --------------------
+   ABOVE 700px THERE IS NO FOLD. The header is not rendered to the reader at
+   all and the groups are always open, so the rule that filter groups do not
+   fold holds exactly where it was written: beside the results, hiding the
+   controls hides the thing somebody came to use.
+
+   Below 700px the filters stack on top of the results instead of beside
+   them, and the same choice has the opposite effect: measured at 375px they
+   pushed the first result to y=805 on an 812px screen.
+
+   IT LOOKS LIKE THE COURSE SECTIONS ON PURPOSE. Same pressable row, same
+   accent chevron in its own token, same rotation when open. One fold
+   affordance in the product, so learning it once is enough, and a fold that
+   does not announce itself is indistinguishable from missing content. */
+.filters-toggle { display: none; }
+
+@media (max-width: 700px) {
+  .filters-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    margin-bottom: 0.75rem;
+    padding: 0.7rem 0.55rem 0.7rem 0.85rem;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .filters-toggle:hover { background: var(--accent-soft); border-color: var(--accent); }
+  .filters-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .filters-toggle .fold-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .filters-toggle .fold-chevron {
+    flex: none;
+    box-sizing: content-box;
+    width: 1.1rem;
+    height: 1.1rem;
+    padding: 0.2rem;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    transition: transform 0.18s ease;
+  }
+  .filters.open .filters-toggle .fold-chevron { transform: rotate(180deg); }
+  .filters.open .filters-toggle .fold-name { color: var(--accent); }
+  /* Closed is the default here, and the header above says so. */
+  .filters:not(.open) .filters-groups { display: none; }
+}
+
+/* The control that lengthens the list. A row of its own under the groups,
+   not a link lost at the end of the last one. */
+.browse-more {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.7rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.browse-more:hover { border-color: var(--accent); background: var(--accent-soft); }
+.browse-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

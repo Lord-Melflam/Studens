@@ -16,7 +16,7 @@
  * catalogue into a tool for that. It is a separate feature with a separate
  * legal footing, and this is not it.
  */
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useT, type Translate } from "@studens/i18n";
 import type { Facet } from "./filters.js";
 
@@ -230,10 +230,52 @@ export function FilterBar({
   scope?: React.ReactNode;
 }) {
   const t = useT();
+  const [open, setOpen] = useState(false);
+  const id = useId();
   return (
-    <div className="filters">
+    <div className={open ? "filters open" : "filters"}>
       {scope}
-      <div className="filters-groups">{children}</div>
+      {/*
+        THE FOLD IS A NARROW-SCREEN CONTROL ONLY, and CSS decides that, not
+        this component. Above 700px the header is not displayed and the groups
+        are always shown, so the rule that filter groups do not fold still
+        holds everywhere it was written for: folding there hid controls
+        somebody needs, and there was room to show them.
+
+        On a phone the same choice does the opposite. The filters stack ON TOP
+        of the results rather than beside them, and measured at 375px they put
+        the first result 805 pixels down an 812 pixel screen. Showing the
+        controls there is what hides the results.
+
+        IT ANNOUNCES ITSELF. Same row, same chevron, same rotation as a course
+        page section: a pressable surface, an accent chevron in its own token,
+        `aria-expanded` for anybody not looking at it. A fold nobody can see is
+        just missing content.
+      */}
+      <button
+        type="button"
+        className="filters-toggle fold-head"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen(!open)}
+      >
+        <span className="fold-name">
+          {t(active ? "ryc.filter.show.active" : "ryc.filter.show")}
+        </span>
+        <svg className="fold-chevron" viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M5.5 8 10 12.5 14.5 8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      <div className="filters-groups" id={id}>
+        {children}
+      </div>
       <p className="filters-summary">
         {summary}
         {active && (
