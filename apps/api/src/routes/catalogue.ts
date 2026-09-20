@@ -65,14 +65,34 @@ export async function catalogueRoutes(source: {
     });
   });
 
-  /** FR-D1 and FR-D2: search by code, then by words in the title. */
+  /**
+   * FR-D1 and FR-D2: search by code, then by words in the title.
+   *
+   * SCOPED BY `institutions`, comma separated, absent meaning all of them.
+   * Without it the search answered from every catalogue whatever the reader
+   * had chosen, so a student scoped to one university found another's courses
+   * among their results. Reported from use on 2026-09-21.
+   *
+   * The scope is applied in the query rather than to the answer, and the
+   * difference is not cosmetic: the limit is spent on whatever comes back
+   * first, so narrowing afterwards truncates the catalogue the reader asked
+   * for. Searching "droit" unscoped returned 24 ULB rows and 1 UCLouvain out
+   * of 282 that match. See the note on `Catalogue.search`.
+   */
   router.get("/courses", (req, res) => {
     const q = typeof req.query["q"] === "string" ? req.query["q"] : "";
     if (q.trim().length < 2) {
       res.json({ query: q, results: [] });
       return;
     }
-    void Promise.resolve(catalogue.search(q)).then((results) => res.json({ query: q, results }));
+    const asked = typeof req.query["institutions"] === "string" ? req.query["institutions"] : "";
+    const institutions = asked
+      .split(",")
+      .map((c) => c.trim().toLowerCase())
+      .filter((c) => c !== "");
+    void Promise.resolve(catalogue.search(q, { institutions })).then((results) =>
+      res.json({ query: q, results }),
+    );
   });
 
   /** FR-D24 and FR-D25: browsing, for the student who does not know the code. */

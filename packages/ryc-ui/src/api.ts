@@ -232,8 +232,17 @@ export const api = {
       /** What each institution contributes. The parts sum to the totals. */
       institutions: Array<{ code: string; courses: number; programmes: number }>;
     }>("/api/catalogue"),
-  search: (q: string) =>
-    json<{ query: string; results: CourseSummary[] }>(`/api/courses?q=${encodeURIComponent(q)}`),
+  /**
+   * The scope travels with the query, because the server applies it in the
+   * query. Narrowing the answer here instead would hide the other catalogue's
+   * rows and leave the reader's own truncated, which looks like a working
+   * search and is not.
+   */
+  search: (q: string, institutions: readonly string[] = []) => {
+    const params = new URLSearchParams({ q });
+    if (institutions.length > 0) params.set("institutions", institutions.join(","));
+    return json<{ query: string; results: CourseSummary[] }>(`/api/courses?${params.toString()}`);
+  },
   course: (institution: string, code: string) =>
     json<CourseDetail>(
       `/api/courses/${encodeURIComponent(institution)}/${encodeURIComponent(code)}`,

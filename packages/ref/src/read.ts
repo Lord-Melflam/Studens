@@ -277,10 +277,34 @@ export interface InstitutionCounts {
   programmes: number;
 }
 
+/**
+ * Which catalogues a request is about.
+ *
+ * Empty or absent means all of them, which is what the public pages want. The
+ * app zone passes the member's, because a student's catalogue is the
+ * university they chose and not everybody's (see Browse.tsx).
+ */
+export interface Scope {
+  institutions?: readonly string[] | undefined;
+  limit?: number | undefined;
+}
+
 export interface Catalogue {
   readonly year: number;
   readonly size: number;
-  search(query: string, limit?: number): CourseSummary[] | Promise<CourseSummary[]>;
+  /**
+   * FR-D1 and FR-D2.
+   *
+   * THE SCOPE GOES IN THE QUERY, not over the results. Filtering afterwards
+   * looks equivalent and is not: the limit would already have been spent on
+   * rows from catalogues the reader did not ask for. Measured on 2026-09-21,
+   * searching "droit" across two catalogues returned 24 ULB rows and 1
+   * UCLouvain, while the database holds 282 UCLouvain matches and 199 ULB. The
+   * window is filled by whichever sorts first, so a browser-side filter would
+   * have hidden the ULB rows and left one result out of 282, which looks like
+   * a working search and is not.
+   */
+  search(query: string, scope?: Scope): CourseSummary[] | Promise<CourseSummary[]>;
   get(institution: string, code: string): (CourseDetail | null) | Promise<CourseDetail | null>;
   /**
    * Which catalogues hold a course with this code.
@@ -345,9 +369,15 @@ export class SnapshotCatalogue implements Catalogue {
    * FR-D1 and FR-D2: match on code, then on words in the title. Exact and
    * prefix matching only; semantic matching is deferred (1.4).
    */
-  search(query: string, limit = 25): CourseSummary[] {
+  search(query: string, scope: Scope = {}): CourseSummary[] {
     const q = query.trim().toLowerCase();
     if (!q) return [];
+    const limit = scope.limit ?? 25;
+    // A snapshot holds one institution, so the scope either includes it or
+    // excludes everything. Checked rather than ignored: a caller that asks for
+    // another catalogue must get nothing back, not this one's courses.
+    const wanted = scope.institutions;
+    if (wanted && wanted.length > 0 && !wanted.includes(this.institution)) return [];
 
     const byCode: ParsedOffering[] = [];
     const byTitle: ParsedOffering[] = [];
@@ -507,9 +537,11 @@ export class DatabaseCatalogue implements Catalogue {
       .filter((i) => i.courses > 0 || i.programmes > 0);
   }
 
-  async search(query: string, limit = 25): Promise<CourseSummary[]> {
+  async search(query: string, scope: Scope = {}): Promise<CourseSummary[]> {
     const q = query.trim().toLowerCase();
     if (!q) return [];
+    const limit = scope.limit ?? 25;
+    const wanted = scope.institutions?.filter((c) => c !== "") ?? [];
 
     // Not restricted to the current year, and then reduced to one row per
     // course, the most recent. A course the institution stopped offering is
@@ -522,6 +554,13 @@ export class DatabaseCatalogue implements Catalogue {
           { course: { code: { startsWith: q } } },
           { title: { contains: q, mode: "insensitive" } },
         ],
+        // THE SCOPE BELONGS HERE AND NOT AFTER THE FACT. `take` below is spent
+        // on whatever the database returns first, so narrowing afterwards
+        // spends the window on rows the reader did not ask for and truncates
+        // the ones they did. See the note on `Catalogue.search`.
+        ...(wanted.length > 0
+          ? { course: { institution: { code: { in: [...wanted] } } } }
+          : {}),
       },
       include: {
         course: { include: { institution: true } },
