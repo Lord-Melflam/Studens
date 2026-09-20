@@ -41,8 +41,26 @@ export interface ReviewInput {
   completed: boolean;
 }
 
-/** FR-D8. Blocks non-reviews, not short ones. */
-export const MIN_BODY = 80;
+/**
+ * FR-D8. Blocks an empty box, not a short opinion.
+ *
+ * IT WAS 80, AND 80 WAS THE WRONG TOOL. The floor was meant to block
+ * non-reviews, and a length floor cannot: eighty characters of "tres bien tres
+ * bien tres bien" clears it, while "Super cours, prof clair, charge
+ * raisonnable" does not. It refused the honest short reviewer and admitted the
+ * lazy long one, which is the opposite of the sorting it was there to do.
+ *
+ * What actually sorts a contribution is moderation (FR-E8), which exists, and
+ * the structured fields beside the text: a named review shows its
+ * recommendation, workload and difficulty per review, so a short sentence
+ * arrives with three numbers attached rather than alone.
+ *
+ * TEN, NOT ZERO. The field is still required, and a floor of nothing turns an
+ * accidental submission into a published review that the anonymous path can
+ * never take back (FR-C9). Ten admits "nice course" and refuses a stray
+ * keystroke, which is all a length rule can honestly claim to do.
+ */
+export const MIN_BODY = 10;
 
 /**
  * FR-D8, the other end. About 600 words, generous for a course review.
