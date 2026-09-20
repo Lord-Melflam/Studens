@@ -63,7 +63,13 @@ export class NotPermitted extends Error {
 
 export class AppointmentRefused extends Error {
   constructor(
-    readonly reason: "unknown-member" | "bad-role" | "self" | "last-admin" | "admin-exists",
+    readonly reason:
+      | "unknown-member"
+      | "bad-role"
+      | "self"
+      | "last-admin"
+      | "admin-exists"
+      | "already-admin",
   ) {
     super(`appointment: ${reason}`);
     this.name = "AppointmentRefused";
@@ -183,6 +189,70 @@ export async function grantFirstAdmin(
       select: { id: true, username: true, role: true },
     });
     if (!member) throw new AppointmentRefused("unknown-member");
+
+    const updated = await tx.member.update({
+      where: { id: member.id },
+      data: { role: "admin" },
+      select: { id: true, username: true, role: true },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        actorMemberId: OPERATOR,
+        action: `role:${member.role}->admin`,
+        targetKind: "member",
+        targetId: member.id,
+        at: now,
+      },
+    });
+
+    return { memberId: updated.id, username: updated.username, role: updated.role as Role };
+  });
+}
+
+/**
+ * Put administrator back on an account when the console can no longer do it.
+ *
+ * WHY THIS EXISTS. Administrators are peers: `setRole` refuses only two things,
+ * changing your own role and demoting the last one, and both exist to prevent
+ * the single state that needs a database to undo. Neither is about seniority,
+ * so with two administrators each can demote the other. That is the ordinary
+ * shape and it is not the problem.
+ *
+ * The problem was that there was no way back. `grantFirstAdmin` refuses the
+ * moment an administrator exists, deliberately, so somebody demoted by a peer
+ * had exactly one route left: editing a row by hand. That is the state this
+ * file already calls the worst version of itself, unrecorded and unrepeatable,
+ * and leaving it as the only recovery made an ordinary disagreement between
+ * two administrators irreversible.
+ *
+ * IT GRANTS NO AUTHORITY THAT WAS NOT ALREADY THERE, which is the whole
+ * argument for it. Running this needs the database, and anybody with the
+ * database can already write any row they like. So the choice is not between
+ * this and safety; it is between a recorded, repeatable command and a silent
+ * UPDATE. The audit entry names the operator rather than a member, because no
+ * member made this decision, exactly as the bootstrap does.
+ *
+ * WHAT IT STILL WILL NOT DO. It does not create an account, it does not take a
+ * role away, and it is not reachable over HTTP. Appointment in the product
+ * stays where FR-E14 put it, in the console, named against the administrator
+ * who made it.
+ */
+export async function recoverAdmin(
+  prisma: PrismaClient,
+  username: string,
+  now: Date = new Date(),
+): Promise<Appointment> {
+  return await prisma.$transaction(async (tx) => {
+    const member = await tx.member.findUnique({
+      where: { username: username.trim().toLowerCase() },
+      select: { id: true, username: true, role: true },
+    });
+    if (!member) throw new AppointmentRefused("unknown-member");
+    // Refused rather than treated as success. A command that says it did
+    // something when it did nothing teaches people to run it twice and trust
+    // it less, and the caller wants to know which of the two states it found.
+    if (member.role === "admin") throw new AppointmentRefused("already-admin");
 
     const updated = await tx.member.update({
       where: { id: member.id },

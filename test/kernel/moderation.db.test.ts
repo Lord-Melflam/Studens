@@ -25,6 +25,7 @@ import {
   canModerate,
   decide,
   grantFirstAdmin,
+  recoverAdmin,
   listAppointments,
   moderationHistory,
   moderationQueue,
@@ -638,6 +639,55 @@ describe("the first administrator (FR-E14)", () => {
       });
     });
     expect(await prisma.member.findFirst({ where: { username: "ztst.mod.nobody.at.all" } })).toBeNull();
+  });
+
+  /**
+   * FR-E17: the way back when an administrator has been demoted by a peer.
+   *
+   * Administrators are peers, so with two of them each can demote the other,
+   * and the bootstrap refuses the moment one exists. That left editing a row
+   * by hand as the only recovery, which is the state the bootstrap was written
+   * to remove. This grants no authority that reaching the database did not
+   * already carry; what it adds is a record of it.
+   */
+  dbit("appoints past the check that an administrator already exists", async () => {
+    const demoted = await member("recovered");
+    const sitting = await member("sitting-admin", "admin");
+
+    // The bootstrap refuses here, which is the situation this exists for.
+    await expect(grantFirstAdmin(prisma, "ztst.mod.recovered")).rejects.toMatchObject({
+      reason: "admin-exists",
+    });
+
+    const back = await recoverAdmin(prisma, "ztst.mod.recovered");
+    expect(back.memberId).toBe(demoted.memberId);
+    expect(back.role).toBe("admin");
+
+    // It takes nothing away: whoever else held the role still holds it.
+    const still = await prisma.member.findUniqueOrThrow({ where: { id: sitting.memberId } });
+    expect(still.role).toBe("admin");
+
+    // Recorded like the bootstrap, against the operator, because no member
+    // made this decision.
+    const entry = await prisma.auditLog.findFirst({
+      where: { targetId: demoted.memberId, targetKind: "member" },
+      orderBy: { at: "desc" },
+    });
+    expect(entry?.action).toBe("role:member->admin");
+    expect(entry?.actorMemberId).toBe(OPERATOR);
+  });
+
+  dbit("refuses an account that already holds the role", async () => {
+    await member("alreadyadmin", "admin");
+    await expect(recoverAdmin(prisma, "ztst.mod.alreadyadmin")).rejects.toMatchObject({
+      reason: "already-admin",
+    });
+  });
+
+  dbit("refuses a username nobody has", async () => {
+    await expect(recoverAdmin(prisma, "ztst.mod.nobody.here")).rejects.toMatchObject({
+      reason: "unknown-member",
+    });
   });
 
   dbit("matches the username as it is stored, whatever case it is typed in", async () => {
