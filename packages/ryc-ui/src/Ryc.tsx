@@ -214,12 +214,21 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
    * Browse, so that line reported the whole catalogue whatever was selected.
    */
   const [mine, setMine] = useState<string[] | null>(null);
+  /**
+   * Whether the answer has arrived, which `mine` alone cannot say: null is
+   * both "not asked yet" and "asked, and there is nothing", the second being
+   * an ordinary signed-out visitor. The search waits for this rather than
+   * running unscoped and correcting itself a moment later, which would show
+   * another university's courses and then take them away.
+   */
+  const [scopeKnown, setScopeKnown] = useState(false);
   useEffect(() => {
     let live = true;
     api
       .myInstitutions()
       .then((r) => live && setMine(r.institutions))
-      .catch(() => live && setMine(null));
+      .catch(() => live && setMine(null))
+      .finally(() => live && setScopeKnown(true));
     return () => {
       live = false;
     };
@@ -300,15 +309,31 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
     };
   }, [legacyCode, legacyWriting, search]);
 
+  /**
+   * SEARCH IS SCOPED TO THE MEMBER'S CATALOGUES, like the browse list beside
+   * it. It was not, so a student who had chosen one university found another's
+   * courses among their results (reported 2026-09-21).
+   *
+   * The scope goes to the server rather than being applied to what comes back.
+   * The limit is spent on whatever the database returns first, so narrowing
+   * here would hide the other catalogue's rows and leave the reader's own
+   * truncated: "droit" unscoped returned 24 rows from one catalogue and 1 from
+   * the other, out of 282 that match.
+   *
+   * `mine` empty or null means no narrowing, which is a signed-out visitor or
+   * a member who has chosen none. Reading silence as "show them nothing" would
+   * be the wrong default on a public catalogue.
+   */
   useEffect(() => {
     if (query.trim().length < 2) {
       setResults([]);
       return;
     }
+    if (!scopeKnown) return;
     const timer = setTimeout(() => {
       setSearching(true);
       api
-        .search(query)
+        .search(query, mine ?? [])
         .then((r) => {
           setResults(r.results);
           setError(null);
@@ -317,7 +342,7 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
         .finally(() => setSearching(false));
     }, 180);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, mine, scopeKnown]);
 
   if (view.kind === "legacyCourse") {
     // Still asking, or forwarding. Nothing to say yet.
