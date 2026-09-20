@@ -507,6 +507,27 @@ There is no route that does this, on purpose. An endpoint that promotes somebody
 while no administrator exists is open to whoever reaches it first, and
 registration is public (FR-A6). Reaching the database is the check.
 
+### If you have been demoted and cannot reach the console
+
+```bash
+npm run admin -- <username> --force
+```
+
+Administrators are peers. `setRole` refuses only two things, changing your own
+role and demoting the last administrator, and both exist to prevent the one
+state that needs a database to undo. Neither is about seniority, so with two
+administrators each can demote the other.
+
+That is ordinary, and it stays. What was not ordinary is that the demoted one
+had no way back except editing a row by hand, so `--force` appoints past the
+bootstrap's check and records it against the operator, exactly as the bootstrap
+does. It takes nothing away from whoever else holds the role.
+
+**It grants nothing that was not already there.** Running it needs the
+database, and anybody holding the database can write any row, so the choice is
+between a recorded command and a silent `UPDATE`. FR-E17 has the alternatives
+that were rejected and what would change the answer.
+
 ---
 
 ## Mail

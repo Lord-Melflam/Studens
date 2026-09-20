@@ -148,6 +148,7 @@ export {
   canAppoint,
   canModerate,
   grantFirstAdmin,
+  recoverAdmin,
   isRole,
   listAppointments,
   requireModerator,
