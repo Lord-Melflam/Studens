@@ -238,10 +238,18 @@ export const api = {
    * rows and leave the reader's own truncated, which looks like a working
    * search and is not.
    */
-  search: (q: string, institutions: readonly string[] = []) => {
+  search: (q: string, institutions: readonly string[] = [], limit?: number) => {
     const params = new URLSearchParams({ q });
     if (institutions.length > 0) params.set("institutions", institutions.join(","));
-    return json<{ query: string; results: CourseSummary[] }>(`/api/courses?${params.toString()}`);
+    if (limit) params.set("limit", String(limit));
+    return json<{
+      query: string;
+      results: CourseSummary[];
+      /** How many the catalogue matched, which is not how many came back. */
+      total: number;
+      /** The administrator's page size, so the list knows what to add. */
+      step: number;
+    }>(`/api/courses?${params.toString()}`);
   },
   course: (institution: string, code: string) =>
     json<CourseDetail>(

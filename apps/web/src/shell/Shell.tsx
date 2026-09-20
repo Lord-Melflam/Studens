@@ -256,7 +256,31 @@ export function Shell() {
           <Brand />
         </a>
         <nav className="crumbs">
-          <button type="button" onClick={() => navigate(APP_PREFIX)}>
+          {/*
+            THE WAY OUT OF EVERY SCREEN, and on a phone it has to be pressable.
+
+            It was a text button at 0.85rem with no padding: about 18 pixels
+            tall, which is half of what a finger needs, and on most screens it
+            is the only way back. The chevron is drawn rather than implied,
+            for the reason the course sections carry one: a bare word reads as
+            a label, the same word behind a mark reads as a control.
+
+            It goes UP a level rather than back through history. Predictable
+            beats clever here: history back can land on another site, or on
+            the screen somebody just left deliberately, and neither is what a
+            person means when they look for the way out.
+          */}
+          <button type="button" className="crumb-up" onClick={() => navigate(APP_PREFIX)}>
+            <svg className="crumb-chevron" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                d="M12 5 7 10l5 5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
             {t("app.modules")}
           </button>
           {(active || settings || console_) && (

@@ -305,6 +305,19 @@ export interface Catalogue {
    * a working search and is not.
    */
   search(query: string, scope?: Scope): CourseSummary[] | Promise<CourseSummary[]>;
+  /**
+   * How many courses the same query matches, ignoring the limit.
+   *
+   * Because the page was saying "25 of 25". That is true about the array it
+   * was handed and false about the catalogue: 25 is the window, and "droit"
+   * matches 282 courses at one university alone. A number that reads as a
+   * fact and is an artefact of a limit is the same defect as a count typed
+   * into a sentence, and the answer is the same: fetch it.
+   *
+   * The real number is also the useful one. It is what tells somebody to
+   * narrow the search rather than scroll a list that was never complete.
+   */
+  searchCount(query: string, scope?: Scope): number | Promise<number>;
   get(institution: string, code: string): (CourseDetail | null) | Promise<CourseDetail | null>;
   /**
    * Which catalogues hold a course with this code.
@@ -389,6 +402,18 @@ export class SnapshotCatalogue implements Catalogue {
     // course whose description mentions it.
     return [...byCode, ...byTitle].slice(0, limit)
       .map((o) => summarise(o, this.institution));
+  }
+
+  searchCount(query: string, scope: Scope = {}): number {
+    const q = query.trim().toLowerCase();
+    if (!q) return 0;
+    const wanted = scope.institutions;
+    if (wanted && wanted.length > 0 && !wanted.includes(this.institution)) return 0;
+    let n = 0;
+    for (const o of this.snapshot.offerings) {
+      if (o.code.startsWith(q) || o.title.toLowerCase().includes(q)) n++;
+    }
+    return n;
   }
 
   countsByInstitution(): InstitutionCounts[] {
@@ -535,6 +560,34 @@ export class DatabaseCatalogue implements Catalogue {
         programmes: i.programmes.length,
       }))
       .filter((i) => i.courses > 0 || i.programmes > 0);
+  }
+
+  /**
+   * The same `where` as `search`, counted rather than fetched.
+   *
+   * DISTINCT COURSES, not offerings. `search` collapses older editions of one
+   * course into a single row, so counting offerings would report a number the
+   * list could never reach and send somebody narrowing a search that was
+   * already narrow enough.
+   */
+  async searchCount(query: string, scope: Scope = {}): Promise<number> {
+    const q = query.trim().toLowerCase();
+    if (!q) return 0;
+    const wanted = scope.institutions?.filter((c) => c !== "") ?? [];
+    const rows = await this.prisma.courseOffering.findMany({
+      where: {
+        OR: [
+          { course: { code: { startsWith: q } } },
+          { title: { contains: q, mode: "insensitive" } },
+        ],
+        ...(wanted.length > 0
+          ? { course: { institution: { code: { in: [...wanted] } } } }
+          : {}),
+      },
+      select: { courseId: true },
+      distinct: ["courseId"],
+    });
+    return rows.length;
   }
 
   async search(query: string, scope: Scope = {}): Promise<CourseSummary[]> {

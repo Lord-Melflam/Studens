@@ -254,6 +254,10 @@ export function moderationRoutes(prisma: PrismaClient): Router {
    */
   const SETTINGS = [
     { key: "ryc.reviewsPerPage", min: 3, max: 50, fallback: 10 },
+    // How many search results come back at once. It is a page size, not a
+    // ceiling: the list says how many matched and lengthens on request, so
+    // this decides how much arrives per step rather than what can be found.
+    { key: "ryc.searchResults", min: 5, max: 100, fallback: 25 },
   ] as const;
 
   router.get("/moderation/settings", (req, res) => {

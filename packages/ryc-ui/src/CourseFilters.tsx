@@ -40,6 +40,10 @@ import { queryOf, settingsRoute } from "./urlstate.js";
 
 export function CourseFilters({
   courses,
+  /** What the catalogue matched, where the list is a window over it. */
+  matched,
+  /** Lengthens that window. Absent on lists that are not windowed. */
+  onShowMore,
   reviewCounts,
   onOpen,
   emptyLabel,
@@ -49,6 +53,8 @@ export function CourseFilters({
   navigate,
 }: {
   courses: CourseSummary[];
+  matched?: number | undefined;
+  onShowMore?: (() => void) | undefined;
   reviewCounts: Record<string, number>;
   onOpen: (course: CourseSummary) => void;
   /** What to say when the list itself is empty, before any filter is applied. */
@@ -101,7 +107,22 @@ export function CourseFilters({
       <FilterBar
         active={!courseFilterIsEmpty(filter)}
         onClear={() => setFilter(NO_COURSE_FILTER)}
-        summary={t("ryc.filter.count", { shown: shown.length, total: courses.length })}
+        summary={
+          /*
+            TRUNCATED IS SAID DIFFERENTLY FROM FILTERED, because they are
+            different facts and one number cannot carry both. The search
+            window is 25, so a query matching 282 courses arrived here as 25
+            and the line read "25 of 25": true about the array it was handed,
+            false about the catalogue, and it told somebody the search was
+            complete when it was not.
+
+            `matched` is absent on the lists that are not windowed, and then
+            this is the count it always was.
+          */
+          matched !== undefined && matched > courses.length
+            ? t("ryc.filter.count.window", { shown: shown.length, total: matched })
+            : t("ryc.filter.count", { shown: shown.length, total: courses.length })
+        }
       >
         {textFilter && (
           <FilterText
@@ -198,6 +219,19 @@ export function CourseFilters({
               <CourseList courses={rows} onOpen={onOpen} reviewCounts={reviewCounts} />
             </section>
           ))}
+          {/*
+            LENGTHEN THE LIST, rather than telling somebody to search better.
+            A student looking for a course often does not know its name, which
+            is why they are searching, so "narrow it" is advice they cannot
+            take. The step is the administrator's setting, and the button says
+            how many are left so the number itself suggests filtering when it
+            is large.
+          */}
+          {onShowMore && matched !== undefined && matched > courses.length && (
+            <button type="button" className="browse-more" onClick={onShowMore}>
+              {t("ryc.filter.more", { n: matched - courses.length })}
+            </button>
+          )}
         </div>
       )}
     </>

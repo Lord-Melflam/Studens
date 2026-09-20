@@ -1125,3 +1125,27 @@ a.ghost.here {
    a separate stylesheet on purpose (see the collision test). */
 .paging { display: flex; align-items: center; gap: 0.6rem; margin-top: 1rem; }
 .paging-where { font-size: 0.8rem; color: var(--muted); }
+
+/* --- the way out, on a screen held in one hand -------------------------
+   The crumb was a text button at 0.85rem with no padding, about 18 pixels
+   tall, and on most screens it is the only way back. A finger needs roughly
+   forty. The chevron is drawn rather than implied, for the reason the course
+   sections carry one: a bare word reads as a label, the same word behind a
+   mark reads as a control.
+
+   Wide screens keep the quiet version, because there a crumb sits beside a
+   brand and a row of actions and does not need to shout. */
+.crumb-up { display: inline-flex; align-items: center; gap: 0.2rem; }
+.crumb-chevron { width: 0.95rem; height: 0.95rem; flex: none; }
+
+@media (max-width: 700px) {
+  .crumb-up {
+    gap: 0.3rem;
+    min-height: 2.5rem;
+    padding: 0.35rem 0.7rem 0.35rem 0.5rem;
+    font-size: 0.9rem;
+    background: var(--accent-soft);
+    border-radius: 999px;
+  }
+  .crumb-chevron { width: 1.05rem; height: 1.05rem; }
+}

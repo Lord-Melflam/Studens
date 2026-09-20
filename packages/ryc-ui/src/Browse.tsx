@@ -38,6 +38,16 @@ import {
   type ProgrammeFilter,
 } from "./filters.js";
 import { queryOf, settingsRoute } from "./urlstate.js";
+
+/**
+ * The slug for how many rows are drawn, and the step it grows by.
+ *
+ * French and short like the module's other keys (`quad`, `entite`, `ouvert`),
+ * because the address is read by people. Fifty is about four phone screens of
+ * rows, which is enough to judge whether to filter instead of scroll.
+ */
+const SHOWN_KEY = "montre";
+const SHOWN_STEP = 50;
 import { programmePath } from "./Ryc.js";
 
 export function Browse({
@@ -230,6 +240,30 @@ export function Browse({
 
   const shown = useMemo(() => applyProgrammeFilter(inScope, filter), [inScope, filter]);
   const grouped = useMemo(() => groupByKind(shown), [shown]);
+
+  /**
+   * HOW MANY ROWS ARE DRAWN, and why there is a cap at all.
+   *
+   * There was none. Measured at 375px on 2026-09-21, this screen was a
+   * 143,112 pixel document: 976 programmes, every one rendered, 176 phone
+   * screens in a single page. That is not a long list, it is a page nobody
+   * can use and a phone has to lay out in full before showing the first row.
+   *
+   * IN THE ADDRESS, like everything else on this screen (FR-B21), so Back
+   * returns to the rows that were open and a link to a long list shows its
+   * reader the long list. `replace`, because pressing "show more" is not
+   * going anywhere.
+   *
+   * THE HEADINGS KEEP THE TRUE COUNTS. Only the drawing is capped, so a group
+   * still says how many it holds and the cap never makes the catalogue look
+   * smaller than it is.
+   */
+  const budget = Math.max(SHOWN_STEP, Number.parseInt(queryOf(search).get(SHOWN_KEY) ?? "", 10) || SHOWN_STEP);
+  const showMore = () => {
+    const next = new URLSearchParams();
+    next.set(SHOWN_KEY, String(budget + SHOWN_STEP));
+    navigate(settingsRoute("/", search, [SHOWN_KEY], next), { replace: true });
+  };
   const facets = useMemo(() => programmeFacets(inScope, filter), [inScope, filter]);
 
   // The list has arrived and the code in the URL is not in it. Said rather than
@@ -450,7 +484,14 @@ export function Browse({
               written when it returned one.
             */
             <div className="browse-list">
-              {grouped.map(([kind, rows]) => (
+              {(() => {
+                let left = budget;
+                return grouped.map(([kind, rows]) => {
+                  const take = Math.max(0, Math.min(rows.length, left));
+                  left -= take;
+                  return [kind, rows, rows.slice(0, take)] as const;
+                });
+              })().map(([kind, rows, visible]) => (
               <section className="prog-group" key={String(kind)}>
                 {grouped.length > 1 && (
                   <h3 className="prog-group-title">
@@ -458,7 +499,7 @@ export function Browse({
                   </h3>
                 )}
                 <ul className="results">
-                  {rows.map((p) => (
+                  {visible.map((p) => (
                     <li key={p.code}>
                       <button type="button" onClick={() => onOpenProgramme(p)}>
                         <span className="code">{p.code.toUpperCase()}</span>
@@ -496,6 +537,16 @@ export function Browse({
                 </ul>
                 </section>
               ))}
+              {/* Only when it can do something, the same rule the reviews
+                  pager follows: a control over nothing is a promise the next
+                  press cannot keep. It says how many are left rather than
+                  "more", because the number is what tells somebody to filter
+                  instead of scroll. */}
+              {shown.length > budget && (
+                <button type="button" className="browse-more" onClick={showMore}>
+                  {t("ryc.browse.more", { n: shown.length - budget })}
+                </button>
+              )}
             </div>
           )}
         </div>

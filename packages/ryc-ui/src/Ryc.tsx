@@ -40,6 +40,17 @@ export const OPEN_KEY = "ouvert";
  */
 export const PAGE_KEY = "avis";
 
+/**
+ * How many search results are asked for, in the address like everything else
+ * on the screen (FR-B21), so Back returns to the list that was open and a
+ * link to a long list shows its reader the long list.
+ *
+ * Absent means the administrator's page size, which the answer reports. The
+ * list grows by that size rather than by a number written in here, so
+ * changing the setting changes the step everywhere at once.
+ */
+export const WINDOW_KEY = "combien";
+
 /** The page named by an address, 1 when it says nothing or says nonsense. */
 export function reviewPageFrom(search: string): number {
   const n = Number.parseInt(queryOf(search).get(PAGE_KEY) ?? "", 10);
@@ -235,6 +246,16 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
   }, []);
 
   const [results, setResults] = useState<CourseSummary[]>([]);
+  /** What the catalogue matched, which is not what the window returned. */
+  const [matched, setMatched] = useState(0);
+  /** The administrator's page size, learned from the answer. */
+  const [step, setStep] = useState(0);
+  const window = Number.parseInt(queryOf(search).get(WINDOW_KEY) ?? "", 10) || 0;
+  const showMoreResults = () => {
+    const next = new URLSearchParams();
+    next.set(WINDOW_KEY, String((window || step || 25) + (step || 25)));
+    navigate(settingsRoute("/recherche", search, [WINDOW_KEY], next), { replace: true });
+  };
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
@@ -333,16 +354,18 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
     const timer = setTimeout(() => {
       setSearching(true);
       api
-        .search(query, mine ?? [])
+        .search(query, mine ?? [], window)
         .then((r) => {
           setResults(r.results);
+          setMatched(r.total);
+          setStep(r.step);
           setError(null);
         })
         .catch(() => setError(t("ryc.err.search")))
         .finally(() => setSearching(false));
     }, 180);
     return () => clearTimeout(timer);
-  }, [query, mine, scopeKnown]);
+  }, [query, mine, scopeKnown, window]);
 
   if (view.kind === "legacyCourse") {
     // Still asking, or forwarding. Nothing to say yet.
@@ -511,6 +534,8 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
             <div className="results-in browse-wide">
               <CourseFilters
                 courses={results}
+                matched={matched}
+                onShowMore={showMoreResults}
                 reviewCounts={reviewCounts}
                 onOpen={(c) => navigate(coursePath(c.institution, c.code))}
                 emptyLabel={t("ryc.search.none", { query })}
