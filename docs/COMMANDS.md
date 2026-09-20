@@ -606,9 +606,53 @@ into a chat or a pull request.**
 | `STUDENS_APP_ORIGIN` | Where a visitor lands after signing in |
 | `STUDENS_SECURE_COOKIES` | `1` when served over HTTPS: adds `Secure` and the `__Host-` prefix |
 | `STUDENS_WEB_ROOT` | Where the built application is. Defaults to `apps/web/dist` beside the API, and is skipped when it is not there |
+| `STUDENS_DEV_HOST` | Hostnames other than localhost allowed to reach the dev server, comma separated. A leading dot covers subdomains. Empty by default; see "Showing it to somebody else" |
 | `STUDENS_CONTACT_EMAIL` | Where somebody writes about a moderation decision. Printed in the suspension message and shown on the suspension screen. Unset means both state the reason and offer nowhere to write, which beats an address that bounces |
 | `CATALOGUE_SNAPSHOT` | Read the catalogue from a file instead of the database |
 | `STUDENS_REQUIRE_DB` | Tests only. `1` makes an unreachable database a failure rather than a skip |
+
+---
+
+## Showing it to somebody else
+
+Nothing is deployed, so the only way to put this in front of a person who is
+not at this keyboard is a tunnel from this machine. Any tunnel works; it
+forwards a public hostname to `localhost:5173`.
+
+**Vite refuses a `Host` header it does not recognise**, which is what stops
+somebody else's DNS name being pointed at a developer's machine, so the tunnel
+hostname has to be named:
+
+```bash
+STUDENS_DEV_HOST=.example-tunnel.dev npm run dev:web
+```
+
+A leading dot means the domain and its subdomains. Without it every request
+comes back "Blocked request. This host is not allowed."
+
+**Run the API WITHOUT the development identity:**
+
+```bash
+npm run dev:api:anon          # not dev:api, and not npm run dev
+```
+
+This matters more than the tunnel. `dev:api` and `dev` both set
+`STUDENS_DEV_IDENTITY=1`, and that sign-in button issues a real session as the
+development member, which on a working machine is usually an **administrator**.
+Reachable from the public internet, one press hands a stranger the moderation
+console, the suspension controls and the settings, against whatever is in the
+local database. A visitor still sees the public site and the whole catalogue,
+which is most of what there is to show.
+
+**Sign-in through a tunnel needs three more things**, and is worth doing only
+if the tunnel is more than a one-off: the tunnel URL registered as a redirect
+URI with the provider, `STUDENS_PUBLIC_ORIGIN` and `STUDENS_APP_ORIGIN` set to
+it, and `STUDENS_SECURE_COOKIES=1` because the tunnel is HTTPS. Left alone, the
+provider sends the visitor back to their own `localhost` and sign-in fails.
+
+**It is this machine.** The tunnel serves the real local database, with its
+real accounts and reviews, for as long as it is open. Close it when the
+demonstration is over.
 
 ---
 
