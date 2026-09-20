@@ -12,6 +12,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { MAX_BODY, MIN_BODY, ReviewInvalid, validate, type ReviewInput } from "@studens/ryc";
+import { MAX_BODY as UI_MAX_BODY, MIN_BODY as UI_MIN_BODY } from "@studens/ryc-ui";
 
 const NOW = new Date("2026-09-10T12:00:00Z");
 
@@ -73,7 +74,7 @@ describe("FR-D8: the length rules, the same on both paths", () => {
   });
 
   it("measures the TRIMMED length, so whitespace is not content", () => {
-    rejects({ body: " ".repeat(200) + "trop court" }, "body");
+    rejects({ body: " ".repeat(200) + "court" }, "body");
   });
 
   it("rejects a body above the maximum", () => {
@@ -118,5 +119,41 @@ describe("FR-D5 to FR-D7: the three scales", () => {
   it("rejects hours per week outside a plausible range", () => {
     rejects({ hoursPerWeek: 101 }, "hoursPerWeek");
     rejects({ hoursPerWeek: -1 }, "hoursPerWeek");
+  });
+});
+
+/**
+ * FR-D8, revised 2026-09-21: the floor blocks an empty box, not a short
+ * opinion.
+ *
+ * WHY 80 WENT. It was there to block non-reviews, and a length floor cannot do
+ * that: eighty characters of the same phrase repeated clears it, while a
+ * complete short judgement does not. It refused the honest short reviewer and
+ * admitted the lazy long one, which is the opposite of the sorting it existed
+ * for. What sorts a contribution is moderation, and the three numbers that
+ * travel beside the text on the named path.
+ */
+describe("the review text floor", () => {
+  it("accepts a short opinion that is a real one", () => {
+    for (const body of ["nice course", "Super cours !", "Trop de travail."]) {
+      expect(() => validate(input({ body }), NOW), body).not.toThrow();
+    }
+  });
+
+  it("still refuses an empty box and a stray keystroke", () => {
+    rejects({ body: "" }, "body");
+    rejects({ body: "   " }, "body");
+    rejects({ body: "a" }, "body");
+  });
+
+  /**
+   * The browser keeps its own copy so the counter can react as somebody types.
+   * A counter that disagrees with the server is worse than none: it says the
+   * review is fine and then the save refuses it, which is the drift the text
+   * rules already have a test for.
+   */
+  it("is the same number in the browser as on the server", () => {
+    expect(UI_MIN_BODY).toBe(MIN_BODY);
+    expect(UI_MAX_BODY).toBe(MAX_BODY);
   });
 });

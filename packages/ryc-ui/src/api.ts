@@ -160,8 +160,10 @@ export interface ReviewDraft {
   completed: boolean;
 }
 
-/** FR-D8, mirrored so the character counter agrees with the server as you type. */
-export const MIN_BODY = 80;
+/** FR-D8, mirrored so the character counter agrees with the server as you type.
+    Pinned to the server's value by a test, because a counter that disagrees
+    tells somebody their review is fine and then the save refuses it. */
+export const MIN_BODY = 10;
 /** FR-D8's ceiling, mirrored for the same reason. The server is the authority. */
 export const MAX_BODY = 4000;
 

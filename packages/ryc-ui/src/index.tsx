@@ -203,6 +203,16 @@ export { PAGE_KEY, reviewPageFrom, reviewPageQuery } from "./Ryc.js";
 export type { CourseDetail, CourseSummary, ProgrammeSummary } from "./api.js";
 
 /**
+ * The review length rules, as the browser holds them.
+ *
+ * Exported so a test can pin them to the server's copy in @studens/ryc. The
+ * form keeps its own so the counter can react as somebody types, and a counter
+ * that disagrees with the server is worse than no counter: it tells somebody
+ * their review is fine and then the save refuses it.
+ */
+export { MIN_BODY, MAX_BODY } from "./api.js";
+
+/**
  * Filtering, exported because it is pure and therefore checked directly.
  * The properties that matter are about the facet counts agreeing with the
  * list, which is far easier to hold here than through a rendered screen.
