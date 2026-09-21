@@ -14,20 +14,24 @@
  * second form would be a second set of rules, and the first thing to drift
  * would be the one the server enforces.
  *
- * IT IS CAPPED, because this list only grows. A quota bounds how fast
- * somebody publishes, not how much they have published by their third year,
- * and an alumnus reviewing every course they took is the person this product
- * most wants. NFR-O4: anything that grows gets a strategy when it is built,
- * not when it hurts. Twenty-five here, the rest one press away, which is the
- * same shape the course list and the search results use.
+ * IT IS PAGED BY THE SERVER, because this list only grows. A quota bounds how
+ * fast somebody publishes, not how much they have published by their third
+ * year, and an alumnus reviewing every course they took is the person this
+ * product most wants (NFR-O4).
+ *
+ * THE FIRST VERSION CAPPED THE WRONG THING. It drew twenty-five rows and left
+ * the rest behind a button, while the request still asked for every row the
+ * member had and the browser still held them all. The screen looked bounded
+ * and the response was not, which is the failure mode NFR-O4 is written
+ * against: a cap you can see is not the same as a cap that exists. The window
+ * is now the module's constant, the button fetches the next one, and nothing
+ * on this path can produce a response that grows with how much somebody has
+ * written.
  */
 import { useCallback, useEffect, useState } from "react";
 import { useT, useLocale } from "@studens/i18n";
 import { api, type MyReview } from "./api.js";
 import { ReviewForm } from "./ReviewForm.js";
-
-/** Rows drawn before the rest are one press away, and the step it grows by. */
-const SHOWN_STEP = 25;
 
 /** Later than its publication by more than the write itself can explain. */
 function wasEdited(r: MyReview): boolean {
@@ -40,8 +44,11 @@ function when(iso: string, locale: string): string {
 
 export function MyReviews({
   onOpenCourse,
+  onBack,
 }: {
   onOpenCourse: (institution: string, code: string) => void;
+  /** Out of the screen, the same control every other page in the module has. */
+  onBack: () => void;
 }) {
   const t = useT();
   const locale = useLocale();
@@ -50,20 +57,35 @@ export function MyReviews({
   const [problem, setProblem] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   /**
-   * How many rows are drawn. Not in the address, unlike the browse list: this
-   * screen is nobody's to link to but its owner's, so there is no shared view
-   * for a URL to carry, and FR-B21's reason for putting a setting in the
-   * address does not apply.
+   * How many there are in total, and which page arrived last. Both come from
+   * the server: the browser cannot know how many rows it has not been sent,
+   * and a count it worked out itself would be wrong the moment anything else
+   * changed.
+   *
+   * Not in the address, unlike the browse list. This screen is nobody's to
+   * link to but its owner's, so there is no shared view for a URL to carry and
+   * FR-B21's reason for putting a setting in the address does not apply.
    */
-  const [shown, setShown] = useState(SHOWN_STEP);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const load = useCallback(() => {
+  const load = useCallback((next: number) => {
+    if (next > 1) setLoadingMore(true);
     api
-      .myReviews()
-      .then((r) => setReviews(r.reviews))
-      .catch(() => setReviews([]));
+      .myReviews(next)
+      .then((r) => {
+        // Appended rather than replaced past the first page, so pressing for
+        // more keeps what is already on screen instead of scrolling somebody
+        // back to the top of a list they were reading.
+        setReviews((had) => (next === 1 ? r.reviews : [...(had ?? []), ...r.reviews]));
+        setTotal(r.total);
+        setPage(next);
+      })
+      .catch(() => setReviews((had) => had ?? []))
+      .finally(() => setLoadingMore(false));
   }, []);
-  useEffect(load, [load]);
+  useEffect(() => load(1), [load]);
 
   if (reviews === null) return <p className="meta">{t("ryc.loading")}</p>;
 
@@ -71,6 +93,9 @@ export function MyReviews({
   if (open) {
     return (
       <section className="mine">
+        <button type="button" className="back" onClick={() => setEditing(null)}>
+          {t("ryc.mine.back.list")}
+        </button>
         <h2>{t("ryc.mine.editing", { course: open.course?.code.toUpperCase() ?? "" })}</h2>
         {problem && <p className="error">{t(`ryc.mine.err.${problem}`)}</p>}
         <ReviewForm
@@ -102,7 +127,12 @@ export function MyReviews({
               .editReview(open.id, draft)
               .then(() => {
                 setEditing(null);
-                load();
+                // Back to the first page rather than reloading every page that
+                // had been fetched. The list is ordered by the last change, so
+                // the review just edited is now at the top of it: reloading
+                // from the start lands the person on their own edit, and it is
+                // one request instead of one per page they had opened.
+                load(1);
               })
               .catch(() => setProblem("failed"))
               .finally(() => setSaving(false));
@@ -113,8 +143,16 @@ export function MyReviews({
     );
   }
 
+  const remaining = total - reviews.length;
+
   return (
     <section className="mine">
+      {/* The way out, on this screen as on every other one in the module. It
+          was missing here: the only way off "Mes avis" was the shell's crumb,
+          which goes up to the module list rather than back to the module. */}
+      <button type="button" className="back" onClick={onBack}>
+        {t("ryc.mine.back")}
+      </button>
       <h2>{t("ryc.mine.title")}</h2>
       {/* Said once, at the top, because somebody who published anonymously
           will come here looking for it. FR-C9 is the reason and it is not a
@@ -125,8 +163,18 @@ export function MyReviews({
         <p className="empty">{t("ryc.mine.none")}</p>
       ) : (
         <ul className="mine-list">
-          {reviews.slice(0, shown).map((r) => (
-            <li key={r.id}>
+          {reviews.map((r) => (
+            /*
+              ONE CARD PER REVIEW, not rows separated by a hairline.
+
+              These are several people's paragraphs of prose stacked on top of
+              one another, and a 1px rule between them is not enough to tell
+              where one ends: read at speed, the end of one review and the
+              start of the next run together into a sentence neither person
+              wrote. A card gives each one an edge, and a held review can carry
+              its own without inventing a second layout.
+            */
+            <li key={r.id} className={`mine-card ${r.held ? "mine-held" : ""}`}>
               <div className="mine-head">
                 <button
                   type="button"
@@ -145,7 +193,7 @@ export function MyReviews({
 
               <p className="mine-body">{r.body}</p>
 
-              <p className="meta">
+              <p className="mine-foot meta">
                 {t("ryc.mine.published", { date: when(r.createdAt, locale) })}
                 {/* A reader judging a course by dated feedback has to be able
                     to tell the text changed, so an edit is shown rather than
@@ -174,13 +222,14 @@ export function MyReviews({
         </ul>
       )}
 
-      {reviews.length > shown && (
+      {remaining > 0 && (
         <button
           type="button"
           className="browse-more"
-          onClick={() => setShown(shown + SHOWN_STEP)}
+          disabled={loadingMore}
+          onClick={() => load(page + 1)}
         >
-          {t("ryc.mine.more", { n: reviews.length - shown })}
+          {loadingMore ? t("ryc.loading") : t("ryc.mine.more", { n: remaining })}
         </button>
       )}
     </section>

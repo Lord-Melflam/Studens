@@ -112,14 +112,15 @@ describe("FR-D12: a member sees their own attributed reviews", () => {
     await submitAttributed(memberId, draft(), { client: prisma });
     const mine = await myReviews(memberId, { client: prisma });
 
-    expect(mine).toHaveLength(1);
-    expect(mine[0]!.body).toContain("exigeant");
-    expect(mine[0]!.courseId).toBe(courseId);
+    expect(mine.reviews).toHaveLength(1);
+    expect(mine.total).toBe(1);
+    expect(mine.reviews[0]!.body).toContain("exigeant");
+    expect(mine.reviews[0]!.courseId).toBe(courseId);
   });
 
   dbit("shows nobody else's", async () => {
     await submitAttributed(memberId, draft(), { client: prisma });
-    expect(await myReviews(otherId, { client: prisma })).toHaveLength(0);
+    expect((await myReviews(otherId, { client: prisma })).reviews).toHaveLength(0);
   });
 
   /**
@@ -132,9 +133,97 @@ describe("FR-D12: a member sees their own attributed reviews", () => {
       client: prisma,
     });
 
-    expect(await myReviews(memberId, { client: prisma })).toHaveLength(0);
+    expect((await myReviews(memberId, { client: prisma })).reviews).toHaveLength(0);
     // And it really was written: the absence above is not a failed insert.
     expect(await prisma.reviewAnonymous.count({ where: { courseId } })).toBe(1);
+  });
+});
+
+/**
+ * NFR-O4. A member's own list has no ceiling in the data: nothing stops
+ * somebody reviewing every course of a five year degree, and an alumnus doing
+ * exactly that is the contributor this product wants most.
+ *
+ * WHAT THESE COVER IS THE RESPONSE, NOT THE SCREEN. The first version of this
+ * screen drew twenty-five rows and hid the rest behind a button, while the
+ * query still asked for every row the member had. The screen was bounded and
+ * the response was not, so the number that grew without limit was the one
+ * nobody had capped. These tests are on the kernel for that reason: a cap in
+ * the browser is not a cap.
+ *
+ * The rows are written straight to the table rather than through
+ * `submitAttributed`, because that path spends quota (five per window) and
+ * this is about reading many, not about publishing many.
+ */
+describe("NFR-O4: the list is windowed", () => {
+  /** Twelve years of one course, which the unique key allows. */
+  async function seed(n: number) {
+    for (let i = 0; i < n; i++) {
+      await prisma.reviewAttributed.create({
+        data: {
+          memberId,
+          courseId,
+          academicYear: 2010 + i,
+          recommendation: 3,
+          workloadVsEcts: 3,
+          difficulty: 3,
+          body: `Avis numéro ${i}, assez long pour passer la règle de longueur.`,
+          status: "published",
+        },
+      });
+    }
+  }
+
+  dbit("returns one window and says how many there are", async () => {
+    await seed(12);
+    const first = await myReviews(memberId, { client: prisma, perPage: 10 });
+
+    expect(first.reviews).toHaveLength(10);
+    // The count is of everything, so the screen can say what is left rather
+    // than guessing from a page that is simply full.
+    expect(first.total).toBe(12);
+  });
+
+  dbit("gives the rest on the next page, with nothing repeated and nothing lost", async () => {
+    await seed(12);
+    const first = await myReviews(memberId, { client: prisma, perPage: 10 });
+    const second = await myReviews(memberId, { client: prisma, perPage: 10, page: 2 });
+
+    expect(second.reviews).toHaveLength(2);
+    const ids = [...first.reviews, ...second.reviews].map((r) => r.id);
+    // The pair of assertions that matter: a row on two pages, or on none, is
+    // the defect an unstable sort produces and it is invisible on one page.
+    expect(new Set(ids).size).toBe(12);
+    expect(ids).toHaveLength(12);
+  });
+
+  /**
+   * The caller does not get to ask for everything. A page size read from a
+   * request is the unbounded response written a different way, so the bound
+   * lives in the kernel and a number past it is clamped rather than obeyed.
+   */
+  dbit("clamps a page size nobody should be able to ask for", async () => {
+    await seed(12);
+    const greedy = await myReviews(memberId, { client: prisma, perPage: 10_000 });
+    expect(greedy.reviews.length).toBeLessThanOrEqual(50);
+
+    const zero = await myReviews(memberId, { client: prisma, perPage: 0 });
+    expect(zero.reviews.length).toBeGreaterThan(0);
+
+    const negative = await myReviews(memberId, { client: prisma, page: -3, perPage: 10 });
+    expect(negative.reviews).toHaveLength(10);
+  });
+
+  dbit("counts only this member's, past the end as well as on the first page", async () => {
+    await seed(12);
+    const stranger = await myReviews(otherId, { client: prisma, perPage: 10 });
+    expect(stranger.total).toBe(0);
+
+    const past = await myReviews(memberId, { client: prisma, perPage: 10, page: 9 });
+    expect(past.reviews).toHaveLength(0);
+    // Still honest about the total, so a screen asking past the end does not
+    // conclude the list became empty.
+    expect(past.total).toBe(12);
   });
 });
 
@@ -154,7 +243,7 @@ describe("FR-C14: the author changes what they said", () => {
     expect(after.recommendation).toBe(2);
     // A reader judging a course by dated feedback has to be able to tell the
     // text changed, so the edit is recorded rather than silent.
-    expect(after.updatedAt.getTime()).toBeGreaterThan(before[0]!.createdAt.getTime());
+    expect(after.updatedAt.getTime()).toBeGreaterThan(before.reviews[0]!.createdAt.getTime());
   });
 
   dbit("leaves the course and the year where they were", async () => {
@@ -183,7 +272,7 @@ describe("FR-C14: the author changes what they said", () => {
 
     // And the text is untouched, which is the thing that actually matters.
     const still = await myReviews(memberId, { client: prisma });
-    expect(still[0]!.body).toContain("exigeant");
+    expect(still.reviews[0]!.body).toContain("exigeant");
   });
 
   /**

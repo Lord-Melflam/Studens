@@ -45,6 +45,24 @@ export interface MineOptions {
 }
 
 /**
+ * How many of somebody's own reviews one call carries.
+ *
+ * NFR-O4. This list only grows: a quota bounds how fast somebody publishes,
+ * never how much they have published by their third year, and an alumnus who
+ * reviewed every course they took is the person this product most wants. The
+ * cap used to be in the browser, which bounded the SCREEN and not the
+ * RESPONSE: the row count still arrived in full, so the one number that
+ * actually had to be bounded was the one that was not.
+ */
+export const MINE_PER_PAGE = 10;
+
+export interface MinePage {
+  reviews: MyReview[];
+  /** Every one they have, so the screen can say how many are still unseen. */
+  total: number;
+}
+
+/**
  * FR-D12: everything this member has published under their name.
  *
  * Detached rows are excluded by the `memberId` match itself: deleting an
@@ -54,29 +72,44 @@ export interface MineOptions {
  */
 export async function myReviews(
   memberId: string,
-  opts: MineOptions = {},
-): Promise<MyReview[]> {
+  opts: MineOptions & { page?: number; perPage?: number } = {},
+): Promise<MinePage> {
   const prisma = opts.client ?? new PrismaClient();
+  // Bounded HERE rather than trusted from the caller, for the reason the
+  // course page states: a caller that could ask for ten thousand rows in one
+  // request is the unbounded response this exists to prevent.
+  const perPage = Math.min(50, Math.max(1, Math.floor(opts.perPage ?? MINE_PER_PAGE)));
+  const page = Math.max(1, Math.floor(opts.page ?? 1));
   try {
-    return await prisma.reviewAttributed.findMany({
-      where: { memberId },
-      orderBy: [{ updatedAt: "desc" }],
-      select: {
-        id: true,
-        courseId: true,
-        academicYear: true,
-        recommendation: true,
-        workloadVsEcts: true,
-        difficulty: true,
-        hoursPerWeek: true,
-        passed: true,
-        body: true,
-        advice: true,
-        createdAt: true,
-        updatedAt: true,
-        status: true,
-      },
-    });
+    const [reviews, total] = await Promise.all([
+      prisma.reviewAttributed.findMany({
+        where: { memberId },
+        // `updatedAt` alone is not a total order: two rows written in the same
+        // transaction can share it, and Postgres promises no order between
+        // them, so a row could appear on two pages or on none. `id` breaks the
+        // tie and is unique, which makes the sequence stable across calls.
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        skip: (page - 1) * perPage,
+        take: perPage,
+        select: {
+          id: true,
+          courseId: true,
+          academicYear: true,
+          recommendation: true,
+          workloadVsEcts: true,
+          difficulty: true,
+          hoursPerWeek: true,
+          passed: true,
+          body: true,
+          advice: true,
+          createdAt: true,
+          updatedAt: true,
+          status: true,
+        },
+      }),
+      prisma.reviewAttributed.count({ where: { memberId } }),
+    ]);
+    return { reviews, total };
   } finally {
     if (!opts.client) await prisma.$disconnect();
   }
