@@ -272,7 +272,15 @@ export function reviewRoutes(prisma: PrismaClient): Router {
         })),
       });
     })().catch((err: unknown) => {
-      if (err instanceof NotAuthenticated) return;
+      // ANSWERED, never dropped. `identify` throws and sends nothing, so a
+      // handler that returns here leaves the request open: the browser waits
+      // for a response that will never come, and the screen sits on its
+      // loading line for as long as somebody is willing to look at it. The
+      // submission route already answered 401 here; these two did not.
+      if (err instanceof NotAuthenticated) {
+        res.status(401).json({ error: "sign in required" });
+        return;
+      }
       res.status(500).json({ error: "unavailable" });
     });
   });
@@ -321,7 +329,11 @@ export function reviewRoutes(prisma: PrismaClient): Router {
         throw err;
       }
     })().catch((err: unknown) => {
-      if (err instanceof NotAuthenticated) return;
+      // Answered, never dropped: see the note on the listing route above.
+      if (err instanceof NotAuthenticated) {
+        res.status(401).json({ error: "sign in required" });
+        return;
+      }
       res.status(500).json({ error: "unavailable" });
     });
   });
