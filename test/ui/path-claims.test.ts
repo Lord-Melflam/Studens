@@ -11,14 +11,24 @@
  * request. A comment saying "do not do this" is not a mechanism, and LESSONS.md
  * section 9 records what happens to rules without one. This is the mechanism.
  *
+ * TWO OF THE THREE SHIPPED ON 2026-09-21, so the card may now say them and
+ * this file was updated in that same change, which is the coupling FR-D28
+ * asks for. It refused the new line first, which is what made the update a
+ * deliberate act rather than a thing that quietly stopped mattering.
+ *
+ * DELETION ON REQUEST IS STILL NOT BUILT and stays banned below. It is also
+ * not specified: OPEN-22 answers editing and refuses conversion to anonymous,
+ * and says nothing about an author deleting an attributed review. Until it
+ * does, neither card may offer it.
+ *
  * EVERY ASSERTION RUNS IN EVERY LANGUAGE. Until 2026-09-13 this screen existed
  * only in French, so the test could match French sentences in the rendered
  * output and be complete. Now the screen is translated, and a promise that is
  * true in French and wrong in Dutch is exactly as damaging: the person
  * reading the Dutch is the one making the permanent choice.
  *
- * WHEN FR-C14 AND FR-D12 SHIP, this test is updated in the same change that
- * ships them, and not before. That coupling is the point.
+ * The rule that remains: a capability appears on a card only in the change
+ * that makes it true, never before.
  */
 import { describe, expect, it } from "vitest";
 import { createElement, type ReactNode } from "react";
@@ -76,21 +86,16 @@ function cards(html: string): string {
  */
 const NOT_BUILT: Record<Locale, Array<{ phrase: string; requirement: string }>> = {
   fr: [
-    { phrase: "Mes avis", requirement: "FR-D12" },
-    { phrase: "modifier plus tard", requirement: "FR-C14" },
-    { phrase: "demander sa suppression", requirement: "FR-C14" },
-    { phrase: "modifier votre avis", requirement: "FR-C14" },
+    { phrase: "demander sa suppression", requirement: "OPEN-22, unanswered" },
+    { phrase: "supprimer votre avis", requirement: "OPEN-22, unanswered" },
   ],
   nl: [
-    { phrase: "Mijn beoordelingen", requirement: "FR-D12" },
-    { phrase: "later aanpassen", requirement: "FR-C14" },
-    { phrase: "verwijdering vragen", requirement: "FR-C14" },
+    { phrase: "verwijdering vragen", requirement: "OPEN-22, unanswered" },
+    { phrase: "beoordeling verwijderen", requirement: "OPEN-22, unanswered" },
   ],
   en: [
-    { phrase: "My reviews", requirement: "FR-D12" },
-    { phrase: "edit it later", requirement: "FR-C14" },
-    { phrase: "request its deletion", requirement: "FR-C14" },
-    { phrase: "edit your review", requirement: "FR-C14" },
+    { phrase: "request its deletion", requirement: "OPEN-22, unanswered" },
+    { phrase: "delete your review", requirement: "OPEN-22, unanswered" },
   ],
 };
 
@@ -115,7 +120,13 @@ describe("the decision cards claim only what is true today", () => {
       expect(cards(fork(locale))).toContain(t("ryc.fork.anon.2"));
     });
 
-    it(`mentions the planned edit once, below both cards, not inside either [${locale}]`, () => {
+    /**
+     * The footnote used to say editing was planned. It now says what stays
+     * permanently true instead: editing never reaches the anonymous path.
+     * That belongs below both cards rather than inside either, because it is
+     * a fact about the difference between them.
+     */
+    it(`keeps the permanent asymmetry below both cards, not inside either [${locale}]`, () => {
       const html = fork(locale);
       const note = t("ryc.fork.note");
       expect(note, "the footnote must exist in this language").not.toBe("ryc.fork.note");
@@ -124,6 +135,15 @@ describe("the decision cards claim only what is true today", () => {
       const probe = note.split(/[.:]/)[0]!.split(" ").slice(-3).join(" ");
       expect(html).toContain(probe);
       expect(cards(html)).not.toContain(probe);
+    });
+
+    /**
+     * And the capability that DID ship is on the named card, which is the
+     * other half of FR-D28: the fork may state a real difference between the
+     * paths, and editing is now one.
+     */
+    it(`offers the editing that now exists, on the named card [${locale}]`, () => {
+      expect(cards(fork(locale))).toContain(t("ryc.fork.named.4"));
     });
 
     it(`shows the counts FR-C21 requires before the choice [${locale}]`, () => {

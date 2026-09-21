@@ -30,6 +30,15 @@ export {
   type Path,
 } from "./read.js";
 
+/** FR-D12 and FR-C14: a member's own attributed reviews, and editing one. */
+export {
+  myReviews,
+  editAttributed,
+  type MyReview,
+  type ReviewEdit,
+  type MineOptions,
+} from "./mine.js";
+
 /** FR-A15 and OPEN-46: what this module does when a Member leaves. */
 export {
   RYC_MODULE,

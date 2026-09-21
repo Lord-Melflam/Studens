@@ -160,6 +160,31 @@ export interface ReviewDraft {
   completed: boolean;
 }
 
+/**
+ * One of a member's own reviews (FR-D12).
+ *
+ * `course` is resolved by the API, not by the module: RYC stores course ids
+ * and may not read the catalogue itself (FR-B11), so the two are joined at
+ * the composition layer. Null where the course has since gone.
+ */
+export interface MyReview {
+  id: string;
+  academicYear: number;
+  recommendation: number;
+  workloadVsEcts: number;
+  difficulty: number;
+  hoursPerWeek: number | null;
+  passed: boolean | null;
+  body: string;
+  advice: string | null;
+  createdAt: string;
+  /** Equal to createdAt until it has been edited. */
+  updatedAt: string;
+  /** A moderator took it out of view. It is still yours and still editable. */
+  held: boolean;
+  course: { institution: string; code: string; title: string } | null;
+}
+
 /** FR-D8, mirrored so the character counter agrees with the server as you type.
     Pinned to the server's value by a test, because a counter that disagrees
     tells somebody their review is fine and then the save refuses it. */
@@ -344,4 +369,18 @@ export const api = {
       `/api/courses/${encodeURIComponent(institution)}/${encodeURIComponent(code)}/review-context`,
     ),
   submitReview: submit,
+
+  /**
+   * FR-D12. There is no anonymous counterpart and there cannot be: that table
+   * holds no member column, so no request can ask for "mine".
+   */
+  myReviews: () => json<{ reviews: MyReview[] }>("/api/reviews/mine"),
+
+  /** FR-C14. PATCH on the review, because this replaces one rather than adding one. */
+  editReview: (id: string, draft: ReviewDraft) =>
+    json<{ id: string; updatedAt: string }>(`/api/reviews/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(draft),
+    }),
 };

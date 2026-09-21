@@ -18,7 +18,7 @@
  * Derived on every render rather than copied into state, because a copy is
  * exactly the thing that falls out of step with the address bar.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useT } from "@studens/i18n";
 import type { CourseSummary } from "./api.js";
 import { CourseList } from "./CourseList.js";
@@ -37,6 +37,9 @@ import {
   type CourseFilter,
 } from "./filters.js";
 import { queryOf, settingsRoute } from "./urlstate.js";
+
+/** Rows drawn before the reader asks for more. About a screenful. */
+const DRAWN_STEP = 25;
 
 export function CourseFilters({
   courses,
@@ -101,6 +104,26 @@ export function CourseFilters({
   );
 
   if (courses.length === 0) return <p className="meta">{emptyLabel}</p>;
+
+  /**
+   * HOW MANY ROWS ARE DRAWN, and it is not the same question as how many the
+   * server sent.
+   *
+   * This component draws two different lists: search results, which the
+   * server already windows, and a programme's courses, which it does not.
+   * `gest2m` has 349, measured 2026-09-21, and every one of them was being
+   * rendered. NFR-O4: a list that can grow gets a strategy when it is
+   * written, and the cheapest correct one is to draw a screenful and let the
+   * reader ask for more.
+   *
+   * Local rather than in the address, because it is a rendering budget rather
+   * than a description of what is on screen: the filters and the query, which
+   * ARE that, stay in the URL.
+   */
+  const [drawn, setDrawn] = useState(DRAWN_STEP);
+  const visible = shown.slice(0, drawn);
+  /** More to draw from what is already here, before asking the server. */
+  const moreLocally = shown.length > drawn;
 
   return (
     <>
@@ -204,7 +227,7 @@ export function CourseFilters({
         // be a two column grid, and a section per term would be laid out one
         // per column.
         <div className="browse-list">
-          {groupByTerm(shown).map(([term, rows]) => (
+          {groupByTerm(visible).map(([term, rows]) => (
           <section className="term-group" key={String(term)}>
             {term !== null && (
               <h3 className="term-group-title">
@@ -227,10 +250,29 @@ export function CourseFilters({
             how many are left so the number itself suggests filtering when it
             is large.
           */}
-          {onShowMore && matched !== undefined && matched > courses.length && (
-            <button type="button" className="browse-more" onClick={onShowMore}>
-              {t("ryc.filter.more", { n: matched - courses.length })}
+          {/*
+            ONE BUTTON, TWO SOURCES. While there are rows here that are not
+            drawn, it draws them. Once they are all drawn and the server says
+            it holds more, it asks the server. A reader does not need to know
+            which of the two is happening, and splitting it into two controls
+            would make them learn.
+          */}
+          {moreLocally ? (
+            <button
+              type="button"
+              className="browse-more"
+              onClick={() => setDrawn(drawn + DRAWN_STEP)}
+            >
+              {t("ryc.filter.more", { n: shown.length - drawn })}
             </button>
+          ) : (
+            onShowMore &&
+            matched !== undefined &&
+            matched > courses.length && (
+              <button type="button" className="browse-more" onClick={onShowMore}>
+                {t("ryc.filter.more", { n: matched - courses.length })}
+              </button>
+            )
           )}
         </div>
       )}

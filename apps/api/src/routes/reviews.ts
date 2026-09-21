@@ -11,6 +11,8 @@ import { QuotaExceeded, quotaRemaining, readNumberSetting, usernamesFor } from "
 import {
   REVIEWS_PER_PAGE,
   ReviewInvalid,
+  editAttributed,
+  myReviews,
   reviewsFor,
   submitAnonymous,
   submitAttributed,
@@ -103,6 +105,36 @@ export function reviewRoutes(prisma: PrismaClient): Router {
     });
 
   /**
+   * Course ids to something a person can read, for the list of a member's own
+   * reviews. The module stores ids and may not read the catalogue itself
+   * (FR-B11), so the join happens here, where both are in scope.
+   */
+  const coursesByIds = async (client: PrismaClient, ids: string[]) => {
+    if (ids.length === 0) return new Map<string, { institution: string; code: string; title: string }>();
+    const rows = await client.course.findMany({
+      where: { id: { in: [...new Set(ids)] } },
+      select: {
+        id: true,
+        code: true,
+        institution: { select: { code: true } },
+        // The most recent description carries the title somebody would
+        // recognise. A course with no offering at all still gets its code.
+        offerings: { orderBy: { year: "desc" }, take: 1, select: { title: true } },
+      },
+    });
+    return new Map(
+      rows.map((r) => [
+        r.id,
+        {
+          institution: r.institution.code,
+          code: r.code,
+          title: r.offerings[0]?.title ?? r.code.toUpperCase(),
+        },
+      ]),
+    );
+  };
+
+  /**
    * FR-C21: the counts a contributor needs BEFORE choosing a path.
    *
    * Both numbers are already public on the course page, so this discloses
@@ -177,6 +209,97 @@ export function reviewRoutes(prisma: PrismaClient): Router {
       }
       res.json({ aggregate, reviews, sessionRequired: false, page, pages, total });
     })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
+   * FR-D12: everything this member published under their name.
+   *
+   * A course label comes with each row, because a review means nothing
+   * without the course it is about and the module holds the ids, not the
+   * titles. Resolved here rather than in the kernel: `@studens/ryc` may not
+   * read the catalogue (FR-B11), so the two are joined at the composition
+   * layer, which is what this file is.
+   *
+   * THERE IS NO ANONYMOUS COUNTERPART AND THERE CANNOT BE. That table holds
+   * no member column (FR-C20), so nothing can answer "which of these is
+   * mine" for anybody, including the author. FR-C9 is that absence.
+   */
+  router.get("/reviews/mine", (req, res) => {
+    void (async () => {
+      const who = await identify(prisma, req, res);
+      const rows = await myReviews(who.memberId, { client: prisma });
+      const courses = await coursesByIds(prisma, rows.map((r) => r.courseId));
+      res.json({
+        reviews: rows.map((r) => ({
+          id: r.id,
+          academicYear: r.academicYear,
+          recommendation: r.recommendation,
+          workloadVsEcts: r.workloadVsEcts,
+          difficulty: r.difficulty,
+          hoursPerWeek: r.hoursPerWeek,
+          passed: r.passed,
+          body: r.body,
+          advice: r.advice,
+          createdAt: r.createdAt.toISOString(),
+          updatedAt: r.updatedAt.toISOString(),
+          /** Said plainly, because a held review looks missing otherwise. */
+          held: r.status !== "published",
+          course: courses.get(r.courseId) ?? null,
+        })),
+      });
+    })().catch((err: unknown) => {
+      if (err instanceof NotAuthenticated) return;
+      res.status(500).json({ error: "unavailable" });
+    });
+  });
+
+  /**
+   * FR-C14: the author changes what they said.
+   *
+   * PATCH on the review rather than a second POST to the course, because
+   * this replaces one contribution rather than adding one, and the
+   * difference is what keeps the quota and the one-per-course rule honest.
+   *
+   * The member is taken from the session and passed to the kernel, which
+   * scopes its query by it. An id belonging to somebody else matches no row
+   * and comes back as the same refusal as an id that does not exist, so the
+   * endpoint cannot be used to learn which review ids are real.
+   */
+  router.patch("/reviews/:id", (req, res) => {
+    void (async () => {
+      const who = await identify(prisma, req, res);
+      const body = req.body as Partial<ReviewInput>;
+      try {
+        const updated = await editAttributed(
+          who.memberId,
+          String(req.params.id),
+          {
+            recommendation: Number(body.recommendation),
+            workloadVsEcts: Number(body.workloadVsEcts),
+            difficulty: Number(body.difficulty),
+            hoursPerWeek:
+              body.hoursPerWeek === undefined || body.hoursPerWeek === null
+                ? undefined
+                : Number(body.hoursPerWeek),
+            passed: typeof body.passed === "boolean" ? body.passed : undefined,
+            body: String(body.body ?? ""),
+            advice: body.advice ? String(body.advice) : undefined,
+            completed: body.completed === true,
+          },
+          { client: prisma },
+        );
+        res.json({ id: updated.id, updatedAt: updated.updatedAt.toISOString() });
+      } catch (err) {
+        if (err instanceof ReviewInvalid) {
+          res.status(400).json({ error: "invalid", field: err.field });
+          return;
+        }
+        throw err;
+      }
+    })().catch((err: unknown) => {
+      if (err instanceof NotAuthenticated) return;
+      res.status(500).json({ error: "unavailable" });
+    });
   });
 
   router.post("/courses/:institution/:code/reviews", (req, res) => {

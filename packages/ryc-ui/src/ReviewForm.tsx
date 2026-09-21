@@ -77,6 +77,7 @@ export function ReviewForm({
   onCancel,
   onReady,
   initial,
+  editing = false,
 }: {
   courseCode: string;
   /**
@@ -89,6 +90,20 @@ export function ReviewForm({
   onReady: (draft: ReviewDraft) => void;
   /** Carried back when someone returns from the fork to change something. */
   initial?: ReviewDraft | null;
+  /**
+   * CHANGING A REVIEW THAT IS ALREADY PUBLISHED (FR-C14), rather than writing
+   * a new one. The fields and every rule about them are identical, which is
+   * why this is a flag on one form and not a second form: two forms would be
+   * two places for the length rule, the scale bounds and the completion
+   * checkbox to drift apart.
+   *
+   * What it changes is the frame around them. The step indicator counts
+   * towards a choice of path that an edit does not make: the path was chosen
+   * when the review was published and FR-C14 cannot move it, since converting
+   * an attributed review to anonymous is refused (OPEN-22). The year is fixed
+   * for the same reason the kernel fixes it: it identifies the contribution.
+   */
+  editing?: boolean;
 }) {
   const t: Translate = useT();
   const years = yearOptions();
@@ -149,7 +164,7 @@ export function ReviewForm({
 
   return (
     <form className="review-form" onSubmit={submit} noValidate>
-      <Steps current="form" />
+      {!editing && <Steps current="form" />}
       <button type="button" className="back" onClick={leave}>
         {t("ryc.form.back")}
       </button>
@@ -179,7 +194,15 @@ export function ReviewForm({
 
       <label className="picker">
         {t("ryc.form.year")}
-        <select value={academicYear} onChange={(e) => setAcademicYear(Number(e.target.value))}>
+        {/* Fixed while editing, and shown rather than hidden so the review
+            still says which year it is about. The kernel refuses to move it:
+            (member, course, year) is unique, so an edit that changed the year
+            would meet a constraint violation the person could not act on. */}
+        <select
+          value={academicYear}
+          disabled={editing}
+          onChange={(e) => setAcademicYear(Number(e.target.value))}
+        >
           {years.map((y) => (
             <option key={y} value={y}>
               {y}-{y + 1}
