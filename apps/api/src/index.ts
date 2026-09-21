@@ -32,6 +32,13 @@ export const process_role = "web" as const;
  */
 export { looksLikeAFile, mountWebApp, webRoot } from "./web.js";
 
+/**
+ * The review routes, exported for test/api/signed-out.db.test.ts. That test
+ * mounts them on a real socket to check that a request with no session is
+ * answered rather than left open, which is a thing only HTTP can show.
+ */
+export { reviewRoutes } from "./routes/reviews.js";
+
 export interface AppSource {
   /** Set to read a snapshot file instead of the database. */
   snapshotPath?: string;
