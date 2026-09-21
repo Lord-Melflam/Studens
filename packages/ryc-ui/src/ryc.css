@@ -356,12 +356,75 @@ button.ghost {
 .denominator { margin: 0.6rem 0 0; font-size: 0.85rem; color: var(--muted); }
 
 /* --- one review */
-.review { padding: 1rem 0; border-top: 1px solid var(--line); }
+/* ONE BOX PER REVIEW, not rows divided by a hairline.
+
+   These are several people's paragraphs stacked on one another, and a 1px rule
+   between them is not enough to say where one ends. Read at speed, the last
+   sentence of one review and the first of the next run together into a
+   sentence neither person wrote, and the reader attributes both to whoever the
+   nearest name happens to be. An edge fixes it, and it costs nothing else on
+   screen.
+
+   NO PATH COLOUR ON THE BOX. --named and --anon stay on the chips (see the two
+   rules at the top of this section): a card tinted by path would put the
+   attributed and the anonymous halves on different visual footing across a
+   whole page, and the second rule there exists to stop exactly that. */
+.review {
+  padding: 1rem 1.1rem;
+  margin-top: 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
 .review header { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .review-year { font-size: 0.8rem; color: var(--muted); }
 .review-scores { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .review-body { margin: 0.6rem 0 0; white-space: pre-wrap; }
 .review-advice { margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--muted); }
+
+/* --- FR-D12, a member's own reviews
+
+   THIS SCREEN SHIPPED WITH NO STYLES AT ALL. Every class it renders was
+   invented in the component and none of them existed here, so it drew as a
+   wall of unbroken prose: no box, no spacing, nothing to say where one review
+   stopped. The layout below is the card above, with the controls a list of
+   your own things needs and a course page does not. */
+.mine h2 { margin: 0 0 0.4rem; font-size: 1.25rem; }
+.mine .hint { margin: 0 0 1.5rem; }
+.mine-list { margin: 0; padding: 0; list-style: none; }
+
+.mine-card {
+  padding: 1rem 1.1rem;
+  margin-bottom: 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+/* A review a moderator took out of view. Marked on the box as well as in the
+   footer, because the footer is the last line somebody reads and this is the
+   one thing on the card they may need to act on. --warn rather than --danger:
+   it is a state, not an accusation, and the text may well come back. */
+.mine-held { border-left: 3px solid var(--warn); }
+
+.mine-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.mine-head .linkish { text-align: left; }
+.mine-body {
+  margin: 0.6rem 0 0;
+  white-space: pre-wrap;
+  /* A review is free text, so it can contain a URL or a run of characters with
+     no space in it. Without this the card grows wider than the phone it is on
+     and takes the whole page sideways with it. */
+  overflow-wrap: anywhere;
+}
+.mine-foot { margin: 0.6rem 0 0.75rem; font-size: 0.8rem; }
+.mine .back { display: block; }
 
 /* --- the form */
 .review-form h3, .fork h3, .confirm h3, .sent h3 { margin: 0 0 0.3rem; font-size: 1.2rem; }

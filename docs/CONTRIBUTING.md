@@ -245,6 +245,11 @@ update this test in the same change, not before.
 *attributed* and *anonymous* out of the themeable palette. A per-institution
 theme is planned and must never be able to make the two paths look alike.
 
+`test/architecture/styled.test.ts` fails when a component renders a class name
+that no stylesheet defines. A screen shipped with six such names and drew as an
+unbroken wall of text; nothing else in the toolchain treats that as an error. A
+class with no visual job goes on the list inside that file, with the reason.
+
 `test/ryc/validate.test.ts` covers what a review must be before either path will
 take it. The rules are shared deliberately (FR-C6): a lower bar on the anonymous
 path would itself be a signal.

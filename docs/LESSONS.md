@@ -696,3 +696,41 @@ wins across eight hundred lines is exactly the thing a picture answers in a
 second, and this repeats section 6's rule from the other direction: measure the
 document when the question is layout, look at the render when the question is
 which rule applied.
+
+### And a fourth time, where no rule had been written at all
+
+"Mes avis" shipped with six class names and not one rule for any of them.
+`.mine`, `.mine-list`, `.mine-head`, `.mine-body` and the rest were invented in
+the component and never written into a stylesheet, so the screen drew as an
+unbroken column of prose with nothing to say where one review ended and the next
+began. It reached somebody using the product, who reported it as reviews being
+hard to tell apart.
+
+Nothing failed. The build was clean, every test passed, the bundle contained the
+markup and the browser rendered it exactly as asked. An unstyled class is not an
+error in any language involved: TypeScript sees a string, the bundler sees a
+string, CSS sees a selector nobody wrote. The only thing that catches it is
+looking at the page, and looking at the page is what does not happen on the
+fourth screen of an evening.
+
+The same day, the course page reviews were reported for the same reason. Those
+had rules, and the rules were wrong for the job: one hairline between each
+review, which is enough to separate table rows and not enough to separate
+paragraphs somebody wrote. Read at speed, the last sentence of one review and
+the first of the next run together into a sentence neither person wrote, and the
+reader attributes both to whichever name is nearest. Both now sit in their own
+box.
+
+`test/architecture/styled.test.ts` reads the class names out of the JSX and
+fails when one has no rule in any stylesheet the app loads. It carries a list of
+names excused from it, each with the reason it has no visual job, and a second
+test that drops a name from that list the moment it gains a rule or leaves the
+markup. Writing the list was worth as much as the gate: it found four named
+wrappers doing nothing and one class name that no component had rendered for
+some time.
+
+**The pattern, across all four.** Three of these were a rule losing to another
+rule and one was a rule that did not exist, and on screen they are
+indistinguishable. Nothing about "the style is missing" narrows down which of
+the two it is, so the answer both times is to make the absence fail a build
+rather than to be more careful.

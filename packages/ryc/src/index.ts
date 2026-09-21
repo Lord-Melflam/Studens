@@ -34,7 +34,9 @@ export {
 export {
   myReviews,
   editAttributed,
+  MINE_PER_PAGE,
   type MyReview,
+  type MinePage,
   type ReviewEdit,
   type MineOptions,
 } from "./mine.js";

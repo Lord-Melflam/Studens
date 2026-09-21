@@ -13,6 +13,7 @@ import {
   ReviewInvalid,
   editAttributed,
   myReviews,
+  MINE_PER_PAGE,
   reviewsFor,
   submitAnonymous,
   submitAttributed,
@@ -227,9 +228,32 @@ export function reviewRoutes(prisma: PrismaClient): Router {
   router.get("/reviews/mine", (req, res) => {
     void (async () => {
       const who = await identify(prisma, req, res);
-      const rows = await myReviews(who.memberId, { client: prisma });
+      // `?page=` and nothing else, the same shape the course page uses and for
+      // the same reason: the SIZE of a page is the module's constant, so no
+      // caller can ask for every row at once. The administrator's setting is
+      // shared with the course page deliberately. The quantity being bounded
+      // is the same one (how many review bodies a single response carries) and
+      // the reason to change it is the same (the screen is too long, or too
+      // short to be worth the press). A second setting would need its own
+      // explanation on a form for a difference nobody outside this file can
+      // see. Accepted cost: the two screens cannot be tuned apart. Evidence
+      // that they want different numbers would change the answer.
+      const asked = Number.parseInt(String(req.query["page"] ?? "1"), 10);
+      const perPage = await readNumberSetting(prisma, "ryc.reviewsPerPage", {
+        fallback: MINE_PER_PAGE,
+        min: 3,
+        max: 50,
+      });
+      const { reviews: rows, total } = await myReviews(who.memberId, {
+        client: prisma,
+        page: Number.isFinite(asked) ? asked : 1,
+        perPage,
+      });
       const courses = await coursesByIds(prisma, rows.map((r) => r.courseId));
       res.json({
+        page: Number.isFinite(asked) && asked > 1 ? asked : 1,
+        pages: Math.max(1, Math.ceil(total / perPage)),
+        total,
         reviews: rows.map((r) => ({
           id: r.id,
           academicYear: r.academicYear,

@@ -374,7 +374,10 @@ export const api = {
    * FR-D12. There is no anonymous counterpart and there cannot be: that table
    * holds no member column, so no request can ask for "mine".
    */
-  myReviews: () => json<{ reviews: MyReview[] }>("/api/reviews/mine"),
+  myReviews: (page = 1) =>
+    json<{ reviews: MyReview[]; page: number; pages: number; total: number }>(
+      `/api/reviews/mine?page=${page}`,
+    ),
 
   /** FR-C14. PATCH on the review, because this replaces one rather than adding one. */
   editReview: (id: string, draft: ReviewDraft) =>

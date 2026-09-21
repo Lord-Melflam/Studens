@@ -376,6 +376,7 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
     return (
       <MyReviews
         onOpenCourse={(institution, code) => navigate(coursePath(institution, code))}
+        onBack={() => navigate("/")}
       />
     );
   }
