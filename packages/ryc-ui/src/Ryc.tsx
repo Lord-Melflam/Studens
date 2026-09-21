@@ -89,6 +89,7 @@ export function openSectionsQuery(open: readonly string[]): URLSearchParams {
 import { CoursePage } from "./CoursePage.js";
 import { CourseFilters } from "./CourseFilters.js";
 import { Browse } from "./Browse.js";
+import { MyReviews } from "./MyReviews.js";
 
 /**
  * What the path inside the module means. Parsed in one place.
@@ -110,6 +111,7 @@ export type RycView =
   | { kind: "programme"; institution: string; code: string }
   | { kind: "legacyProgramme"; code: string }
   | { kind: "search" }
+  | { kind: "mine" }
   | { kind: "course"; institution: string; code: string; writing: boolean }
   | { kind: "legacyCourse"; code: string; writing: boolean };
 
@@ -117,6 +119,9 @@ export function parseView(path: string): RycView {
   const parts = path.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
   const lower = (i: number): string => (parts[i] ?? "").toLowerCase();
   if (parts[0] === "recherche") return { kind: "search" };
+  // FR-D12. French and short like every other slug this module puts in a
+  // path, because the address is read by people.
+  if (parts[0] === "mes-avis") return { kind: "mine" };
   if (parts[0] === "p" && parts[1] && parts[2]) {
     return { kind: "programme", institution: lower(1), code: lower(2) };
   }
@@ -367,6 +372,14 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
     return () => clearTimeout(timer);
   }, [query, mine, scopeKnown, window]);
 
+  if (view.kind === "mine") {
+    return (
+      <MyReviews
+        onOpenCourse={(institution, code) => navigate(coursePath(institution, code))}
+      />
+    );
+  }
+
   if (view.kind === "legacyCourse") {
     // Still asking, or forwarding. Nothing to say yet.
     if (ambiguous === null) return <p className="meta">{t("ryc.loading")}</p>;
@@ -432,6 +445,28 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
         >
           {t("ryc.tab.search")}
         </button>
+        {/* FR-D12. A third destination rather than a link buried in the
+            account screen: the shell may not name what a module owns
+            (FR-B16), and "my reviews" is this module's word. Offered only to
+            somebody signed in, because it can only ever be empty otherwise. */}
+        {/*
+            SIGNED IN IS INFERRED, and this is the honest version of it. The
+            shell tells a module its path and its query string and nothing
+            about the session (ModuleProps), so the only signal here is that
+            `/api/me/institutions` answered rather than 401'd, which is what
+            leaves `mine` non-null. It is indirect, and it is better than
+            offering a destination that can only answer 401. If a module ever
+            needs the session for a second reason, the right fix is to pass it
+            rather than to infer it twice.
+
+            Never marked current: this branch renders only for the views that
+            are not "mine", because that one returns earlier.
+        */}
+        {mine !== null && (
+          <button type="button" onClick={() => navigate("/mes-avis")}>
+            {t("ryc.tab.mine")}
+          </button>
+        )}
       </nav>
 
       {/* The two tabs did not say what they were FOR, and the difference is

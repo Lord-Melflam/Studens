@@ -290,6 +290,34 @@ and two cases had silently decayed to plain `"ab"`.
 screen that lies about it. When something claims a thing happened, has happened,
 or will happen, that claim is what needs the test.
 
+## Anything that can grow
+
+NFR-O4, and it is part of MEA rather than a performance concern.
+
+**If the number of things in it is not fixed by construction, the change that
+introduces it says how it behaves at ten times the size, and does something
+about it then.** Lists, pages, tables, queries, files, queues. Not the change
+that discovers it hurts: that one always arrives at the worst moment, when
+somebody is finally using the thing.
+
+The failures this comes from were all legibility before they were ever speed:
+
+- the programme list rendered 976 rows as a 143,112 pixel page, 176 phone
+  screens;
+- search reported "25 cours sur 25" because 25 was the window and 456 matched;
+- one programme, `gest2m`, drew 349 courses;
+- the suspension register and the appointment list only ever grow.
+
+Each looked fine at the size it was written for, which is the whole trap.
+
+**The cheap answer is almost always the right one:** draw a screenful, say how
+many are left, offer the rest. Put the position in the address when the list is
+something one person can send to another (FR-B21), and keep it in component
+state when it is nobody's but the viewer's.
+
+**What this costs**, stated so nobody has to rediscover it: a control and a
+decision on every list, including ones that will never be large.
+
 ## Adding a test that touches the database
 
 Vitest runs test **files** in parallel against one database, so a file owns its

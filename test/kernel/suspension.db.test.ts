@@ -88,8 +88,22 @@ async function member(
   });
 }
 
+/**
+ * ORDERED EXPLICITLY, because the assertion below is about a sequence.
+ *
+ * This read had no `orderBy`, and Postgres promises no row order without one.
+ * It returned insertion order almost always, and occasionally not: the suite
+ * failed twice in full parallel runs on 2026-09-20 and 2026-09-21, passed
+ * alone every time, and passed in three consecutive full runs in between. A
+ * test that depends on an order the database never promised is a test that
+ * fails on whichever day the plan changes, and it blames whoever happened to
+ * add an unrelated file.
+ */
 async function outboxFor(address: string) {
-  return await prisma.mailOutbox.findMany({ where: { toAddress: address } });
+  return await prisma.mailOutbox.findMany({
+    where: { toAddress: address },
+    orderBy: { createdAt: "asc" },
+  });
 }
 
 describe("suspending an account tells the person", () => {

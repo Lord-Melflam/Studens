@@ -27,6 +27,20 @@ Hard rule 8. Four things, one line each is enough:
    and it should be marked [OPEN] instead.)
 -->
 
+## Anything that can grow (NFR-O4)
+
+- [ ] Every list, page, table, query, file and queue this change adds or
+      touches has a bound, a page or a step, **or** its size is fixed by
+      construction and I can say why in one line.
+
+<!--
+This is not about speed. The failures were legibility first: 976 programmes as
+a 143,112 pixel page, "25 of 25" because 25 was the window, 349 courses in one
+programme, a register that only grows. Every one looked fine at the size it
+was written for. The cheap answer is almost always right: draw a screenful,
+offer the rest.
+-->
+
 ## Gates
 
 - [ ] `npm run gates` passes locally

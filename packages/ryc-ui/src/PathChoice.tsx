@@ -108,6 +108,12 @@ export function PathChoice({
             <li>{t("ryc.fork.named.1")}</li>
             <li>{t("ryc.fork.named.2")}</li>
             <li>{t("ryc.fork.named.3")}</li>
+            {/* FR-D28: this may be said here now, and could not be before.
+                Editing (FR-C14) and "Mes avis" (FR-D12) ship in the same
+                change as this line, which is the coupling that requirement
+                asks for. Deletion on request is still not built and is still
+                absent from both cards. */}
+            <li>{t("ryc.fork.named.4")}</li>
           </ul>
           <button type="button" className="primary named" onClick={onNamed} disabled={busy}>
             {t("ryc.fork.named.cta")}
