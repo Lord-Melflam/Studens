@@ -23,6 +23,7 @@ import express from "express";
 import { createServer, type Server } from "node:http";
 import { PrismaClient } from "@prisma/client";
 import { reviewRoutes } from "@studens/api";
+import { FIXTURE_INSTITUTION, upsertCourse } from "../fixtures/catalogue.js";
 
 const prisma = new PrismaClient();
 let reachable = false;
@@ -46,8 +47,20 @@ const dbit = reachable ? it : it.skip;
 let origin = "";
 let server: Server | undefined;
 
+/**
+ * A course this file makes and removes.
+ *
+ * The first version of these tests named a real scraped course, which existed
+ * on the machine they were written on and on no other. CI migrates the schema
+ * and scrapes nothing, so the route answered 404 and the public case failed
+ * for a reason that had nothing to do with what it tests. A test owns the rows
+ * it reads.
+ */
+const COURSE = "ztst.sout.course";
+
 beforeAll(async () => {
   if (!reachable) return;
+  await upsertCourse(prisma, COURSE);
   const app = express();
   app.use("/api", reviewRoutes(prisma));
   server = createServer(app);
@@ -61,6 +74,9 @@ afterAll(async () => {
     if (!server) return resolve();
     server.close(() => resolve());
   });
+  if (reachable) {
+    await prisma.course.deleteMany({ where: { code: { startsWith: "ztst.sout" } } });
+  }
   await prisma.$disconnect();
 });
 
@@ -97,7 +113,7 @@ const BEHIND_A_SESSION: Array<[string, string, RequestInit?]> = [
   ],
   [
     "POST",
-    "/api/courses/uclouvain/lepl1503/reviews",
+    `/api/courses/${FIXTURE_INSTITUTION}/${COURSE}/reviews`,
     {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -125,7 +141,7 @@ describe("signed out, the review endpoints refuse rather than hang", () => {
    * course page is public, the review bodies are not.
    */
   dbit("but a course's aggregate is still public", async () => {
-    const res = await probe("/api/courses/uclouvain/lepl1503/reviews");
+    const res = await probe(`/api/courses/${FIXTURE_INSTITUTION}/${COURSE}/reviews`);
     expect(res.status).toBe(200);
     const body = (await res.json()) as { sessionRequired: boolean; reviews: unknown[] };
     expect(body.sessionRequired).toBe(true);
