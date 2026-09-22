@@ -732,13 +732,21 @@ rather than a procedure:
 
 ## The design documents
 
-Two are LaTeX and produce PDFs, which are gitignored: build them yourself.
+Three LaTeX sources under `docs/typeset/`, producing PDFs that are gitignored:
+build them yourself. They share one preamble, `studens-preamble.tex`, so the
+palette and the diagram styles exist once.
 
 ```bash
-cd docs/design
-xelatex frontend-design.tex && xelatex frontend-design.tex   # twice, for the contents
+cd docs/typeset
+xelatex stack-overview.tex  && xelatex stack-overview.tex    # twice, for the contents
+xelatex frontend-design.tex && xelatex frontend-design.tex
 xelatex backend-design.tex  && xelatex backend-design.tex
 ```
+
+`stack-overview.tex` is the one to hand somebody who asks what the stack is: it
+names every dependency, says what was deliberately left out and why, and walks
+the five pipelines (a request, a review, the catalogue, mail, and the build)
+end to end. The other two go deeper on one half each.
 
 The logos those documents reference are fetched, never committed:
 
