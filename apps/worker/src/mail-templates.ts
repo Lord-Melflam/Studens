@@ -13,11 +13,20 @@
  *
  * It was plain text alone until 2026-09-19, on the reasoning that styling is
  * stripped by half the clients that matter and that a text-only message has
- * nowhere to put a tracking pixel. The second half still holds and is still
- * enforced, by tests: no image, no remote asset, no stylesheet. What changed
- * is the first half. A bare wall of text from an address nobody recognises is
- * the shape of a phishing mail, and for somebody whose account was suspended
- * that message may be the only notice they get.
+ * nowhere to put a tracking pixel. What changed first was the styling: a bare
+ * wall of text from an address nobody recognises is itself the shape of a
+ * phishing mail, and for somebody whose account was suspended that message may
+ * be the only notice they get.
+ *
+ * SINCE 2026-09-22 THERE IS ONE IMAGE, the mark, at the end. The rule it has
+ * to respect was sharpened rather than dropped, because "no image" was never
+ * the property anybody wanted: the property is that opening a message asks
+ * nobody for anything. A REMOTE image is a read receipt whether or not it was
+ * meant as one, reporting the time, the address and roughly the place. This
+ * one is attached to the message and referenced by `cid:`, so it is already in
+ * the client before the message is opened. The tests enforce "nothing remote",
+ * which is stronger than the old rule and is the one that was meant. No
+ * stylesheet, no `@import`, no `url()`, and every `src` must be a `cid:`.
  *
  * THE LIFETIME IS STATED IN THREE PLACES AND MUST AGREE. These three templates
  * say how long the confirmation link lasts, and `CONFIRM_MAX_AGE_SECONDS`

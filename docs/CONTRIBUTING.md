@@ -364,9 +364,17 @@ docs/
   COMMANDS.md      what to type
   design/          one markdown note per decision, nothing else
   typeset/         the LaTeX documents and their (ignored) build output
+brand/             the mark, and the files derived from it for outside the app
 scripts/           things run by hand, not by the application
 test/              mirrors the source tree it tests
 ```
+
+`brand/` is the one directory added to the root since this list was written,
+and it earns the place under rule 1 below: it holds a single kind of thing, and
+it is read from two places with nothing in common, the worker that puts the
+mark in outgoing mail and a person setting a picture on an account somewhere
+else. `apps/web/src/Brand.tsx` stays the source of truth and a test keeps the
+derivations identical to it.
 
 Three rules, and they are cheap to keep and expensive to recover:
 

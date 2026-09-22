@@ -25,3 +25,4 @@ export { TEMPLATED_KINDS, renderMail } from "./mail-templates.js";
 
 /** How a rendered message becomes something a server accepts, for its tests. */
 export { encodeHeader, mimeMessage, textToHtml } from "./mime.js";
+export { LOGO_BASE64, LOGO_CID, LOGO_NAME, LOGO_TYPE } from "./logo.js";
