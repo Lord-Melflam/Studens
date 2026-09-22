@@ -27,6 +27,7 @@ import { mailRelayConfigured } from "@studens/platform";
 import { loadDotEnv } from "./env.js";
 import { renderMail } from "./mail-templates.js";
 import { mimeMessage } from "./mime.js";
+import { LOGO_BASE64, LOGO_CID, LOGO_NAME, LOGO_TYPE } from "./logo.js";
 
 const BATCH = 25;
 /** After this many failures a row is left alone, to be looked at by a person. */
@@ -140,7 +141,14 @@ async function deliver(r: Relay, to: string, subject: string, body: string): Pro
     // sockets and is therefore testable without one. Everything that used to
     // be assembled inline here, including a subject written raw into a header
     // that may only hold ASCII, lives there now.
-    const message = mimeMessage({ from: r.from, to, subject, body });
+    const message = mimeMessage({
+      from: r.from,
+      to,
+      subject,
+      body,
+      // Attached, never fetched. See the note on `logo.ts`.
+      logo: { cid: LOGO_CID, type: LOGO_TYPE, name: LOGO_NAME, base64: LOGO_BASE64 },
+    });
     await say(socket, `${stuff(message)}\r\n.`, [250]);
     await say(socket, "QUIT", [221]);
   } finally {

@@ -68,9 +68,12 @@ export function encodeHeader(value: string): string {
 }
 
 /** Base64, wrapped at 76 characters, as a MIME body part must be. */
-function base64Body(text: string): string {
-  const raw = Buffer.from(text, "utf8").toString("base64");
+function wrap(raw: string): string {
   return (raw.match(/.{1,76}/g) ?? []).join("\r\n");
+}
+
+function base64Body(text: string): string {
+  return wrap(Buffer.from(text, "utf8").toString("base64"));
 }
 
 function escapeHtml(text: string): string {
@@ -96,7 +99,7 @@ function escapeHtml(text: string): string {
  * in cases that are hard to predict, and a layout that depends on one degrades
  * into something worse than no styling at all.
  */
-export function textToHtml(text: string): string {
+export function textToHtml(text: string, logoCid?: string): string {
   const blocks = text.trim().split(/\n\s*\n/);
   const signature = blocks.length > 1 ? blocks.pop()! : null;
 
@@ -113,14 +116,28 @@ export function textToHtml(text: string): string {
       'color:#16191d">',
     '<div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dfe3e8;' +
       'border-radius:12px;padding:28px 28px 20px">',
-    // The wordmark is text. An image would need somewhere to be hosted, and a
-    // remote image in a mail is a read receipt whether or not it is meant as
-    // one.
+    // THE WORDMARK AT THE TOP STAYS TEXT. It is the first thing read and it
+    // has to be readable in a client that blocks images, which most of them do
+    // by default. The mark goes at the bottom instead, where it is decoration
+    // and its absence costs nothing.
     '<div style="font-size:18px;font-weight:700;letter-spacing:-0.01em;margin:0 0 20px">Stud&#275;ns</div>',
     blocks.map(p).join("\n"),
     signature
       ? '<hr style="border:0;border-top:1px solid #dfe3e8;margin:24px 0 16px">' +
-        `<div style="font-size:13px;line-height:1.5;color:#5b6470">${escapeHtml(signature).replace(/\n/g, "<br>")}</div>`
+        '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>' +
+        // A table, not a flex row: Outlook on Windows renders through Word,
+        // which has no flexbox and no float worth relying on. A two cell table
+        // is the one layout every client has agreed on for twenty years.
+        (logoCid
+          ? `<td style="padding:0 12px 0 0;vertical-align:top"><img src="cid:${escapeHtml(logoCid)}" ` +
+            // ALT TEXT THAT IS A WORD, not "logo". Most clients block images
+            // by default, so this string is what a majority of recipients
+            // actually see, and it should read as the signature it is part of.
+            'alt="Studens" width="40" height="40" ' +
+            'style="display:block;width:40px;height:40px;border:0;border-radius:9px"></td>'
+          : "") +
+        `<td style="vertical-align:top"><div style="font-size:13px;line-height:1.5;color:#5b6470">${escapeHtml(signature).replace(/\n/g, "<br>")}</div></td>` +
+        "</tr></table>"
       : "",
     "</div></body></html>",
   ].join("\n");
@@ -135,19 +152,55 @@ export interface Message {
   /** Injected so a test can assert on them. */
   date?: Date;
   id?: string;
+  /**
+   * Attached and referred to by `cid:`, or absent.
+   *
+   * Optional rather than always on, because the shape of the message changes
+   * when it is present and a test that wants to read the simple shape should
+   * be able to ask for it.
+   */
+  logo?: { cid: string; type: string; name: string; base64: string };
 }
 
 /**
- * The whole message: headers, a blank line, and two alternative bodies.
+ * The whole message: headers, a blank line, and the bodies.
  *
  * `multipart/alternative` with text first. The order is the standard's way of
  * saying which part is the fallback and which is preferred, and it means a
  * client that shows text shows ours rather than a stripped approximation of
  * the HTML.
+ *
+ * WITH A LOGO THAT ALTERNATIVE IS WRAPPED IN `multipart/related`, which is the
+ * structure the standard gives for a body plus the things it refers to. The
+ * nesting is the part worth being careful about, so it is worth saying what it
+ * buys and what it costs.
+ *
+ *   multipart/related
+ *     multipart/alternative
+ *       text/plain          <- unchanged, and still first
+ *       text/html           <- refers to cid:studens-mark
+ *     image/png             <- Content-ID: <studens-mark>
+ *
+ * It buys an image that is already in the recipient's client when the message
+ * arrives, so displaying it asks nobody for anything. A remote image would be
+ * a read receipt whether or not anybody meant it as one.
+ *
+ * It costs a level of nesting in every message this platform sends, including
+ * the suspension notice, which is the one message that absolutely has to
+ * arrive and be readable. The text part is deliberately untouched and still
+ * first inside the alternative, so a client that does not understand `related`
+ * still finds the alternative inside it and still prefers text. That is the
+ * reason the wrapper goes outside rather than the image going inside the
+ * alternative, which would make the image an alternative TO the message.
  */
 export function mimeMessage(m: Message): string {
   const date = m.date ?? new Date();
   const boundary = `studens-${(m.id ?? String(date.getTime())).replace(/[^\w.-]/g, "")}`;
+  // A SECOND, DIFFERENT BOUNDARY. Two nested multiparts sharing one delimiter
+  // is a message that ends at the first inner terminator, and it fails by
+  // truncating rather than by being rejected.
+  const outer = `${boundary}-related`;
+  const logo = m.logo ?? null;
   const id = m.id ?? `${date.getTime()}.${Math.random().toString(36).slice(2)}@studens`;
   const text = m.body;
 
@@ -161,7 +214,9 @@ export function mimeMessage(m: Message): string {
     `Date: ${date.toUTCString().replace("GMT", "+0000")}`,
     `Message-ID: <${id}>`,
     "MIME-Version: 1.0",
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    logo
+      ? `Content-Type: multipart/related; type="multipart/alternative"; boundary="${outer}"`
+      : `Content-Type: multipart/alternative; boundary="${boundary}"`,
     // Nothing in this product's mail is worth tracking, and a recipient who
     // replies should reach a person rather than a void.
     "Auto-Submitted: auto-generated",
@@ -181,12 +236,38 @@ export function mimeMessage(m: Message): string {
       "",
     ].join("\r\n");
 
+  const alternative = [
+    part("text/plain", text),
+    part("text/html", textToHtml(text, logo?.cid)),
+    `--${boundary}--`,
+  ].join("\r\n");
+
+  if (!logo) {
+    return [headers.join("\r\n"), "", alternative, ""].join("\r\n");
+  }
+
   return [
     headers.join("\r\n"),
     "",
-    part("text/plain", text),
-    part("text/html", textToHtml(text)),
-    `--${boundary}--`,
+    `--${outer}`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    "",
+    alternative,
+    "",
+    `--${outer}`,
+    `Content-Type: ${logo.type}`,
+    "Content-Transfer-Encoding: base64",
+    // Angle brackets in the header, bare in the `cid:` URL. Getting that
+    // backwards is the classic way an inline image silently becomes an
+    // attachment nobody asked for.
+    `Content-ID: <${logo.cid}>`,
+    // `inline` so a client places it where the HTML puts it instead of listing
+    // it as a file the reader is invited to download.
+    `Content-Disposition: inline; filename="${logo.name}"`,
+    "",
+    wrap(logo.base64),
+    "",
+    `--${outer}--`,
     "",
   ].join("\r\n");
 }
