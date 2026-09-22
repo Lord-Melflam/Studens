@@ -1,0 +1,512 @@
+% The answer to "what's your stack, and how does it fit together".
+%
+% Written for a developer who has just been pointed at this repository and has
+% twenty minutes. It states what is used, what is deliberately not used, and
+% how a request, a review, a course and a message each travel end to end.
+%
+% Build:  xelatex stack-overview.tex   (twice, for the contents)
+
+\documentclass[11pt,a4paper]{article}
+\input{studens-preamble}
+\docfooter{Studens stack and pipelines}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+{\sffamily\Huge\bfseries\color{studens} Studens}\\[0.6em]
+{\sffamily\LARGE The stack, and how it fits together}\\[2em]
+{\sffamily\large\color{muted} What runs, what was deliberately left out,\\
+and the five pipelines that carry everything}\\[3em]
+{\sffamily\normalsize\color{muted} 2026-09-22}\\[0.4em]
+{\sffamily\footnotesize\color{muted} AGPL-3.0-or-later\ \ \textbf{·}\ \
+github.com/Lord-Melflam/Studens}
+\vfill
+{\sffamily\footnotesize\color{muted}
+Every number in this document was counted on 2026-09-22 with
+\texttt{npm run state} or read from the source. Nothing here is aspirational:
+if it says it is built, it is built and tested.}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ===========================================================================
+\section{The short answer}
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}>{\bfseries}l l@{}}
+\toprule
+Language & TypeScript everywhere, \texttt{strict}, ES2022, NodeNext modules \\
+\midrule
+Front end & React 18, Vite 8, plain CSS \\
+Back end & Node 22, Express 5 \\
+Database & PostgreSQL 14, Prisma 5 as the client and migration tool \\
+Scraping & Cheerio \\
+Tokens & \texttt{jose} for OIDC id-token verification \\
+Tests & Vitest, 929 passing \\
+Lint & ESLint 9 with typescript-eslint \\
+CI & GitHub Actions, two jobs \\
+Shape & Modular monolith plus one worker process \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{1em}
+
+That is \textbf{six runtime dependencies} across the whole repository:
+\texttt{@prisma/client}, \texttt{express}, \texttt{react},
+\texttt{react-dom}, \texttt{cheerio} and \texttt{jose}. Everything else is
+a build or test tool, or the standard library.
+
+\begin{why}
+The budget is zero and it is a hard constraint, so a dependency is not free:
+it is a thing that can be abandoned, can change its licence, can ship a
+compromised release, and has to be understood by whoever reads the code next.
+Each one below had to earn its place against writing the twenty lines by hand.
+\end{why}
+
+\subsection{Counted on 2026-09-22}
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}l r l r@{}}
+\toprule
+TypeScript & 26{,}820 lines & Requirements & 158 \\
+Tests & 12{,}907 lines, 929 passing & Migrations & 23 \\
+Commits & 114 & Open questions & 8 of 48 \\
+Courses in the catalogue & 12{,}155 & Programmes & 1{,}055 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ===========================================================================
+\newpage
+\section{The shape}
+
+One repository, one database, three deployable processes, and a dependency
+rule that a linter enforces.
+
+\begin{center}
+\begin{tikzpicture}[node distance=6mm]
+  \node[wtier={3.4cm}{1.0cm}] (web)  {\textbf{apps/web}\\React SPA\\Vite dev, static in production};
+  \node[wtier={3.4cm}{1.0cm}, right=14mm of web] (api) {\textbf{apps/api}\\Express\\serves the API and the built SPA};
+  \node[wtier={3.4cm}{1.0cm}, right=14mm of api] (wrk) {\textbf{apps/worker}\\crawls, sends mail,\\loads snapshots};
+  \node[wbox={11.6cm}{0.75cm}, below=12mm of api] (db) {\textbf{PostgreSQL}\ \ one database, three schemas:
+    \texttt{platform} \textbf{·} \texttt{ref} \textbf{·} \texttt{ryc}, one role each};
+  \draw[flow] (web) -- node[lbl,above]{HTTP} (api);
+  \draw[flow] (api) -- (db);
+  \draw[flow] (wrk) -- (db);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Three tiers, and dependencies point down}
+
+\begin{center}
+\begin{tikzpicture}[node distance=5mm]
+  \node[wbox={5.0cm}{0.8cm}] (ryc) {\textbf{tier 3} \ \texttt{packages/ryc}\\the feature module (reviews)};
+  \node[wbox={5.0cm}{0.8cm}, below=8mm of ryc] (ref) {\textbf{tier 2} \ \texttt{packages/ref}\\the catalogue, read-only to others};
+  \node[wbox={5.0cm}{0.8cm}, below=8mm of ref] (plat) {\textbf{tier 1} \ \texttt{packages/platform}\\members, sessions, quota, moderation};
+  \draw[flow] (ryc) -- (ref);
+  \draw[flow] (ryc.west) to[out=180,in=180] (plat.west);
+  \node[right=8mm of ref, text width=5.6cm, font=\sffamily\scriptsize\color{muted}]
+    {Tier 1 imports nothing. Tier 2 imports nothing. Tier 3 may import both.
+     Nothing ever points upward or sideways.\\[0.4em]
+     This is not a convention. \texttt{eslint.config.js} bans the imports by
+     path group, and a test in \texttt{test/architecture/boundaries.test.ts}
+     writes a violating file and asserts the linter rejects it, so the gate is
+     proved to bite rather than assumed to.};
+\end{tikzpicture}
+\end{center}
+
+\subsection{And the database enforces the same thing}
+
+Each schema has its own PostgreSQL role, granted in a migration.
+\texttt{studens\_ryc} holds \texttt{SELECT} and nothing else on the anonymous
+review table; \texttt{studens\_platform} holds \texttt{INSERT}. So the module
+that owns the feature physically cannot write an anonymous review on its own,
+at any price, whatever its code says.
+
+\texttt{scripts/verify-isolation.sql} proves the grants hold by attempting each
+forbidden statement as each role and asserting it is denied. It asserts
+\texttt{current\_user} first inside every block, because the first version of
+that file was a false green: every \texttt{SET ROLE} was itself denied, so all
+nine queries ran as the table owner and the "must fail" cases quietly
+succeeded.
+
+\begin{why}
+Microservices were excluded by two independent arguments rather than by
+taste. A saga's correlation identifier \emph{is} the member-to-contribution
+link the privacy design forbids, and the schema-level test above only exists
+while there is one schema to test.
+\end{why}
+
+% ===========================================================================
+\newpage
+\section{What is deliberately not used}
+
+This is usually the more interesting half of the answer.
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}>{\bfseries}p{3.1cm} p{11.2cm}@{}}
+\toprule
+No router library & \texttt{apps/web/src/router.ts} is hand written, about a
+  hundred lines. Every piece of screen state lives in the URL, which is a
+  requirement (FR-B21), and a router that owns the URL fights that. \\
+\midrule
+No state library & No Redux, no Zustand, no React Query. Server state is
+  fetched in the component that needs it; the little that is shared goes
+  through context. \\
+\midrule
+No CSS framework & Plain CSS with custom properties, two stylesheets plus one
+  per zone. Dark mode is a token redefinition, not a second sheet. \\
+\midrule
+No auth library & No Passport, no NextAuth, no \texttt{express-session}. The
+  OIDC flow is about 250 lines using \texttt{jose} for signature verification
+  only: authorisation-code with PKCE (S256), \texttt{state} against CSRF,
+  \texttt{nonce} bound into the id token. Sessions are 32 random bytes,
+  stored as a SHA-256 hash, compared in constant time, 14 days idle and 90
+  days absolute. \\
+\midrule
+No mail library & No Nodemailer. \texttt{apps/worker/src/send-mail.ts} speaks
+  SMTP over \texttt{node:net} and \texttt{node:tls} directly, STARTTLS on port
+  587, with the MIME assembly in \texttt{mime.ts}. \\
+\midrule
+No ORM relations across schemas & Cross-schema references are plain id
+  columns. A Prisma relation must be declared on both sides, so a relation
+  from a review to a member would make tier 1 depend on tier 3 and invert the
+  whole rule. \\
+\midrule
+No Docker, locally & Docker Desktop's WSL integration is off on the
+  development machine, so any Compose workflow has a prerequisite outside this
+  repository. PostgreSQL runs as a service with peer authentication over the
+  unix socket and no password anywhere. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{careful}
+None of these is a claim that the library is bad. Each is a claim that the
+thing it replaces is small enough to read in one sitting, and that for a
+project whose whole argument rests on a reviewer having read the code that
+touches the database, "small enough to read" is the property that matters.
+\end{careful}
+
+% ===========================================================================
+\newpage
+\section{Pipeline 1: a request, end to end}
+
+\begin{center}
+\begin{tikzpicture}[node distance=4mm]
+  \node[wbox={2.5cm}{0.9cm}] (b) {browser\\React SPA};
+  \node[wbox={2.5cm}{0.9cm}, right=8mm of b] (e) {Express\\\texttt{apps/api}};
+  \node[wbox={2.5cm}{0.9cm}, right=8mm of e] (i) {\texttt{identify()}\\session cookie};
+  \node[wbox={2.5cm}{0.9cm}, right=8mm of i] (m) {module\\\texttt{packages/ryc}};
+  \node[wbox={2.5cm}{0.9cm}, below=9mm of m] (k) {kernel\\\texttt{platform}};
+  \node[wbox={2.5cm}{0.9cm}, left=8mm of k] (p) {PostgreSQL\\one transaction};
+  \draw[flow] (b) -- node[lbl,above]{\texttt{/api/...}} (e);
+  \draw[flow] (e) -- (i);
+  \draw[flow] (i) -- (m);
+  \draw[flow] (m) -- (k);
+  \draw[flow] (k) -- (p);
+\end{tikzpicture}
+\end{center}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{In development}, Vite serves the SPA on 5173 and proxies
+        \texttt{/api} to 3001, so the two share one origin. \textbf{In
+        production} there is no Vite: the same Express process serves the
+        built SPA, mounted \emph{after} the \texttt{/api} 404 so a mistyped API
+        path still answers JSON instead of the index page.
+  \item \texttt{identify()} in \texttt{apps/api/src/identity.ts} is the one
+        place a request becomes a member. Every failure raises the same error,
+        because a caller must never learn whether a token was unknown, revoked
+        or merely stale.
+  \item \textbf{Routes are the composition layer.} The module may not read the
+        catalogue and the catalogue may not read members, so anything that
+        needs both is joined in \texttt{apps/api/src/routes/}, which is the
+        only place allowed to import all three tiers.
+  \item Writes that spend quota go through the kernel, below.
+\end{enumerate}
+
+% ===========================================================================
+\section{Pipeline 2: a review, and the kernel}
+
+A contribution is published either under the account or anonymously, chosen
+per contribution. The two are \textbf{separate tables}, never one table with a
+nullable owner column, because a nullable owner means the schema itself permits
+the link and the guarantee then depends on application code being correct
+forever.
+
+\begin{center}
+\begin{tikzpicture}
+  % Explicit coordinates. Positioning relative to a midpoint put the quota box
+  % on top of the two it sits beside, because `right=` measures from a point
+  % and these boxes are 4.6cm wide.
+  \node[wnamed={4.6cm}{1.0cm}] (n) at (0,1.3)
+    {\texttt{ryc.ReviewAttributed}\\has a \texttt{memberId}\\editable by its author};
+  \node[wanon={4.6cm}{1.0cm}] (a) at (0,-1.3)
+    {\texttt{ryc.ReviewAnonymous}\\\textbf{no member column at all}\\permanent, never editable};
+  \node[wfork={2.8cm}{0.9cm}] (f) at (-4.6,0)
+    {the fork\\the author chooses};
+  \node[wtier={4.4cm}{1.0cm}] (q) at (5.3,0)
+    {\texttt{platform.MemberQuota}\\a counter and a window start,\\no per-submission timestamp};
+  \draw[flown] (f) -- (n);
+  \draw[flowa] (f) -- (a);
+  \draw[flow,dashed] (n) -- (q);
+  \draw[flow,dashed] (a) -- (q);
+  \node[font=\sffamily\scriptsize\color{muted}, text width=13cm, align=center]
+    at (0.3,-2.75)
+    {Both paths spend the same quota, in the same transaction as the write. The
+     counter is a fact about the member; it records no fact about the contribution.};
+\end{tikzpicture}
+\end{center}
+
+\subsection{The anonymity kernel}
+
+\texttt{packages/platform/src/kernel.ts} is the smallest piece of code the
+whole privacy design depends on, kept small so it can be read in full. It
+guarantees three things at once:
+
+\begin{enumerate}[leftmargin=*]
+  \item the quota cannot be exceeded, enforced by one conditional
+        \texttt{UPDATE} rather than a read followed by a write;
+  \item the quota increment and the contribution write are one transaction, so
+        neither can exist without the other;
+  \item nothing links them. The kernel never learns what the module wrote, and
+        the module never learns that the member id reached the database.
+\end{enumerate}
+
+The kernel does not know what a review is and must not, because importing
+anything from \texttt{ryc} would invert the tier rule. So the module passes a
+callback, which the kernel runs inside its own transaction, on its own
+connection. That connection is the point: the grants above mean the module
+cannot write the anonymous table by itself.
+
+\begin{careful}
+Rate limiting is a \textbf{fixed window} counter on the member record, never a
+rolling one, because a rolling window needs a precise timestamp per submission
+and that timestamp is the link. There is no
+\texttt{HMAC(key, member \textbar\textbar\ target)} on a contribution either:
+the server holds the key, so the server could relink everything.
+\end{careful}
+
+% ===========================================================================
+\newpage
+\section{Pipeline 3: the catalogue}
+
+Neither university publishes an API, so the catalogue is scraped. 12{,}155
+courses and 1{,}055 programmes are in the database today.
+
+\begin{center}
+\begin{tikzpicture}[node distance=4mm]
+  \node[wbox={2.3cm}{0.85cm}] (u) {\texttt{urls.ts}\\derive the year};
+  \node[wbox={2.3cm}{0.85cm}, right=6mm of u] (c) {\texttt{crawl.ts}\\follow redirects};
+  \node[wbox={2.3cm}{0.85cm}, right=6mm of c] (pp) {\texttt{parse/}\\one per source};
+  \node[wbox={2.3cm}{0.85cm}, right=6mm of pp] (s) {\texttt{snapshot.ts}\\JSON on disk};
+  \node[wbox={2.3cm}{0.85cm}, right=6mm of s] (l) {\texttt{db:load}\\into Postgres};
+  \node[wbox={3.2cm}{0.85cm}, below=8mm of s] (r) {\texttt{catalogue:report}\\compares both ways};
+  \draw[flow] (u) -- (c); \draw[flow] (c) -- (pp);
+  \draw[flow] (pp) -- (s); \draw[flow] (s) -- (l);
+  \draw[flow] (l.south) to[out=270,in=0] (r.east);
+\end{tikzpicture}
+\end{center}
+
+Five facts the code has to respect, each verified against the live sites:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{The structure is discovered at runtime, never hardcoded.}
+        Faculties, programmes and courses change within a year.
+  \item \textbf{The year comes from the date, not from \texttt{now().year}.}
+        A URL carries the first year of the academic year, and the two
+        disagree until mid-September.
+  \item \textbf{Course codes are not stable.} \texttt{LINGI} became
+        \texttt{LINFO}, \texttt{LFSAB} became \texttt{LEPL}. So
+        \texttt{Course} holds the stable identity and \texttt{CourseOffering}
+        holds one row per year; a review states its own year and survives a
+        missing offering.
+  \item \textbf{Old years have a different layout}, back to 2012, reached
+        through a redirect that crosses hosts. ECTS is required in every era;
+        other fields may be legitimately absent, and "absent because the era
+        lacks it" must stay distinguishable from "absent because the parse
+        broke".
+  \item \textbf{The two universities publish different shapes.} The parser is
+        per source, and their vocabularies are mapped onto one set of keys
+        rather than shown twice.
+\end{itemize}
+
+\begin{openq}
+The crawl fetches the French edition, so stored catalogue text is French in
+every language of the interface. The screen says so rather than hiding it.
+Fixing it means crawling the English edition too, about 78 more minutes per
+run, storing a language per field, and falling back per field, because the two
+editions disagree about which fields exist. Dutch has no source at all.
+\end{openq}
+
+% ===========================================================================
+\section{Pipeline 4: mail}
+
+Nothing is ever sent inside a request.
+
+\begin{center}
+\begin{tikzpicture}[node distance=4mm]
+  \node[wbox={3.0cm}{0.85cm}] (t) {request transaction\\\texttt{enqueueMail()}};
+  \node[wbox={3.0cm}{0.85cm}, right=8mm of t] (o) {\texttt{platform.MailOutbox}\\address, kind, payload};
+  \node[wbox={3.0cm}{0.85cm}, right=8mm of o] (w) {worker\\\texttt{npm run mail}};
+  \node[wbox={3.0cm}{0.85cm}, right=8mm of w] (smtp) {SMTP 587\\STARTTLS};
+  \draw[flow] (t) -- (o); \draw[flow] (o) -- (w); \draw[flow] (w) -- (smtp);
+\end{tikzpicture}
+\end{center}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{The outbox row holds an address, never a member id.} A member
+        deleted between queueing and sending leaves no dangling reference, the
+        receipt for their own deletion still goes out, and the table can never
+        be used to join a person to a contribution.
+  \item \textbf{Bodies are rendered at send time, not at queue time.} The row
+        holds the kind, the language and the variables. Fixing a sentence fixes
+        every message still waiting.
+  \item \textbf{Two classes of message.} Transactional mail (a suspension, a
+        deletion receipt, an address confirmation) is sent whatever the
+        preferences say, because suppressing it would hide from somebody that
+        their own account is being changed. Everything else is opt-in and off
+        by default.
+  \item Messages about losing access carry \textbf{no link and ask for no
+        action}, because that is the shape every phishing mail takes.
+\end{itemize}
+
+% ===========================================================================
+
+\section{Pipeline 5: the build, and what CI actually gates}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3mm]
+  \node[wbox={2.15cm}{0.8cm}] (tc) {typecheck\\\texttt{tsc --build}};
+  \node[wbox={2.15cm}{0.8cm}, right=5mm of tc] (li) {lint\\boundary rules};
+  \node[wbox={2.15cm}{0.8cm}, right=5mm of li] (te) {929 tests\\Vitest};
+  \node[wbox={2.15cm}{0.8cm}, right=5mm of te] (sv) {schema\\\texttt{prisma validate}};
+  \node[wbox={2.15cm}{0.8cm}, right=5mm of sv] (dl) {docs links\\every path resolves};
+  \node[wbox={11.8cm}{0.8cm}, below=9mm of te, xshift=13mm] (dbj)
+    {\textbf{second job, with a database:} migrate \textbf{·} grant the roles
+     \textbf{·} run \texttt{verify-isolation.sql} \textbf{·}
+     \texttt{STUDENS\_REQUIRE\_DB=1 vitest run}};
+  \draw[flow] (tc) -- (li); \draw[flow] (li) -- (te);
+  \draw[flow] (te) -- (sv); \draw[flow] (sv) -- (dl);
+\end{tikzpicture}
+\end{center}
+
+The first job needs no database and no secrets, so it stays fast and can never
+be skipped for want of a service. The second one needs both.
+
+\begin{careful}
+\texttt{STUDENS\_REQUIRE\_DB=1} exists because of a real failure. The database
+job used to run the migrations and the isolation script and nothing else, while
+23 kernel tests skipped silently in \emph{both} jobs. Every run was green and
+reported "23 skipped", and nobody read that line. The tests covering the quota
+race, the role boundary and the anonymous-path filtering had therefore never
+run in CI at all. That flag turns an unreachable database into a failure
+instead of a quietly empty job.
+\end{careful}
+
+\subsection{The unusual tests}
+
+Roughly a third of the suite tests the \emph{project} rather than the product,
+and each of those exists because something got through.
+
+\begin{center}
+\sffamily\scriptsize
+\begin{tabular}{@{}>{\ttfamily}p{4.3cm} p{9.9cm}@{}}
+\toprule
+boundaries & Writes a file that imports across a tier and asserts the linter rejects it. \\
+anonymity-schema & Reads the Prisma schema and asserts the anonymous table has no member column. \\
+verify-isolation.sql & Attempts each forbidden statement as each role and asserts denial. \\
+here-wins & Every class the markup renders with \texttt{here} carries its own two-class rule, so the "you are here" mark wins by construction rather than by where the file's rules happen to sit. Three separate bugs. \\
+styled & Reads class names out of the JSX and fails when one has no rule in any stylesheet. A whole screen shipped with six class names and no styles. \\
+css-collisions & Freezes the class names the shell and a module stylesheet share. \\
+design-tokens & Keeps the two colours that mean \emph{attributed} and \emph{anonymous} out of the themeable palette. \\
+path-claims & The fork's two cards may not name a capability that is not built. \\
+no-stale-counts & No document states a number that a command can compute. \\
+test-isolation & Each database test file owns its id range and its generated-name prefix. \\
+signed-out & Mounts the router on a real socket and asserts every endpoint behind a session \emph{answers}. A route that swallowed the error left the request open forever. \\
+docs:links & Nothing tracked may reference a file that is not tracked. The repository is public. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ===========================================================================
+
+\section{Running it}
+
+\begin{center}
+\sffamily\small
+\begin{tabular}{@{}>{\ttfamily}l p{9.6cm}@{}}
+\toprule
+\textrm{\textbf{Command}} & \textrm{\textbf{What it does}} \\
+\midrule
+npm run dev & API on 3001 with the development identity, Vite on 5173. \\
+npm run dev:api:anon & The API \emph{without} the development identity. This is
+  the one to use behind a tunnel: the other two hand any visitor an
+  administrator session. \\
+npm run gates & typecheck, lint, tests, schema, doc links. \\
+npm run gates:db & the above plus migrations and the role isolation proof. \\
+npm run ingest & crawl a catalogue into a snapshot. \\
+npm run db:load & load a snapshot into the database. \\
+npm run catalogue:report & compare snapshot and database both ways, exit 1 on a gap. \\
+npm run mail & drain the outbox once. \\
+npm run admin -- <user> & appoint the first administrator. \\
+npm run state & print the live numbers, so no document has to hold them. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Where it runs}
+
+Windows 11 host, all real work inside WSL2 (Ubuntu 22.04). Node 22, PostgreSQL
+14 as a service with peer authentication over the unix socket. The repository
+lives on the ext4 filesystem and must stay there: 300 small file writes
+measured 0.03 s on ext4 and 4.0 s on the mounted Windows drive, 134 times
+slower, and \texttt{node\_modules} is tens of thousands of files.
+
+% ===========================================================================
+\section{What is not built}
+
+Stated plainly, because a document that only lists what works is a sales
+brochure.
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Nothing is deployed.} There is a deployable artefact, one
+        process serving both the API and the built SPA, and it has never run
+        anywhere but a laptop. A host, a domain and TLS are what is missing.
+  \item \textbf{Automatic screening of contributions} before publication.
+  \item \textbf{Removal publishing a statement of reasons} in the place the
+        contribution occupied. The reasoning is written down and marked as a
+        non-lawyer's reading that needs professional confirmation, so it is
+        open on purpose rather than forgotten.
+  \item \textbf{Microsoft sign-in has never been exercised.} Google works end
+        to end. The Microsoft configuration was written from documentation and
+        two of its values have never been observed against the live provider.
+        This matters: one of the two target universities runs on Microsoft 365,
+        so it decides whether that population can use a university account at
+        all.
+  \item \textbf{Nothing prunes old session rows.}
+\end{itemize}
+
+\begin{why}
+The interface never claims any of these. A test asserts that the screen where a
+contributor makes a permanent choice names no capability that is not built,
+because a claim that is not true today biases that decision, and it biases it
+away from anonymity.
+\end{why}
+
+\vfill
+\noindent{\sffamily\footnotesize\color{muted}
+Two companion documents go deeper:
+\texttt{docs/typeset/backend-design.tex} on the kernel, the grants and the
+schema, and \texttt{docs/typeset/frontend-design.tex} on the screens.
+\texttt{docs/TIMELINE.md} records how each decision was reached and is the
+thing to read first.}
+
+\end{document}
