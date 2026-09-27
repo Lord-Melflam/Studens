@@ -30,6 +30,8 @@ import {
   canModerate,
   decide,
   listAppointments,
+  listMembers,
+  revealAddress,
   moderationHistory,
   moderationQueue,
   setRole,
@@ -39,6 +41,7 @@ import {
   suspendMember,
   writeSetting,
   type ModeratableContent,
+  type Role,
 } from "@studens/platform";
 import {
   RYC_REVIEW_KIND,
@@ -476,6 +479,76 @@ export function moderationRoutes(prisma: PrismaClient): Router {
    * log, which is where a record of the past belongs.
    */
   const SUSPENDED_PER_PAGE = 20;
+
+  /**
+   * WHO IS REGISTERED. Administrators only, like the settings beside it.
+   *
+   * A moderator decides about content and needs no list of people; knowing who
+   * exists is a different power and stays with the smaller named set. The
+   * answer to somebody without it is 404 and not 403, so the endpoint does not
+   * teach a moderator that it exists.
+   *
+   * Searching, filtering and windowing all happen in SQL. A thousand members
+   * is a thousand rows, and sending them to the browser to filter would be the
+   * unbounded response NFR-O4 exists to prevent, on the one number this
+   * product actually wants to grow.
+   */
+  router.get("/moderation/members", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canAppoint(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const q = typeof req.query["q"] === "string" ? req.query["q"] : "";
+      const asked = Number.parseInt(String(req.query["page"] ?? "1"), 10);
+      // An unknown role is treated as no filter rather than as an error: it
+      // comes from a URL, and a stale one should show everybody rather than
+      // empty the screen with nothing to unclick (FR-B21's habit).
+      const wanted = typeof req.query["role"] === "string" ? req.query["role"] : "";
+      const role = ROLES.includes(wanted as Role) ? wanted : undefined;
+
+      const out = await listMembers({
+        client: prisma,
+        q,
+        ...(role ? { role } : {}),
+        page: Number.isFinite(asked) ? asked : 1,
+      });
+      res.json({
+        ...out,
+        members: out.members.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() })),
+        // So the screen can build its filter from the server's own list rather
+        // than hardcoding role names, the way the appointments screen does.
+        roles: ROLES,
+      });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
+   * ONE MEMBER'S ADDRESS, read deliberately and written to the audit log.
+   *
+   * Separate from the list on purpose. The privacy statement tells members
+   * their address is kept in order to contact them, so an administrator
+   * reading one is a different purpose; the difference between that being
+   * acceptable and troubling is whether anybody could tell it happened. The
+   * audit row is written in the same transaction as the read, so it cannot be
+   * skipped.
+   */
+  router.get("/moderation/members/:id/address", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canAppoint(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const found = await revealAddress(who.memberId, String(req.params.id), { client: prisma });
+      if (!found) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      res.json(found);
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
 
   router.get("/moderation/suspensions", (req, res) => {
     void (async () => {

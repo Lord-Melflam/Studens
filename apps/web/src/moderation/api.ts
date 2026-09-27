@@ -189,3 +189,57 @@ export async function fetchSuspensions(
     total: number;
   };
 }
+
+/** One row of the directory. Carries a domain; never an address (FR-A10). */
+export interface DirectoryMember {
+  id: string;
+  username: string | null;
+  role: string;
+  emailDomain: string;
+  createdAt: string;
+  suspended: boolean;
+  hasAddress: boolean;
+}
+
+export async function fetchMembers(
+  q: string,
+  role: string,
+  page: number,
+): Promise<{
+  members: DirectoryMember[];
+  roles: string[];
+  page: number;
+  pages: number;
+  total: number;
+}> {
+  const params = new URLSearchParams();
+  if (q !== "") params.set("q", q);
+  if (role !== "") params.set("role", role);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  const r = await fetch(`/api/moderation/members${query === "" ? "" : `?${query}`}`);
+  if (!r.ok) return { members: [], roles: [], page: 1, pages: 1, total: 0 };
+  return (await r.json()) as {
+    members: DirectoryMember[];
+    roles: string[];
+    page: number;
+    pages: number;
+    total: number;
+  };
+}
+
+/**
+ * One member's address. A separate call on purpose: the server writes an audit
+ * row for it, so it must not happen as a side effect of drawing a list.
+ */
+export async function fetchAddress(
+  id: string,
+): Promise<{ providerEmail: string | null; contactEmail: string | null; contactVerified: boolean } | null> {
+  const r = await fetch(`/api/moderation/members/${encodeURIComponent(id)}/address`);
+  if (!r.ok) return null;
+  return (await r.json()) as {
+    providerEmail: string | null;
+    contactEmail: string | null;
+    contactVerified: boolean;
+  };
+}
