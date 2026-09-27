@@ -1283,6 +1283,10 @@ a.ghost.here {
 .directory-row {
   display: flex;
   align-items: center;
+  /* WRAPS, so the confirmation can take a line of its own beneath the row it
+     belongs to. Without this, `flex-basis: 100%` cannot wrap: it becomes a
+     fourth item competing for the same line and shrinks into a column. */
+  flex-wrap: wrap;
   gap: 1rem;
   padding: 0.7rem 0;
   border-top: 1px solid var(--line);
@@ -1356,3 +1360,21 @@ a.ghost.here {
   border-color: var(--accent);
   font-weight: 600;
 }
+
+/* The erasure confirmation, opened under the row it belongs to.
+
+   IN THE FLOW, not a modal. A modal would cover the list the administrator is
+   using to decide, and the thing they most need while deciding is the row
+   itself: the name, the domain, the date it was created. */
+.directory-confirm {
+  flex: 1 0 100%;
+  margin: 0.6rem 0 0.2rem;
+  padding: 0.8rem 0.9rem;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-left-width: 3px;
+  border-radius: 0 8px 8px 0;
+}
+.directory-confirm ul { margin: 0 0 0.6rem; }
+.directory-confirm .hint { margin: 0 0 0.75rem; }
+.directory-confirm .field-label { display: block; margin-bottom: 0.3rem; font-size: 0.82rem; }

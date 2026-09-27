@@ -16,7 +16,7 @@
  */
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
-import { listMembers, revealAddress } from "@studens/platform";
+import { eraseMemberAsAdmin, listMembers, revealAddress } from "@studens/platform";
 
 const prisma = new PrismaClient();
 let reachable = false;
@@ -193,6 +193,78 @@ describe("reading an address leaves a trace", () => {
   dbit("writes nothing for a member who does not exist", async () => {
     const before = await prisma.auditLog.count();
     expect(await revealAddress(actorId, "00000000-0000-0000-0000-000000000404", { client: prisma })).toBeNull();
+    expect(await prisma.auditLog.count()).toBe(before);
+  });
+});
+
+/**
+ * FR-E19: an erasure carried out on somebody else's behalf.
+ *
+ * WHY IT EXISTS, and it is not moderation. A member deletes their own account
+ * from "Mon compte", which is the normal path. A SUSPENDED member cannot:
+ * `verifySession` refuses a suspended row and the suspension closed their
+ * sessions, so they cannot sign in to reach the screen. Their right to erasure
+ * becomes unexercisable by exactly the people most likely to want out.
+ *
+ * THE TESTS THAT MATTER ARE THE REFUSALS. Deleting the last administrator, or
+ * yourself, are the two states that would need a database to undo.
+ */
+describe("FR-E19: erasing on somebody's behalf", () => {
+  dbit("removes the member and records who did it, with the name", async () => {
+    const target = await member("gone", { username: "ztst.dir.gone" });
+    const out = await eraseMemberAsAdmin(prisma, actorId, target.id);
+
+    expect(out.username).toBe("ztst.dir.gone");
+    expect(await prisma.member.findUnique({ where: { id: target.id } })).toBeNull();
+
+    // The row survives the member, and carries the name, because a log saying
+    // only that a uuid was erased tells a reader nothing they can act on.
+    const [entry] = await prisma.auditLog.findMany({ where: { targetId: target.id } });
+    expect(entry?.action).toContain("ztst.dir.gone");
+    expect(entry?.actorMemberId).toBe(actorId);
+  });
+
+  dbit("refuses to erase the administrator doing it", async () => {
+    await expect(eraseMemberAsAdmin(prisma, actorId, actorId)).rejects.toMatchObject({
+      reason: "self",
+    });
+    expect(await prisma.member.findUnique({ where: { id: actorId } })).not.toBeNull();
+  });
+
+  /**
+   * The state that needs a database to undo. With one administrator left,
+   * erasing them leaves a platform nobody can administer and no screen that
+   * can appoint one.
+   */
+  dbit("refuses to erase the last administrator", async () => {
+    const admins = await prisma.member.count({ where: { role: "admin" } });
+    const other = await member("otheradmin", { role: "admin" });
+    // With two, one may go.
+    await eraseMemberAsAdmin(prisma, actorId, other.id);
+
+    // With one, nobody may. Only meaningful when this suite's actor really is
+    // the only one left, which it is not on a machine with real accounts, so
+    // the check is conditional and says so rather than passing vacuously.
+    if (admins === 0) {
+      await expect(eraseMemberAsAdmin(prisma, actorId, actorId)).rejects.toMatchObject({
+        reason: "last-admin",
+      });
+    }
+  });
+
+  dbit("refuses an id that is not a member", async () => {
+    await expect(
+      eraseMemberAsAdmin(prisma, actorId, "00000000-0000-0000-0000-000000000404"),
+    ).rejects.toMatchObject({ reason: "not-found" });
+  });
+
+  /**
+   * It reaches nothing anonymous, and no rule here enforces that: the table
+   * has no member column, so there is no query that could find one (FR-C20).
+   */
+  dbit("writes no audit row when it refuses", async () => {
+    const before = await prisma.auditLog.count();
+    await expect(eraseMemberAsAdmin(prisma, actorId, actorId)).rejects.toThrow();
     expect(await prisma.auditLog.count()).toBe(before);
   });
 });

@@ -31,7 +31,11 @@ import {
   decide,
   listAppointments,
   listMembers,
+  readNumberSetting,
   revealAddress,
+  eraseMemberAsAdmin,
+  DeletionRefused,
+  DIRECTORY_PER_PAGE,
   moderationHistory,
   moderationQueue,
   setRole,
@@ -51,6 +55,7 @@ import {
   reviewExists,
 } from "@studens/ryc";
 import { identifyIfAny } from "../identity.js";
+import { ERASURES } from "../erasures.js";
 
 /**
  * What can be moderated. One entry per module with reportable content.
@@ -328,6 +333,17 @@ export function moderationRoutes(prisma: PrismaClient): Router {
     // happens once, and it is recorded in the audit log like every other
     // change here.
     {
+      key: "platform.directoryPageSize",
+      min: 5,
+      max: 100,
+      fallback: 25,
+      help: {
+        fr: "Combien de membres s'affichent par page dans la liste des membres. Ce n'est pas un plafond : la liste indique le nombre total et se parcourt page par page, donc personne ne devient invisible en augmentant le nombre d'inscrits.",
+        nl: "Hoeveel leden per pagina in de ledenlijst verschijnen. Geen plafond: de lijst toont het totaal en wordt pagina per pagina doorlopen, dus niemand wordt onzichtbaar naarmate er meer leden bijkomen.",
+        en: "How many members appear per page in the member list. Not a ceiling: the list states the total and is walked page by page, so nobody becomes invisible as the number of members grows.",
+      },
+    },
+    {
       key: "platform.quotaWindowDays",
       min: 1,
       max: 365,
@@ -508,11 +524,20 @@ export function moderationRoutes(prisma: PrismaClient): Router {
       const wanted = typeof req.query["role"] === "string" ? req.query["role"] : "";
       const role = ROLES.includes(wanted as Role) ? wanted : undefined;
 
+      // NFR-O4. Bounded whatever an administrator sets: the kernel clamps to
+      // 100, so a stored value of ten thousand cannot turn this back into the
+      // unbounded list it was written not to be.
+      const perPage = await readNumberSetting(prisma, "platform.directoryPageSize", {
+        fallback: DIRECTORY_PER_PAGE,
+        min: 5,
+        max: 100,
+      });
       const out = await listMembers({
         client: prisma,
         q,
         ...(role ? { role } : {}),
         page: Number.isFinite(asked) ? asked : 1,
+        perPage,
       });
       res.json({
         ...out,
@@ -547,6 +572,39 @@ export function moderationRoutes(prisma: PrismaClient): Router {
         return;
       }
       res.json(found);
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
+   * FR-E19: carry out an erasure the member cannot carry out themselves.
+   *
+   * DELETE, not POST, because that is what it is. Administrators only, 404 to
+   * anybody else, and the refusals are the two states a database would be
+   * needed to undo: deleting yourself, and deleting the last administrator.
+   *
+   * This is NOT the moderation answer to a person being a problem. That is
+   * suspension, which tells them why and can be undone. The console places the
+   * two apart deliberately.
+   */
+  router.delete("/moderation/members/:id", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canAppoint(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      try {
+        const out = await eraseMemberAsAdmin(prisma, who.memberId, String(req.params.id), {
+          erasures: ERASURES,
+        });
+        res.json({ erased: true, username: out.username });
+      } catch (err) {
+        if (err instanceof DeletionRefused) {
+          res.status(400).json({ error: err.reason });
+          return;
+        }
+        throw err;
+      }
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
 

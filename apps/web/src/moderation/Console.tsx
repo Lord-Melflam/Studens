@@ -25,6 +25,8 @@ import { useSession } from "../session.js";
 import { Info } from "../Info.js";
 import { navigate, useSearch } from "../router.js";
 import {
+  eraseMember,
+  type DirectoryMember,
   fetchMembers,
   fetchAddress,
   decide,
@@ -691,6 +693,19 @@ function Directory() {
   const [data, setData] = useState<Awaited<ReturnType<typeof fetchMembers>> | null>(null);
   /** Addresses this administrator has deliberately asked for, this visit. */
   const [shown, setShown] = useState<Record<string, Awaited<ReturnType<typeof fetchAddress>>>>({});
+  /**
+   * Which row is being erased, and what has been typed to confirm it.
+   *
+   * THE TYPED WORD IS THE USERNAME, not a fixed word like DELETE. A fixed word
+   * becomes muscle memory and then it is possible to erase the wrong row while
+   * meaning to erase the right one; a name can only be typed for the person
+   * actually in front of you. Same shape as the account screen's own deletion,
+   * which asks for a word before it will act.
+   */
+  const [asked, setAsked] = useState<string | null>(null);
+  const [typed2, setTyped2] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
 
   // One request per pause in typing, not one per letter.
   useEffect(() => {
@@ -713,6 +728,21 @@ function Directory() {
 
   const reveal = (id: string) => {
     void fetchAddress(id).then((a) => setShown((was) => ({ ...was, [id]: a })));
+  };
+
+  const erase = (m: DirectoryMember) => {
+    setBusy(true);
+    setProblem(null);
+    void eraseMember(m.id).then((r) => {
+      setBusy(false);
+      if (r.ok) {
+        setAsked(null);
+        setTyped2("");
+        void fetchMembers(q, role, page).then(setData);
+      } else {
+        setProblem(r.reason);
+      }
+    });
   };
 
   return (
@@ -790,7 +820,60 @@ function Directory() {
                 ) : (
                   <span className="hint">{t("mod.directory.noaddress")}</span>
                 )}
+                {/* Erasure sits at the far end of the row, away from the
+                    address control and in a different section of the console
+                    from suspension. It is not the moderation answer to a
+                    person being a problem: that is suspension, which tells
+                    them why and can be undone. */}
+                <button
+                  type="button"
+                  className="ghost danger"
+                  onClick={() => {
+                    setAsked(asked === m.id ? null : m.id);
+                    setTyped2("");
+                    setProblem(null);
+                  }}
+                >
+                  {t("mod.directory.erase")}
+                </button>
               </div>
+
+              {asked === m.id && (
+                <div className="directory-confirm">
+                  {/* What actually happens, said BEFORE the control and not
+                      after it. The second line is the one nobody expects: the
+                      text of a signed review stays, without the name. */}
+                  <ul className="plain">
+                    <li>{t("mod.directory.erase.what.account")}</li>
+                    <li>{t("mod.directory.erase.what.named")}</li>
+                    <li>{t("mod.directory.erase.what.anonymous")}</li>
+                  </ul>
+                  <p className="hint">{t("mod.directory.erase.notmoderation")}</p>
+                  <label className="field-label" htmlFor={`erase-${m.id}`}>
+                    {t("mod.directory.erase.type", {
+                      name: m.username ?? t("mod.directory.unnamed"),
+                    })}
+                  </label>
+                  <div className="inline-field">
+                    <input
+                      id={`erase-${m.id}`}
+                      className="text-input"
+                      value={typed2}
+                      autoComplete="off"
+                      onChange={(e) => setTyped2(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="ghost danger"
+                      disabled={busy || typed2.trim() !== (m.username ?? "")}
+                      onClick={() => erase(m)}
+                    >
+                      {t("mod.directory.erase.now")}
+                    </button>
+                  </div>
+                  {problem && <p className="error">{t(`mod.directory.erase.err.${problem}`)}</p>}
+                </div>
+              )}
             </li>
           ))}
         </ul>
