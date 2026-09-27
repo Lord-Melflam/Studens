@@ -175,6 +175,19 @@ export {
   type RevealedAddress,
 } from "./directory.js";
 
+/** FR-E21: a moderator asks an administrator, and nothing here grants. */
+export {
+  AccessRefused,
+  ACCESS_STATUSES,
+  REASON_MIN,
+  REASON_MAX,
+  askForAccess,
+  listAccessRequests,
+  decideAccess,
+  type AccessRequestRow,
+  type AccessStatus,
+} from "./access.js";
+
 /** FR-I1 to FR-I4: what people say about Studens itself. */
 export {
   FeedbackInvalid,

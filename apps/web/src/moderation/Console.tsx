@@ -32,6 +32,10 @@ import {
   fetchFeedbackAuthors,
   setFeedbackState,
   exportFeedbackFull,
+  fetchAccessRequests,
+  askForAccess,
+  decideAccess,
+  type AccessRequest,
   type FeedbackPageData,
   fetchAddress,
   decide,
@@ -1226,6 +1230,196 @@ function FeedbackQueue({ canExport, me }: { canExport: boolean; me: string | nul
   );
 }
 
+/**
+ * FR-E21, the asking half: what a moderator sees where an administrator sees
+ * a screen.
+ *
+ * NOT AN ERROR AND NOT AN EMPTY PANEL. Before this, a moderator following an
+ * administrator's link was silently put back on the report queue, which is
+ * correct and tells them nothing: they do not learn that the screen exists,
+ * that it is not theirs, or that there is anything they can do about it. This
+ * says all three in the place they landed.
+ *
+ * IT DOES NOT SAY WHAT IS ON THE SCREEN, only what it is for. A locked door
+ * with a description of the room behind it is a different kind of leak.
+ */
+function LockedSection({ section }: { section: string }) {
+  const t = useT();
+  const locale = useLocale();
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [mine, setMine] = useState<AccessRequest[] | null>(null);
+
+  const load = useCallback(() => {
+    void fetchAccessRequests().then((d) => setMine(d.requests));
+  }, []);
+  useEffect(load, [load]);
+
+  const here = (mine ?? []).filter((r) => r.section === section);
+  const open = here.find((r) => r.status === "open");
+  const last = here.find((r) => r.status !== "open");
+
+  return (
+    <section className="panel">
+      <h3>{t(`mod.section.${section}`)}</h3>
+      <p className="locked-line">
+        <span className="locked-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="15" height="15">
+            <path
+              d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v10H5z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+        {t("mod.locked.title")}
+      </p>
+      <p className="hint">{t(`mod.locked.what.${section}`)}</p>
+
+      {open ? (
+        <p className="locked-state">
+          {t("mod.locked.pending", { when: ago(open.createdAt, locale) })}
+        </p>
+      ) : (
+        <>
+          {last && (
+            <p className="locked-state">
+              {last.status === "declined"
+                ? t("mod.locked.declined", { answer: last.answer ?? "" })
+                : t("mod.locked.granted")}
+            </p>
+          )}
+          <label className="field-label" htmlFor={`ask-${section}`}>
+            {t("mod.locked.why")}
+          </label>
+          <textarea
+            id={`ask-${section}`}
+            className="text-input"
+            rows={3}
+            value={reason}
+            maxLength={1000}
+            placeholder={t("mod.locked.placeholder")}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <p className="hint">{t("mod.locked.note")}</p>
+          <button
+            type="button"
+            className="ghost"
+            disabled={busy || reason.trim().length < 15}
+            onClick={() => {
+              setBusy(true);
+              setProblem(null);
+              void askForAccess(section, reason.trim()).then((r) => {
+                setBusy(false);
+                if (r.ok) {
+                  setReason("");
+                  load();
+                  return;
+                }
+                setProblem(r.why);
+              });
+            }}
+          >
+            {t("mod.locked.ask")}
+          </button>
+          {problem && <p className="error">{t(`mod.locked.err.${problem}`)}</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
+/**
+ * FR-E21, the answering half.
+ *
+ * IT SITS IN THE ROLES SECTION, not in one of its own, because the only
+ * answers it can give are the ones that screen already gives: appoint, or
+ * refuse. A section of its own would imply a third kind of answer exists.
+ *
+ * GRANTING SAYS WHAT IT DOES. The button is not "grant access": it appoints
+ * the person an administrator, which is the only thing granting can mean while
+ * there are three roles and no lattice, and the screen says so in words above
+ * the controls rather than letting somebody discover it afterwards.
+ */
+function AccessQueue() {
+  const t = useT();
+  const locale = useLocale();
+  const [rows, setRows] = useState<AccessRequest[] | null>(null);
+  const [answer, setAnswer] = useState<Record<string, string>>({});
+  const [problem, setProblem] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    void fetchAccessRequests().then((d) => setRows(d.requests));
+  }, []);
+  useEffect(load, [load]);
+
+  const open = (rows ?? []).filter((r) => r.status === "open");
+  if (rows === null || open.length === 0) return null;
+
+  const decide = (r: AccessRequest, decision: "granted" | "declined"): void => {
+    setProblem(null);
+    void decideAccess(r.id, decision, answer[r.id] ?? "").then((res) => {
+      if (res.ok) {
+        load();
+        return;
+      }
+      setProblem(res.why);
+    });
+  };
+
+  return (
+    <section className="panel">
+      <h3>
+        {t("mod.access.title")} <span className="count">{open.length}</span>
+      </h3>
+      <p className="hint">{t("mod.access.hint")}</p>
+
+      <ul className="directory">
+        {open.map((r) => (
+          <li key={r.id} className="directory-row">
+            <div className="directory-who">
+              <span className="directory-name">{r.username ?? r.memberId}</span>
+              <span className="directory-meta">
+                {t(`mod.section.${r.section}`)} · {ago(r.createdAt, locale)}
+              </span>
+              <p className="feedback-text">{r.reason}</p>
+              <label className="field-label" htmlFor={`answer-${r.id}`}>
+                {t("mod.access.answer")}
+              </label>
+              <textarea
+                id={`answer-${r.id}`}
+                className="text-input"
+                rows={2}
+                maxLength={1000}
+                value={answer[r.id] ?? ""}
+                onChange={(e) => setAnswer({ ...answer, [r.id]: e.target.value })}
+              />
+            </div>
+            <div className="directory-actions">
+              <button type="button" className="ghost" onClick={() => decide(r, "granted")}>
+                {t("mod.access.grant")}
+              </button>
+              <button
+                type="button"
+                className="ghost danger"
+                disabled={(answer[r.id] ?? "").trim() === ""}
+                onClick={() => decide(r, "declined")}
+              >
+                {t("mod.access.decline")}
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {problem && <p className="error">{t(`mod.access.err.${problem}`)}</p>}
+    </section>
+  );
+}
+
 function Appointments() {
   const t = useT();
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -1447,10 +1641,16 @@ const MODERATOR_SECTIONS: readonly Section[] = [
   "comptes",
 ];
 
-export function sectionFrom(search: string, canAppoint: boolean): Section {
+export function sectionFrom(search: string): Section {
   const asked = new URLSearchParams(search).get("section");
   if (!SECTIONS.includes(asked as Section)) return "signalements";
-  if (!canAppoint && !MODERATOR_SECTIONS.includes(asked as Section)) return "signalements";
+  // A MODERATOR STAYS WHERE THEY LANDED, and this is a change of mind worth
+  // recording. They used to be put back on the report queue, which is correct
+  // and tells them nothing: not that the screen exists, not that it is not
+  // theirs, not that there is anything they can do about it. FR-E21 gives
+  // them something to do about it, so bouncing them away from the one place
+  // that says so would defeat it. The screen shows the locked panel; the API
+  // still answers 404 to everything behind it, which is where the control is.
   return asked as Section;
 }
 
@@ -1468,7 +1668,7 @@ export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; h
   }, []);
   useEffect(load, [load]);
 
-  const section = sectionFrom(search, canAppoint);
+  const section = sectionFrom(search);
   const visible: readonly Section[] = canAppoint ? SECTIONS : MODERATOR_SECTIONS;
 
   const go = (to: Section): void =>
@@ -1484,15 +1684,33 @@ export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; h
           would have left them looking at a row with one item in it. */}
       {visible.length > 1 && (
         <nav className="console-tabs" aria-label={t("mod.title")}>
-          {visible.map((id) => (
+          {SECTIONS.map((id) => (
             <button
               key={id}
               type="button"
-              className={id === section ? "console-tab here" : "console-tab"}
+              className={
+                id === section
+                  ? "console-tab here"
+                  : visible.includes(id)
+                    ? "console-tab"
+                    : "console-tab console-shut"
+              }
               aria-current={id === section ? "page" : undefined}
               onClick={() => go(id)}
             >
               {t(`mod.section.${id}`)}
+              {!visible.includes(id) && (
+                <svg className="tab-lock" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v10H5z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
             </button>
           ))}
         </nav>
@@ -1536,8 +1754,21 @@ export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; h
       {section === "retours" && <FeedbackQueue canExport={canAppoint} me={mine?.username ?? null} />}
 
       {section === "membres" && <Directory canAct={canAppoint} />}
-      {canAppoint && section === "roles" && <Appointments />}
-      {canAppoint && section === "reglages" && <Settings />}
+      {/* FR-E21. The two sections a moderator cannot open show what they are
+          and offer the only thing there is to do about it, rather than
+          silently putting somebody back on the queue. The API answers 404 to
+          everything behind them either way, so nothing here is a control. */}
+      {section === "roles" &&
+        (canAppoint ? (
+          <>
+            <AccessQueue />
+            <Appointments />
+          </>
+        ) : (
+          <LockedSection section="roles" />
+        ))}
+      {section === "reglages" &&
+        (canAppoint ? <Settings /> : <LockedSection section="reglages" />)}
     </div>
   );
 }

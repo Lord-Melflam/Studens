@@ -124,6 +124,7 @@ model Member {
   sessions     Session[]
   institutions MemberInstitution[]
   feedback     Feedback[]
+  accessAsked  AccessRequest[]
 
   /// SUSPENSION BINDS AN ACCOUNT, NEVER A PERSON, and the wording everywhere
   /// has to keep saying so. Registration is open by design (FR-A6) because no
@@ -394,6 +395,59 @@ model Feedback {
   @@index([memberId])
   /// The queue filtered by state, which is how it is actually read.
   @@index([status, createdAt])
+  @@schema("platform")
+}
+
+/// A moderator asking an administrator for something they cannot reach.
+/// FR-E21.
+///
+/// IT CARRIES NO POWER, and that is the design rather than a shortcut. The
+/// roles are three and there is no lattice (`roles.ts`): no per-action grant,
+/// no group, no table of permissions, because there are two powers to control
+/// and a table of them would be a system to maintain rather than a rule to
+/// read. A row here that granted access to one screen would be exactly that
+/// table, arriving through the back door.
+///
+/// So this is a MESSAGE WITH A SUBJECT AND AN ANSWER. The subject is the
+/// screen they could not open, which saves them describing it and saves the
+/// administrator guessing. The answer is either the power itself, given
+/// through the appointment that already exists and is already audited, or a
+/// refusal with a reason. Nothing in between, because in between is the
+/// lattice.
+///
+/// WHY IT IS A ROW AND NOT AN EMAIL. An email to whoever happens to be an
+/// administrator today is a message that arrives once, in one inbox, and
+/// cannot be answered in a way the asker can see. A row is visible to every
+/// administrator, survives the one who read it first doing nothing, and its
+/// answer reaches the person who asked without a relay being configured.
+model AccessRequest {
+  id       String @id @default(uuid())
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  /// The console section they asked for. A name from the screen, opaque here:
+  /// the platform stores what it was given and never learns what it means,
+  /// the same way settings are namespaced by module and read by nobody else.
+  section String
+  /// Why they need it. Required, because "grant me access" is not a request
+  /// anybody can answer, and the administrator's decision has to rest on
+  /// something.
+  reason  String
+
+  createdAt DateTime @default(now())
+  /// open, granted or declined. Never deleted: a request that vanished is one
+  /// nobody can show was answered, which is the same reasoning as `Report`.
+  status    String   @default("open")
+  decidedAt DateTime?
+  decidedBy String?
+  /// What the administrator said back. The only way the asker learns why, and
+  /// required on a refusal for the same reason the reason above is.
+  answer    String?
+
+  /// The queue an administrator reads, oldest first.
+  @@index([status, createdAt])
+  /// Everything one person has asked for, and whether it is still open.
+  @@index([memberId, status])
   @@schema("platform")
 }
 

@@ -264,13 +264,13 @@ describe("a demotion is confirmed, a promotion is not", () => {
  */
 describe("which section the address asks for", () => {
   it("lands on the reports queue by default", () => {
-    expect(sectionFrom("", true)).toBe("signalements");
-    expect(sectionFrom("?", false)).toBe("signalements");
+    expect(sectionFrom("")).toBe("signalements");
+    expect(sectionFrom("?")).toBe("signalements");
   });
 
   it("opens the one named, for somebody who holds the powers", () => {
     for (const id of SECTIONS) {
-      expect(sectionFrom(`?section=${id}`, true)).toBe(id);
+      expect(sectionFrom(`?section=${id}`)).toBe(id);
     }
   });
 
@@ -287,25 +287,29 @@ describe("which section the address asks for", () => {
    * and changing settings: the two screens that change what everybody else
    * can do.
    */
-  it("opens the four a moderator may use", () => {
-    for (const id of ["signalements", "retours", "membres", "comptes"]) {
-      expect(sectionFrom(`?section=${id}`, false)).toBe(id);
+  /**
+   * THE ROLE NO LONGER DECIDES WHERE SOMEBODY LANDS, only what they are shown
+   * there, and that is FR-E21 rather than a relaxation. A moderator following
+   * an administrator's link used to be put back on the report queue silently,
+   * which is correct and tells them nothing: not that the screen exists, not
+   * that it is not theirs, not that they can ask. They land on it now and
+   * find a panel that says all three. Every request behind it still answers
+   * 404, which is where the control has always been.
+   */
+  it("opens whichever section the address names", () => {
+    for (const id of SECTIONS) {
+      expect(sectionFrom(`?section=${id}`)).toBe(id);
     }
   });
 
-  it("sends a moderator back to the queue from the two that are not theirs", () => {
-    expect(sectionFrom("?section=roles", false)).toBe("signalements");
-    expect(sectionFrom("?section=reglages", false)).toBe("signalements");
-  });
-
   it("ignores a name it does not know rather than drawing nothing", () => {
-    expect(sectionFrom("?section=comptez", true)).toBe("signalements");
-    expect(sectionFrom("?section=", true)).toBe("signalements");
+    expect(sectionFrom("?section=comptez")).toBe("signalements");
+    expect(sectionFrom("?section=")).toBe("signalements");
   });
 
   it("leaves the other settings in the address alone", () => {
     // The console shares a query string with nothing today, and will not be
     // the reason that stops being true.
-    expect(sectionFrom("?q=lepl&section=roles", true)).toBe("roles");
+    expect(sectionFrom("?q=lepl&section=roles")).toBe("roles");
   });
 });
