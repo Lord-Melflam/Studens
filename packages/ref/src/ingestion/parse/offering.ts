@@ -473,6 +473,35 @@ function unlessDeferred(blocks: Block[] | null): Block[] | null {
   return DEFERRAL.test(flat.replace(/^ *(kind p lines t|kind p lines) */i, "")) ? null : blocks;
 }
 
+/**
+ * Does this English record carry anything a reader would come for?
+ *
+ * THE TITLE DOES NOT COUNT, and that is the whole point of this function
+ * existing rather than a `!== null` check at each call site. Every UCLouvain
+ * course has an English title: the university publishes one for all 6,654 of
+ * them whether or not anybody ever wrote the English sheet. So a page that
+ * defers every prose field to the French version still parses to a non-null
+ * `EnglishText`, because `title` survived.
+ *
+ * Counting those as editions made the crawl report "6,654 with an English
+ * edition, 0 whose English page had nothing" while the database held 4,860,
+ * and the database was right: `load.ts` stores `textEn` from the seven prose
+ * fields and drops the title out of that decision. Two definitions of the same
+ * sentence, disagreeing by 1,794 courses. This is the one both now use.
+ */
+export function hasEnglishProse(e: EnglishText | null | undefined): boolean {
+  if (!e) return false;
+  return (
+    e.assessment !== null ||
+    e.themes !== null ||
+    e.content !== null ||
+    e.objectives !== null ||
+    e.prerequisites !== null ||
+    e.teachingMethods !== null ||
+    e.bibliography !== null
+  );
+}
+
 export function parseEnglish(
   html: string,
   code: string,

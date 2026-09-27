@@ -22,6 +22,7 @@ export {
 } from "./ingestion/snapshot.js";
 export {
   parseOffering,
+  hasEnglishProse,
   parseEnglish,
   detectEra,
   type ParsedOffering,

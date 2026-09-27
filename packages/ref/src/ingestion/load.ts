@@ -26,7 +26,7 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import type { Snapshot } from "./snapshot.js";
 import { slug } from "./parse/search.js";
 import type { Block } from "./parse/rich.js";
-import type { EnglishText } from "./parse/offering.js";
+import { hasEnglishProse, type EnglishText } from "./parse/offering.js";
 
 /**
  * A block tree as a Json column value.
@@ -297,7 +297,7 @@ export async function loadSnapshot(
             teachingMethods: e.teachingMethods,
             bibliography: e.bibliography,
           };
-          return Object.values(blocks).some((v) => v !== null) ? blocks : null;
+          return hasEnglishProse(e) ? blocks : null;
         }
 
         const offering = await tx.courseOffering.upsert({

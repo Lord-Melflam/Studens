@@ -22,7 +22,10 @@
  */
 import { PoliteFetcher } from "../../ingestion/http.js";
 import type { Snapshot, SnapshotProgramme } from "../../ingestion/snapshot.js";
-import type { ParsedOffering } from "../../ingestion/parse/offering.js";
+import {
+  hasEnglishProse,
+  type ParsedOffering,
+} from "../../ingestion/parse/offering.js";
 import type { CatalogueSource, SourceCrawlOptions } from "../index.js";
 import { parseFaculties, type UlbFaculty } from "./faculties.js";
 import { parseProgramme, programmeCodeFrom } from "./programme.js";
@@ -321,7 +324,11 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
         try {
           const alt = (await fetcher.get(courseUrlEn(o.year, o.code))).html;
           const en = parseCourseProse(alt);
-          const blocks = {
+          // `title` stays null on purpose: ULB's English page repeats the
+          // French programme title, and storing that would put a French
+          // string in a column whose name promises an English one.
+          const record = {
+            title: null,
             assessment: en.assessment,
             themes: null,
             content: en.content,
@@ -330,8 +337,8 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
             teachingMethods: en.teachingMethods,
             bibliography: en.bibliography,
           };
-          if (Object.values(blocks).some((v) => v !== null)) {
-            o.english = { title: null, ...blocks };
+          if (hasEnglishProse(record)) {
+            o.english = record;
             englishFound += 1;
           }
         } catch {
