@@ -243,3 +243,16 @@ export async function fetchAddress(
     contactVerified: boolean;
   };
 }
+
+/**
+ * FR-E19: carry out an erasure the member cannot carry out themselves.
+ *
+ * DELETE, because that is what it is. The refusal reasons come back as a code
+ * so the screen can say which of the two states it hit rather than "failed".
+ */
+export async function eraseMember(id: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const r = await fetch(`/api/moderation/members/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (r.ok) return { ok: true };
+  const body = (await r.json().catch(() => ({}))) as { error?: string };
+  return { ok: false, reason: body.error ?? "failed" };
+}

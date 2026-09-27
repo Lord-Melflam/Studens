@@ -164,9 +164,11 @@ export {
  * which deliberately lists only people holding a power.
  */
 export {
-  DIRECTORY_PER_PAGE,
   listMembers,
   revealAddress,
+  eraseMemberAsAdmin,
+  DeletionRefused,
+  DIRECTORY_PER_PAGE,
   type DirectoryEntry,
   type DirectoryPage,
   type DirectoryOptions,

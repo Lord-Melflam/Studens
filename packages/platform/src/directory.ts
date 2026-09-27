@@ -29,6 +29,7 @@
  * anonymously: that table has no member column, so there is no query to write.
  */
 import { PrismaClient, Prisma } from "@prisma/client";
+import { deleteAccount, type MemberErasure } from "./account.js";
 
 export interface DirectoryEntry {
   id: string;
@@ -182,4 +183,74 @@ export async function revealAddress(
   } finally {
     if (!opts.client) await prisma.$disconnect();
   }
+}
+
+export class DeletionRefused extends Error {
+  constructor(readonly reason: "not-found" | "self" | "last-admin") {
+    super(reason);
+    this.name = "DeletionRefused";
+  }
+}
+
+/**
+ * Carry out an erasure on somebody else's behalf (FR-E19).
+ *
+ * WHY THIS EXISTS, and it is not moderation. A member deletes their own
+ * account from "Mon compte", which is the normal path and the one almost
+ * everybody uses. But a SUSPENDED member cannot: `verifySession` refuses a
+ * suspended row and the suspension closed their sessions, so they cannot sign
+ * in to reach the screen. Their right to erasure becomes unexercisable by
+ * exactly the people most likely to want out, which is the wrong way round.
+ *
+ * IT IS NOT A MODERATION TOOL AND MUST NOT BECOME ONE. Deleting somebody to
+ * stop them contributing is what suspension is for, and suspension is the one
+ * that tells them why (FR-E15) and can be undone. This removes personal data;
+ * it does not remove a problem. The console places it accordingly.
+ *
+ * IT REUSES `deleteAccount` RATHER THAN DELETING ROWS ITSELF, so an erasure
+ * asked for by an administrator and one asked for by the member are the same
+ * operation: contributions detach and the text survives without the name
+ * (FR-A15), anonymous contributions are untouched because nothing can reach
+ * them (FR-C2), and a future module's rows are erased through the same hook.
+ *
+ * TWO REFUSALS, both about states a database would be needed to undo:
+ * deleting yourself, which the account screen already does properly and which
+ * here would end the session doing it; and deleting the last administrator,
+ * which would leave a platform nobody can administer.
+ */
+export async function eraseMemberAsAdmin(
+  prisma: PrismaClient,
+  actorMemberId: string,
+  targetMemberId: string,
+  opts: { erasures?: MemberErasure[] } = {},
+): Promise<{ username: string | null }> {
+  if (actorMemberId === targetMemberId) throw new DeletionRefused("self");
+
+  const target = await prisma.member.findUnique({
+    where: { id: targetMemberId },
+    select: { id: true, username: true, role: true },
+  });
+  if (!target) throw new DeletionRefused("not-found");
+
+  if (target.role === "admin") {
+    const admins = await prisma.member.count({ where: { role: "admin" } });
+    if (admins <= 1) throw new DeletionRefused("last-admin");
+  }
+
+  // WRITTEN BEFORE THE ROW GOES, not after. The member id is a foreign key to
+  // nothing here, so the audit row survives the deletion; but the username
+  // does not, and a log saying only that a uuid was erased tells a reader
+  // nothing they can act on. The name is put in the action for that reason,
+  // and it is the only place it survives.
+  await prisma.auditLog.create({
+    data: {
+      actorMemberId,
+      action: `member:erased:${target.username ?? "(no username)"}`,
+      targetKind: "member",
+      targetId: targetMemberId,
+    },
+  });
+
+  await deleteAccount(prisma, targetMemberId, opts.erasures ? { erasures: opts.erasures } : {});
+  return { username: target.username };
 }
