@@ -396,9 +396,23 @@ teaching methods, and none of them is UCLouvain's "Thèmes abordés": putting on
 in that column would make the field mean two things depending on which
 university a row came from.
 
-**Keep `data/page-cache`.** It is gitignored, so a fresh clone or a new worktree
-has none, and an ingest then re-crawls 546 pages instead of finishing in nine
-seconds. Copy it across rather than making uclouvain.be serve it again.
+**Keep `data/page-cache`.** It is gitignored, so a fresh clone or a new
+worktree has none, and an ingest then re-crawls the catalogue from the start
+instead of reading it off the disk. Copy it across rather than making either
+university serve it all again. Measured 2026-09-27: it holds about 27,000 pages
+and 4.1 GB.
+
+**A parsing mistake costs a re-parse, not a re-crawl**, and this is the most
+useful thing on this page. `PoliteFetcher` serves a cached page before the
+delay and without counting it against the request budget, so a run over a warm
+cache does the whole parse again at disk speed. Measured 2026-09-27: the full
+UCLouvain catalogue, 6,654 courses in both editions, took **145 seconds and 0
+requests**, 14,270 pages served from cache, against 78 minutes for the crawl
+that filled it. So when a parser turns out to have been reading a field wrongly,
+fix it and run the ingest again; write to a scratch file with `--out` if you
+would rather not disturb the live snapshot until you have looked at the result.
+A term regex that dropped Q1 et Q2 was repaired this way, and 1,084 courses got
+their term back without one request to uclouvain.be.
 
 The whole run writes a complete new snapshot and only replaces the live one if
 everything succeeded, so a broken crawl cannot empty a course page.
