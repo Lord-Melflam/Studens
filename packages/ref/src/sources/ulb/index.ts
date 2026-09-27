@@ -345,7 +345,18 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
         `${failed} pages unreachable`,
     );
     if (wantEnglish) {
-      say(`ulb: ${englishFound} with an English edition, ${englishMissing} without`);
+      /*
+        THREE OUTCOMES, NOT TWO. It said "4037 with an English edition, 4
+        without" on a run of 5,439 courses, which reads as though the other
+        1,398 did not exist. They did: their English page answered and carried
+        no prose worth storing, which is the ordinary case and not a failure.
+        Only the 4 were actually unreachable.
+      */
+      const silent = offerings.length - englishFound - englishMissing;
+      say(
+        `ulb: ${englishFound} with an English edition, ${silent} whose English page ` +
+          `had nothing, ${englishMissing} unreachable`,
+      );
     }
   }
 

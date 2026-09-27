@@ -319,7 +319,14 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   }
   say(`${offerings.length} offerings parsed`);
   if (wantEnglish) {
-    say(`${englishFound} with an English edition, ${englishMissing} without`);
+    // Three outcomes, not two: a page that answered and carried nothing is
+    // the ordinary case, and counting only the unreachable ones made the
+    // difference between the two numbers look like courses that vanished.
+    const silent = offerings.length - englishFound - englishMissing;
+    say(
+      `${englishFound} with an English edition, ${silent} whose English page had ` +
+        `nothing, ${englishMissing} unreachable`,
+    );
   }
 
   // A handful of broken pages is the catalogue; a wave of them is us. Being
