@@ -399,8 +399,9 @@ university a row came from.
 **Keep `data/page-cache`.** It is gitignored, so a fresh clone or a new
 worktree has none, and an ingest then re-crawls the catalogue from the start
 instead of reading it off the disk. Copy it across rather than making either
-university serve it all again. Measured 2026-09-27: it holds about 27,000 pages
-and 4.1 GB.
+university serve it all again. It is the largest thing the project keeps on
+disk by a wide margin, and it grows with every year and source crawled, so
+check its size before assuming a copy will fit somewhere.
 
 **A parsing mistake costs a re-parse, not a re-crawl**, and this is the most
 useful thing on this page. `PoliteFetcher` serves a cached page before the
