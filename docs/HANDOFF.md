@@ -4,7 +4,7 @@ For whoever arrives next: a person, or a model working on their behalf. It
 assumes you have the repository and nothing else, and it is written to be read
 once, in order, in about twenty minutes.
 
-Everything here was true on 2026-09-27 and checked against the code rather than
+Everything here was true on 2026-09-28 and checked against the code rather than
 recalled. Where a number would go stale, this file names the command that
 computes it instead.
 
@@ -263,7 +263,8 @@ Stated plainly, because a handover that lists only what works is a brochure.
 - **Nothing is deployed.** There is one deployable artefact, the web process
   serves the built application as well as the API, and it has never run
   anywhere but a laptop. A host, a domain and TLS are what is missing.
-- **Automatic screening before publication** (FR-E4).
+- **Automatic screening before publication** (FR-E4). Feedback and reports are
+  both read by a person, and nothing is held automatically.
 - **Removal publishing a statement of reasons** in the place the contribution
   occupied (FR-E9). Marked `[OPEN]`: it is a non-lawyer's reading of DSA
   Article 17 and needs confirming by somebody qualified.
@@ -275,8 +276,20 @@ Stated plainly, because a handover that lists only what works is a brochure.
   deliberately on 2026-09-27**, not forgotten: it needs a directory to register
   an application in, which a personal Microsoft account does not have. It is
   the highest-value thing on this list and nothing technical blocks it.
-- **No student has used any of this.** Every review in the database was written
-  during testing.
+- **No student has written a review.** Every review in the database was written
+  during testing. **Feedback is different and is now real:** the public link
+  went out on 2026-09-27 and messages started arriving the same evening,
+  through the panel and from people who were not the author. Those rows are the
+  first thing in this database that somebody else put there, so treat them as
+  data rather than as fixtures, and do not clear the table to tidy up.
+- **It is reachable only while a laptop is on.** Two tunnels point at a
+  development server: one whose free tier shows a warning page once per
+  visitor and cannot be made not to, one that shows none but whose address is
+  random and dies when it stops. **Sign-in works on exactly one of them,**
+  because the public origin is a single value that has to match what was
+  registered with the provider. Whichever link is in circulation is the one to
+  configure. A domain removes all of this at once and is what the deployment
+  needs anyway.
 
 `npm run state` prints how many questions are still open;
 `docs/requirements.md` section 7 holds them with their reasoning. Two are open
@@ -310,5 +323,8 @@ on purpose rather than by neglect, and say so in the entry itself.
    path, and look at what the course page shows and withholds.
 5. Open `docs/requirements.md` section 3.3 and read the complement problem.
    Everything odd in the schema follows from it.
+6. Read the feedback table. It is the only place in this database holding words
+   somebody outside the project wrote, and it is the shortest route to knowing
+   what is actually wrong with the product rather than what we think is.
 
 Then pick something from section 7.

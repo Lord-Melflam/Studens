@@ -691,6 +691,33 @@ provider sends the visitor back to their own `localhost` and sign-in fails.
 real accounts and reviews, for as long as it is open. Close it when the
 demonstration is over.
 
+### Two tunnels, and the three things that bite
+
+All three were met on 2026-09-27, the day a link was first shared.
+
+**`STUDENS_DEV_HOST` replaces, it does not append.** Starting a second tunnel
+and restarting the dev server with only the new hostname makes the FIRST one
+answer 403 to everybody who already has the link. Name both, comma separated,
+and after changing anything a live address depends on, fetch that address and
+look at the status code. It is one command and it is the only check that
+catches this.
+
+**The origin is a single value**, because the sign-in callback has to match
+what was registered with the provider exactly. Two public links therefore
+cannot both be where sign-in completes: whichever is in people's hands is the
+one to configure, and the other is for reading, which is most of what a
+stranger does anyway.
+
+**A free tier's warning page cannot be removed from this side.** One vendor's
+interstitial lists three escapes; two are request headers a visitor's browser
+sends, which a link cannot control, and the third is a paid account. Injecting
+them at the tunnel edge was tried both ways, with a traffic policy adding the
+header and with one rewriting the user agent, and neither worked because the
+abuse check runs before the policy. It appears once per visitor rather than
+once per request. Another vendor's free quick tunnel shows nothing at all but
+hands out a random hostname that dies with the process. A domain removes both
+problems and is what deploying needs regardless.
+
 ---
 
 ## Deploying
