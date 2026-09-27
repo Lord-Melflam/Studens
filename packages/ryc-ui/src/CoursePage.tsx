@@ -6,8 +6,9 @@
  * is why the review form will be short.
  */
 import { useCallback, useEffect, useState } from "react";
-import { useT } from "@studens/i18n";
+import { useLocale, useT } from "@studens/i18n";
 import { api, type Aggregate, type CourseDetail, type PublishedReview } from "./api.js";
+import { languageName, quarterKey } from "./normalise.js";
 import { CatalogueLanguageNote, FoldedField } from "./Prose.js";
 import { Reviews } from "./Reviews.js";
 import { SubmitFlow } from "./SubmitFlow.js";
@@ -83,6 +84,7 @@ export function CoursePage({
   } | null>(null);
   const [failed, setFailed] = useState(false);
   const t = useT();
+  const locale = useLocale();
 
   const load = useCallback(() => {
     api
@@ -132,8 +134,11 @@ export function CoursePage({
             from a source we do not control, and ten courses of 6,654 state no
             credits at all. */}
         {course.ects === null ? t("ryc.course.ects.unstated") : t("ryc.course.ects", { n: course.ects })}
-        {course.quarter ? ` · ${course.quarter}` : ""}
-        {course.language ? ` · ${course.language}` : ""}
+        {/* Normalised, like the rows in a list. "Q1 et Q2" is the French
+            edition's wording and "Anglais" is the French name of a language,
+            and this ribbon is the page speaking rather than the catalogue. */}
+        {course.quarter ? ` · ${quarterKey(course.quarter)}` : ""}
+        {course.language ? ` · ${languageName(course.language, locale)}` : ""}
         {` · ${course.year}-${course.year + 1}`}
       </p>
 

@@ -143,6 +143,45 @@ export function quarterKey(raw: string | null): string | null {
  * course in the same primary language, so the part before the separator is the
  * answer and the rest belongs on the page.
  */
+/**
+ * The language a course is taught in, named in the language being read.
+ *
+ * WHAT WAS ON SCREEN BEFORE. The row showed the value exactly as the
+ * university published it, so a Dutch reader was told a course is taught in
+ * "Anglais" and an English reader the same. `languageKey` above already says
+ * this was always wrong and fixed only the filter; this is the other half.
+ *
+ * `Intl.DisplayNames` RATHER THAN A TABLE, and that is the whole decision.
+ * Sixteen codes appear in the catalogue today and a seventeenth arrives
+ * whenever a university adds one, so a hand written table is 48 strings that
+ * go stale silently: a missing entry shows a bare code and nothing fails. The
+ * platform already carries these names, in every locale, and it is part of
+ * ECMA-402 rather than a dependency.
+ *
+ * FALLBACK IS THE PUBLISHED VALUE, not the code. `sfb`, Belgian French Sign
+ * Language, has no name in `Intl` and comes back empty; showing "sfb" to a
+ * student would be worse than showing the words the university chose, even
+ * though they are French. The same holds for any value that does not map to a
+ * code at all.
+ */
+export function languageName(raw: string | null, locale: string): string | null {
+  if (raw === null) return null;
+  const code = languageKey(raw);
+  if (code === null) return null;
+  // Not a code: `languageKey` gave the raw value back because it recognised
+  // nothing, and the raw value is the best thing we hold.
+  if (!/^[a-z]{2,3}$/.test(code)) return raw;
+  try {
+    const named = new Intl.DisplayNames([locale], { type: "language", fallback: "none" }).of(code);
+    if (named === undefined) return raw;
+    return named.charAt(0).toUpperCase() + named.slice(1);
+  } catch {
+    // An environment without the locale data, rather than a bad code. The
+    // published value still says something true.
+    return raw;
+  }
+}
+
 export function languageKey(raw: string | null): string | null {
   if (raw === null) return null;
   const primary = flatten(raw).split(/[>/]/)[0]!.trim();

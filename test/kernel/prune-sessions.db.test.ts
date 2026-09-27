@@ -90,10 +90,17 @@ const mine = () => prisma.session.count({ where: { memberId } });
 
 describe("pruning removes only what could never work again", () => {
   dbit("leaves a live session exactly where it is", async () => {
-    await session("live");
-    const { deleted } = await pruneSessions({ client: prisma });
-    expect(deleted).toBe(0);
+    const live = await session("live");
+    await pruneSessions({ client: prisma });
+    // THIS TEST'S ROWS, NOT THE TABLE'S. It used to assert that the prune
+    // deleted nothing at all, which is a claim about every row in the
+    // database and not about the one thing being tested. It passed in CI,
+    // where the database is made fresh, and failed on a working machine as
+    // soon as any real session aged past the idle window: two rows nobody had
+    // touched in a fortnight were correctly deleted and the test reported a
+    // defect. A row belongs to the test that made it (LESSONS.md).
     expect(await mine()).toBe(1);
+    expect(await prisma.session.findUnique({ where: { id: live.id } })).not.toBeNull();
   });
 
   dbit("removes one idle past the idle window", async () => {
