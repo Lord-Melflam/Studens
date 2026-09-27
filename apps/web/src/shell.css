@@ -200,23 +200,62 @@ header { margin-bottom: 1.75rem; }
 
 .lede { margin: 0 0 1.5rem; color: var(--muted); }
 
-.modules { list-style: none; margin: 0; padding: 0; }
-.modules li + li { margin-top: 0.5rem; }
-.modules button {
-  display: block;
-  width: 100%;
-  padding: 1rem 1.1rem;
-  text-align: left;
-  font: inherit;
-  color: inherit;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  cursor: pointer;
+/*
+  The tile that opens the catalogue (FR-F16).
+
+  DASHED, NOT SOLID, so it reads as a space for something rather than as a
+  thing, and it drops the accent edge the real cards carry because it is not a
+  module. It is still a button and pressing it goes somewhere: the design
+  note's first principle refuses a card you cannot press, and the greyed-out
+  list this replaces was exactly that.
+
+  These rules sit AFTER the card rules further down this file, deliberately.
+  The first version of this change added a second `.modules button` block near
+  the top and wondered why almost none of it applied: there were already two
+  further down, and the last one wins. One document, one cascade (LESSONS 12).
+*/
+/* The catalogue itself: a list, because it is read rather than entered. */
+.store-list { list-style: none; margin: 1.25rem 0 0; padding: 0; }
+.store-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
 }
-.modules button:hover { border-color: var(--accent); }
-.modules .name { display: block; font-weight: 600; }
-.modules .summary { display: block; margin-top: 0.2rem; font-size: 0.9rem; color: var(--muted); }
+.store-who { flex: 1 1 18rem; min-width: 0; }
+.store-who .name { display: block; font-weight: 600; }
+.store-who .summary { display: block; margin-top: 0.2rem; font-size: 0.9rem; color: var(--muted); }
+.store-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.store-state { display: flex; align-items: center; gap: 0.75rem; margin-left: auto; }
+.store-tag {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+/* Two classes, so a later rule of equal weight cannot take it back. */
+.store-tag.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.store-foot { margin-top: 1.5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .modules button,
+  .modules .module-add {
+    transition: none;
+  }
+  .modules button:hover,
+  .modules .module-add:hover {
+    transform: none;
+  }
+}
 
 
 .error { color: #a3231b; font-size: 0.9rem; }
@@ -956,12 +995,49 @@ a.ghost.here {
      here: a card that needs an illustration to look finished is a card with
      nothing to say. */
   border-left: 3px solid var(--accent);
+  /* SITTING ON THE PAGE RATHER THAN DRAWN ON IT. Two layers rather than one:
+     a single soft shadow reads as a blur, while a tight contact shadow under
+     a wider ambient one reads as an object with a surface beneath it. The
+     card had no shadow at rest and gained one on hover, so it only looked
+     like an object once you were already pointing at it. */
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.05),
+    0 5px 14px rgb(0 0 0 / 0.06);
   transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
 }
 .modules button:hover {
   border-color: var(--accent);
-  box-shadow: 0 6px 18px rgba(22, 25, 29, 0.07);
-  transform: translateY(-1px);
+  box-shadow:
+    0 2px 4px rgb(0 0 0 / 0.07),
+    0 14px 30px rgb(0 0 0 / 0.11);
+  transform: translateY(-2px);
+}
+.modules button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The tile, after the cards so it wins, and losing the accent edge with it. */
+.modules .module-add {
+  border: 1px dashed var(--line);
+  background: none;
+  box-shadow: none;
+  color: var(--muted);
+  justify-content: flex-start;
+}
+.modules .module-add:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+  background: none;
+  box-shadow: none;
+  transform: translateY(-2px);
+}
+.module-plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
 }
 .modules .name { font-size: 1.05rem; }
 .modules .summary { margin-top: 0; line-height: 1.5; }
@@ -974,28 +1050,9 @@ a.ghost.here {
 }
 .modules .go::after { content: " \2192"; }
 
-/* Announced and not built. A different shape from a card on purpose: nothing
-   here is pressable, so nothing here should look pressable. */
-.planned { margin-top: 2.2rem; }
-.planned h3 {
-  margin: 0 0 0.6rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.planned ul { list-style: none; margin: 0; padding: 0; }
-.planned li {
-  max-width: 34rem;
-  padding: 0.75rem 0 0.75rem 0.9rem;
-  border-left: 2px solid var(--line);
-}
-.planned li + li { margin-top: 0.5rem; }
-.planned .name { display: block; font-weight: 600; font-size: 0.95rem; }
-.planned .summary { display: block; margin-top: 0.15rem; font-size: 0.9rem; color: var(--muted); }
-.planned .note { display: block; margin-top: 0.3rem; font-size: 0.82rem; color: var(--muted); }
-
+/* The `.planned` rules that stood here are gone with the section they
+   styled: the home screen no longer lists unbuilt modules with nothing to
+   click, it offers a tile that opens the catalogue instead (FR-F16). */
 /* A row of choices with one of them current: the display scheme, and the
    language. `.here` marks the current one, like everything else that answers
    "which of these am I on".

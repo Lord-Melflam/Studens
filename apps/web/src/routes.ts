@@ -72,6 +72,9 @@ const SLUGS: Record<string, Record<Locale, string>> = {
 const APP_SLUGS: Record<string, Record<Locale, string>> = {
   settings: { fr: "mon-compte", nl: "mijn-account", en: "my-account" },
   moderation: { fr: "moderation", nl: "moderatie", en: "moderation" },
+  // FR-F16. The catalogue of modules, which is a shell screen rather than a
+  // module: it is the list OF them, so it cannot belong to one of them.
+  store: { fr: "modules", nl: "modules", en: "modules" },
 };
 
 const APP_CANONICAL: Record<string, string> = Object.fromEntries(

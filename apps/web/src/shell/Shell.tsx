@@ -55,6 +55,18 @@ const SETTINGS = "settings";
 const MODERATION = "moderation";
 
 /**
+ * The catalogue of modules. FR-F16.
+ *
+ * A SHELL SCREEN AND NOT A MODULE, which is the whole reason it can exist: it
+ * is the list OF modules, so it cannot belong to one of them. Reserved
+ * alongside the account screen and the console, and a module declaring this id
+ * would simply never mount.
+ *
+ * Canonical, like every route here. What a reader sees is `/fr/app/modules`.
+ */
+const STORE = "store";
+
+/**
  * Where signing out lands. The public home, from anywhere.
  *
  * IT USED TO STAY PUT, and to land on `/app` when the screen it was done from
@@ -119,33 +131,133 @@ function Home() {
             </button>
           </li>
         ))}
+
+        {/*
+          THE TILE THAT REPLACED A DEAD LIST. It sits in the same grid as the
+          modules, dashed rather than solid so it reads as a space for
+          something rather than as a thing, and it is PRESSABLE. The section it
+          replaces listed the unbuilt modules with nothing to click, which was
+          honest and was also a dead end; the design note's first principle
+          refuses a card you cannot press, and a greyed-out card is exactly
+          that. This is a different answer to the same rule.
+        */}
+        <li>
+          <button
+            type="button"
+            className="module-add"
+            onClick={() => navigate(`${APP_PREFIX}/${STORE}`)}
+          >
+            <span className="module-plus" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22">
+                <path
+                  d="M12 5v14M5 12h14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+            <span className="name">{t("app.home.add")}</span>
+            <span className="summary">{t("app.home.add.note", { n: planned.length })}</span>
+          </button>
+        </li>
+      </ul>
+    </>
+  );
+}
+
+/**
+ * The catalogue of modules. FR-F16.
+ *
+ * WHY THIS REPLACED A LIST OF THINGS YOU CANNOT PRESS. The home screen used to
+ * end with a "planned" section: the name of each unbuilt module, its summary,
+ * and nothing to click. That was honest and it was also a dead end, and it
+ * made the app home read as a product with one feature and a promise.
+ *
+ * Now the home shows what can be opened, and one more tile with a `+` on it
+ * that comes here. The tile is PRESSABLE, which is the point: the design note's
+ * first principle refuses a card you cannot press, and a greyed-out card is
+ * exactly that. This is a different answer to the same rule.
+ *
+ * THERE IS NO "ADD" BUTTON, and that is a decision rather than something
+ * missing. Adding would mean enrolment, and who owns enrolment is OPEN-34,
+ * deliberately still open because an abstraction designed from a single
+ * consumer is the ordinary way to get a shared service wrong. With one module
+ * live there is nothing to add, and a button that does nothing is precisely
+ * what this project refuses to ship (FR-F: never describe a plan in the
+ * present tense). What this screen does is tell the truth about what exists,
+ * which is what somebody pressing a `+` actually wants to know.
+ */
+function Store() {
+  const t = useT();
+  const shown = presentModules(t);
+  const live = shown.filter((m) => m.presentation.status === "live");
+  const planned = shown.filter((m) => m.presentation.status !== "live");
+  const [open, setOpen] = useState<string | null>(null);
+
+  return (
+    <>
+      <header className="page-intro">
+        <button type="button" className="crumb-up" onClick={() => navigate(APP_PREFIX)}>
+          {t("app.back")}
+        </button>
+        <h2>{t("store.title")}</h2>
+        <p className="lede">{t("store.lede")}</p>
+      </header>
+
+      <ul className="store-list">
+        {live.map((m) => (
+          <li key={m.id} className="store-item">
+            <div className="store-who">
+              <span className="name">{m.name}</span>
+              <span className="summary">{m.summary}</span>
+            </div>
+            <div className="store-state">
+              <span className="store-tag on">{t("store.here")}</span>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => navigate(`${APP_PREFIX}/${m.id}`)}
+              >
+                {t("app.open")}
+              </button>
+            </div>
+          </li>
+        ))}
+
+        {planned.map((m) => (
+          <li key={m.id} className="store-item">
+            <div className="store-who">
+              <span className="name">{m.name}</span>
+              <span className="summary">{m.summary}</span>
+              {open === m.id && (
+                <p className="store-note">
+                  {m.presentation.statusNote || t("store.upcoming.note")}
+                </p>
+              )}
+            </div>
+            <div className="store-state">
+              <span className="store-tag">{t("store.upcoming")}</span>
+              {/* PRESSABLE, and it says the same thing whether or not you
+                  press it. The tag already tells you it is not here; pressing
+                  gives the module's own sentence about why, which is the
+                  module's to write (FR-B16). It is not a disabled control
+                  pretending to be an action. */}
+              <button
+                type="button"
+                className="linkish"
+                aria-expanded={open === m.id}
+                onClick={() => setOpen(open === m.id ? null : m.id)}
+              >
+                {open === m.id ? t("store.less") : t("store.why")}
+              </button>
+            </div>
+          </li>
+        ))}
       </ul>
 
-      {/*
-        What is announced but not built, kept visibly apart from what can be
-        opened. NOT a greyed-out card: a card you cannot press is the thing the
-        design note's first principle refuses. It is a different shape, it says
-        what it is and why it is listed, and it offers nothing to click.
-
-        The public site already announces this module, so leaving it out here
-        would mean the two pages disagree about what Studens is.
-      */}
-      {planned.length > 0 && (
-        <section className="planned">
-          <h3>{t("app.home.planned")}</h3>
-          <ul>
-            {planned.map((m) => (
-              <li key={m.id}>
-                <span className="name">{m.name}</span>
-                <span className="summary">{m.summary}</span>
-                {m.presentation.statusNote && (
-                  <span className="note">{m.presentation.statusNote}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <p className="hint store-foot">{t("store.foot")}</p>
     </>
   );
 }
@@ -335,6 +447,8 @@ export function Shell() {
       <div className="app-body">
       {settings ? (
         <Settings />
+      ) : routeId === STORE ? (
+        <Store />
       ) : moderating ? (
         // Rendered only where the power exists. Somebody typing the URL without
         // it gets the unknown-screen message, and the API answers 404 to every
