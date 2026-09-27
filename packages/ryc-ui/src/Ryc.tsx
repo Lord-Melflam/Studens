@@ -262,6 +262,20 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
     navigate(settingsRoute("/recherche", search, [WINDOW_KEY], next), { replace: true });
   };
   const [course, setCourse] = useState<CourseDetail | null>(null);
+  /**
+   * The edition the reader is looking at, when they have chosen one.
+   *
+   * LOCAL AND NOT IN THE ADDRESS, unlike the filters. FR-B21 puts what is on
+   * screen in the URL so a link shows its reader the same thing, and that is
+   * exactly the argument against putting this there: a course page sent to
+   * somebody should arrive in THEIR language, not in the one the sender
+   * happened to be reading. It is a preference about the reader, not a
+   * description of the page.
+   *
+   * Cleared when the course changes, so choosing English on one course does
+   * not silently pick it for the next.
+   */
+  const [edition, setEdition] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
 
@@ -291,15 +305,21 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
     api
       // OPEN-47: the language decides which edition each field comes back in,
       // so it belongs in the request rather than being applied afterwards.
-      .course(institution, code, locale)
+      // The reader's own choice wins over the interface language when they
+      // have made one.
+      .course(institution, code, edition ?? locale)
       .then((c) => live && setCourse(c))
       .catch(() => live && setError(t("ryc.err.course", { code: code.toUpperCase() })));
     return () => {
       live = false;
     };
     // `locale` is a dependency: changing language has to refetch, or the
-    // reader switches to English and keeps the French record.
-  }, [code, institution, locale]);
+    // reader switches to English and keeps the French record. `edition` is
+    // one for the same reason, one press later.
+  }, [code, institution, locale, edition]);
+
+  // A choice belongs to the course it was made on.
+  useEffect(() => setEdition(null), [code, institution]);
 
   /**
    * A link written before the institution was in the path.
@@ -425,6 +445,8 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
         reviewPage={reviewPage}
         onReviewPage={goToReviewPage}
         onBack={() => navigate("/")}
+        edition={course.edition ?? "fr"}
+        onEdition={setEdition}
         onWrite={() => navigate(coursePath(course.institution, course.code, true))}
         onCloseWriting={() => navigate(coursePath(course.institution, course.code))}
       />

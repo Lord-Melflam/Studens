@@ -56,6 +56,19 @@ const KNOWN = new Set([
   "field-label",
   "field-note",
   "ghost",
+  /*
+    `here` IS SHARED ON PURPOSE, unlike most of this list.
+
+    The others here are collisions that exist and are tolerated. This one is
+    the opposite: `.here` marks the current item and is defined once in
+    shell.css "one definition for every zone", so a module using it is using
+    the shared definition as intended rather than colliding with it.
+
+    It arrived in the module sheet on 2026-09-27 with the edition switch, and
+    that rule restates it at two-class specificity, which is what
+    here-wins.test.ts requires of every class rendered with it.
+  */
+  "here",
   "hint",
   "linkish",
   "notice",

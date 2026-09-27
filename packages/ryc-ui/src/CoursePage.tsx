@@ -52,6 +52,8 @@ export function CoursePage({
   reviewPage,
   onReviewPage,
   onBack,
+  edition,
+  onEdition,
   onWrite,
   onCloseWriting,
 }: {
@@ -65,6 +67,9 @@ export function CoursePage({
   reviewPage: number;
   onReviewPage: (page: number) => void;
   onBack: () => void;
+  /** Which edition is being shown: the reader's choice, or the interface language. */
+  edition: string;
+  onEdition: (lang: string) => void;
   onWrite: () => void;
   onCloseWriting: () => void;
 }) {
@@ -167,6 +172,9 @@ export function CoursePage({
           <CatalogueLanguageNote
             institution={course.institution}
             textLanguage={course.textLanguage}
+            editions={course.editions}
+            edition={edition}
+            onEdition={onEdition}
           />
         )}
         <FoldedField

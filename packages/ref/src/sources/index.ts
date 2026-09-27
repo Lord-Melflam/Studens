@@ -50,6 +50,19 @@ export interface SourceCrawlOptions {
    * the long prose.
    */
   prose?: boolean;
+  /**
+   * Also fetch the English edition of every course page (OPEN-47).
+   *
+   * On the source interface rather than on one crawler, because both sources
+   * publish one. That it was added to UCLouvain's crawler alone was the same
+   * oversight as asserting ULB had no English edition: an assumption stated as
+   * a fact and never checked.
+   *
+   * Default on where a source supports it, because a catalogue that is French
+   * in an English interface is the defect this exists to fix, and a fix nobody
+   * remembers to enable is not one.
+   */
+  english?: boolean;
 }
 
 export interface CatalogueSource {

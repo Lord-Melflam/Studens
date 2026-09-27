@@ -1355,3 +1355,45 @@ button.ghost {
   border-radius: 4px;
   flex: none;
 }
+
+/* OPEN-47: which edition of this record is being read.
+
+   Beside the sentence that explains why a language is appearing, because that
+   is the one place a control changing it reads as an answer rather than as a
+   setting. It changes this record and nothing else: not the interface, not the
+   next course.
+
+   `.here` restated at two-class specificity, which is the rule here-wins
+   enforces: `.here` alone is one class and loses to any later single-class
+   rule, and these sit inside a panel on some screens. */
+.edition-switch {
+  display: inline-flex;
+  gap: 0.15rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.edition-switch button:not(.here) {
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.4rem;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.edition-switch button:not(.here):hover { color: var(--accent); border-color: var(--accent); }
+.edition-switch button.here {
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.4rem;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  cursor: default;
+}

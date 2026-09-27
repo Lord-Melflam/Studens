@@ -1181,9 +1181,42 @@ detect.
 matches on title and a string inside a JSON blob is not matchable by that query;
 `textEn` holds the seven prose blocks in the shape the French ones already use.
 
-**Dutch is unchanged and cannot be fixed from this source.** `nl-cours-...`
-answers 404. Dutch readers get French, and the screen says which fields are
-French rather than pretending otherwise.
+**Dutch has no edition and cannot have one from this source.** `nl-cours-...`
+answers 404. A Dutch reader is therefore offered the ENGLISH edition first and
+French only where English is absent, which is the owner's call of 2026-09-27 on
+knowledge of the country rather than anything measurable here: a Dutch speaker
+in Belgium is likelier to read English comfortably than French. The first
+version sent them to French and told them so in Dutch, on courses whose English
+edition was in the same row.
+
+**ULB publishes an English edition too, and that was asserted otherwise.** When
+this section was first written it said ULB had none. That was never checked:
+the measurement behind it concerned Dutch at UCLouvain, and the conclusion was
+extended to a second university without looking. Corrected on 2026-09-27 after
+the owner pointed at `ulb.be/en/programme/arpa-p3101`, which is a real
+translation of the content and not only of the page furniture.
+
+Measured over 18 ULB courses and 108 field pairs:
+
+| | count | share |
+|---|---|---|
+| absent in both | 51 | 47% |
+| **French only** | **32** | **30%** |
+| genuinely translated | 20 | 19% |
+| identical, so untranslated French on the English page | 5 | 5% |
+| English only | 0 | 0% |
+
+ULB translates less than UCLouvain, which makes the per-field fallback matter
+MORE rather than less: replacing one edition with the other here would lose
+roughly a third of the prose instead of a sixth. The English labels were read
+off a real page, `/en/programme/<code>`, and sit in the same list as the French
+ones.
+
+**A reader can change edition on the page.** A switch beside the note, local to
+that record, offered only where a second edition exists. It is not in the
+address (FR-B21), because a course page sent to somebody should arrive in
+THEIR language: it is a preference about the reader, not a description of the
+page.
 
 ### 12.16 A term is not always one term
 

@@ -78,6 +78,21 @@ const WANTED: Array<{ label: string; field: ProseField }> = [
   { label: "pre requis et co requis", field: "prerequisites" },
   { label: "methodes d enseignement et activites d apprentissages", field: "teachingMethods" },
   { label: "references bibliographie et lectures recommandees", field: "bibliography" },
+  /*
+    THE ENGLISH EDITION'S LABELS, read off a real page on 2026-09-27 rather
+    than translated by hand. `/en/programme/<code>` is the same document with
+    the same structure, so the same parser reads it and only these spellings
+    are new. `Evaluation` is the same word in both and is already above.
+
+    They sit in this list rather than in a second one because the match is on
+    a normalised label and the field is the same field: one vocabulary, two
+    spellings, which is the rule the rest of the catalogue follows.
+  */
+  { label: "course content", field: "content" },
+  { label: "objectives and or specific learning outcomes", field: "objectives" },
+  { label: "prerequisites and corequisites", field: "prerequisites" },
+  { label: "teaching methods and learning activities", field: "teachingMethods" },
+  { label: "references bibliography and recommended readings", field: "bibliography" },
 ];
 
 type ProseField =
