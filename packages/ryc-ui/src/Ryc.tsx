@@ -289,13 +289,17 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
     let live = true;
     setCourse(null);
     api
-      .course(institution, code)
+      // OPEN-47: the language decides which edition each field comes back in,
+      // so it belongs in the request rather than being applied afterwards.
+      .course(institution, code, locale)
       .then((c) => live && setCourse(c))
       .catch(() => live && setError(t("ryc.err.course", { code: code.toUpperCase() })));
     return () => {
       live = false;
     };
-  }, [code, institution]);
+    // `locale` is a dependency: changing language has to refetch, or the
+    // reader switches to English and keeps the French record.
+  }, [code, institution, locale]);
 
   /**
    * A link written before the institution was in the path.

@@ -1334,3 +1334,24 @@ button.ghost {
 }
 .browse-more:hover { border-color: var(--accent); background: var(--accent-soft); }
 .browse-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* OPEN-47: the language a single field ended up in.
+
+   On the FOLD HEADER, so it is visible while the section is closed. A reader
+   deciding which of seven sections to open should not have to open one to find
+   out it is in a language they did not ask for.
+
+   Quiet: it is a fact about the source, not a warning, and the course page
+   already carries one note explaining why French appears at all. */
+.field-lang {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  flex: none;
+}

@@ -22,8 +22,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useT, useLocale } from "@studens/i18n";
 import { useSession } from "../session.js";
+import { Info } from "../Info.js";
 import { navigate, useSearch } from "../router.js";
 import {
+  fetchMembers,
+  fetchAddress,
   decide,
   fetchAppointments,
   fetchQueue,
@@ -324,6 +327,7 @@ function Holder({
  */
 function Settings() {
   const t = useT();
+  const locale = useLocale();
   const [rows, setRows] = useState<SettingRow[] | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [problem, setProblem] = useState<string | null>(null);
@@ -354,36 +358,74 @@ function Settings() {
     <section className="panel">
       <h3>{t("mod.settings")}</h3>
       <p className="hint">{t("mod.settings.hint")}</p>
-      {rows.map((row) => (
-        <div key={row.key} className="field-row narrow">
-          {/* THE KEY IS THE LABEL. Translating it would mean the shell
-              holding a phrase like "reviews per page", which is the module's
-              vocabulary and exactly what FR-B16 keeps out of here; the gate
-              caught the first attempt. A key is also what an administrator
-              reading the audit log will see, and a new setting needs no change
-              to this screen at all. */}
-          <label htmlFor={row.key}>
-            <code>{row.key}</code>
-          </label>
-          <input
-            id={row.key}
-            className="text-input"
-            type="number"
-            min={row.min}
-            max={row.max}
-            value={draft[row.key] ?? ""}
-            onChange={(e) => setDraft({ ...draft, [row.key]: e.target.value })}
-          />
-          <span className="hint">
-            {t("mod.settings.range", { min: row.min, max: row.max, fallback: row.fallback })}
-          </span>
-          <div className="panel-actions">
-            <button type="button" className="go" onClick={() => save(row)}>
-              {t("mod.settings.save")}
-            </button>
-          </div>
-        </div>
-      ))}
+      {/*
+        ONE ROW PER SETTING, name on the left, control on the right.
+
+        It was a stack of full width blocks, each with its own large primary
+        button, so three settings produced three identical loud buttons down a
+        narrow column with half the panel's width unused. A settings list is a
+        list: the thing being set and the thing that sets it belong on one
+        line, and the rule between rows is what says where one ends.
+
+        The button is quiet until the value actually differs from what is
+        stored. Three primary buttons on a screen where nothing has changed
+        invite a press that writes the same number back and puts a line in the
+        audit log saying somebody changed something.
+      */}
+      <ul className="settings-list">
+        {rows.map((row) => {
+          const stored = row.value === null ? String(row.fallback) : String(row.value);
+          const dirty = (draft[row.key] ?? "") !== stored;
+          return (
+            <li key={row.key} className="setting">
+              <div className="setting-name">
+                {/* THE KEY IS THE LABEL. Translating it would mean the shell
+                    holding a phrase like "reviews per page", which is the
+                    module's vocabulary and exactly what FR-B16 keeps out of
+                    here; the gate caught the first attempt. A key is also what
+                    an administrator reading the audit log will see, and a new
+                    setting needs no change to this screen at all. */}
+                <span className="setting-label">
+                  <label htmlFor={row.key}>
+                    <code>{row.key}</code>
+                  </label>
+                  {/* The sentence comes from the API, because it describes a
+                      module's domain and the shell may not hold those words
+                      (FR-B16). The shell decides where it goes, not what it
+                      says. */}
+                  {row.help && <Info label={row.key}>{row.help[locale] ?? row.help.en}</Info>}
+                </span>
+                <span className="hint">
+                  {t("mod.settings.range", {
+                    min: row.min,
+                    max: row.max,
+                    fallback: row.fallback,
+                  })}
+                </span>
+              </div>
+              <div className="setting-control">
+                <input
+                  id={row.key}
+                  className="text-input setting-input"
+                  type="number"
+                  min={row.min}
+                  max={row.max}
+                  value={draft[row.key] ?? ""}
+                  onChange={(e) => setDraft({ ...draft, [row.key]: e.target.value })}
+                />
+                <button
+                  type="button"
+                  className={dirty ? "go" : "ghost"}
+                  disabled={!dirty}
+                  onClick={() => save(row)}
+                >
+                  {t("mod.settings.save")}
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
       {saved && <p className="hint">{t("mod.settings.saved")}</p>}
       {problem && <p className="bad">{t("mod.settings.refused")}</p>}
     </section>
@@ -616,6 +658,159 @@ const SUSPENSION_LENGTHS = ["7", "30", "90", "permanent"] as const;
 /** How many holders a role shows before the rest are one press away. */
 const VISIBLE_HOLDERS = 8;
 
+/**
+ * WHO IS REGISTERED.
+ *
+ * Its own section, and not part of the roles screen. That screen deliberately
+ * lists only people holding a power, on the reasoning that showing every
+ * account would turn a page about accountability into a directory. The
+ * reasoning is right about that page. It is not an argument against a
+ * directory existing: an operator who cannot see who is in their own database
+ * cannot answer a support question, tell a real sign-up from a test account,
+ * or notice a hundred registrations in an hour.
+ *
+ * THE LIST SHOWS A DOMAIN. The full address is one deliberate press per
+ * member, and the server writes an audit row for it in the same transaction as
+ * the read. Members are told their address is kept in order to contact them,
+ * so reading one is a different purpose and should leave a trace rather than
+ * be a side effect of scrolling.
+ *
+ * SEARCHING AND FILTERING HAPPEN ON THE SERVER, for the reason the course
+ * search does: a thousand members is a thousand rows, and the browser must
+ * never be handed all of them to filter itself. The debounce is the same 180ms
+ * the catalogue search settled on, so typing costs one request per pause and
+ * not one per letter.
+ */
+function Directory() {
+  const t = useT();
+  const locale = useLocale();
+  const [q, setQ] = useState("");
+  const [typed, setTyped] = useState("");
+  const [role, setRole] = useState("");
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<Awaited<ReturnType<typeof fetchMembers>> | null>(null);
+  /** Addresses this administrator has deliberately asked for, this visit. */
+  const [shown, setShown] = useState<Record<string, Awaited<ReturnType<typeof fetchAddress>>>>({});
+
+  // One request per pause in typing, not one per letter.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQ(typed.trim());
+      setPage(1);
+    }, 180);
+    return () => clearTimeout(timer);
+  }, [typed]);
+
+  useEffect(() => {
+    let live = true;
+    void fetchMembers(q, role, page).then((d) => live && setData(d));
+    return () => {
+      live = false;
+    };
+  }, [q, role, page]);
+
+  if (!data) return null;
+
+  const reveal = (id: string) => {
+    void fetchAddress(id).then((a) => setShown((was) => ({ ...was, [id]: a })));
+  };
+
+  return (
+    <section className="panel">
+      <h3>
+        {t("mod.directory")} <span className="count">{data.total}</span>
+      </h3>
+      <p className="hint">{t("mod.directory.hint")}</p>
+
+      <div className="directory-controls">
+        <input
+          className="text-input"
+          type="search"
+          value={typed}
+          placeholder={t("mod.directory.search")}
+          onChange={(e) => setTyped(e.target.value)}
+        />
+        {/* Built from the server's own list, so a new role gets a filter
+            without this file being edited, exactly as the appointments screen
+            builds its groups. */}
+        <div className="filter-chips">
+          <button
+            type="button"
+            className={role === "" ? "filter-chip here" : "filter-chip"}
+            onClick={() => {
+              setRole("");
+              setPage(1);
+            }}
+          >
+            {t("mod.directory.all")}
+          </button>
+          {data.roles.map((r) => (
+            <button
+              key={r}
+              type="button"
+              className={role === r ? "filter-chip here" : "filter-chip"}
+              onClick={() => {
+                setRole(r);
+                setPage(1);
+              }}
+            >
+              {t(`mod.role.${r}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {data.members.length === 0 ? (
+        <p className="hint">{t("mod.directory.none")}</p>
+      ) : (
+        <ul className="directory">
+          {data.members.map((m) => (
+            <li key={m.id} className="directory-row">
+              <div className="directory-who">
+                <span className="directory-name">{m.username ?? t("mod.directory.unnamed")}</span>
+                <span className="tag">{t(`mod.role.${m.role}`)}</span>
+                {m.suspended && <span className="tag bad">{t("mod.directory.suspended")}</span>}
+              </div>
+              <div className="directory-meta">
+                <span className="domain">{m.emailDomain}</span>
+                <span className="hint">{ago(m.createdAt, locale)}</span>
+              </div>
+              <div className="directory-address">
+                {shown[m.id] ? (
+                  <span className="address">
+                    {shown[m.id]?.contactEmail ?? shown[m.id]?.providerEmail}
+                    {shown[m.id]?.contactEmail && !shown[m.id]?.contactVerified && (
+                      <span className="hint"> {t("mod.directory.unconfirmed")}</span>
+                    )}
+                  </span>
+                ) : m.hasAddress ? (
+                  <button type="button" className="ghost" onClick={() => reveal(m.id)}>
+                    {t("mod.directory.reveal")}
+                  </button>
+                ) : (
+                  <span className="hint">{t("mod.directory.noaddress")}</span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {data.pages > 1 && (
+        <nav className="pager" aria-label={t("mod.directory")}>
+          <button type="button" onClick={() => setPage(page - 1)} disabled={page <= 1}>
+            {t("mod.page.prev")}
+          </button>
+          <span className="pager-where">{t("mod.page.where", { page: data.page, pages: data.pages })}</span>
+          <button type="button" onClick={() => setPage(page + 1)} disabled={page >= data.pages}>
+            {t("mod.page.next")}
+          </button>
+        </nav>
+      )}
+    </section>
+  );
+}
+
 function Appointments() {
   const t = useT();
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -793,7 +988,7 @@ function Appointments() {
  * A MODERATOR WITHOUT THE ADMINISTRATOR'S POWERS SEES NO BAR AT ALL. They have
  * one section, and a row of one tab is a control that can never do anything.
  */
-export const SECTIONS = ["signalements", "comptes", "roles", "reglages"] as const;
+export const SECTIONS = ["signalements", "comptes", "membres", "roles", "reglages"] as const;
 export type Section = (typeof SECTIONS)[number];
 
 /**
@@ -881,6 +1076,7 @@ export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; h
         </>
       )}
 
+      {canAppoint && section === "membres" && <Directory />}
       {canAppoint && section === "roles" && <Appointments />}
       {canAppoint && section === "reglages" && <Settings />}
     </div>

@@ -79,14 +79,14 @@ function fakeSite(overrides: Record<string, string | number> = {}) {
 describe("the chain is discovered, not configured", () => {
   it("finds faculties it could not possibly have had a list of", async () => {
     const site = fakeSite();
-    const snap = await crawl({ year: YEAR, fetcher: site.fetcher });
+    const snap = await crawl({ year: YEAR, fetcher: site.fetcher, english: false });
     // Names come from the link text, which ref.Faculty needs.
     expect(snap.faculties.find((f) => f.code === "zzz")?.name).toBe("Zeta");
     expect(snap.faculties.map((f) => f.code).sort()).toEqual(["xxx", "yyy", "zzz"]);
   });
 
   it("walks through to the offerings", async () => {
-    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     expect(snap.programmes).toHaveLength(3);
     expect(snap.offerings.map((o) => o.code).sort()).toEqual([
       "xaaa3000",
@@ -97,26 +97,26 @@ describe("the chain is discovered, not configured", () => {
   });
 
   it("records a course reached through more than one faculty (many-to-many)", async () => {
-    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     const shared = snap.reachedVia.filter((r) => r.code === "yaaa2000").map((r) => r.faculty);
     expect(shared.sort()).toEqual(["xxx", "yyy"]);
   });
 
   it("reads ECTS as a number on every offering", async () => {
-    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     for (const o of snap.offerings) expect(typeof o.ects).toBe("number");
     expect(snap.offerings.find((o) => o.code === "zbbb1001")!.ects).toBe(3);
   });
 
   it("can be scoped to one faculty without hardcoding which", async () => {
-    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, onlyFaculties: ["zzz"] });
+    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, onlyFaculties: ["zzz"], english: false });
     expect(snap.faculties.map((f) => f.code)).toEqual(["zzz"]);
     expect(snap.offerings).toHaveLength(2);
   });
 
   it("refuses a scope that matches nothing, rather than crawling everything", async () => {
     await expect(
-      crawl({ year: YEAR, fetcher: fakeSite().fetcher, onlyFaculties: ["nosuchfaculty"] }),
+      crawl({ year: YEAR, fetcher: fakeSite().fetcher, onlyFaculties: ["nosuchfaculty"], english: false }),
     ).rejects.toThrow(/none of the requested faculties/);
   });
 
@@ -125,7 +125,7 @@ describe("the chain is discovered, not configured", () => {
     // programme listing links "cours-2025-x" with no slash. The fake site
     // deliberately serves both forms, because a fixture that only used the
     // tidy form is what let this bug reach a live run.
-    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     expect(snap.offerings.map((o) => o.code).sort()).toEqual([
       "xaaa3000",
       "yaaa2000",
@@ -137,13 +137,13 @@ describe("the chain is discovered, not configured", () => {
   it("falls back to the bachelor-only listing suffix when the first is absent", async () => {
     // xprog is served ONLY on -programme_annual_blocks in the fake site, so the
     // course it lists can be reached only if the fallback works.
-    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     expect(snap.offerings.map((o) => o.code)).toContain("xaaa3000");
   });
 
   it("is serial, never parallel", async () => {
     const site = fakeSite();
-    await crawl({ year: YEAR, fetcher: site.fetcher });
+    await crawl({ year: YEAR, fetcher: site.fetcher, english: false });
     // 1 index + 1 search + 3 faculties + 4 programme listing attempts (xprog
     // needs two) + 4 courses.
     //
@@ -189,7 +189,9 @@ describe("reconciling the index with the search application", () => {
       year: YEAR,
       fetcher: fakeSite({
         [SEARCH]: row("zprog", "Bachelier en Z", "Charleroi", "Sciences"),
-      }).fetcher,
+        english: false,
+    }).fetcher,
+      english: false,
     });
     const z = snap.programmes.find((p) => p.code === "zprog");
     expect(z?.site).toBe("Charleroi");
@@ -208,6 +210,7 @@ describe("reconciling the index with the search application", () => {
           `<a href="/prog-${YEAR}-zprog">Bachelier en Z (Mons)</a>`,
         [SEARCH]: row("zprog", "Bachelier en Z", "Charleroi", "Sciences"),
       }).fetcher,
+      english: false,
     });
     expect(snap.conflicts).toEqual([
       { code: "zprog", field: "site", fromIndex: "Mons", fromSearch: "Charleroi" },
@@ -227,6 +230,7 @@ describe("reconciling the index with the search application", () => {
           `<a href="/prog-${YEAR}-yprog">Mineure en Y (Tournai)</a>`,
         [SEARCH]: row("zprog", "Bachelier en Z", "Charleroi", "Sciences"),
       }).fetcher,
+      english: false,
     });
     const y = snap.programmes.find((p) => p.code === "yprog");
     expect(y?.site).toBe("Tournai");
@@ -250,6 +254,7 @@ describe("reconciling the index with the search application", () => {
       year: YEAR,
       fetcher: fakeSite().fetcher,
       onProgress: (m) => said.push(m),
+      english: false,
     });
     expect(snap.programmes).toHaveLength(3);
     expect(snap.programmes.every((p) => p.domain === null)).toBe(true);
@@ -266,7 +271,7 @@ describe("failures are loud", () => {
       [`https://uclouvain.be/cours-${YEAR}-zaaa1000`]:
         "<html><body><h1>Something else entirely</h1><p>no fields here</p></body></html>",
     });
-    await expect(crawl({ year: YEAR, fetcher: site.fetcher })).rejects.toThrow(
+    await expect(crawl({ year: YEAR, fetcher: site.fetcher, english: false })).rejects.toThrow(
       /unrecognised course page layout/,
     );
   });
@@ -276,7 +281,7 @@ describe("failures are loud", () => {
       [`https://uclouvain.be/fr/catalogue-formations/formations-par-faculte-${YEAR}`]:
         "<html><body>site redesigned</body></html>",
     });
-    await expect(crawl({ year: YEAR, fetcher: site.fetcher })).rejects.toThrow(/faculty links/);
+    await expect(crawl({ year: YEAR, fetcher: site.fetcher, english: false })).rejects.toThrow(/faculty links/);
   });
 });
 
@@ -288,14 +293,14 @@ describe("a broken run cannot corrupt the live catalogue", () => {
 
   it("promotes a good snapshot", async () => {
     const path = await livePath();
-    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     await promote(snap, path);
     expect((await load(path)).offerings).toHaveLength(4);
   });
 
   it("leaves the previous snapshot untouched when the new one is invalid", async () => {
     const path = await livePath();
-    const good = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const good = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     await promote(good, path);
 
     const broken: Snapshot = { ...good, offerings: [] };
@@ -309,7 +314,7 @@ describe("a broken run cannot corrupt the live catalogue", () => {
 
   it("refuses a snapshot whose offering year disagrees with the run", async () => {
     const path = await livePath();
-    const good = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const good = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     const mismatched: Snapshot = {
       ...good,
       offerings: good.offerings.map((o) => ({ ...o, year: 1999 })),
@@ -319,7 +324,7 @@ describe("a broken run cannot corrupt the live catalogue", () => {
 
   it("refuses a snapshot with an implausible course code", async () => {
     const path = await livePath();
-    const good = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const good = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     const bad: Snapshot = {
       ...good,
       offerings: [{ ...good.offerings[0]!, code: "not a code" }],
@@ -346,7 +351,7 @@ describe("course code validation", () => {
   async function promoteWithCode(code: string): Promise<void> {
     const { mkdtemp } = await import("node:fs/promises");
     const dir = await mkdtemp(join(tmpdir(), "studens-code-"));
-    const good = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const good = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     await promote(
       { ...good, offerings: [{ ...good.offerings[0]!, code }] },
       join(dir, "c.json"),
@@ -389,6 +394,7 @@ describe("the request budget", () => {
       await crawl({
         year: YEAR,
         fetcher: new PoliteFetcher({ delayMs: 0, fetchImpl: warm.fetchImpl, cacheDir: dir }),
+        english: false,
       });
       const cold = fakeSite();
       const fetcher = new PoliteFetcher({
@@ -397,7 +403,7 @@ describe("the request budget", () => {
         cacheDir: dir,
         maxRequests: 1,
       });
-      const snap = await crawl({ year: YEAR, fetcher });
+      const snap = await crawl({ year: YEAR, fetcher, english: false });
       expect(snap.offerings).toHaveLength(4);
       // The one request is the search, which the warm run could not cache
       // because the fake site answers it with a 404.
@@ -627,7 +633,7 @@ describe("transient failures", () => {
     // A retry is work the university did, so it is spent from the same purse.
     const f = flaky(503, 1);
     const fetcher = new PoliteFetcher({ delayMs: 0, fetchImpl: f.fetchImpl, retries: 3 });
-    await crawl({ year: YEAR, fetcher });
+    await crawl({ year: YEAR, fetcher, english: false });
     expect(fetcher.retryCount).toBe(1);
     expect(fetcher.requestCount).toBe(14);
   });
@@ -702,7 +708,7 @@ describe("courses the university will not serve", () => {
     const site = fakeSite({
       [`https://uclouvain.be/cours-${YEAR}-zaaa1000`]: "<html><body>nothing at all</body></html>",
     });
-    await expect(crawl({ year: YEAR, fetcher: site.fetcher })).rejects.toThrow(
+    await expect(crawl({ year: YEAR, fetcher: site.fetcher, english: false })).rejects.toThrow(
       /unrecognised course page layout/,
     );
   });
@@ -720,7 +726,7 @@ describe("courses the university will not serve", () => {
  */
 describe("what happened to a programme's course list", () => {
   it("records a list that was read", async () => {
-    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher });
+    const snap = await crawl({ year: YEAR, fetcher: fakeSite().fetcher, english: false });
     const z = snap.programmes.find((p) => p.code === "zprog");
     expect(z?.listing).toBe("listed");
     expect(z?.courses).toBe(2);
@@ -736,6 +742,7 @@ describe("what happened to a programme's course list", () => {
         [`https://uclouvain.be/prog-${YEAR}-zprog-programme_annual_blocks`]:
           "<html><body>nothing here either</body></html>",
       }).fetcher,
+      english: false,
     });
     expect(snap.programmes.find((p) => p.code === "zprog")?.listing).toBe("empty");
     // yprog's pages are absent from the fake site entirely, so nothing loaded.
@@ -812,7 +819,7 @@ describe("courses published without credits", () => {
     const site = fakeSite({
       [`https://uclouvain.be/cours-${YEAR}-zaaa1000`]: "<html><body>nothing at all</body></html>",
     });
-    await expect(crawl({ year: YEAR, fetcher: site.fetcher })).rejects.toThrow(
+    await expect(crawl({ year: YEAR, fetcher: site.fetcher, english: false })).rejects.toThrow(
       /unrecognised course page layout/,
     );
   });
@@ -830,5 +837,67 @@ describe("courses published without credits", () => {
     } finally {
       await rm(path, { recursive: true, force: true });
     }
+  });
+});
+
+/**
+ * OPEN-47: the English edition, fetched alongside the French one.
+ *
+ * DEFAULT ON, which is why every test above had to say `english: false`
+ * explicitly. That is not noise: those tests measure the French chain's
+ * request count and its serial order, and a second fetch per course changes
+ * both. Saying which crawl each one measures is the honest version.
+ *
+ * THE BEHAVIOUR THAT MATTERS IS THE TOLERANCE. This edition is a bonus: a
+ * course without one is ordinary, not an error, so neither a refused fetch nor
+ * an unparseable page may stop a run or lose the French record already held.
+ */
+describe("the English edition (OPEN-47)", () => {
+  const withEnglish = (extra: Record<string, string | number> = {}) =>
+    fakeSite({
+      [`https://uclouvain.be/en-cours-${YEAR}-xaaa3000`]: coursePage("Alpha Course"),
+      ...extra,
+    });
+
+  it("attaches it when the university publishes one", async () => {
+    const snap = await crawl({ year: YEAR, fetcher: withEnglish().fetcher });
+    const alpha = snap.offerings.find((o) => o.code === "xaaa3000");
+    expect(alpha?.english?.title).toBe("Alpha Course");
+  });
+
+  /**
+   * The other three courses in the fake site have no English page at all, and
+   * the run has to finish with their French records intact. This is the 16%
+   * case at crawl time rather than at read time.
+   */
+  it("keeps the French record for a course with no English page", async () => {
+    const snap = await crawl({ year: YEAR, fetcher: withEnglish().fetcher });
+    expect(snap.offerings).toHaveLength(4);
+    for (const o of snap.offerings) expect(o.title).toBeTruthy();
+    expect(snap.offerings.filter((o) => o.english).length).toBe(1);
+  });
+
+  /**
+   * A page that answers but cannot be understood is fatal on the French path,
+   * because a catalogue with wrong data is worse than one that refused to
+   * update. It must NOT be fatal here: the French record is already correct,
+   * and losing a whole run over a malformed bonus page would be absurd.
+   */
+  it("survives an English page it cannot parse", async () => {
+    const snap = await crawl({
+      year: YEAR,
+      fetcher: withEnglish({
+        [`https://uclouvain.be/en-cours-${YEAR}-xaaa3000`]: "<html><body>not a course page</body></html>",
+      }).fetcher,
+    });
+    expect(snap.offerings).toHaveLength(4);
+    expect(snap.offerings.find((o) => o.code === "xaaa3000")?.english ?? null).toBeNull();
+  });
+
+  it("fetches nothing extra when it is switched off", async () => {
+    const site = withEnglish();
+    await crawl({ year: YEAR, fetcher: site.fetcher, english: false });
+    // 13 requests is the French chain, asserted at the top of this file.
+    expect(site.fetcher.requestCount).toBe(13);
   });
 });

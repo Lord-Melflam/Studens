@@ -220,7 +220,14 @@ header { margin-bottom: 1.75rem; }
 
 
 .error { color: #a3231b; font-size: 0.9rem; }
-.linkish {
+/* Restated at two-class specificity, because `.panel button` is (0,1,1) and
+   this is (0,1,0). `.linkish` is used inside panels in the account and the
+   settings screens, where every one of these properties was being overridden:
+   a control meant to read as a link was drawing as a bordered, padded button
+   on a surface background. Found by the gate in here-wins.test.ts, which was
+   written after the same collision cost three separate bugs. */
+.linkish,
+.panel .linkish {
   font: inherit;
   color: var(--accent);
   background: none;
@@ -1148,4 +1155,204 @@ a.ghost.here {
     border-radius: 999px;
   }
   .crumb-chevron { width: 1.05rem; height: 1.05rem; }
+}
+
+/* --- the settings list in the console
+
+   It was a stack of full width blocks, each carrying its own large primary
+   button: three settings produced three identical loud buttons down a narrow
+   column, with half the panel's width unused and each range hint orphaned
+   below its input rather than beside the name it qualifies.
+
+   A settings list is a list. The thing being set and the control that sets it
+   belong on one line, and a rule between rows is what says where one ends. */
+.settings-list { margin: 0.5rem 0 0; padding: 0; list-style: none; }
+
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--line);
+}
+.setting:first-child { border-top: 0; }
+
+.setting-name { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.setting-name label { font: inherit; }
+.setting-name code { font-size: 0.86rem; color: var(--ink); }
+.setting-name .hint { margin: 0; font-size: 0.78rem; }
+
+.setting-control { display: flex; align-items: center; gap: 0.5rem; flex: none; }
+/* Wide enough for the largest value the bounds allow and no wider: a number
+   field that could hold a sentence invites one. */
+.setting-input { width: 5.5rem; text-align: right; }
+
+/* A save that can do nothing should not look like it can. The quiet variant
+   already exists; this only stops it reacting to a pointer. */
+.setting-control button:disabled { opacity: 0.45; cursor: default; }
+.setting-control button:disabled:hover { border-color: var(--line); background: none; }
+
+/* On a phone the two halves stack, and the control goes full width rather
+   than sitting in a 5rem column against the left edge. */
+@media (max-width: 560px) {
+  .setting { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+  .setting-control { justify-content: space-between; }
+  .setting-input { flex: 1; text-align: left; }
+}
+
+/* --- the "i" that explains a control
+
+   Reported as: you cannot put keys like `platform.quotaPerWindow` in an admin
+   panel without saying what they are, or somebody sets a value for the wrong
+   parameter. Two of the three settings look alike and are not alike at all.
+
+   A BUTTON, NOT A HOVER TOOLTIP. A tooltip does not exist on a phone, vanishes
+   while it is being read, and cannot be reached from a keyboard. This toggles
+   a paragraph that pushes the row down, so nothing is drawn over anything. */
+/* TWO CLASSES, DELIBERATELY, AND THIS IS THE FOURTH TIME.
+   `.panel button` is a class plus an element, so it outranks a single class
+   wherever this mark sits inside a panel. It sets padding, colour, background,
+   border and radius; the padding alone squeezed a 1.9rem button's content box
+   to a negative width, which clamps to zero, so the icon rendered as nothing
+   inside a visible chip. Ordering could not have fixed it: it is a specificity
+   loss, the same one `.here` lost three times (LESSONS.md).
+   So the mark is restated at two-class specificity, which beats `.panel button`
+   by class count whatever order the file ends up in. */
+.info-mark,
+.panel .info-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* A finger's worth of target around a 16px mark. It sits next to a label,
+     so the box is kept from adding height with a negative margin instead of
+     being made small. */
+  width: 1.9rem;
+  height: 1.9rem;
+  margin: -0.45rem 0 -0.45rem -0.15rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  flex: none;
+}
+/* Restated for the same reason: each of these is a property `.panel button`
+   declares, so leaving any of them to the base rule alone loses it in a panel. */
+.panel .info-mark { padding: 0; background: none; border: 0; color: var(--muted); }
+.info-mark svg,
+.panel .info-mark svg { width: 1rem; height: 1rem; flex: none; }
+.info-mark:hover,
+.panel .info-mark:hover { color: var(--accent); background: var(--accent-soft); }
+.info-mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Open is a state and says so, for the same reason .here does. */
+.info-mark[aria-expanded="true"],
+.panel .info-mark[aria-expanded="true"] { color: var(--accent); background: var(--accent-soft); }
+
+.info-body {
+  flex-basis: 100%;
+  margin: 0.4rem 0 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+}
+
+/* The label and its mark sit on one line; the explanation wraps underneath. */
+.setting-label { display: flex; align-items: center; gap: 0.1rem; flex-wrap: wrap; }
+
+/* --- the member directory
+
+   A list an operator reads down, so the three things they scan for line up in
+   columns: who, where they are from, and the control that reveals an address.
+   Reported as: it is frustrating not to know which users are in my database. */
+.directory-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0 0.25rem;
+}
+.directory-controls .text-input { flex: 1 1 16rem; min-width: 0; }
+
+.directory { margin: 0; padding: 0; list-style: none; }
+.directory-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--line);
+}
+.directory-who { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; min-width: 0; flex: 1 1 40%; }
+.directory-name { font-weight: 600; overflow-wrap: anywhere; }
+.directory-meta { display: flex; align-items: baseline; gap: 0.6rem; flex: 0 1 auto; }
+.directory-meta .hint { margin: 0; font-size: 0.78rem; }
+/* The domain is the signal the product already uses (FR-A10), so it is the
+   thing given weight here rather than a grey afterthought. */
+.domain {
+  font-size: 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted);
+}
+.directory-address { margin-left: auto; flex: none; }
+/* Revealed deliberately, so it is allowed to look like a fact rather than a
+   hint. It is also the one string on this screen that is personal data. */
+.address {
+  font-size: 0.82rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-wrap: anywhere;
+}
+
+/* A small state label: a role, or that somebody is stopped. */
+.tag {
+  padding: 0.1rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.tag.bad { color: var(--danger); border-color: var(--danger); background: none; }
+
+@media (max-width: 640px) {
+  .directory-row { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+  .directory-address { margin-left: 0; }
+}
+
+/* The role filter. `.chip` and `.chipset` belong to a module's stylesheet, and
+   borrowing them here would be the collision the css-collisions gate exists to
+   stop, so the shell has its own.
+
+   SPLIT IN TWO ON PURPOSE. The layout half applies to every chip including the
+   current one, or the selected filter would lose its padding and its border.
+   The colour half is guarded with :not(.here), because colour, background and
+   font weight are what `.here` owns: a later rule setting them at equal
+   specificity silently wins and the current filter stops looking current,
+   which is the bug three earlier ones were. `.filter-chip.here` is then
+   declared at two classes as well, so it also beats `.panel button`. */
+.filter-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.filter-chip,
+.panel .filter-chip {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.filter-chip:not(.here),
+.panel .filter-chip:not(.here) { color: var(--muted); background: none; }
+.filter-chip:not(.here):hover,
+.panel .filter-chip:not(.here):hover { border-color: var(--accent); color: var(--accent); }
+.filter-chip.here,
+.panel .filter-chip.here {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  font-weight: 600;
 }

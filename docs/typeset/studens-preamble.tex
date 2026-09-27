@@ -19,6 +19,7 @@
 \usetikzlibrary{positioning,shapes.geometric,arrows.meta,calc,fit,backgrounds,
                 decorations.pathreplacing,shadows.blur,patterns}
 \usepackage[most]{tcolorbox}
+\usepackage{fancyvrb}
 \usepackage{enumitem}
 \usepackage{booktabs}
 \usepackage{array}
@@ -92,6 +93,17 @@
 \newtcolorbox{openq}[1][]{colback=white,colframe=muted,boxrule=0.6pt,
   arc=2pt,left=3mm,right=3mm,top=2mm,bottom=2mm,
   fonttitle=\sffamily\bfseries\small,title=Still open,#1}
+
+% A block of shell, kept verbatim.
+%
+% ADDED 2026-09-27, when the handover document needed one and discovered there
+% was none. An undefined environment does not stop the build in nonstopmode:
+% the commands were typeset as italic mathematics, underscores became
+% subscripts, and the PDF looked plausible at a glance. Only the overfull-box
+% warnings gave it away, which is why those are read rather than tolerated.
+\DefineVerbatimEnvironment{cmd}{Verbatim}%
+  {frame=single,rulecolor=\color{line},framesep=3mm,fontsize=\small,
+   baselinestretch=1.05}
 
 % Screen wireframe frame
 \tikzset{

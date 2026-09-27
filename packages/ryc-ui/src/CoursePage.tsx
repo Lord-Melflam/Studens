@@ -164,23 +164,29 @@ export function CoursePage({
             Only where there is something for it to be about: on a course that
             publishes none of the three, it would be describing an empty page. */}
         {(course.assessment || course.themes || course.content) && (
-          <CatalogueLanguageNote institution={course.institution} />
+          <CatalogueLanguageNote
+            institution={course.institution}
+            textLanguage={course.textLanguage}
+          />
         )}
         <FoldedField
           label={t("ryc.course.assessment")}
           blocks={course.assessment}
+          lang={course.textLanguage?.assessment}
           open={open.includes(SECTION.assessment)}
           onToggle={() => onToggleSection(SECTION.assessment)}
         />
         <FoldedField
           label={t("ryc.course.themes")}
           blocks={course.themes}
+          lang={course.textLanguage?.themes}
           open={open.includes(SECTION.themes)}
           onToggle={() => onToggleSection(SECTION.themes)}
         />
         <FoldedField
           label={t("ryc.course.content")}
           blocks={course.content}
+          lang={course.textLanguage?.content}
           open={open.includes(SECTION.content)}
           onToggle={() => onToggleSection(SECTION.content)}
         />
@@ -194,24 +200,28 @@ export function CoursePage({
         <FoldedField
           label={t("ryc.course.objectives")}
           blocks={course.objectives}
+          lang={course.textLanguage?.objectives}
           open={open.includes(SECTION.objectives)}
           onToggle={() => onToggleSection(SECTION.objectives)}
         />
         <FoldedField
           label={t("ryc.course.prerequisites")}
           blocks={course.prerequisites}
+          lang={course.textLanguage?.prerequisites}
           open={open.includes(SECTION.prerequisites)}
           onToggle={() => onToggleSection(SECTION.prerequisites)}
         />
         <FoldedField
           label={t("ryc.course.teachingMethods")}
           blocks={course.teachingMethods}
+          lang={course.textLanguage?.teachingMethods}
           open={open.includes(SECTION.teachingMethods)}
           onToggle={() => onToggleSection(SECTION.teachingMethods)}
         />
         <FoldedField
           label={t("ryc.course.bibliography")}
           blocks={course.bibliography}
+          lang={course.textLanguage?.bibliography}
           open={open.includes(SECTION.bibliography)}
           onToggle={() => onToggleSection(SECTION.bibliography)}
         />

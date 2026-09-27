@@ -8,6 +8,7 @@ you need it.
 
 | | |
 |---|---|
+| [`HANDOFF.md`](HANDOFF.md) | **Start here if you are new, or if you are a model working on somebody's behalf.** What this is, how to get it running from an empty machine, what is deliberately NOT in this repository and must be recreated, how the project is worked on, and what is not built. Written to be read once, in order, in twenty minutes. |
 | [`TIMELINE.md`](TIMELINE.md) | **Where the project stands, and how it got here.** The state table at the top is what matters day to day, and it holds no figure that moves: `npm run state` counts those when you ask, because a number kept by hand here went stale twice in one week. The phase log below it records how each decision was reached, so a decision can be reopened with its reasoning attached rather than argued again from nothing. |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | **How we work and why.** Branching, review, the gates, and what each gate exists to prevent. Read it before your first pull request. |
 | [`COMMANDS.md`](COMMANDS.md) | **What to type.** Setup, running it, the database, the catalogue, mail, and a table of what to do when something breaks. Includes the things that are not npm scripts: `psql` one-liners, `gh`, worktrees. |

@@ -32,6 +32,28 @@ import { richBlocks, type Block } from "./rich.js";
 
 export type Era = "modern" | "archive";
 
+/**
+ * The English edition of one course, when the university publishes one.
+ *
+ * OPEN-47. Deliberately only the fields that are PROSE. `ects`, the quarter
+ * and the contact hours are numbers and identical in both editions; the
+ * teaching language is a value rather than a label, and the French record is
+ * the one the filters already use.
+ *
+ * Every field is nullable and most of them are null: measured on 24 courses,
+ * 16% of fields exist in French and not in English, and 43% exist in neither.
+ */
+export interface EnglishText {
+  title: string | null;
+  assessment: Block[] | null;
+  themes: Block[] | null;
+  content: Block[] | null;
+  objectives: Block[] | null;
+  prerequisites: Block[] | null;
+  teachingMethods: Block[] | null;
+  bibliography: Block[] | null;
+}
+
 export interface ParsedOffering {
   code: string;
   year: number;
@@ -75,6 +97,8 @@ export interface ParsedOffering {
   prerequisites?: Block[] | null;
   teachingMethods?: Block[] | null;
   bibliography?: Block[] | null;
+  /** OPEN-47. Absent when the English edition was not fetched or had nothing. */
+  english?: EnglishText | null;
   owningFaculty: string | null;
   /**
    * The campuses this course is taught on, where the source states them per
@@ -300,7 +324,7 @@ export function parseOffering(
     throw new ParseError(url, "fields", "no labelled fields found; the layout changed");
   }
 
-  const teachersRaw = field(fields, ["enseignants", "enseignant", "teachers"], url, "teachers");
+  const teachersRaw = field(fields, ["enseignants", "enseignant", "teacher"], url, "teachers");
 
   return {
     code: code.toLowerCase(),
@@ -312,7 +336,7 @@ export function parseOffering(
     contactHours: headerCells.find((c) => /\bh\b/.test(c) && !/cr/i.test(c)) ?? null,
     // The archive era has no quarter at all. Absent by era, not an error.
     quarter: headerCells.find((c) => /^Q[1-4]$/i.test(c)) ?? null,
-    language: field(fields, ["langue d'enseignement", "langue"], url, "language"),
+    language: field(fields, ["langue d'enseignement", "langue", "language"], url, "language"),
     teachers: teachersRaw
       ? teachersRaw
           .split(";")
@@ -329,15 +353,27 @@ export function parseOffering(
       url,
       "assessment",
     ),
-    themes: richField($, fields, ["themes abordes"], url, "themes"),
-    content: richField($, fields, ["contenu"], url, "content"),
+    themes: richField($, fields, ["themes abordes", "main themes"], url, "themes"),
+    content: richField($, fields, ["contenu", "content"], url, "content"),
     // Added 2026-09-19, on request. Four lines, and no logic above
     // them is touched: the labels are read exactly as the six already here
     // are, through the same `richField` and the same label map.
-    objectives: richField($, fields, ["acquisd'apprentissage", "acquis d'apprentissage"], url, "objectives"),
-    prerequisites: richField($, fields, ["prealables", "prealable"], url, "prerequisites"),
-    teachingMethods: richField($, fields, ["methodes d'enseignement", "methode d'enseignement"], url, "teachingMethods"),
-    bibliography: richField($, fields, ["bibliographie"], url, "bibliography"),
+    objectives: richField(
+      $,
+      fields,
+      ["acquisd'apprentissage", "acquis d'apprentissage", "learning outcomes"],
+      url,
+      "objectives",
+    ),
+    prerequisites: richField($, fields, ["prealables", "prealable", "prerequisites"], url, "prerequisites"),
+    teachingMethods: richField(
+      $,
+      fields,
+      ["methodes d'enseignement", "methode d'enseignement", "teaching methods"],
+      url,
+      "teachingMethods",
+    ),
+    bibliography: richField($, fields, ["bibliographie", "bibliography"], url, "bibliography"),
     owningFaculty: entity(
       field(
         fields,
@@ -383,4 +419,56 @@ export function mainLanguage(language: string | null): string | null {
   if (language === null) return null;
   const main = language.split(">")[0]!.trim();
   return main === "" ? null : main;
+}
+
+/**
+ * WHAT THE ENGLISH EDITION SAYS, reduced to the fields worth keeping.
+ *
+ * OPEN-47. It runs the SAME parser over the English page rather than a second
+ * one: the two editions share a layout, and the only difference is the labels,
+ * which `find` already matches by substring against a list of spellings. The
+ * English spellings were read off the real page on 2026-09-27 rather than
+ * guessed, and they are in the same lists as the French ones.
+ *
+ * TWO THINGS MAKE THIS MORE THAN A SECOND PARSE:
+ *
+ * 1. **A deferral is not content.** The English page may carry the literal
+ *    sentence "See French document" where a lecturer did not translate. Storing
+ *    it would replace a real French field with a sentence telling the reader to
+ *    go and find the thing we just discarded. Confirmed on `lepl1503`, where
+ *    the French assessment is 1,855 characters and the English one is that
+ *    sentence. Rare, 0 of 24 sampled courses, and cheap to refuse.
+ *
+ * 2. **An empty result is null, not an object of nulls.** A course whose
+ *    English page published nothing at all should store nothing, so that the
+ *    reader's fallback is a single null check rather than seven.
+ */
+const DEFERRAL = /^\s*(see (the )?french( document| version)?|voir le document fran[çc]ais)\s*\.?\s*$/i;
+
+function unlessDeferred(blocks: Block[] | null): Block[] | null {
+  if (!blocks) return null;
+  const flat = JSON.stringify(blocks).replace(/[^A-Za-zÀ-ſ ]+/g, " ").replace(/\s+/g, " ");
+  // Only a field that is ENTIRELY the deferral counts. A long English section
+  // that happens to mention the French document in passing is real content.
+  return DEFERRAL.test(flat.replace(/^ *(kind p lines t|kind p lines) */i, "")) ? null : blocks;
+}
+
+export function parseEnglish(
+  html: string,
+  code: string,
+  year: number,
+  url: string,
+): EnglishText | null {
+  const o = parseOffering(html, code, year, url);
+  const out: EnglishText = {
+    title: o.title || null,
+    assessment: unlessDeferred(o.assessment),
+    themes: unlessDeferred(o.themes),
+    content: unlessDeferred(o.content),
+    objectives: unlessDeferred(o.objectives ?? null),
+    prerequisites: unlessDeferred(o.prerequisites ?? null),
+    teachingMethods: unlessDeferred(o.teachingMethods ?? null),
+    bibliography: unlessDeferred(o.bibliography ?? null),
+  };
+  return Object.values(out).some((v) => v !== null) ? out : null;
 }

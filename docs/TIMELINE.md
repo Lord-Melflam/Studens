@@ -17,7 +17,7 @@ gone wrong and what each failure changed.
 | Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted, read and paged on both paths, moderation end to end, and an administrator who can change settings, suspend an account, and see who is suspended and why. A suspended person is told, which they were not until phase 46. The web process serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
 | Data | **Two catalogues in PostgreSQL**, UCLouvain and ULB, with eleven institutions known and two open for choosing. **No figure is written into the interface**: `/api/catalogue` reports them and the pages read it |
 | Reviews | **All written by us while testing**, seeded onto two courses so that paging and the aggregate can be shown. No student has used this yet, and the product does not pretend otherwise |
-| Not sent | **No mail leaves this installation**, and that now costs something. Messages are queued and printed; five `STUDENS_SMTP_*` variables turn that into delivery. Since phase 46 the queue also holds the message telling somebody their account was suspended, so half of FR-E15 is waiting on a relay |
+| Mail | **It really leaves the machine**, since 2026-09-19. Plain SMTP over a socket, STARTTLS on 587, no library and no vendor; the relay is whatever mailbox the installation was given. The queue is drained by `npm run mail`, or continuously by `npm run mail -- --watch` every thirty seconds. Nothing is sent inside a request: the outbox row is the unit of retry and it survives a restart. A row that fails five times is left for a person, and nothing alerts anybody to that |
 | Counted | `npm run state` prints the commits, the requirements, the open questions, the tests, the lines and the catalogue and review figures, from the repository and the database. **Deliberately not written here**, see phase 47: six of this table's cells used to be numbers that move on nearly every merge, and they were wrong again two merges after being corrected by hand |
 
 ### What runs today
@@ -30,6 +30,8 @@ npm run db:load                        # snapshot into PostgreSQL, in one transa
 npm run dev:api                        # terminal 1, with the development identity
 npm run dev:api:anon                   # same, signed out, to see what a visitor sees
 npm run dev:web                        # terminal 2, then localhost:5173
+npm run mail -- --watch                # terminal 3, drains the outbox every 30s
+npm run state                          # the live numbers, so no document holds them
 ```
 
 `dev:api` sets `STUDENS_DEV_IDENTITY=1`, because submission needs a member
@@ -54,10 +56,27 @@ the aggregate all work end to end, against the real kernel.
 
 ### What is deliberately not there
 
-Authentication, so submission runs on a fenced development identity
-(`STUDENS_DEV_IDENTITY=1`, refused when `NODE_ENV=production`, and the process
-says so at every start). Moderation has no queue consumer, so a submitted review
-publishes directly. The trendline and distribution graphs, deferred to v2.
+**This section described the product as it stood before sign-in, moderation and
+mail were built, and it went on saying so for weeks after each of them landed.
+It contradicted the stage line four rows above it.** What is actually absent
+today:
+
+Automatic screening before publication (FR-E4), so a submitted review publishes
+directly and moderation acts afterwards, on a report or on a moderator's own
+reading. Removal publishing a statement of reasons in the place the
+contribution occupied (FR-E9), which is marked `[OPEN]` because it is a
+non-lawyer's reading of DSA Article 17 and needs confirming. The trendline and
+distribution graphs, deferred to v2. Any deployment.
+
+Microsoft sign-in exists in the source and **has never been exercised against
+the live provider**, which is not the same as being built: two of its values
+were written from documentation and have never been observed. Google works end
+to end.
+
+`STUDENS_DEV_IDENTITY=1` is still there and still fenced: refused when
+`NODE_ENV=production`, and the process says so at every start. It is a
+convenience for working without provider credentials, no longer the only way
+in.
 **No placeholders for any of them**: an
 empty ratings panel would claim the platform does something it cannot.
 

@@ -142,6 +142,17 @@ export interface SubmitOptions {
   assumeRole?: string | null;
   /** The role that writes the row. See each path below for why they differ. */
   writeRole?: string | null;
+  /**
+   * Contributions per window, when an administrator has set one.
+   *
+   * Passed IN rather than read here, because `@studens/ryc` is a feature
+   * module and settings are the platform's (FR-B11). The composition layer
+   * reads the row and hands it down, which is the same seam the page size
+   * already travels on.
+   */
+  limit?: number;
+  /** Days per window, when an administrator has set one. Same seam as `limit`. */
+  windowDays?: number;
 }
 
 /**
@@ -171,6 +182,8 @@ export async function submitAttributed(
       {
         client: prisma,
         ...(opts.now ? { now: opts.now } : {}),
+        ...(opts.limit !== undefined ? { limit: opts.limit } : {}),
+        ...(opts.windowDays !== undefined ? { windowDays: opts.windowDays } : {}),
         ...(opts.assumeRole !== undefined ? { assumeRole: opts.assumeRole } : {}),
         // The quota is platform data; this table is the module's own. The
         // platform holds no grant on it, deliberately, so the insert runs as
@@ -217,6 +230,8 @@ export async function submitAnonymous(
       {
         client: prisma,
         ...(opts.now ? { now: opts.now } : {}),
+        ...(opts.limit !== undefined ? { limit: opts.limit } : {}),
+        ...(opts.windowDays !== undefined ? { windowDays: opts.windowDays } : {}),
         ...(opts.assumeRole !== undefined ? { assumeRole: opts.assumeRole } : {}),
         // Both halves run as the platform: studens_ryc holds no INSERT here,
         // which is what stops the module bypassing the quota.

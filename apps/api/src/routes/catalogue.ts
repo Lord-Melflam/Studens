@@ -189,7 +189,17 @@ export async function catalogueRoutes(source: {
 
   /** FR-D3: the course page. */
   router.get("/courses/:institution/:code", (req, res) => {
-    void Promise.resolve(catalogue.get(req.params.institution, req.params.code)).then((course) => {
+    // OPEN-47. The catalogue is crawled in French and, for UCLouvain, in
+    // English. Which one a field comes back in is decided per field, because
+    // the two editions disagree about which fields exist, and the answer
+    // travels back with the course so the screen can say so rather than
+    // presenting French as though it were the reader's language.
+    //
+    // A query parameter rather than Accept-Language: the interface already
+    // carries the language in the path (FR-G), so the client knows it exactly
+    // and a header would be a second, quieter source that could disagree.
+    const locale = typeof req.query["lang"] === "string" ? req.query["lang"] : undefined;
+    void Promise.resolve(catalogue.get(req.params.institution, req.params.code, locale)).then((course) => {
       if (!course) {
         res.status(404).json({ error: "no such course in this catalogue year" });
         return;

@@ -61,6 +61,56 @@ const FIXTURE_ID = /['"`](?:0{8}-0{4}-0{4}-0{4}-0{10}[a-z0-9]{2}|ztst[a-z0-9.-]+
  */
 const FIXTURE_PREFIX = /['"`]?`(ztst[a-z0-9.-]*)\$\{/g;
 
+/**
+ * ONE RESERVED NAMESPACE, NOT A FAMILY OF THEM.
+ *
+ * `npm run state` excludes rows whose code begins `ztst`, because what the
+ * tests create the project does not count. That exclusion is only as good as
+ * the convention: a suite that seeds under some other made-up prefix has its
+ * rows counted as catalogue, and the number the project publishes about itself
+ * goes quietly wrong. It did. Five invented courses reached the README and a
+ * typeset document before anybody checked the figure against the database.
+ *
+ * A prefix here is anything that looks deliberately unreal: a literal starting
+ * with `z` followed by letters, in a file that seeds rows. The rule is that it
+ * must be `ztst`.
+ */
+describe("every fixture lives under the one reserved prefix", () => {
+  const files = testFiles(join(root, "test"));
+
+  /** A short lowercase token starting with z, which is how this repo spells "not real". */
+  const UNREAL = /['"`](z[a-z][a-z0-9]*)[a-z0-9.-]*['"`]/g;
+
+  it("finds files to check", () => {
+    expect(files.length).toBeGreaterThan(20);
+  });
+
+  it("uses no z-prefix namespace other than ztst", () => {
+    const strays = new Map<string, string[]>();
+    for (const file of files) {
+      const code = readFileSync(file, "utf8");
+      // ONLY FILES THAT WRITE ROWS. `crawl.test.ts` names a fake university
+      // with fake course codes and never opens a connection: those strings
+      // exist on disk in a temporary directory and are deleted with it, so
+      // they cannot reach a count. Flagging them would have made this gate
+      // noise on its first run, which is how a gate gets disabled.
+      if (!code.includes("PrismaClient")) continue;
+      for (const [, token] of code.matchAll(UNREAL)) {
+        if (token.startsWith("ztst")) continue;
+        // One suite really did seed courses outside the namespace, and its
+        // rows were counted as catalogue until the figures were checked
+        // against the database by hand.
+        strays.set(token, [...(strays.get(token) ?? []), file.slice(root.length)]);
+      }
+    }
+    expect(
+      [...strays].map(([token, where]) => `${token} in ${where.join(", ")}`),
+      "a fixture namespace that is not `ztst` is one `npm run state` will " +
+        "count as real catalogue. Rename it into ztst.",
+    ).toEqual([]);
+  });
+});
+
 describe("parallel test files do not fight over the same row", () => {
   const files = testFiles(join(root, "test"));
 

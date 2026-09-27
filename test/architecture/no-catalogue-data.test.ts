@@ -69,6 +69,80 @@ describe("no crawled catalogue reaches the public repository", () => {
     expect(crowded, "this is a slice of the catalogue, not a fixture").toEqual([]);
   });
 
+  /**
+   * The people this repository invents, so a fixture can have a lecturer
+   * without having somebody's lecturer.
+   *
+   * A NAME CANNOT BE RECOGNISED AS REAL BY A MACHINE, so the rule is inverted:
+   * a fixture may name only people on this list. Adding one is a claim that
+   * you made the name up, which is a visible act in a diff and the only form
+   * of this check that can work.
+   */
+  const INVENTED = new Set(["prenom.nom", "alice.dupont", "bruno.martin"]);
+
+  /**
+   * A PROFILE URL IS A NAME, and this gate did not know that.
+   *
+   * LESSONS.md section 3 records nearly committing two complete course pages
+   * "including a named lecturer and their profile URL". The check written
+   * afterwards looked for email addresses only, so on 2026-09-27 a fixture
+   * went in carrying two real lecturers' names, both their profile URLs and
+   * their addresses. It caught a third of what it was written for, and the
+   * two thirds it missed are the two thirds that are not mechanical to spot.
+   *
+   * A URL is mechanical. It is checked here.
+   */
+  it("links to no real person's profile", () => {
+    const linked: string[] = [];
+    for (const f of files.filter((f) => f.endsWith(".html"))) {
+      for (const [, who] of readFileSync(root + f, "utf8").matchAll(
+        /\/people\/([A-Za-z0-9._-]+)/g,
+      )) {
+        if (!INVENTED.has(who.toLowerCase())) linked.push(`${f}: /people/${who}`);
+      }
+    }
+    expect(
+      linked,
+      "a profile URL names somebody as surely as the name does. Use " +
+        "/people/prenom.nom, as the addresses already do.",
+    ).toEqual([]);
+  });
+
+  /**
+   * A FIXTURE IS AN EXCERPT, NOT A CAPTURE.
+   *
+   * The rule from LESSONS.md section 3 is that fixtures are structural
+   * excerpts derived programmatically from real captures, so the quirks
+   * survive without the page doing. A whole saved page is how somebody's name
+   * arrives in the first place: nobody reads thirty kilobytes of scraped HTML
+   * before committing it, which is exactly what happened.
+   *
+   * Size is a blunt proxy and a good one here: the parser needs a heading, the
+   * header cells and the labelled rows, which is a few kilobytes. Everything
+   * past that is the university's navigation, scripts and footer.
+   */
+  it("keeps a fixture an excerpt rather than a saved page", () => {
+    // CALIBRATED AGAINST THE FIXTURES THAT EXIST, not chosen round. A saved
+    // modern UCLouvain course page is about 31kB, and that is the shape this
+    // is for: the one that arrived carrying two lecturers. The ULB listing and
+    // programme fixtures are 20kB and 13kB and are legitimately many rows of
+    // structure with nobody named in them. The margin is thinner than is
+    // comfortable, which is why the check above about names is the one that
+    // matters and this is the blunt second line.
+    const LIMIT = 24 * 1024;
+    const fat = files
+      .filter((f) => f.endsWith(".html"))
+      .map((f) => ({ f, size: readFileSync(root + f, "utf8").length }))
+      .filter(({ size }) => size > LIMIT)
+      .map(({ f, size }) => `${f} is ${Math.round(size / 1024)}kB`);
+    expect(
+      fat,
+      "this is a saved page, not a fixture. Take the heading, the header " +
+        "cells and the labelled rows programmatically; leave the navigation, " +
+        "the scripts and whoever the page happens to name.",
+    ).toEqual([]);
+  });
+
   it("names no real person in a fixture", () => {
     // requirements.md 5.1: the GDPR exposure here is the lecturers, not the
     // students. The fixtures use invented names on purpose, and a real one

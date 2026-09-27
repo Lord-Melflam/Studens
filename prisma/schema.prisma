@@ -569,6 +569,18 @@ model CourseOffering {
   course       Course  @relation(fields: [courseId], references: [id])
   year         Int
   title        String
+  /// OPEN-47. The English edition's title, when that edition has one. A column
+  /// of its own rather than a key inside `textEn`, because the catalogue
+  /// search matches on title and a string inside JSON is not matchable by the
+  /// query that already exists.
+  titleEn      String?
+  /// OPEN-47. The seven prose blocks as the English edition publishes them, in
+  /// the same shape the French ones use, so no reader learns a second format.
+  /// Null means that edition published nothing, which is common rather than
+  /// exceptional: measured at 16% of fields present in French and absent in
+  /// English, which is why this sits beside the French text instead of
+  /// replacing it.
+  textEn       Json?
   /// NULLABLE, because the official page does not always state it.
   ///
   /// Ten courses of the 6,654 in 2026-2027 publish no credits at all: the

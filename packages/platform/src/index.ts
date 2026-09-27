@@ -27,6 +27,7 @@ export {
   revokeSession,
   revokeOtherSessions,
   listSessions,
+  pruneSessions,
   hashToken,
   newToken,
   secretEquals,
@@ -157,6 +158,20 @@ export {
   type AppointmentEvent,
   type Role,
 } from "./roles.js";
+
+/**
+ * Who is registered, for an administrator. Separate from the roles screen,
+ * which deliberately lists only people holding a power.
+ */
+export {
+  DIRECTORY_PER_PAGE,
+  listMembers,
+  revealAddress,
+  type DirectoryEntry,
+  type DirectoryPage,
+  type DirectoryOptions,
+  type RevealedAddress,
+} from "./directory.js";
 
 /** FR-E10 to FR-E14: the moderator's queue and decisions. */
 export {

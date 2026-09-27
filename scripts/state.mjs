@@ -94,6 +94,28 @@ if (!quick) {
   suite = m ? `${m[1]} passing` : "could not be counted, run npm test";
 }
 
+/**
+ * Rows the test suite made, which are not the product's.
+ *
+ * THE BUG THIS EXISTS FOR. This script counted every row in the catalogue, and
+ * the database on a development machine holds whatever the last test run left
+ * behind. It reported 12,155 courses when the catalogue held 12,150, and that
+ * inflated figure went into the README and into a typeset document handed to
+ * people as fact. Five of the courses Studens claimed to know about were
+ * invented by its own tests.
+ *
+ * `ztst` is the reserved fixture namespace, and a gate in
+ * `test/architecture/test-isolation.test.ts` keeps every generated fixture
+ * name inside it. This is the other end of that rule: what tests create, the
+ * project does not count.
+ *
+ * Filtering here rather than making the fixtures delete their rows, because a
+ * count taken while a suite is running would still be wrong, and because the
+ * number has to be right on a machine where a run was interrupted, which is
+ * exactly when somebody reaches for it.
+ */
+const FIXTURE = { code: { startsWith: "ztst" } };
+
 /** Figures that live in the database. Absent is a state, not a fallback. */
 async function fromDatabase() {
   try {
@@ -101,11 +123,11 @@ async function fromDatabase() {
     const prisma = new PrismaClient();
     await prisma.$queryRaw`SELECT 1`;
     const out = {
-      courses: await prisma.course.count(),
-      programmes: await prisma.programme.count(),
+      courses: await prisma.course.count({ where: { NOT: FIXTURE } }),
+      programmes: await prisma.programme.count({ where: { NOT: FIXTURE } }),
       faculties: await prisma.faculty.count(),
       institutions: await prisma.institution.count(),
-      offerings: await prisma.courseOffering.count(),
+      offerings: await prisma.courseOffering.count({ where: { course: { NOT: FIXTURE } } }),
       named: await prisma.reviewAttributed.count(),
       anonymous: await prisma.reviewAnonymous.count(),
       suspended: await prisma.member.count({ where: { suspendedAt: { not: null } } }),
