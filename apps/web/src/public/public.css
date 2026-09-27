@@ -503,3 +503,80 @@ a.cta:hover { background: #16407c; }
   .suspended-mark,
   .suspended > * { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Motion on the landing page.
+
+   ONE IDEA, USED FOUR TIMES: things arrive from slightly below, in the order a
+   reader meets them. That is the whole vocabulary. A landing page with several
+   different movements reads as a template rather than as a product, and this
+   one has to look maintained, which is a different thing from looking lively.
+
+   CSS ONLY, NO SCRIPT. The alternative is an IntersectionObserver and elements
+   that start invisible, which means a reader whose script did not run gets a
+   blank page. Here the markup is visible by default: the animation's `both`
+   fill applies the hidden start only while the animation exists, so a browser
+   that ignores animations shows the finished state and loses nothing.
+
+   NOTHING BELOW THE FOLD IS ANIMATED. Revealing on scroll needs either script
+   or `animation-timeline`, which is one engine's feature today. A reader who
+   arrives at a section by scrolling has already decided to read it, and making
+   them wait for it to fade in is a cost with no return.
+   --------------------------------------------------------------------------- */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The curve matters more than the duration: it leaves fast and settles slowly,
+   which reads as something arriving rather than something being animated. */
+.hero-text > *,
+.hero-mock {
+  animation: rise-in 0.55s cubic-bezier(0.22, 0.7, 0.28, 1) both;
+}
+
+/* Staggered in reading order, and deliberately tight. Past about 60ms a stagger
+   stops feeling like one movement and starts feeling like a queue. */
+.hero-text > :nth-child(1) { animation-delay: 0.02s; }
+.hero-text > :nth-child(2) { animation-delay: 0.08s; }
+.hero-text > :nth-child(3) { animation-delay: 0.14s; }
+.hero-text > :nth-child(4) { animation-delay: 0.2s; }
+.hero-text > :nth-child(5) { animation-delay: 0.26s; }
+/* Last, and a touch slower: it is the largest thing on the page, and moving a
+   large object at the speed of a small one looks wrong. */
+.hero-mock { animation-duration: 0.7s; animation-delay: 0.24s; }
+
+/* A card lifts under the pointer. Transform and shadow only: animating a
+   border or a size makes the browser re-lay-out the page on every frame. */
+.module-cards li {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.module-cards li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgb(22 25 29 / 8%);
+}
+
+/*
+  NOT A NICETY. A reader who has asked their system for less motion has often
+  asked because motion makes them ill, and a decorative animation is exactly
+  the kind they meant. Everything above is decoration, so all of it goes, and
+  the page arrives finished instead.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .hero-text > *,
+  .hero-mock {
+    animation: none;
+  }
+  .module-cards li {
+    transition: none;
+  }
+  .module-cards li:hover {
+    transform: none;
+  }
+}

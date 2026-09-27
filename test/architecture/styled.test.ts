@@ -55,7 +55,6 @@ const NO_VISUAL_JOB: Record<string, string> = {
   // own, because the children carry the layout.
   "browse-list": "a named wrapper around the grouped course rows",
   flow: "a named wrapper around the submission steps",
-  "hero-text": "a named wrapper around the landing copy",
   "sources-inline": "a named wrapper around a module's sources block",
 };
 
