@@ -18,6 +18,7 @@ import { sessionRoutes } from "./routes/session.js";
 import { profileRoutes } from "./routes/profile.js";
 import { accountRoutes } from "./routes/account.js";
 import { reportRoutes } from "./routes/reports.js";
+import { feedbackRoutes } from "./routes/feedback.js";
 import { moderationRoutes } from "./routes/moderation.js";
 import { authRoutes } from "./routes/auth.js";
 import { configuredProviders } from "@studens/platform";
@@ -76,6 +77,7 @@ export async function createApp(source: AppSource = {}) {
     app.use("/api", profileRoutes(prisma));
     app.use("/api", accountRoutes(prisma));
     app.use("/api", reportRoutes(prisma));
+    app.use("/api", feedbackRoutes(prisma));
     app.use("/api", moderationRoutes(prisma));
     app.use("/api", reviewRoutes(prisma));
   }

@@ -175,6 +175,27 @@ export {
   type RevealedAddress,
 } from "./directory.js";
 
+/** FR-I1 to FR-I4: what people say about Studens itself. */
+export {
+  FeedbackInvalid,
+  FEEDBACK_KINDS,
+  FEEDBACK_STATUSES,
+  FEEDBACK_PER_PAGE,
+  MESSAGE_MIN,
+  MESSAGE_MAX,
+  submitFeedback,
+  listFeedback,
+  feedbackAuthors,
+  setFeedbackStatus,
+  validate as validateFeedback,
+  type Feedback,
+  type FeedbackInput,
+  type FeedbackKind,
+  type FeedbackRow,
+  type FeedbackPage,
+  type FeedbackQuery,
+} from "./feedback.js";
+
 /** FR-E10 to FR-E14: the moderator's queue and decisions. */
 export {
   ModerationRefused,

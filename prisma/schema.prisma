@@ -123,6 +123,7 @@ model Member {
   quota        MemberQuota?
   sessions     Session[]
   institutions MemberInstitution[]
+  feedback     Feedback[]
 
   /// SUSPENSION BINDS AN ACCOUNT, NEVER A PERSON, and the wording everywhere
   /// has to keep saying so. Registration is open by design (FR-A6) because no
@@ -333,6 +334,66 @@ model Report {
   @@index([status, createdAt])
   /// Every report about one thing, for the count FR-E12 shows.
   @@index([targetKind, targetId])
+  @@schema("platform")
+}
+
+/// What somebody says about Studens itself (FR-I1).
+///
+/// NOT A CONTRIBUTION, and the nullable `memberId` is the reason to say so
+/// out loud. FR-C2 forbids one table with a nullable member column, and that
+/// rule is about REVIEWS, where unlinkability is a guarantee we make and must
+/// keep forever. There is no such guarantee here and there never was: this is
+/// somebody telling us the search is broken, and answering them is the point.
+/// `Report` already works exactly this way, for the same reason (FR-E8).
+///
+/// WHY SIGNED-OUT IS ALLOWED AT ALL. The link goes on social media, and
+/// somebody who arrives, finds the site confusing and leaves is precisely the
+/// person whose opinion is worth most and who will never make an account to
+/// give it. A form that demands a sign-in collects feedback from people who
+/// already liked it enough to sign in.
+model Feedback {
+  id      String  @id @default(uuid())
+  /// NULL when nobody was signed in, which is expected rather than an error.
+  memberId String?
+  member   Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  /// bug, idea or other. A small set so the console can group and filter
+  /// without reading anything, and so somebody with one sentence to write is
+  /// not made to categorise it finely.
+  kind    String
+  message String
+
+  /// Optional, and the only way to answer somebody who reported a real
+  /// problem. Stored on the row rather than looked up from an account,
+  /// because most senders will not have one. Deleting an account does not
+  /// remove it: it was given here, for this, by whoever typed it.
+  contactEmail String?
+
+  /// THE PATH, NEVER THE QUERY STRING. Knowing somebody was on the search
+  /// screen when they hit trouble is most of the value of a bug report; the
+  /// query string carries what they typed into a search box, which is theirs
+  /// and is not needed to find the fault.
+  route String?
+
+  /// Which translation they were reading, so "the wording is wrong" can be
+  /// acted on. Two characters, and it is already in the URL they were on.
+  locale String?
+
+  /// NOTHING ELSE IS RECORDED. No address, no user agent, no device. The
+  /// session list makes the same choice for the same reason (FR-A5): a record
+  /// of where somebody was and on what is a thing we would then hold.
+  createdAt DateTime @default(now())
+
+  /// open, read or done. A console with no way to clear a queue becomes a
+  /// list nobody opens twice.
+  status String @default("open")
+
+  /// The queue, newest first: the console's default order.
+  @@index([createdAt])
+  /// Everything one member has sent, for grouping by author.
+  @@index([memberId])
+  /// The queue filtered by state, which is how it is actually read.
+  @@index([status, createdAt])
   @@schema("platform")
 }
 
