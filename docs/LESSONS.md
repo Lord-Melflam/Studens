@@ -897,3 +897,113 @@ search the screens for a server value rendered raw into a text run rather than
 through `t(...)`: what is left is codes, URLs, numbers and marked catalogue
 prose. Both are worth repeating whenever a tier grows a return value that a
 screen prints directly.
+
+---
+
+## A change made for one address broke a different one
+
+Two public tunnels, one already shared. Setting up the second meant restarting
+the dev server with the new host in its allowed list, and the list is exactly
+what it says: the host that was already circulating stopped being allowed, and
+every person who opened the shared link got a 403.
+
+**Nothing in the change mentioned the broken thing.** The command named the new
+host. The old one was not removed, argued about or considered; it simply was
+not in a list that replaces rather than appends. That is the shape to watch
+for: a setting that looks like "add this" and behaves like "only this".
+
+**What it changed.** The server takes a comma separated list, so both hosts are
+named now. More generally: after changing anything that a live address depends
+on, fetch the live address and look at the status code. It costs one command,
+and it is the only check that would have caught this.
+
+**A related constraint, found the same evening.** The application's public
+origin is a single value, because the sign-in callback has to match what was
+registered with the provider exactly. Two public links cannot both be where
+sign-in completes. Whichever is in people's hands is the one to configure; the
+other is for reading, which is most of what a stranger does anyway.
+
+---
+
+## The free tunnel's warning page cannot be removed from our side
+
+The interstitial a free tunnel shows before the site lists three ways to remove
+it. Two are request headers, and they are sent by the visitor's browser, which
+a link cannot control. The third is a paid account.
+
+**Both were tried at the tunnel's edge and neither worked.** A traffic policy
+adding the skip header: page still shown. A policy stripping the browser user
+agent and replacing it with a custom one, which is the other documented escape:
+page still shown, and the site stopped being served at all. The abuse check
+runs before the policy, so nothing the policy does can reach it.
+
+**Recorded because the next person will read the same three bullet points and
+assume one of them is reachable from the server.** They are not. The options
+are a paid account, a different vendor whose free tier has no such page, or a
+domain, which removes it and also gives a link that reads like the product.
+
+**One correction to how this was first written down.** It was reported as
+appearing on every request. It appears once per visitor. The test that said
+otherwise used a tool that runs no JavaScript and so could not keep whatever
+the page sets, and the conclusion was stated more strongly than the evidence
+supported. The cost is one click per person, not one per visit, which is a
+much smaller thing than it was made to sound.
+
+---
+
+## Depth that only exists in one colour scheme
+
+Reported as module cards having inconsistent depth and nothing saying they
+could be pressed. The cause was not too little shadow. It was a shadow written
+as a literal `rgb(0 0 0 / 0.06)`.
+
+Over a near-white page that reads as an object sitting on paper. Over `#13161a`
+it is nothing at all. So the card looked raised in the light scheme and flat in
+the dark one, and **the two schemes disagreed about whether it could be
+pressed**, which is worse than either answer.
+
+**A card also needs fill, not only a shadow.** Its background was `--surface`,
+within a hair of the page colour, so the shape existed only because of a one
+pixel line. A raised surface is a different token from a flat one: white on
+light, and LIGHTER than the surface on dark, because a raised thing comes
+towards the light.
+
+**The rule.** Anything that makes a thing look raised is a token, defined
+everywhere the palette is defined. A literal colour in a shadow is a shadow
+that works in one scheme, and the scheme it does not work in is the one nobody
+is looking at while writing it.
+
+**The other half was the cascade, again.** The first attempt added a
+`.modules button` block near the top of the stylesheet and almost none of it
+applied, because there were already two further down and the last one wins. The
+accent edge that looked like a bug in the screenshot turned out to be
+deliberate and documented two hundred lines below where the reading started.
+Before adding a rule for a class, grep the file for that class: this stylesheet
+has had the same lesson three times now and it keeps arriving in a new costume.
+
+---
+
+## Stacked pull requests, and the rebase that undoes them
+
+Six changes were built as a chain, each cut from the one before because each
+needed the last one's code. The branching rule allows it and names it as the
+exception. The bill arrives at merge time.
+
+Squash merging the first two rewrote them as one commit each on `main`, so
+every branch further up still carried the originals, and every one of them
+conflicted. The fix is mechanical and worth writing down because it looks
+frightening and is not:
+
+```bash
+git rebase --onto origin/main <the base it was cut from> <branch>
+```
+
+That replays only the branch's own commits onto the current `main` and drops
+the ones already merged under another identity. Done one at a time, merging as
+you go so the next rebase starts from a `main` that includes the previous, four
+conflicting branches went in with no manual conflict resolution at all.
+
+**The real lesson is upstream of the fix.** A chain of six is four rebases, four
+full gate runs and four waits for CI, all of which fall on whoever merges. Cut
+from `main` whenever the new work does not actually need the unmerged code, and
+when it does, expect to pay this.

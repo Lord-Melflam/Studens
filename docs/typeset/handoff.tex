@@ -269,8 +269,17 @@ on all database-touching code having been read.
         deliberately on 2026-09-27, not forgotten: it needs a directory to
         register an application in, which a personal account does not have. It
         is the highest-value item here and nothing technical blocks it.
-  \item \textbf{No student has used any of this.} Every review in the database
-        was written during testing.
+  \item \textbf{No student has written a review.} Every review in the database
+        was written during testing. \textbf{Feedback is different and is now
+        real}: the public link went out on 2026-09-27 and messages arrived the
+        same evening, from people who are not the author. Those rows are the
+        first thing in this database that somebody else put there, so treat
+        them as data rather than as fixtures.
+  \item \textbf{It is reachable only while a laptop is on.} Two tunnels point
+        at a development server, and sign-in works on exactly one of them,
+        because the public origin is a single value that has to match what was
+        registered with the provider. A domain removes this and is what the
+        deployment needs anyway.
 \end{itemize}
 
 % ===========================================================================

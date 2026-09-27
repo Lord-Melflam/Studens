@@ -14,7 +14,7 @@ gone wrong and what each failure changed.
 
 | | |
 |---|---|
-| Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted, read and paged on both paths, moderation end to end, and an administrator who can change settings, suspend an account, see who is suspended and why, list the members, reveal one address at a time with each reveal recorded, and erase an account behind a confirmation. A suspended person is told, which they were not until phase 46. The web process serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
+| Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted, read and paged on both paths, moderation end to end, and an administrator who can change settings, suspend an account, see who is suspended and why, list the members, reveal one address at a time with each reveal recorded, and erase an account behind a confirmation. **Anybody can say what they think of Studens itself**, signed in or not, from a control on every page; the console reads that queue and exports it as JSON, with the scope carrying no names as the default. A **moderator** reads the feedback, the member list and the suspension register without acting on any of them, and can ask an administrator for a screen that is not theirs, which grants nothing by itself. A suspended person is told, which they were not until phase 46. The web process serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
 | Data | **Two catalogues in PostgreSQL**, UCLouvain and ULB, with eleven institutions known and two open for choosing. Since phase 53 a course is stored in **both editions the universities publish**, and the language is chosen per field rather than per course, so a field that exists only in French is still shown and marked. **No figure is written into the interface**: `/api/catalogue` reports them and the pages read it |
 | Reviews | **All written by us while testing**, seeded onto two courses so that paging and the aggregate can be shown. No student has used this yet, and the product does not pretend otherwise |
 | Mail | **It really leaves the machine**, since 2026-09-19. Plain SMTP over a socket, STARTTLS on 587, no library and no vendor; the relay is whatever mailbox the installation was given. The queue is drained by `npm run mail`, or continuously by `npm run mail -- --watch` every thirty seconds. Nothing is sent inside a request: the outbox row is the unit of retry and it survives a restart. A row that fails five times is left for a person, and nothing alerts anybody to that |
@@ -2342,6 +2342,166 @@ which was the cost that made this question look expensive in the first place.
 **Cost accepted.** Two slug tables to keep, one per side of the module
 boundary, and a fourth language whose word collided with an institution or
 course code would need noticing. The round trip test is what would notice.
+
+---
+
+### Phase 55: the product asks a question back
+
+Everything in Studens until now ran one way: it served somebody. This is the
+one path in the other direction, and it exists because the product is about to
+meet people for the first time.
+
+**The sample decided the shape.** A form behind a sign-in is answered by people
+who already liked it enough to make an account. The person worth hearing from
+is the one who arrived from a link, could not work out what to do, and left.
+They will not register to say so. So feedback is taken signed in or not, the
+control sits in the corner of every page rather than in a footer, and nothing
+on the screen asks which they are.
+
+**It is not a contribution, and the schema says so at length.** FR-C2 forbids
+one table with a nullable member column, and that rule is about reviews, where
+unlinkability is a guarantee that must hold forever and would otherwise rest on
+application code staying correct. There is no such guarantee here: this is
+somebody saying the search is broken, and answering them is why the optional
+address field exists. `Report` has had the same shape since FR-E8.
+
+**What is refused rather than stored:** no address, no user agent, no device,
+and not the query string of the page they were on. Knowing somebody was on the
+search screen is most of a bug report; what they typed into the search box is
+theirs and finds no faults. The cut happens in the kernel, so it is a property
+of the column rather than a rule somebody remembers.
+
+**The ceiling on an open endpoint is in memory and writes nothing down**,
+because counting per address means holding addresses. It forgets on restart, it
+is a speed bump, and it is described as nothing more. Two details that are not
+decoration: the limiter is itself a list that can grow, so it sweeps expired
+entries and has a hard cap; and it charges only submissions that were stored.
+The first version charged every attempt, and three malformed tries moved a
+caller from 0 to 3 of their 5, which punishes somebody for using the form badly
+rather than for abusing it. Found by running it, not by reading it.
+
+**The export's safe scope is the default rather than an option**, because an
+export exists to be read somewhere else and a file that has left cannot be
+called back. OPEN-23 already settled that contribution text never reaches a
+third-party inference service; feedback is different data and is not covered by
+that, but a file with names in it has the same shape. The anonymised file
+carries a stable pseudonym per sender, so a reader sees that five messages came
+from one person without learning who. That is not the `HMAC(key, member ||
+target)` the notes forbid: that rule protects a row whose whole guarantee is
+that no link exists, and here the link is a plain foreign key. The hash removes
+a link from a file rather than creating one.
+
+**It was used before it was finished.** Two real messages arrived through the
+public link while the export was being written, one of them about choosing
+courses for a PAE, which is the sentence v1's acceptance test is made of.
+
+---
+
+### Phase 56: a card that looks pressable before it is pointed at
+
+Reported as the module cards having inconsistent depth, the weight sitting only
+on the left, and nothing saying clearly they should be clicked. Three angles on
+one fault, and the catalogue screen had a fourth.
+
+**The shadow did not exist in dark mode**, which is most of it. Written as a
+literal `rgb(0 0 0 / 0.06)`, it reads as an object on paper over a near-white
+page and as nothing at all over `#13161a`. The card looked raised in one scheme
+and flat in the other, so the two schemes disagreed about whether it could be
+pressed. Depth is a token now, defined everywhere the palette is.
+
+**A card needs fill, not only a shadow.** Its background was `--surface`,
+within a hair of the page, so the shape existed only because of a one pixel
+line. `--card` is a token of its own, white on light and LIGHTER than the
+surface on dark, which is the correct inversion because a raised thing comes
+towards the light.
+
+**Finding where to put it was the actual work.** The first attempt added a
+`.modules button` block near the top of the stylesheet and almost none of it
+applied: there were already two further down, and the last one wins. The accent
+edge that looked like a bug in the screenshot turned out to be deliberate and
+documented two hundred lines below where I was reading. One document, one
+cascade, again.
+
+**The home's dead list became a tile that goes somewhere.** It used to end with
+the unbuilt modules listed and nothing to click, which was honest and was also a
+dead end. The tile is pressable, which is the point: the design note's first
+principle refuses a card you cannot press, and a greyed-out card is exactly
+that. Behind it is the catalogue, with no button to add anything, because
+adding means enrolment and who owns enrolment is OPEN-34, still open. A button
+that does nothing is worse than its absence, and the screen says so in its own
+words.
+
+---
+
+### Phase 57: what a moderator sees, and how they ask for the rest
+
+A moderator saw the report queue and nothing else, so the person doing the
+reading had none of the context the reading needs.
+
+**Three things they now read and cannot act on:** the feedback, the member list,
+the register of who is suspended. The line is not the screen. Reading one
+member's address is a separate audited act and erasing an account has no undo,
+so both stay an administrator's, and a moderator is told an address EXISTS
+without being shown it. Taking a suspension is an administrator's; seeing who is
+suspended is not, because a moderator reading a report about an account somebody
+already dealt with has no way to tell, and re-actioning it is the mistake that
+follows.
+
+**The hard part was not building the other feature.** "Let a moderator ask for
+rights" reads as a grant per screen, and `roles.ts` refuses exactly that: three
+roles and no lattice, no per-action grant, because there are two powers to
+control and a table of them would be a system to maintain rather than a rule to
+read. A row that opened one screen for one person is that table arriving by the
+back door, and the question after it is "for how long".
+
+So a request is a message with a subject and an answer. The subject is the
+screen, which saves the asker describing it. The answer is the power itself,
+through the appointment that already exists and is already audited, or a refusal
+carrying a reason. Nothing in between, because in between is the lattice. The
+two halves meet in the route and nowhere else, and a test fails if the request
+kernel ever gains the ability to change a role.
+
+**Granting says what it does on the button.** It reads "make administrator",
+not "grant access", because the person gets everything rather than the screen
+they asked for, and the panel says so above the control. A refusal requires a
+reason and a grant does not: a "no" with nothing attached tells the asker only
+that somebody saw it, while a grant is announced by the power arriving.
+
+---
+
+### Phase 58: the day the link went out, and what it cost
+
+Not a feature, and worth recording because two of the three problems were
+self-inflicted and the third is a constraint somebody will meet again.
+
+**A tunnel restart took the published link down.** Setting up a second tunnel
+meant restarting the dev server with only the new host allowed, so the link
+already circulating answered 403 to everybody who opened it. The server takes a
+comma separated list; both hosts are allowed now. The lesson is narrower than
+"be careful": a change made for one address broke a different address that
+nothing in the change mentioned.
+
+**The application's origin is single valued**, because the sign-in callback has
+to match what was registered with the provider exactly. Two public links
+therefore cannot both be the place sign-in completes. Whichever one is in
+people's hands should be the one configured, and the other is for reading.
+
+**The free tunnel's warning page cannot be removed from the server side.** Its
+own text offers three ways out, and two of them are headers a visitor's browser
+sends, which a link cannot control. Injecting them at the tunnel's edge was
+tried twice, with a header and with a rewritten user agent, and neither worked:
+the abuse check runs before the traffic policy. The third way is a paid account.
+A second tunnel from a different vendor has no such page and was set up
+alongside rather than instead, because the first link was already shared. What
+removes both problems at once is a domain, which is also what the deployment
+needs.
+
+**One correction, because it was stated too strongly the first time.** The
+warning was reported here as appearing on every request. It appears once per
+visitor: the test that said otherwise used a tool that runs no JavaScript and so
+could not keep what the page sets. The cost is one click per person, not per
+visit.
+
 
 ---
 

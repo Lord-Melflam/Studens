@@ -18,9 +18,12 @@ mounted. Three languages throughout, with the language in the URL, and a gate th
 the build if a sentence is hardcoded in a component.
 
 **RYC**, Rate Your Courses, is the first module, and it holds **two whole catalogues for
-2026-2027**, UCLouvain and ULB: 12,154 courses through 1,055 programmes of 32 faculties,
-counted in the database on 2026-09-19. Eleven institutions are known and two are open for
-choosing, because a student picks theirs and everything they see is scoped to it. All of
+2026-2027**, UCLouvain and ULB, both scraped. `npm run state` prints how many courses,
+programmes and faculties, for the reason the paragraph above gives. Eleven institutions
+are known and two are open for choosing, because a student picks theirs and everything
+they see is scoped to it. A course is stored in **both editions the universities
+publish**, French and English, and which one a reader gets is decided per field and
+marked on screen, so a field that exists only in French is shown rather than hidden. All of
 it scraped, with the faculty, programme and course structure discovered at runtime rather
 than listed anywhere in the source. The two universities publish different shapes, so the
 parser is per source and the vocabularies are mapped onto one set of keys rather than
@@ -98,16 +101,39 @@ everything the one before it holds plus one thing. Only an administrator appoint
 moderator cannot appoint a moderator. The first administrator cannot be appointed from
 inside the product, so a command does it once and refuses afterwards.
 
+**Anybody can say what they think of Studens itself**, signed in or not, from a control
+in the corner of every page. That is deliberate rather than convenient: a form behind a
+sign-in is answered by people who already liked it enough to make an account, and the
+person worth hearing from is the one who arrived from a link, could not work out what to
+do, and left. The message carries the page they were on and the interface language, and
+nothing else about them: no address, no device, not even the query string of the page,
+because what somebody typed into a search box is theirs. A console reads the queue a
+screenful at a time and exports it as JSON in two scopes, where the one carrying no names
+is the default, since a file that has left cannot be called back.
+
+**The app home is a catalogue of modules**, one card per module that works and one tile
+that opens the list of what exists and what is announced. There is no button to add one,
+because with a single module in service there is nothing to add and a button that does
+nothing is worse than its absence.
+
+**A moderator reads what they need and acts on none of it**: the feedback, the member
+list, the register of who is suspended. Reading one member's address is a separate audited
+act and erasing an account has no undo, so both stay an administrator's. Where a screen is
+not theirs they can ask for it, and the asking grants nothing: there are three roles and
+no permission grid, so the only answers are the appointment itself, which is audited
+already, or a refusal carrying a reason.
+
 Not built, and deliberately not faked: **automatic screening** of submissions, **removal
 with a published statement of reasons** (DSA Article 17 collides with the promise that an
 anonymous contribution is unprovable, and that reading needs a qualified reader before a
-line of it is written, so the console can hide and restore and cannot delete), **editing a
-review**, and **deployment**. Microsoft sign-in is registered and untried. Nothing on
-screen offers any of it.
+line of it is written, so the console can hide and restore and cannot delete), and
+**deployment**. Microsoft sign-in is written and **has never been registered**: it needs a
+directory that a personal Microsoft account does not have, which is a step outside this
+repository. Nothing on screen offers any of it.
 
 ```bash
 npm install
-npm run gates              # typecheck, lint, 598 tests, schema validation. No database needed
+npm run gates              # typecheck, lint, the suite, schema validation. No database needed
 ```
 
 `docs/COMMANDS.md` is the command reference: setup, running it, the database, the
