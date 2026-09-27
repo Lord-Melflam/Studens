@@ -18,6 +18,7 @@
  * why each one is out.
  */
 import { PrismaClient, Prisma } from "@prisma/client";
+import { createHmac } from "node:crypto";
 
 /** The three kinds. Small on purpose: somebody with one sentence to write should not have to classify it finely. */
 export const FEEDBACK_KINDS = ["bug", "idea", "other"] as const;
@@ -279,6 +280,149 @@ export async function setFeedbackStatus(
   const prisma = opts.client ?? new PrismaClient();
   try {
     await prisma.feedback.update({ where: { id }, data: { status } });
+  } finally {
+    if (!opts.client) await prisma.$disconnect();
+  }
+}
+
+/**
+ * FR-I4: feedback as a JSON file, in one of two scopes.
+ *
+ * AN EXPORT EXISTS TO BE READ SOMEWHERE ELSE, which is the whole reason the
+ * safe scope is the default rather than an option. A file that leaves this
+ * machine cannot be called back, and the likeliest next step for it is being
+ * pasted into something that reads it. OPEN-23 already settled that
+ * contribution text never reaches a third-party inference service; feedback is
+ * different data and is NOT covered by that decision, but a file with names in
+ * it has the same shape, so the version that takes no extra thought is the one
+ * without them.
+ *
+ * THE PSEUDONYM IS NOT THE THING FR-C FORBIDS, and the difference is worth
+ * stating because the shapes look alike. The rule in the working notes is that
+ * an anonymous CONTRIBUTION must never carry `HMAC(key, member || target)`,
+ * because the server holds the key and could therefore relink every anonymous
+ * review to its author. That is about a column stored on a row whose whole
+ * guarantee is that no such link exists. Here the link already exists in
+ * plain: `Feedback.memberId` is a real foreign key, because feedback is not a
+ * contribution and answering the sender is the point. The hash is not creating
+ * a link, it is REMOVING one from a file: it lets a reader see that five
+ * messages came from one person without learning who, which is what makes the
+ * anonymised scope useful rather than shapeless.
+ *
+ * A SENDER WHO WAS NOT SIGNED IN GETS NO KEY AT ALL. There is nothing to
+ * group them by and inventing one would be a lie about what is known.
+ */
+export type ExportScope = "anonymised" | "full";
+
+export interface ExportedFeedback {
+  exported: string;
+  scope: ExportScope;
+  count: number;
+  /** What each field means, in the file, so a reader needs nothing else. */
+  fields: Record<string, string>;
+  items: Array<Record<string, unknown>>;
+}
+
+/**
+ * Stable across exports, so the same sender is the same key next month.
+ *
+ * Keyed on a server secret rather than on the id alone: a plain hash of a
+ * uuid is reversible by anybody who has the uuid, which every administrator
+ * does. Rotating the secret changes every key, which is acceptable because
+ * this is a pseudonym for grouping and never an identifier to store.
+ */
+function senderKey(memberId: string, secret: string): string {
+  return createHmac("sha256", secret).update(`feedback:${memberId}`).digest("hex").slice(0, 16);
+}
+
+const FIELDS_ANON: Record<string, string> = {
+  id: "the row's own id, stable across exports",
+  sender: "a pseudonym, stable across exports; null when nobody was signed in",
+  kind: "bug, idea or other, chosen by the sender",
+  status: "open, read or done, set by whoever is reading the queue",
+  message: "what they wrote, verbatim",
+  route: "the page they were on, without its query string",
+  locale: "the interface language they were reading",
+  at: "when it arrived, ISO 8601",
+};
+
+const FIELDS_FULL: Record<string, string> = {
+  ...FIELDS_ANON,
+  sender: "the pseudonym, as in the anonymised export",
+  memberId: "the sender's account id, or null",
+  username: "the sender's username, or null",
+  contactEmail: "the address they left to be answered on, or null",
+};
+
+export interface ExportOptions {
+  client?: PrismaClient;
+  scope?: ExportScope;
+  /** Keys the pseudonym. Absent, the anonymised export carries no sender at all. */
+  secret?: string;
+  /** Who asked. Required for the full scope, which is audited. */
+  actorMemberId?: string;
+  now?: Date;
+}
+
+export async function exportFeedback(opts: ExportOptions = {}): Promise<ExportedFeedback> {
+  const prisma = opts.client ?? new PrismaClient();
+  const scope: ExportScope = opts.scope === "full" ? "full" : "anonymised";
+  const now = opts.now ?? new Date();
+  try {
+    // Everything, in one file, oldest first so a reader follows the product's
+    // story forwards. This is the one place the list is deliberately not
+    // paged: a file with a page size is a file somebody silently reads a
+    // quarter of.
+    const rows = await prisma.feedback.findMany({
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      include: { member: { select: { username: true } } },
+    });
+
+    if (scope === "full") {
+      if (!opts.actorMemberId) {
+        throw new FeedbackInvalid("kind", "a full export must say who asked");
+      }
+      // Written BEFORE the file is handed over, and carrying the count, so
+      // the record says how much left rather than only that something did.
+      await prisma.auditLog.create({
+        data: {
+          actorMemberId: opts.actorMemberId,
+          action: `feedback:exported:full:${rows.length}`,
+          targetKind: "feedback",
+          targetId: "all",
+        },
+      });
+    }
+
+    const items = rows.map((r) => {
+      const sender =
+        r.memberId !== null && opts.secret ? senderKey(r.memberId, opts.secret) : null;
+      const base = {
+        id: r.id,
+        sender,
+        kind: r.kind,
+        status: r.status,
+        message: r.message,
+        route: r.route,
+        locale: r.locale,
+        at: r.createdAt.toISOString(),
+      };
+      if (scope !== "full") return base;
+      return {
+        ...base,
+        memberId: r.memberId,
+        username: r.member?.username ?? null,
+        contactEmail: r.contactEmail,
+      };
+    });
+
+    return {
+      exported: now.toISOString(),
+      scope,
+      count: items.length,
+      fields: scope === "full" ? FIELDS_FULL : FIELDS_ANON,
+      items,
+    };
   } finally {
     if (!opts.client) await prisma.$disconnect();
   }

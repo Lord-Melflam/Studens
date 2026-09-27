@@ -31,6 +31,7 @@ import {
   fetchFeedback,
   fetchFeedbackAuthors,
   setFeedbackState,
+  exportFeedbackFull,
   type FeedbackPageData,
   fetchAddress,
   decide,
@@ -918,7 +919,7 @@ function Directory() {
  * GROUP rather than a person, and the chip says so: it is every row nobody
  * signed for, which on a public link is most of them.
  */
-function FeedbackQueue() {
+function FeedbackQueue({ canExport, me }: { canExport: boolean; me: string | null }) {
   const t = useT();
   const locale = useLocale();
   const [typed, setTyped] = useState("");
@@ -932,6 +933,10 @@ function FeedbackQueue() {
     Array<{ memberId: string | null; username: string | null; count: number }>
   >([]);
   const [open, setOpen] = useState<string | null>(null);
+  /** The full export asks for a typed name before it will run. */
+  const [asking, setAsking] = useState(false);
+  const [typedName, setTypedName] = useState("");
+  const [exportProblem, setExportProblem] = useState<string | null>(null);
 
   // One request per pause in typing, not one per letter.
   useEffect(() => {
@@ -966,6 +971,77 @@ function FeedbackQueue() {
         {t("mod.feedback")} <span className="count">{data.total}</span>
       </h3>
       <p className="hint">{t("mod.feedback.hint")}</p>
+
+      {/*
+        FR-I4. TWO SCOPES, AND THE SAFE ONE IS AN ORDINARY LINK while the other
+        is a control that asks a question. That asymmetry is the decision: an
+        export exists to be read somewhere else, a file that has left cannot be
+        called back, and the version without names should be the one that takes
+        no extra thought.
+      */}
+      {canExport && (
+        <div className="export-row">
+          <a className="ghost" href="/api/moderation/feedback/export" download>
+            {t("mod.feedback.export.safe")}
+          </a>
+          <button type="button" className="linkish" onClick={() => setAsking(!asking)}>
+            {t("mod.feedback.export.full")}
+          </button>
+          <Info>{t("mod.feedback.export.help")}</Info>
+        </div>
+      )}
+
+      {canExport && asking && (
+        <div className="export-confirm">
+          <ul className="plain">
+            <li>{t("mod.feedback.export.what.names")}</li>
+            <li>{t("mod.feedback.export.what.audit")}</li>
+            <li>{t("mod.feedback.export.what.gone")}</li>
+          </ul>
+          <label className="field-label" htmlFor="export-confirm">
+            {t("mod.feedback.export.type", { name: me ?? "" })}
+          </label>
+          <div className="inline-field">
+            <input
+              id="export-confirm"
+              className="text-input"
+              value={typedName}
+              autoComplete="off"
+              onChange={(e) => setTypedName(e.target.value)}
+            />
+            <button
+              type="button"
+              className="ghost danger"
+              disabled={me === null || typedName.trim() !== me}
+              onClick={() => {
+                setExportProblem(null);
+                void exportFeedbackFull(typedName.trim()).then((r) => {
+                  if (!r.ok) {
+                    setExportProblem(r.reason);
+                    return;
+                  }
+                  // Built here rather than served as a link, because the
+                  // request that produces it is a POST and writes an audit row.
+                  const blob = new Blob([JSON.stringify(r.file, null, 2)], {
+                    type: "application/json",
+                  });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "studens-feedback-full.json";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  setAsking(false);
+                  setTypedName("");
+                });
+              }}
+            >
+              {t("mod.feedback.export.now")}
+            </button>
+          </div>
+          {exportProblem && <p className="error">{t(`mod.feedback.export.err.${exportProblem}`)}</p>}
+        </div>
+      )}
 
       <div className="directory-controls">
         <input
@@ -1356,6 +1432,7 @@ export function sectionFrom(search: string, canAppoint: boolean): Section {
 export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; here: string }) {
   const t = useT();
   const search = useSearch();
+  const { session: mine } = useSession();
   const [queue, setQueue] = useState<QueueEntry[] | null>(null);
   // Bumped when a suspension is taken or lifted, so the register beside the
   // form is never one decision out of date.
@@ -1427,7 +1504,7 @@ export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; h
         </>
       )}
 
-      {section === "retours" && <FeedbackQueue />}
+      {section === "retours" && <FeedbackQueue canExport={canAppoint} me={mine?.username ?? null} />}
 
       {canAppoint && section === "membres" && <Directory />}
       {canAppoint && section === "roles" && <Appointments />}
