@@ -46,6 +46,13 @@ than discovering later.
 
 ## 2. The route map
 
+**The slugs below are French, in all three interfaces**, so a Dutch reader
+is sent to `/nl/confidentialite`. That was never chosen: this map was
+written while the product was French only, and the language segment arrived
+afterwards. Recorded as OPEN-49 rather than quietly fixed, because changing
+a slug breaks every link already written and keeping the old ones as
+redirects means holding three sets forever.
+
 ```
 PUBLIC
   /                     what Studens is, the problem from 1.1, how it works
