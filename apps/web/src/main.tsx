@@ -13,6 +13,7 @@ import { Shell } from "./shell/Shell.js";
 import { PublicZone } from "./public/index.js";
 import { bundle } from "./bundle.js";
 import { APP_PREFIX, currentRoute, isAppPath, navigate, usePath } from "./router.js";
+import { toSlugPath } from "./routes.js";
 import { SessionProvider, useSession } from "./session.js";
 import { ErrorBoundary } from "./ErrorBoundary.js";
 import { FIRST_RUN, FirstRun, isFirstRunPath } from "./firstrun/FirstRun.js";
@@ -35,7 +36,24 @@ function Studens() {
   useEffect(() => {
     if (locale !== null) return;
     const chosen = preferredLocale(navigator.languages ?? [navigator.language]);
-    window.history.replaceState({}, "", localePath(route, chosen) + window.location.search);
+    window.history.replaceState(
+      {},
+      "",
+      localePath(toSlugPath(route, chosen), chosen) + window.location.search,
+    );
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, [locale, route]);
+
+  // The slug belongs to a language, so a path can name the right page in the
+  // wrong one: `/nl/confidentialite` resolves (OPEN-49, `routes.ts` says why
+  // every language's slug is accepted) and would otherwise sit in the address
+  // bar in French on a Dutch page. Corrected in place rather than pushed, so
+  // Back does not walk through a spelling.
+  useEffect(() => {
+    if (locale === null) return;
+    const wanted = localePath(toSlugPath(route, locale), locale);
+    if (wanted === window.location.pathname) return;
+    window.history.replaceState({}, "", wanted + window.location.search);
     window.dispatchEvent(new PopStateEvent("popstate"));
   }, [locale, route]);
 
@@ -88,7 +106,7 @@ function Zone({ route }: { route: string }) {
       rememberDestination(route);
       navigate(FIRST_RUN);
     } else if (strayed) {
-      navigate("/connexion");
+      navigate("/signin");
     }
   }, [divert, strayed, route]);
 

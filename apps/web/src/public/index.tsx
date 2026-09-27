@@ -17,13 +17,13 @@ export function PublicZone({ path }: { path: string }) {
   const page =
     path === "/modules" ? (
       <Modules />
-    ) : path === "/confidentialite" ? (
+    ) : path === "/privacy" ? (
       <Privacy />
-    ) : path === "/a-propos" ? (
+    ) : path === "/about" ? (
       <About />
-    ) : path === "/connexion" ? (
+    ) : path === "/signin" ? (
       <SignIn />
-    ) : path === "/suspendu" ? (
+    ) : path === "/suspended" ? (
       /* In the PUBLIC zone, because somebody suspended has no session and the
          app zone is exactly what they cannot reach. */
       <Suspended />

@@ -97,7 +97,7 @@ describe("the app renders for a signed-in member", () => {
     });
 
     it(`draws the account panel ${name}`, () => {
-      at("/fr/app/moi");
+      at("/fr/app/mon-compte");
       const html = draw(createElement(Settings), session);
       expect(html.length).toBeGreaterThan(100);
     });
@@ -133,8 +133,8 @@ describe("the app renders for a signed-in member", () => {
   it("offers the account screen to somebody signed in, and not to somebody signed out", () => {
     at("/fr/app/ryc");
     const signedOut: SessionState = { signedIn: false, devSignInAvailable: true };
-    expect(draw(createElement(Shell), settled)).toContain("/fr/app/moi");
-    expect(draw(createElement(Shell), signedOut)).not.toContain("/fr/app/moi");
+    expect(draw(createElement(Shell), settled)).toContain("/fr/app/mon-compte");
+    expect(draw(createElement(Shell), signedOut)).not.toContain("/fr/app/mon-compte");
   });
 
   /**
@@ -182,7 +182,7 @@ describe("no screen leaks an untranslated key", () => {
     // on: the page still looks like a page.
     at("/fr/app");
     expect(draw(createElement(Shell), fresh)).not.toMatch(/\b(?:app|nav|settings|foot)\.[a-z.]+/);
-    at("/fr/app/moi");
+    at("/fr/app/mon-compte");
     expect(draw(createElement(Settings), settled)).not.toMatch(
       /\b(?:app|nav|settings|foot)\.[a-z.]+/,
     );

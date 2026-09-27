@@ -20,8 +20,8 @@ describe("every step is a place you can come back to (FR-F5)", () => {
     expect(isFirstRunPath(`${FIRST_RUN}/3`)).toBe(true);
     expect(isFirstRunPath("/app")).toBe(false);
     expect(isFirstRunPath("/")).toBe(false);
-    // Not a prefix match on the string: /bienvenue-ailleurs is another page.
-    expect(isFirstRunPath("/bienvenue-ailleurs")).toBe(false);
+    // Not a prefix match on the string: /welcome-elsewhere is another page.
+    expect(isFirstRunPath("/welcome-elsewhere")).toBe(false);
   });
 
   it("reads the step out of the path", () => {
@@ -40,7 +40,7 @@ describe("every step is a place you can come back to (FR-F5)", () => {
 
   /**
    * The bare prefix means "wherever I was", which is what makes the saved step
-   * usable: the redirect out of the app sends people to /bienvenue with no
+   * usable: the redirect out of the app sends people to /welcome with no
    * number, and the wizard resolves it from the server's answer. If this ever
    * reported true, the resume would be skipped and everyone would restart at
    * screen one.
@@ -257,7 +257,7 @@ describe("the first run can be left (FR-F4, and FR-F6's reasoning)", () => {
 
   it("still sends a signed-out visitor away from the wizard", () => {
     expect(main).toContain("strayed");
-    expect(main).toContain('navigate("/connexion")');
+    expect(main).toContain('navigate("/signin")');
   });
 });
 

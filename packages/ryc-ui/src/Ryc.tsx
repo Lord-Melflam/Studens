@@ -15,11 +15,12 @@
  * to anyone, and a refresh lost your place. Navigation that does not touch the
  * URL is not navigation.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocale, useT } from "@studens/i18n";
 import type { ModuleProps } from "./index.js";
 import { api, type CourseDetail, type CourseSummary } from "./api.js";
 import { queryOf, settingsRoute } from "./urlstate.js";
+import { fromSlugPath, toSlugPath } from "./slugs.js";
 
 /**
  * The query key naming the unfolded sections of a course page.
@@ -118,10 +119,12 @@ export type RycView =
 export function parseView(path: string): RycView {
   const parts = path.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
   const lower = (i: number): string => (parts[i] ?? "").toLowerCase();
-  if (parts[0] === "recherche") return { kind: "search" };
-  // FR-D12. French and short like every other slug this module puts in a
-  // path, because the address is read by people.
-  if (parts[0] === "mes-avis") return { kind: "mine" };
+  if (parts[0] === "search") return { kind: "search" };
+  // FR-D12. Canonical here and translated at the boundary (`slugs.ts`), so
+  // what a reader sees is `/mes-avis`, `/mijn-beoordelingen` or `/my-reviews`
+  // depending on the language they are reading. The address is read by people,
+  // which is the reason it is translated rather than the reason it is French.
+  if (parts[0] === "my-reviews") return { kind: "mine" };
   if (parts[0] === "p" && parts[1] && parts[2]) {
     return { kind: "programme", institution: lower(1), code: lower(2) };
   }
@@ -129,25 +132,25 @@ export function parseView(path: string): RycView {
   // path. Resolved by Browse against the programme list it already has, so it
   // needs no endpoint of its own.
   if (parts[0] === "p" && parts[1]) return { kind: "legacyProgramme", code: lower(1) };
-  if (parts[0] === "c" && parts[1] && parts[2] && parts[2] !== "avis") {
+  if (parts[0] === "c" && parts[1] && parts[2] && parts[2] !== "review") {
     return {
       kind: "course",
       institution: lower(1),
       code: lower(2),
-      writing: parts[3] === "avis",
+      writing: parts[3] === "review",
     };
   }
   // `/c/lepl1503` and `/c/lepl1503/avis`: the shape links carried before the
   // institution was in the path.
   if (parts[0] === "c" && parts[1]) {
-    return { kind: "legacyCourse", code: lower(1), writing: parts[2] === "avis" };
+    return { kind: "legacyCourse", code: lower(1), writing: parts[2] === "review" };
   }
   return { kind: "browse" };
 }
 
 /** The address of a course, built in one place so no screen guesses at it. */
 export function coursePath(institution: string, code: string, writing = false): string {
-  return `/c/${institution}/${code}${writing ? "/avis" : ""}`;
+  return `/c/${institution}/${code}${writing ? "/review" : ""}`;
 }
 
 export function programmePath(institution: string, code: string): string {
@@ -165,10 +168,28 @@ export function courseKey(c: { institution: string; code: string }): string {
   return `${c.institution}/${c.code}`;
 }
 
-export function Ryc({ path, search, navigate }: ModuleProps) {
+export function Ryc({ path, search, navigate: navigateRaw }: ModuleProps) {
   const t = useT();
   const locale = useLocale();
-  const view = parseView(path);
+  /*
+    THE TWO POINTS WHERE A PATH CROSSES THE BOUNDARY (OPEN-49).
+
+    The shell hands over the path it found in the URL and puts back whatever it
+    is given, reading neither (FR-B16), so the slugs arrive in whatever language
+    the reader is using and have to leave in it too. Translating here, once in
+    each direction, is what lets every screen below keep writing `/search` and
+    `/c/<institution>/<code>/review` without knowing a language exists.
+
+    Doing it at the call sites instead would mean threading the locale through
+    thirty-odd of them, and the one that got missed would produce a link that
+    works in French and silently falls through to the module's home screen in
+    Dutch.
+  */
+  const view = parseView(fromSlugPath(path));
+  const navigate = useCallback(
+    (to: string, opts?: { replace?: boolean }) => navigateRaw(toSlugPath(to, locale), opts),
+    [navigateRaw, locale],
+  );
   const [meta, setMeta] = useState<{
     year: number;
     courses: number;
@@ -197,7 +218,7 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
   const query = queryOf(search).get("q") ?? "";
   const setQuery = (next: string): void => {
     const asked = new URLSearchParams(next === "" ? [] : [["q", next]]);
-    navigate(settingsRoute("/recherche", search, ["q"], asked), { replace: true });
+    navigate(settingsRoute("/search", search, ["q"], asked), { replace: true });
   };
   /**
    * WHICH LONG FIELDS OF A COURSE ARE UNFOLDED, from the address.
@@ -259,7 +280,7 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
   const showMoreResults = () => {
     const next = new URLSearchParams();
     next.set(WINDOW_KEY, String((window || step || 25) + (step || 25)));
-    navigate(settingsRoute("/recherche", search, [WINDOW_KEY], next), { replace: true });
+    navigate(settingsRoute("/search", search, [WINDOW_KEY], next), { replace: true });
   };
   const [course, setCourse] = useState<CourseDetail | null>(null);
   /**
@@ -468,7 +489,7 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
         <button
           type="button"
           className={view.kind === "search" ? "on" : ""}
-          onClick={() => navigate("/recherche")}
+          onClick={() => navigate("/search")}
         >
           {t("ryc.tab.search")}
         </button>
@@ -602,7 +623,7 @@ export function Ryc({ path, search, navigate }: ModuleProps) {
                 onOpen={(c) => navigate(coursePath(c.institution, c.code))}
                 emptyLabel={t("ryc.search.none", { query })}
                 search={search}
-                here="/recherche"
+                here="/search"
                 navigate={navigate}
                 /* The box above already asks this question. */
                 textFilter={false}

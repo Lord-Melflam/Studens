@@ -35,7 +35,7 @@ export function SignIn() {
     const r = await fetch("/api/session/dev", { method: "POST" });
     // Suspended: no session, and the screen that says why, exactly as the
     // provider path does.
-    window.location.assign(r.status === 403 ? "/suspendu" : "/app");
+    window.location.assign(r.status === 403 ? "/suspended" : "/app");
   }
 
   return (
@@ -76,7 +76,7 @@ export function SignIn() {
 
       <p className="signin-fine">
         {t("signin.fine")}{" "}
-        <a {...linkProps("/confidentialite")}>{t("signin.fine.link")}</a>.
+        <a {...linkProps("/privacy")}>{t("signin.fine.link")}</a>.
       </p>
     </section>
   );

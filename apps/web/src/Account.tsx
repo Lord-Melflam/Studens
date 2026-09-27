@@ -72,7 +72,7 @@ export function Account({
       const r = await fetch("/api/session/dev", { method: "POST" });
       // Suspended: no session, and the screen that says why.
       if (r.status === 403) {
-        window.location.assign("/suspendu");
+        window.location.assign("/suspended");
         return;
       }
       reload();
@@ -161,14 +161,14 @@ export function Account({
         <a
           className={here ? "ghost here" : "ghost"}
           aria-current={here ? "page" : undefined}
-          {...linkProps("/connexion")}
+          {...linkProps("/signin")}
         >
           {t("nav.signin")}
         </a>
         <a
           className={here ? "cta here" : "cta"}
           aria-current={here ? "page" : undefined}
-          {...linkProps("/connexion")}
+          {...linkProps("/signin")}
         >
           {t("nav.register")}
         </a>

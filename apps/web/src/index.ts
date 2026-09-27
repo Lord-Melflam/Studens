@@ -20,6 +20,9 @@ export {
 } from "./router.js";
 export { modules, liveModules, presentModules, activeModuleFor } from "./shell/registry.js";
 export { bundle } from "./bundle.js";
+// The public slug table (OPEN-49). Exported so the round trip can be tested
+// by name rather than by reaching across the workspace with a relative path.
+export { toSlugPath, fromSlugPath } from "./routes.js";
 export {
   FIRST_RUN,
   STEPS,

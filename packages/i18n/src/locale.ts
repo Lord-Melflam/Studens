@@ -29,7 +29,7 @@ export function isLocale(value: string): value is Locale {
 }
 
 /**
- * Split `/nl/a-propos` into its locale and the rest.
+ * Split `/nl/privacy` into its locale and the rest.
  *
  * THE LOCALE IS IN THE PATH, not in a cookie alone.
  *
@@ -51,7 +51,13 @@ export function splitLocale(path: string): { locale: Locale | null; rest: string
   return { locale: head, rest };
 }
 
-/** Build a path in a given language: `("/a-propos", "nl")` -> `/nl/a-propos`. */
+/**
+ * Put the language in front of a path: `("/privacy", "nl")` -> `/nl/privacy`.
+ *
+ * It prefixes and nothing else. Translating the rest of the path is the web
+ * application's business, because the page names are its own; this package is
+ * imported by code that has no routes at all.
+ */
 export function localePath(rest: string, locale: Locale): string {
   const clean = rest === "/" ? "" : rest.replace(/\/+$/, "");
   return `/${locale}${clean}`;
