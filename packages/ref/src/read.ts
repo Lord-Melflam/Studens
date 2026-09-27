@@ -136,6 +136,64 @@ export interface CourseDetail extends CourseSummary {
   owningFaculty: string | null;
   /** Faculties this course was reached through. Many-to-many on purpose. */
   reachedVia: string[];
+  /**
+   * OPEN-47: which language each text field actually ended up in.
+   *
+   * REPORTED RATHER THAN ASSUMED, because it varies per field on the same
+   * course. Measured on 24 courses: 38% of fields are genuinely translated,
+   * 16% exist in French only, and the English edition sometimes publishes the
+   * literal sentence "See French document", which is refused at ingestion. A
+   * reader who asked for English and is shown French deserves to be told
+   * which parts, and a screen cannot work that out for itself.
+   *
+   * Absent keys are fields the course does not have at all.
+   */
+  textLanguage: Partial<Record<TextField, "fr" | "en">>;
+}
+
+/** The fields that have a French and possibly an English edition. */
+export type TextField =
+  | "title"
+  | "assessment"
+  | "themes"
+  | "content"
+  | "objectives"
+  | "prerequisites"
+  | "teachingMethods"
+  | "bibliography";
+
+export const TEXT_FIELDS: readonly TextField[] = [
+  "title",
+  "assessment",
+  "themes",
+  "content",
+  "objectives",
+  "prerequisites",
+  "teachingMethods",
+  "bibliography",
+];
+
+/**
+ * Choose between the two editions, field by field.
+ *
+ * ONLY `en` EVER GETS THE ENGLISH TEXT. French readers get French, and Dutch
+ * readers get French too, because `nl-cours-...` answers 404 and there is no
+ * Dutch source to fall back from. That is a fact about the university's site
+ * and it is why the interface says which language a field is in rather than
+ * pretending three are available.
+ */
+function pickText(
+  locale: string | undefined,
+  french: Block[] | null,
+  english: Block[] | null,
+): { value: Block[] | null; lang: "fr" | "en" | null } {
+  if (french === null && english === null) return { value: null, lang: null };
+  if (locale === "en" && english !== null) return { value: english, lang: "en" };
+  if (french !== null) return { value: french, lang: "fr" };
+  // French absent and English present, for a reader who did not ask for
+  // English: showing it beats showing nothing, and saying it is English is the
+  // whole point of reporting the language per field.
+  return { value: english, lang: "en" };
 }
 
 function summarise(o: ParsedOffering, institution: string): CourseSummary {
@@ -318,7 +376,16 @@ export interface Catalogue {
    * narrow the search rather than scroll a list that was never complete.
    */
   searchCount(query: string, scope?: Scope): number | Promise<number>;
-  get(institution: string, code: string): (CourseDetail | null) | Promise<CourseDetail | null>;
+  /**
+   * `locale` selects which edition a field comes back in, per field, and the
+   * record says which one each ended up being (OPEN-47). Optional, because a
+   * caller that does not care gets French, which is what every row has.
+   */
+  get(
+    institution: string,
+    code: string,
+    locale?: string,
+  ): (CourseDetail | null) | Promise<CourseDetail | null>;
   /**
    * Which catalogues hold a course with this code.
    *
@@ -480,7 +547,14 @@ export class SnapshotCatalogue implements Catalogue {
       .map((o) => summarise(o, this.institution));
   }
 
-  get(institution: string, code: string): CourseDetail | null {
+  /**
+   * The locale is accepted and ignored: a snapshot on disk is the French
+   * crawl, and the English edition is loaded into the database beside it. The
+   * parameter exists so both catalogues satisfy one interface, and every field
+   * this returns reports itself as French rather than staying silent.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  get(institution: string, code: string, locale?: string): CourseDetail | null {
     if (institution.toLowerCase() !== this.institution) return null;
     const o = this.snapshot.offerings.find((x) => x.code === code.toLowerCase());
     if (!o) return null;
@@ -500,6 +574,14 @@ export class SnapshotCatalogue implements Catalogue {
       reachedVia: this.snapshot.reachedVia
         .filter((r) => r.code === o.code)
         .map((r) => r.faculty),
+      // A snapshot on disk is the French crawl. The English edition is loaded
+      // into the database alongside it and is not carried here, so every field
+      // this reader returns is French and says so rather than staying silent.
+      textLanguage: Object.fromEntries(
+        TEXT_FIELDS.filter((f) => (f === "title" ? true : o[f as keyof typeof o] != null)).map(
+          (f) => [f, "fr" as const],
+        ),
+      ),
     };
   }
 }
@@ -579,6 +661,11 @@ export class DatabaseCatalogue implements Catalogue {
         OR: [
           { course: { code: { startsWith: q } } },
           { title: { contains: q, mode: "insensitive" } },
+          // OPEN-47. A student reading the English interface types "Project 3"
+          // and has to find the course whose French title is "Projet 3". This
+          // is the reason `titleEn` is a column and not a key inside the JSON
+          // blob: a string inside JSON is not matchable by this query.
+          { titleEn: { contains: q, mode: "insensitive" } },
         ],
         ...(wanted.length > 0
           ? { course: { institution: { code: { in: [...wanted] } } } }
@@ -606,6 +693,11 @@ export class DatabaseCatalogue implements Catalogue {
         OR: [
           { course: { code: { startsWith: q } } },
           { title: { contains: q, mode: "insensitive" } },
+          // OPEN-47. A student reading the English interface types "Project 3"
+          // and has to find the course whose French title is "Projet 3". This
+          // is the reason `titleEn` is a column and not a key inside the JSON
+          // blob: a string inside JSON is not matchable by this query.
+          { titleEn: { contains: q, mode: "insensitive" } },
         ],
         // THE SCOPE BELONGS HERE AND NOT AFTER THE FACT. `take` below is spent
         // on whatever the database returns first, so narrowing afterwards
@@ -671,7 +763,7 @@ export class DatabaseCatalogue implements Catalogue {
     return rows.map((r) => r.institution.code);
   }
 
-  async get(institution: string, code: string): Promise<CourseDetail | null> {
+  async get(institution: string, code: string, locale?: string): Promise<CourseDetail | null> {
     // The current year first, then the most recent there is. A course the
     // institution has stopped offering still has readers: somebody who took it
     // last year, and anybody reading the reviews they wrote about it.
@@ -696,20 +788,42 @@ export class DatabaseCatalogue implements Catalogue {
         include,
       }));
     if (!row) return null;
+
+    // OPEN-47. Field by field, because the two editions disagree about which
+    // fields exist: 16% are French only, so choosing an edition per COURSE
+    // would lose them.
+    const en = (row.textEn ?? null) as Record<string, unknown> | null;
+    const lang: Partial<Record<TextField, "fr" | "en">> = {};
+    const chosen = {} as Record<TextField, Block[] | null>;
+    for (const f of TEXT_FIELDS) {
+      if (f === "title") continue;
+      const picked = pickText(
+        locale,
+        blocksFrom((row as unknown as Record<string, Prisma.JsonValue>)[f] ?? null),
+        blocksFrom((en?.[f] as Prisma.JsonValue) ?? null),
+      );
+      chosen[f] = picked.value;
+      if (picked.lang) lang[f] = picked.lang;
+    }
+    const useEnglishTitle = locale === "en" && Boolean(row.titleEn);
+    lang.title = useEnglishTitle ? "en" : "fr";
+
     return {
       ...summariseRow(row, this.year),
+      title: useEnglishTitle ? row.titleEn! : row.title,
       officialUrl: officialCourseUrl(row.course.institution.code, row.year, row.course.code),
       language: row.language,
       contactHours: row.contactHours,
-      assessment: blocksFrom(row.assessment),
-      themes: blocksFrom(row.themes),
-      content: blocksFrom(row.content),
-      objectives: blocksFrom(row.objectives),
-      prerequisites: blocksFrom(row.prerequisites),
-      teachingMethods: blocksFrom(row.teachingMethods),
-      bibliography: blocksFrom(row.bibliography),
+      assessment: chosen.assessment,
+      themes: chosen.themes,
+      content: chosen.content,
+      objectives: chosen.objectives,
+      prerequisites: chosen.prerequisites,
+      teachingMethods: chosen.teachingMethods,
+      bibliography: chosen.bibliography,
       owningFaculty: row.owningFaculty,
       reachedVia: row.faculties.map((f) => f.faculty.code),
+      textLanguage: lang,
     };
   }
 

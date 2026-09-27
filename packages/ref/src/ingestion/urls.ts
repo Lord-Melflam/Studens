@@ -50,6 +50,20 @@ export function courseUrl(year: number, code: string): string {
   return `${BASE}/cours-${year}-${code.toLowerCase()}`;
 }
 
+/**
+ * The same course as the English edition publishes it (OPEN-47).
+ *
+ * `en-` in front of the path, and nothing else changes. Verified live on
+ * 2026-09-27: `en-cours-2026-lepl1503` answers 200 with translated content.
+ *
+ * THERE IS NO DUTCH EQUIVALENT. `nl-cours-...` answers 404, so a Dutch record
+ * is not obtainable from this source at all and Dutch falls back to French
+ * permanently. That is a property of the university's site, not a gap here.
+ */
+export function courseUrlEn(year: number, code: string): string {
+  return `${BASE}/en-cours-${year}-${code.toLowerCase()}`;
+}
+
 /** A programme's own page on the institution's site. */
 export function programmeUrl(year: number, code: string): string {
   return `${BASE}/prog-${year}-${code.toLowerCase()}`;

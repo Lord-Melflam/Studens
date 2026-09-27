@@ -13,6 +13,7 @@ import { PoliteFetcher } from "./http.js";
 import {
   courseLinkPattern,
   courseUrl,
+  courseUrlEn,
   facultyIndex,
   facultyLinkPattern,
   programmeLinkPattern,
@@ -20,7 +21,7 @@ import {
   searchUrl,
 } from "./urls.js";
 import { extractLinks } from "./parse/links.js";
-import { parseOffering, type ParsedOffering } from "./parse/offering.js";
+import { parseEnglish, parseOffering, type ParsedOffering } from "./parse/offering.js";
 import { parseSearchRows } from "./parse/search.js";
 import { BudgetExceeded, TooManyUnavailable } from "./errors.js";
 import { programmeShape } from "./parse/programme.js";
@@ -42,6 +43,17 @@ export interface CrawlOptions {
   fetcher?: PoliteFetcher;
   now?: Date;
   onProgress?: (msg: string) => void;
+  /**
+   * OPEN-47: also fetch the English edition of every course page.
+   *
+   * DEFAULT ON, because the catalogue being French in an English interface is
+   * the defect this exists to fix, and a fix nobody remembers to enable is not
+   * one. It roughly doubles a run that already takes about 75 minutes per
+   * university, so there is a way to turn it off for a quick scoped crawl.
+   *
+   * There is no Dutch equivalent to turn on: `nl-cours-...` answers 404.
+   */
+  english?: boolean;
 }
 
 /**
@@ -262,6 +274,9 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   // is served fine, so a crawl of nine thousand pages will meet several, and
   // ending the run over one means the catalogue can never be updated again.
   const unavailable: string[] = [];
+  const wantEnglish = opts.english ?? true;
+  let englishFound = 0;
+  let englishMissing = 0;
   for (const [i, code] of sampled.entries()) {
     const url = courseUrl(year, code);
     let page;
@@ -277,7 +292,25 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
     // understand is exactly that. A page missing a FIELD is a different thing
     // and is not a failure: the parser returns null for it and the course is
     // kept, because the other thirty fields are what a student came to read.
-    offerings.push(parseOffering(page.html, code, year, page.finalUrl));
+    const parsed = parseOffering(page.html, code, year, page.finalUrl);
+
+    // OPEN-47. Tolerated far more loosely than the French page, and
+    // deliberately: this edition is a bonus. A course with no English text is
+    // ordinary, so neither a refused fetch NOR a page we cannot parse may stop
+    // a run or lose the French record we already hold. Both are counted and
+    // reported, because a wave of them is still a fact worth knowing.
+    if (wantEnglish) {
+      try {
+        const alt = await fetcher.get(courseUrlEn(year, code));
+        parsed.english = parseEnglish(alt.html, code, year, alt.finalUrl);
+        if (parsed.english) englishFound++;
+      } catch (err) {
+        if (err instanceof BudgetExceeded) throw err;
+        englishMissing++;
+      }
+    }
+
+    offerings.push(parsed);
     // A long run has to say it is alive. At one faculty this prints twice; at
     // twenty-one it is the difference between a crawl and a hang.
     if (sampled.length > 200 && (i + 1) % 250 === 0) {
@@ -285,6 +318,9 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
     }
   }
   say(`${offerings.length} offerings parsed`);
+  if (wantEnglish) {
+    say(`${englishFound} with an English edition, ${englishMissing} without`);
+  }
 
   // A handful of broken pages is the catalogue; a wave of them is us. Being
   // blocked or rate limited fails everything at once, and that must stop the

@@ -371,6 +371,33 @@ real names remain.
 **Generalised.** Every rule about other people's material applies to our own use
 of it. Consistency is cheaper to keep than to explain.
 
+### It happened again on 2026-09-27, and the gate caught a third of it
+
+Adding the English edition needed a fixture, and what went in was a saved
+UCLouvain course page: 31kB, two real lecturers by name, both their profile
+URLs, and both their institutional addresses. The same mistake as above, in the
+same repository, against a rule written after the first time.
+
+**The gate written after the first time caught the addresses and nothing else.**
+It looked for `@uclouvain.be`, because an address is mechanical to spot. The
+names it could not see, and the profile URLs it did not think to look for, and
+those are two thirds of the exposure.
+
+Worse, it went green locally. The gate reads `git ls-files`, so a new fixture is
+invisible to it until it is staged: the whole suite passed, the file was added,
+and CI failed on something that had been true on the machine all along. **A gate
+that scans tracked files cannot see a file you have not added yet**, so running
+the suite before `git add` is a weaker check than it looks.
+
+**What changed.** The fixture is now a 5kB structural excerpt, produced
+programmatically from the capture by taking the heading, the header cells and
+the labelled rows and leaving everything else. Two checks were added beside the
+address one: a profile URL must name somebody from an explicit list of invented
+people, and an HTML fixture over 24kB is a saved page rather than a fixture. The
+list is the important half: a name cannot be recognised as real by a machine, so
+the rule is inverted, and adding a name to that list is a claim in a diff that
+you made it up.
+
 ---
 
 ## 4. Process failures around long-running work

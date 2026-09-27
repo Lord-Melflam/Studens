@@ -177,13 +177,26 @@ export function FoldedField({
   blocks,
   open,
   onToggle,
+  lang,
 }: {
   label: string;
   blocks: Block[] | null;
   open: boolean;
   onToggle: () => void;
+  /**
+   * The language THIS field ended up in (OPEN-47), which is not necessarily
+   * the language of the field above it: the two editions of a course page
+   * disagree about which fields exist, so a reader asking for English can get
+   * English content and a French assessment on the same course.
+   *
+   * Defaults to French, which is what every field was before the English
+   * edition was crawled and what every ULB field still is.
+   */
+  lang?: string;
 }) {
   const id = useId();
+  const locale = useLocale();
+  const fieldLang = lang ?? CATALOGUE_LANG;
   if (!blocks || blocks.length === 0) return null;
   return (
     <div className={open ? "field fold open" : "field fold"}>
@@ -199,6 +212,12 @@ export function FoldedField({
           onClick={onToggle}
         >
           <span className="fold-name">{label}</span>
+          {/* Marked on the HEADER, so it is visible while the field is folded.
+              A reader deciding whether to open seven sections should not have
+              to open one to find out it is in a language they did not ask
+              for. Only when it differs: on a French page this would be saying
+              that French is French. */}
+          {fieldLang !== locale && <span className="field-lang">{fieldLang.toUpperCase()}</span>}
           {/* Drawn, not built out of two rotated borders. The border trick
               gives a hairline that thickens on the diagonal and sits a pixel
               off its own centre, which is most of why this row looked like an
@@ -218,8 +237,11 @@ export function FoldedField({
       {/* Not rendered at all while folded rather than hidden with CSS: a
           closed field holds hundreds of elements on a long course, and seven
           of them is a page the browser lays out and nobody reads. */}
+      {/* `lang` is the real language of THIS field, so a screen reader does not
+          read French with English phonemes and a browser's translate offer is
+          accurate. It was a constant until the English edition existed. */}
       {open && (
-        <dd className="prose" id={id} lang={CATALOGUE_LANG}>
+        <dd className="prose" id={id} lang={fieldLang}>
           <Blocks blocks={blocks} />
         </dd>
       )}
@@ -239,10 +261,41 @@ export function FoldedField({
  * It states a fact and makes no promise. It does not say a translation is
  * coming, because whether one ever does is OPEN-47 and nobody has decided.
  */
-export function CatalogueLanguageNote({ institution }: { institution: string }) {
+export function CatalogueLanguageNote({
+  institution,
+  textLanguage,
+}: {
+  institution: string;
+  /**
+   * Which language each field ended up in (OPEN-47). Optional, because a
+   * caller that has not got it gets the old wholesale note, which is still
+   * true wherever no English edition was crawled.
+   */
+  textLanguage?: Record<string, string>;
+}) {
   const t = useT();
   const locale = useLocale();
   if (locale === CATALOGUE_LANG) return null;
+  // SILENT WHEN THERE IS NOTHING TO EXPLAIN. Once the English edition is
+  // loaded, most fields on a UCLouvain course are in English for an English
+  // reader, and a banner saying the record is French would then be the
+  // falsehood this note exists to prevent. It appears only for what is
+  // actually still French, and says how much.
+  if (textLanguage) {
+    const fields = Object.entries(textLanguage);
+    const foreign = fields.filter(([, l]) => l !== locale);
+    if (foreign.length === 0) return null;
+    if (foreign.length < fields.length) {
+      return (
+        <div className="source-lang">
+          {/* No count in the sentence: "1 section(s)" is the shape a plural
+              nobody implemented takes, and the marks on the headers already
+              say which ones and how many. */}
+          {t("ryc.course.sourceLanguage.some", { name: institution.toUpperCase() })}
+        </div>
+      );
+    }
+  }
   // A div and not a p, because on the course page this sits inside the <dl>
   // holding the fields, and a dl may hold only dt, dd and div.
   //

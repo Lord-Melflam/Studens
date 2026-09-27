@@ -1144,9 +1144,46 @@ So the shape of the work is not "crawl English instead". It is:
    ended up in,
 4. accept that Dutch has no source and will fall back to French always.
 
-**Deferred, on the owner's call, 2026-09-17.** The cost is a second full crawl and
-a second snapshot per year for a partial gain, and the note now on screen is
-what makes the current state honest rather than broken. Recorded as OPEN-47.
+**Deferred on 2026-09-17, then built on 2026-09-27**, on the owner's call to fix
+it properly rather than hand it over measured.
+
+**What the second measurement found**, on 24 courses and 168 field pairs, and it
+is the reason the shape above was right:
+
+| | count | share |
+|---|---|---|
+| absent in both editions | 72 | 43% |
+| genuinely translated | 64 | 38% |
+| **French only** | **27** | **16%** |
+| identical text, so untranslated French on the English page | 4 | 2% |
+| English only | 1 | 1% |
+
+Sixteen per cent is the number that decides the design. Crawling English
+*instead* would lose those fields silently, which is worse than not translating,
+so both editions are stored and the fallback is per field.
+
+**The labels were read off the live page, not guessed:** `Teacher(s)`,
+`Language`, `Prerequisites`, `Main themes`, `Learning outcomes`, `Content`,
+`Teaching methods`, `Evaluation methods`, `Bibliography`, `Faculty or entity`.
+The parser matches labels by substring against a list of spellings, so the
+English ones sit in the same lists as the French ones and there is no second
+parser. One character mattered: the alias is `teacher`, because `teacher(s)`
+does not contain `teachers`, and that silently emptied the lecturer list on
+every English page until it was tested.
+
+**A deferral is refused at ingestion.** The English edition may publish the
+literal sentence "See French document"; `lepl1503` does, where the French
+assessment is 1,855 characters. Keeping it would replace real text with a
+pointer to the thing just discarded. Rare, 0 of 24 sampled courses, and cheap to
+detect.
+
+**Storage.** `titleEn` is a column of its own because the catalogue search
+matches on title and a string inside a JSON blob is not matchable by that query;
+`textEn` holds the seven prose blocks in the shape the French ones already use.
+
+**Dutch is unchanged and cannot be fixed from this source.** `nl-cours-...`
+answers 404. Dutch readers get French, and the screen says which fields are
+French rather than pretending otherwise.
 
 ## 13. A second institution: ULB
 

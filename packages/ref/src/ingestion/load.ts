@@ -26,6 +26,7 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import type { Snapshot } from "./snapshot.js";
 import { slug } from "./parse/search.js";
 import type { Block } from "./parse/rich.js";
+import type { EnglishText } from "./parse/offering.js";
 
 /**
  * A block tree as a Json column value.
@@ -42,6 +43,13 @@ import type { Block } from "./parse/rich.js";
  */
 function asJson(blocks: Block[] | null): Prisma.InputJsonValue | Prisma.NullTypes.DbNull {
   return blocks === null ? Prisma.DbNull : (blocks as unknown as Prisma.InputJsonValue);
+}
+
+/** The same, for a whole object of blocks rather than one field (OPEN-47). */
+function objectAsJson(
+  value: object | null,
+): Prisma.InputJsonValue | Prisma.NullTypes.DbNull {
+  return value === null ? Prisma.DbNull : (value as unknown as Prisma.InputJsonValue);
 }
 
 export interface LoadResult {
@@ -275,6 +283,23 @@ export async function loadSnapshot(
         if (existing) result.coursesReused += 1;
         else result.coursesCreated += 1;
 
+        // The seven prose blocks only. The title is a column of its own
+        // because the search matches on it, and nothing else in the English
+        // edition differs in a way worth storing: the ECTS, the quarter and
+        // the contact hours are numbers.
+        function englishBlocks(e: EnglishText) {
+          const blocks = {
+            assessment: e.assessment,
+            themes: e.themes,
+            content: e.content,
+            objectives: e.objectives,
+            prerequisites: e.prerequisites,
+            teachingMethods: e.teachingMethods,
+            bibliography: e.bibliography,
+          };
+          return Object.values(blocks).some((v) => v !== null) ? blocks : null;
+        }
+
         const offering = await tx.courseOffering.upsert({
           where: { courseId_year: { courseId: course.id, year: o.year } },
           update: {
@@ -290,6 +315,12 @@ export async function loadSnapshot(
             prerequisites: asJson(o.prerequisites ?? null),
             teachingMethods: asJson(o.teachingMethods ?? null),
             bibliography: asJson(o.bibliography ?? null),
+            // OPEN-47. Separate from the French columns, never instead of
+            // them: 16% of fields exist in French and not in English, so a
+            // merge at write time would lose them permanently. The reader
+            // falls back per field instead.
+            titleEn: o.english?.title ?? null,
+            textEn: objectAsJson(o.english ? englishBlocks(o.english) : null),
             owningFaculty: o.owningFaculty,
           },
           create: {
@@ -307,6 +338,12 @@ export async function loadSnapshot(
             prerequisites: asJson(o.prerequisites ?? null),
             teachingMethods: asJson(o.teachingMethods ?? null),
             bibliography: asJson(o.bibliography ?? null),
+            // OPEN-47. Separate from the French columns, never instead of
+            // them: 16% of fields exist in French and not in English, so a
+            // merge at write time would lose them permanently. The reader
+            // falls back per field instead.
+            titleEn: o.english?.title ?? null,
+            textEn: objectAsJson(o.english ? englishBlocks(o.english) : null),
             owningFaculty: o.owningFaculty,
           },
         });

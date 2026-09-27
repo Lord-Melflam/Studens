@@ -53,6 +53,16 @@ export interface CourseDetail extends CourseSummary {
   bibliography: Block[] | null;
   owningFaculty: string | null;
   reachedVia: string[];
+  /**
+   * OPEN-47: which language each text field ended up in.
+   *
+   * Per field, not per course, because the two editions of a UCLouvain page
+   * disagree about which fields exist: a reader asking for English can get an
+   * English description and a French assessment on the same course. Optional,
+   * because a ULB course has no English edition at all and the key is simply
+   * absent there.
+   */
+  textLanguage?: Record<string, string>;
 }
 
 export interface FacultySummary {
@@ -276,9 +286,16 @@ export const api = {
       step: number;
     }>(`/api/courses?${params.toString()}`);
   },
-  course: (institution: string, code: string) =>
+  /**
+   * `locale` decides which edition each field comes back in (OPEN-47). Passed
+   * explicitly rather than left to a header: the interface already carries the
+   * language in the path, so the client knows it exactly and a header would be
+   * a second, quieter source that could disagree.
+   */
+  course: (institution: string, code: string, locale?: string) =>
     json<CourseDetail>(
-      `/api/courses/${encodeURIComponent(institution)}/${encodeURIComponent(code)}`,
+      `/api/courses/${encodeURIComponent(institution)}/${encodeURIComponent(code)}` +
+        (locale ? `?lang=${encodeURIComponent(locale)}` : ""),
     ),
   /**
    * Which catalogues hold a bare code, for a link made before OPEN-48.

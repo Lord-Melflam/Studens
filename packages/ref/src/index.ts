@@ -20,7 +20,14 @@ export {
   type Snapshot,
   type DiscoveredFaculty,
 } from "./ingestion/snapshot.js";
-export { parseOffering, detectEra, type ParsedOffering, type Era } from "./ingestion/parse/offering.js";
+export {
+  parseOffering,
+  parseEnglish,
+  detectEra,
+  type ParsedOffering,
+  type EnglishText,
+  type Era,
+} from "./ingestion/parse/offering.js";
 /**
  * The block model for the long course-page fields. Exported because the API
  * hands these to the browser: the shape is part of the contract, not an
