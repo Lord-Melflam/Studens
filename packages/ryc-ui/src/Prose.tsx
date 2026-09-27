@@ -264,6 +264,9 @@ export function FoldedField({
 export function CatalogueLanguageNote({
   institution,
   textLanguage,
+  editions,
+  edition,
+  onEdition,
 }: {
   institution: string;
   /**
@@ -272,42 +275,99 @@ export function CatalogueLanguageNote({
    * true wherever no English edition was crawled.
    */
   textLanguage?: Record<string, string>;
+  /** The editions that exist for this course. */
+  editions?: string[];
+  /** The one being shown, and a way to change it. */
+  edition?: string;
+  onEdition?: (lang: string) => void;
 }) {
   const t = useT();
   const locale = useLocale();
-  if (locale === CATALOGUE_LANG) return null;
-  // SILENT WHEN THERE IS NOTHING TO EXPLAIN. Once the English edition is
-  // loaded, most fields on a UCLouvain course are in English for an English
-  // reader, and a banner saying the record is French would then be the
-  // falsehood this note exists to prevent. It appears only for what is
-  // actually still French, and says how much.
-  if (textLanguage) {
-    const fields = Object.entries(textLanguage);
-    const foreign = fields.filter(([, l]) => l !== locale);
-    if (foreign.length === 0) return null;
-    if (foreign.length < fields.length) {
-      return (
-        <div className="source-lang">
-          {/* No count in the sentence: "1 section(s)" is the shape a plural
-              nobody implemented takes, and the marks on the headers already
-              say which ones and how many. */}
-          {t("ryc.course.sourceLanguage.some", { name: institution.toUpperCase() })}
-        </div>
-      );
+
+  /*
+    THE SWITCH, AND WHY IT IS HERE RATHER THAN IN THE HEADER.
+
+    It changes which edition of THIS RECORD is shown, and nothing else: not the
+    interface, not the next course, not a preference that follows the reader
+    around. Putting it beside the sentence that explains why a language is
+    appearing is the one place it reads as an answer to that sentence.
+
+    Offered only when a second edition exists, because a switch with one option
+    is a control that can do nothing, which is the rule the filter groups and
+    the review pager already follow.
+
+    It is shown even to a reader whose interface language matches the record,
+    because a French reader may still want the English edition, and the note
+    above it is the only thing that disappears in that case.
+  */
+  const choice =
+    editions && editions.length > 1 && onEdition ? (
+      <span className="edition-switch" role="group" aria-label={t("ryc.course.edition")}>
+        {editions.map((e) => (
+          <button
+            key={e}
+            type="button"
+            className={e === edition ? "here" : ""}
+            aria-pressed={e === edition}
+            onClick={() => onEdition(e)}
+          >
+            {e.toUpperCase()}
+          </button>
+        ))}
+      </span>
+    ) : null;
+
+  /*
+    WHAT THE NOTE HAS TO EXPLAIN, now that a record is not simply French.
+
+    The first version compared every field against the INTERFACE language and
+    said "published in French" whenever they differed. For a Dutch reader that
+    was wrong twice over: nothing is ever published in Dutch, so every field
+    counted as foreign, and the sentence named French while most of the record
+    on screen was English.
+
+    So it compares against the edition being READ. The switch beside it already
+    says which that is; the only thing left to explain is the fields that
+    could not come from it, and those carry their own mark.
+  */
+  const fields = Object.entries(textLanguage ?? {});
+  const current = edition === "en" || edition === "fr" ? edition : CATALOGUE_LANG;
+  const odd = fields.filter(([, l]) => l !== current);
+
+  if (fields.length > 0) {
+    if (odd.length === 0) {
+      // The whole record is in one language. The switch says which, and a
+      // sentence repeating it would be noise; without a switch there is
+      // nothing to say at all unless that language is not the reader's.
+      if (!choice && current !== locale) {
+        return (
+          <div className="source-lang">
+            {t("ryc.course.sourceLanguage.all", {
+              name: institution.toUpperCase(),
+              lang: t(`ryc.lang.${current}`),
+            })}
+          </div>
+        );
+      }
+      return choice ? <div className="source-lang">{choice}</div> : null;
     }
+    const other = odd[0]![1].toUpperCase();
+    return (
+      <div className="source-lang">
+        {t("ryc.course.sourceLanguage.some", {
+          name: institution.toUpperCase(),
+          tag: other,
+          lang: t(`ryc.lang.${odd[0]![1]}`),
+        })}
+        {choice}
+      </div>
+    );
   }
-  // A div and not a p, because on the course page this sits inside the <dl>
-  // holding the fields, and a dl may hold only dt, dd and div.
-  //
-  // THE INSTITUTION IS A PARAMETER because this line named UCLouvain whatever
-  // the course. That was true while there was one catalogue and became a
-  // falsehood the hour ULB loaded: an English reader on a ULB course was told
-  // UCLouvain had published it. The note exists to be accurate about where the
-  // French came from, so naming the wrong university defeats the whole point
-  // of having it.
+
   return (
     <div className="source-lang">
       {t("ryc.course.sourceLanguage", { name: institution.toUpperCase() })}
+      {choice}
     </div>
   );
 }

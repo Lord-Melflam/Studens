@@ -63,6 +63,14 @@ export interface CourseDetail extends CourseSummary {
    * absent there.
    */
   textLanguage?: Record<string, string>;
+  /**
+   * The editions that exist for this course. The screen offers a switch only
+   * when there is more than one, because a control with a single option can
+   * do nothing.
+   */
+  editions?: string[];
+  /** The edition this record is written in, as the server chose it. */
+  edition?: string;
 }
 
 export interface FacultySummary {

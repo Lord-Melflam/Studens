@@ -121,14 +121,23 @@ describe("a field comes back in the language that actually exists", () => {
   });
 
   /**
-   * There is no Dutch edition at all: `nl-cours-...` answers 404. A Dutch
-   * reader gets French and is told it is French, which is the honest answer
-   * and not a bug to be fixed later.
+   * THIS TEST ASSERTED THE OPPOSITE UNTIL 2026-09-27, and the change is
+   * deliberate rather than a fix.
+   *
+   * There is no Dutch edition and there cannot be: `nl-cours-...` answers 404.
+   * The original rule sent every reader who had not asked for English to
+   * French, so a Dutch reader was shown French and told so in Dutch, on a
+   * course whose English edition was sitting in the same row. Overruled by the
+   * owner on knowledge of the country: a Dutch speaker in Belgium is likelier
+   * to read English comfortably than French.
+   *
+   * Dutch readers still get French where English does not exist, which is the
+   * case the rest of this file covers.
    */
-  dbit("gives a Dutch reader French, because no Dutch source exists", async () => {
+  dbit("gives a Dutch reader English rather than French where both exist", async () => {
     const c = await new DatabaseCatalogue(prisma, YEAR).get("uclouvain", CODE, "nl");
-    expect(JSON.stringify(c?.content)).toContain("français");
-    expect(c?.textLanguage.content).toBe("fr");
+    expect(JSON.stringify(c?.content)).toContain("Content in English");
+    expect(c?.textLanguage.content).toBe("en");
   });
 
   dbit("defaults to French when no language is asked for", async () => {
@@ -151,5 +160,77 @@ describe("a field comes back in the language that actually exists", () => {
     expect(
       (await catalogue.search("Projet de test", { institutions: ["uclouvain"] })).map((h) => h.code),
     ).toContain(CODE);
+  });
+});
+
+/**
+ * WHICH EDITION A READER IS OFFERED FIRST.
+ *
+ * A DUTCH READER GETS ENGLISH BEFORE FRENCH. The owner's call, 2026-09-27, on
+ * knowledge of the country rather than anything in this repository: a Dutch
+ * speaker in Belgium is likelier to read English comfortably than French.
+ *
+ * The first version offered French to everyone who had not asked for English,
+ * so a Dutch reader on a course with a perfectly good English edition was
+ * shown French and told, in Dutch, that the record was in French. Reported
+ * from use.
+ *
+ * Neither guess has to be right, because the page carries a switch. These
+ * tests are about where a reader STARTS, and about the record saying plainly
+ * which edition it is, since the screen cannot work that out by comparing
+ * against an interface language that no edition matches.
+ */
+describe("which edition a reader is offered", () => {
+  dbit("offers a Dutch reader English, not French", async () => {
+    const c = await new DatabaseCatalogue(prisma, YEAR).get("uclouvain", CODE, "nl");
+    expect(c?.edition).toBe("en");
+    expect(c?.title).toBe("Test project");
+    expect(JSON.stringify(c?.content)).toContain("Content in English");
+  });
+
+  dbit("still falls back per field for a Dutch reader", async () => {
+    // The assessment exists in French only, so it comes back in French and
+    // says so, inside a record that is otherwise English.
+    const c = await new DatabaseCatalogue(prisma, YEAR).get("uclouvain", CODE, "nl");
+    expect(JSON.stringify(c?.assessment)).toContain("français");
+    expect(c?.textLanguage.assessment).toBe("fr");
+  });
+
+  dbit("says which edition it served, for each reader", async () => {
+    const catalogue = new DatabaseCatalogue(prisma, YEAR);
+    expect((await catalogue.get("uclouvain", CODE, "fr"))?.edition).toBe("fr");
+    expect((await catalogue.get("uclouvain", CODE, "en"))?.edition).toBe("en");
+    expect((await catalogue.get("uclouvain", CODE))?.edition).toBe("fr");
+  });
+
+  /**
+   * The switch is offered on the strength of a second edition EXISTING, not on
+   * which one is currently shown, so the list is the same whoever asks.
+   */
+  dbit("lists the editions that exist, the same way for everybody", async () => {
+    const catalogue = new DatabaseCatalogue(prisma, YEAR);
+    for (const locale of ["fr", "nl", "en"]) {
+      expect((await catalogue.get("uclouvain", CODE, locale))?.editions.sort()).toEqual(["en", "fr"]);
+    }
+  });
+
+  /**
+   * A course with no English edition offers no choice, so the screen draws no
+   * switch: a control with one option can do nothing.
+   */
+  dbit("offers one edition where only one exists", async () => {
+    const id = await institutionId(prisma, "uclouvain");
+    const bare = await prisma.course.create({
+      data: { code: "ztst.en.bare", institutionId: id },
+      select: { id: true },
+    });
+    await prisma.courseOffering.create({
+      data: { courseId: bare.id, year: YEAR, title: "Sans anglais", content: block("Que du français") },
+    });
+
+    const c = await new DatabaseCatalogue(prisma, YEAR).get("uclouvain", "ztst.en.bare", "nl");
+    expect(c?.editions).toEqual(["fr"]);
+    expect(c?.edition).toBe("fr");
+    expect(c?.textLanguage.content).toBe("fr");
   });
 });

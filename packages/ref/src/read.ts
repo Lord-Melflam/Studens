@@ -149,6 +149,29 @@ export interface CourseDetail extends CourseSummary {
    * Absent keys are fields the course does not have at all.
    */
   textLanguage: Partial<Record<TextField, "fr" | "en">>;
+  /**
+   * The editions that actually exist for this course, in no order.
+   *
+   * SO THE SCREEN CAN OFFER A CHOICE ONLY WHERE THERE IS ONE. A switch with a
+   * single option is a control that can do nothing, which is the same rule the
+   * filter groups and the review pager already follow.
+   *
+   * It is computed from the text rather than from a column, because "has an
+   * English edition" means "some field came back in English", and a row can
+   * carry an English title with no English prose.
+   */
+  editions: Array<"fr" | "en">;
+  /**
+   * The edition this response is written in: the reader's first preference
+   * that exists.
+   *
+   * REPORTED, NOT INFERRED. A Dutch reader is served the English edition, so
+   * the screen cannot work out which one it is holding by comparing against
+   * the interface language: neither `fr` nor `en` matches `nl`, and the switch
+   * marked neither as current. Individual fields may still differ from this,
+   * which is what `textLanguage` is for.
+   */
+  edition: "fr" | "en";
 }
 
 /** The fields that have a French and possibly an English edition. */
@@ -182,18 +205,42 @@ export const TEXT_FIELDS: readonly TextField[] = [
  * and it is why the interface says which language a field is in rather than
  * pretending three are available.
  */
+/**
+ * WHICH EDITION A READER WOULD RATHER HAVE, IN ORDER.
+ *
+ * A DUTCH READER IS OFFERED ENGLISH BEFORE FRENCH, and that is the owner's
+ * call, 2026-09-27, on knowledge of the country rather than on anything in
+ * this repository: a Dutch speaker in Belgium is likelier to read English
+ * comfortably than French. The first version offered French to everyone who
+ * had not asked for English, so a Dutch reader on a course with a perfectly
+ * good English edition was shown French and told it was French. That is a
+ * worse guess than the one available.
+ *
+ * Neither guess has to be right, because the course page carries a switch: the
+ * reader changes edition in one press and the page says which language every
+ * field ended up in. This decides only where they start.
+ *
+ * WHAT WOULD CHANGE IT: a Dutch edition existing, which would go first for
+ * `nl` and make the rest of this moot; or evidence that Dutch readers here
+ * prefer French, which would be a fact about the population and not about the
+ * catalogue.
+ */
+const PREFERENCE: Record<string, readonly ("fr" | "en")[]> = {
+  fr: ["fr", "en"],
+  en: ["en", "fr"],
+  nl: ["en", "fr"],
+};
+
 function pickText(
   locale: string | undefined,
   french: Block[] | null,
   english: Block[] | null,
 ): { value: Block[] | null; lang: "fr" | "en" | null } {
-  if (french === null && english === null) return { value: null, lang: null };
-  if (locale === "en" && english !== null) return { value: english, lang: "en" };
-  if (french !== null) return { value: french, lang: "fr" };
-  // French absent and English present, for a reader who did not ask for
-  // English: showing it beats showing nothing, and saying it is English is the
-  // whole point of reporting the language per field.
-  return { value: english, lang: "en" };
+  const have = { fr: french, en: english };
+  for (const want of PREFERENCE[locale ?? "fr"] ?? PREFERENCE["fr"]!) {
+    if (have[want] !== null) return { value: have[want], lang: want };
+  }
+  return { value: null, lang: null };
 }
 
 function summarise(o: ParsedOffering, institution: string): CourseSummary {
@@ -582,6 +629,10 @@ export class SnapshotCatalogue implements Catalogue {
           (f) => [f, "fr" as const],
         ),
       ),
+      // A snapshot on disk is one crawl in one language, so there is nothing
+      // to choose between and the screen offers no switch.
+      editions: ["fr"],
+      edition: "fr",
     };
   }
 }
@@ -805,7 +856,18 @@ export class DatabaseCatalogue implements Catalogue {
       chosen[f] = picked.value;
       if (picked.lang) lang[f] = picked.lang;
     }
-    const useEnglishTitle = locale === "en" && Boolean(row.titleEn);
+    // What EXISTS, not what was chosen: the switch is offered on the strength
+    // of there being another edition, whichever one is currently shown.
+    const hasEnglish =
+      Boolean(row.titleEn) ||
+      TEXT_FIELDS.some((f) => f !== "title" && blocksFrom((en?.[f] as Prisma.JsonValue) ?? null));
+
+    // The first preference that exists, which is what the reader is reading.
+    const available: Array<"fr" | "en"> = hasEnglish ? ["fr", "en"] : ["fr"];
+    const order = PREFERENCE[locale ?? "fr"] ?? PREFERENCE["fr"]!;
+    const chosen_ = order.find((e) => available.includes(e)) ?? "fr";
+
+    const useEnglishTitle = chosen_ === "en" && Boolean(row.titleEn);
     lang.title = useEnglishTitle ? "en" : "fr";
 
     return {
@@ -824,6 +886,8 @@ export class DatabaseCatalogue implements Catalogue {
       owningFaculty: row.owningFaculty,
       reachedVia: row.faculties.map((f) => f.faculty.code),
       textLanguage: lang,
+      editions: hasEnglish ? ["fr", "en"] : ["fr"],
+      edition: chosen_,
     };
   }
 

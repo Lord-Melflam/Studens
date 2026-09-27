@@ -57,6 +57,27 @@ export function courseUrl(_year: number, code: string): string {
   return `${BASE}/fr/programme/${code}`;
 }
 
+/**
+ * The same course as ULB publishes it in English (OPEN-47).
+ *
+ * `/en/` in place of `/fr/`, and nothing else changes. Verified live on
+ * 2026-09-27 against four courses drawn at random, all 200.
+ *
+ * THIS WAS ASSERTED NOT TO EXIST. When the English edition was built for
+ * UCLouvain it was stated, here and in the release notes, that ULB had none,
+ * and that was never checked: the measurement behind it was about DUTCH at
+ * UCLouvain. Corrected after the owner pointed at a page that plainly had one.
+ *
+ * ULB translates less than UCLouvain does, and that makes the per-field
+ * fallback matter MORE rather than less. Measured over 18 courses and 108
+ * field pairs: 30% of fields exist in French and not in English, against 16%
+ * at UCLouvain, so replacing one edition with the other here would lose
+ * roughly a third of the prose.
+ */
+export function courseUrlEn(_year: number, code: string): string {
+  return `${BASE}/en/programme/${code}`;
+}
+
 /** The same namespace as a course, which is ULB's doing and not a mistake here. */
 export function programmeUrl(_year: number, code: string): string {
   return `${BASE}/fr/programme/${code}`;
@@ -266,6 +287,9 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
     let filled = 0;
     let failed = 0;
     let withCampus = 0;
+    const wantEnglish = opts.english ?? true;
+    let englishFound = 0;
+    let englishMissing = 0;
     for (const [i, o] of offerings.entries()) {
       try {
         const page = (await fetcher.get(courseUrl(o.year, o.code))).html;
@@ -282,12 +306,47 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
       } catch {
         failed += 1;
       }
+
+      /*
+        The English edition, tolerated far more loosely than the French one.
+        A course without one is ordinary, so neither a refused fetch nor an
+        unparseable page may cost the French prose just read above. Counted
+        and reported, because a wave of failures is still worth knowing.
+
+        The title is not taken: ULB's English page carries the same programme
+        title as the French one on every page sampled, so storing it would put
+        a French string in a column meaning "the English title".
+      */
+      if (wantEnglish) {
+        try {
+          const alt = (await fetcher.get(courseUrlEn(o.year, o.code))).html;
+          const en = parseCourseProse(alt);
+          const blocks = {
+            assessment: en.assessment,
+            themes: null,
+            content: en.content,
+            objectives: en.objectives,
+            prerequisites: en.prerequisites,
+            teachingMethods: en.teachingMethods,
+            bibliography: en.bibliography,
+          };
+          if (Object.values(blocks).some((v) => v !== null)) {
+            o.english = { title: null, ...blocks };
+            englishFound += 1;
+          }
+        } catch {
+          englishMissing += 1;
+        }
+      }
       if ((i + 1) % 250 === 0) say(`ulb: prose ${i + 1}/${offerings.length}, ${filled} filled`);
     }
     say(
       `ulb: prose done, ${filled} of ${offerings.length} filled, ${withCampus} with a campus, ` +
         `${failed} pages unreachable`,
     );
+    if (wantEnglish) {
+      say(`ulb: ${englishFound} with an English edition, ${englishMissing} without`);
+    }
   }
 
   say(`ulb: done, ${programmes.length} programmes and ${offerings.length} courses`);
