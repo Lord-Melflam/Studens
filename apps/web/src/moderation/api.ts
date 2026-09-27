@@ -351,3 +351,56 @@ export async function exportFeedbackFull(
   if (r.ok) return { ok: true, file: await r.json() };
   return { ok: false, reason: r.status === 400 ? "confirm" : "failed" };
 }
+
+/** FR-E21. A request to an administrator, as either side sees it. */
+export interface AccessRequest {
+  id: string;
+  memberId: string;
+  username: string | null;
+  role: string;
+  section: string;
+  reason: string;
+  createdAt: string;
+  status: string;
+  decidedAt: string | null;
+  answer: string | null;
+}
+
+export async function fetchAccessRequests(): Promise<{
+  requests: AccessRequest[];
+  askable: string[];
+  mine: boolean;
+}> {
+  const r = await fetch("/api/moderation/access");
+  if (!r.ok) return { requests: [], askable: [], mine: true };
+  return (await r.json()) as { requests: AccessRequest[]; askable: string[]; mine: boolean };
+}
+
+export async function askForAccess(
+  section: string,
+  reason: string,
+): Promise<{ ok: true } | { ok: false; why: string }> {
+  const r = await fetch("/api/moderation/access", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ section, reason }),
+  });
+  if (r.ok) return { ok: true };
+  const body = (await r.json().catch(() => ({}))) as { why?: string };
+  return { ok: false, why: body.why ?? "failed" };
+}
+
+export async function decideAccess(
+  id: string,
+  decision: "granted" | "declined",
+  answer: string,
+): Promise<{ ok: true } | { ok: false; why: string }> {
+  const r = await fetch(`/api/moderation/access/${encodeURIComponent(id)}/decide`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ decision, answer }),
+  });
+  if (r.ok) return { ok: true };
+  const body = (await r.json().catch(() => ({}))) as { why?: string; reason?: string };
+  return { ok: false, why: body.why ?? body.reason ?? "failed" };
+}

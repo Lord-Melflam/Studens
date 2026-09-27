@@ -1543,6 +1543,51 @@ a.ghost.here {
   quieter link that opens a question, because it should take a decision rather
   than a click.
 */
+/*
+  A section a moderator cannot open (FR-E21).
+
+  IT LOOKS LIKE A STATEMENT, NOT LIKE A FAILURE. Nothing went wrong: the screen
+  exists, it is not theirs, and there is something they can do about it. A red
+  error panel would say the opposite of all three.
+*/
+.locked-line {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+}
+.locked-mark {
+  display: inline-flex;
+  color: var(--muted);
+}
+/* The question needs air above it: without this the label sits hard against
+   the sentence describing the screen and the two read as one paragraph. */
+.locked-line + .hint { margin-bottom: 1rem; }
+.locked-line ~ .field-label { margin-top: 1rem; }
+.locked-state {
+  margin: 0.75rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* A tab somebody cannot open. Quiet rather than struck through: it is a place
+   they may ask about, not a thing that is broken. */
+/* Named "console-shut" rather than "shut": the module's stylesheet already
+   declares a class of that name, and a name in two of the four sheets loaded
+   together is one of them silently editing the other. The gate caught it
+   before it reached a screen. */
+.console-tab.console-shut { color: var(--muted); }
+.tab-lock {
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-left: 0.35rem;
+  vertical-align: -0.1em;
+}
+
 .export-row {
   display: flex;
   flex-wrap: wrap;

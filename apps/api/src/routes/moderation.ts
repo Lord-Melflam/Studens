@@ -35,6 +35,10 @@ import {
   listFeedback,
   setFeedbackStatus,
   exportFeedback,
+  AccessRefused,
+  askForAccess,
+  listAccessRequests,
+  decideAccess,
   decide,
   listAppointments,
   listMembers,
@@ -923,6 +927,146 @@ export function moderationRoutes(prisma: PrismaClient): Router {
         res.json(await setRole(prisma, who, member.id, role));
       } catch (err) {
         if (!refuse(res, err)) throw err;
+      }
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
+   * FR-E21: asking, reading and answering.
+   *
+   * THE SECTIONS A REQUEST MAY NAME come from here rather than from the
+   * kernel, because they are the console's vocabulary and the platform never
+   * learns what a section is. The same shape as the moderation targets list
+   * and the settings keys: the screen's words, passed in at the boundary.
+   */
+  const ASKABLE = ["roles", "reglages"] as const;
+
+  /** A moderator asks. An administrator has nothing to ask for. */
+  router.post("/moderation/access", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canModerate(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      if (canAppoint(who.role)) {
+        // Not an error worth explaining at length: an administrator opening
+        // this endpoint already holds everything it could ask for.
+        res.status(400).json({ error: "access", why: "already" });
+        return;
+      }
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const { section, reason } = body;
+      if (typeof section !== "string" || typeof reason !== "string") {
+        res.status(400).json({ error: "invalid" });
+        return;
+      }
+      try {
+        await askForAccess(who.memberId, section, reason, {
+          client: prisma,
+          sections: ASKABLE,
+        });
+        res.status(202).json({ received: true });
+      } catch (err) {
+        if (err instanceof AccessRefused) {
+          res.status(400).json({ error: "access", why: err.why });
+          return;
+        }
+        throw err;
+      }
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
+   * An administrator reads every request; a moderator reads their own.
+   *
+   * One endpoint rather than two, because the difference is a `where` clause
+   * and two endpoints would be two places to forget it.
+   */
+  router.get("/moderation/access", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canModerate(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const rows = await listAccessRequests({
+        client: prisma,
+        ...(canAppoint(who.role) ? {} : { memberId: who.memberId }),
+      });
+      res.json({
+        requests: rows.map((r) => ({
+          ...r,
+          createdAt: r.createdAt.toISOString(),
+          decidedAt: r.decidedAt?.toISOString() ?? null,
+        })),
+        askable: ASKABLE,
+        mine: !canAppoint(who.role),
+      });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
+   * An administrator answers.
+   *
+   * THE TWO HALVES MEET HERE AND NOWHERE ELSE. Granting means appointing,
+   * which `setRole` already does and already audits; the request row records
+   * that the question was answered. The kernel that stores requests cannot
+   * appoint anybody and the one that appoints knows nothing about requests,
+   * which is what stops a request quietly becoming a second way to hold a
+   * power (`roles.ts`: three roles and no lattice).
+   *
+   * THE APPOINTMENT HAPPENS FIRST. If it fails, the request stays open and
+   * the administrator sees why; the other order would close a question that
+   * was never actually answered.
+   */
+  router.post("/moderation/access/:id/decide", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canAppoint(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const { decision, answer } = body;
+      if (decision !== "granted" && decision !== "declined") {
+        res.status(400).json({ error: "invalid" });
+        return;
+      }
+
+      const row = await prisma.accessRequest.findUnique({
+        where: { id: String(req.params.id) },
+        select: { memberId: true, status: true },
+      });
+      if (!row || row.status !== "open") {
+        res.status(400).json({ error: "access", why: "decided" });
+        return;
+      }
+
+      if (decision === "granted") {
+        try {
+          await setRole(prisma, who, row.memberId, "admin");
+        } catch (err) {
+          if (!refuse(res, err)) throw err;
+          return;
+        }
+      }
+
+      try {
+        await decideAccess(
+          String(req.params.id),
+          decision,
+          who.memberId,
+          typeof answer === "string" ? answer : null,
+          { client: prisma },
+        );
+        res.json({ ok: true });
+      } catch (err) {
+        if (err instanceof AccessRefused) {
+          res.status(400).json({ error: "access", why: err.why });
+          return;
+        }
+        throw err;
       }
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
