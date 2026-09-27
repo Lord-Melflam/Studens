@@ -197,8 +197,13 @@ the short form of a longer entry in \texttt{docs/LESSONS.md}.
         mentioned: money, permanence, or a weakened guarantee. Then do what was
         decided. Several entries in the specification record the owner
         overruling a recommendation, and say so.
-  \item \textbf{Branch from \texttt{main}, always.} Merges are squash merges,
-        so a branch stacked on an unmerged branch conflicts every time.
+  \item \textbf{Branch from a \texttt{main} you pulled one command ago.}
+        Merges are squash merges, so a branch stacked on an unmerged branch
+        conflicts every time. The half that is easier to miss is freshness: a
+        pull run a few minutes before a merge lands leaves you branching from a
+        \texttt{main} already behind, and the symptom arrives later wearing a
+        different face, a push reporting a new branch for one that was deleted
+        on merge and now holds work in no pull request.
   \item \textbf{A database test owns its namespace.} Files run in parallel
         against one database and \texttt{username} is globally unique. Every
         fixture lives under \texttt{ztst}, and \texttt{npm run state} excludes
@@ -231,6 +236,11 @@ signed-out & A route caught the not-signed-in error and returned without answeri
 no-egress & Review text must never reach a third party, so the module holding it opens no socket at all. \\
 no-stale-counts & The public page said 546 courses while the database held 12,154. \\
 docs:links & Nothing tracked may reference an untracked file. The repository is public. \\
+test-isolation & A non-deterministic failure that lands on whoever added an unrelated file. \\
+no-catalogue-data & The crawl's output is not in a public repository, and a parser fixture is not a way around that. Written after a near miss, it then let a fixture through carrying two lecturers' names, their profile URLs and their addresses, because it looked for addresses only. \\
+css-collisions & A class name declared in two stylesheets is one of them silently editing the other. \\
+reduced-motion & An animation written without its reduced-motion opt-out has no symptom for the author and a real one for the reader. \\
+brand-mark & The mark is drawn in four places. Change one and the other three stay valid SVG, render fine, and are wrong. \\
 \bottomrule
 \end{tabular}
 \end{center}

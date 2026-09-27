@@ -196,9 +196,16 @@ permanence, or a weakened guarantee. Then do what was decided. Several
 decisions in `docs/requirements.md` record the owner overruling a
 recommendation, and those entries say so.
 
-**Branch from `main`, always.** Merges are squash merges, so a branch stacked
-on an unmerged branch conflicts every time. If work genuinely depends on
-another branch, wait.
+**Branch from a `main` you pulled one command ago.** Merges are squash
+merges, so a branch stacked on an unmerged branch conflicts every time: `main`
+gains the work as a single new commit while the stacked branch still carries
+the original. If work genuinely depends on another branch, wait for the merge.
+The half that is easier to miss is freshness rather than choice of base. A pull
+run a few minutes before a merge lands leaves you branching from a `main` that
+is already behind, and the symptom arrives later wearing a different face: a
+push that reports `[new branch]` for a branch you believed existed means it was
+deleted on merge and you have just recreated it, holding commits that belong to
+no pull request. Pull and branch in the same command.
 
 **A database test owns its namespace.** Vitest runs files in parallel against
 one database, and `username` is globally unique. Every fixture lives under the
@@ -237,6 +244,10 @@ None of these was written speculatively.
 | `no-stale-counts` | The public page said 546 courses while the database held 12,154. |
 | `docs:links` | Nothing tracked may reference an untracked file. The repository is public. |
 | `test-isolation` | A non-deterministic failure that lands on whoever added an unrelated file. |
+| `no-catalogue-data` | The crawl's output is not in a public repository, and a parser fixture is not a way around that. Written after a near miss, it then let a fixture through carrying two lecturers' names, their profile URLs and their addresses, because it looked for addresses only. It now caps a fixture's size and its course count, and a fixture may name only people this repository invented. |
+| `css-collisions` | A class name declared in two stylesheets is one of them silently editing the other. `.chips` put a 1.6rem gap above every filter group from a file that has nothing to do with filters. |
+| `reduced-motion` | An animation written without its `prefers-reduced-motion` opt-out has no symptom for the author and a real one for the reader. |
+| `brand-mark` | The mark is drawn in four places. Change one and the other three stay valid SVG, render fine, and are wrong. |
 
 **Never bypass a gate because you wrote the change yourself.** Review is the
 security boundary here, not a quality practice: every anonymity guarantee rests
