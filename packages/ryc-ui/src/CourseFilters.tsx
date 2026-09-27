@@ -102,9 +102,6 @@ export function CourseFilters({
     () => courseFacets(courses, filter, reviewCounts),
     [courses, filter, reviewCounts],
   );
-
-  if (courses.length === 0) return <p className="meta">{emptyLabel}</p>;
-
   /**
    * HOW MANY ROWS ARE DRAWN, and it is not the same question as how many the
    * server sent.
@@ -119,8 +116,17 @@ export function CourseFilters({
    * Local rather than in the address, because it is a rendering budget rather
    * than a description of what is on screen: the filters and the query, which
    * ARE that, stay in the URL.
+   *
+   * ABOVE THE EARLY RETURN, and that is not a style preference. It sat below
+   * it, so a render with no courses called four hooks and the next one, once
+   * they arrived, called five. React refuses that and replaces the page with
+   * an error boundary: every programme crashed the moment its courses
+   * loaded. Hooks run before any branch, always.
    */
   const [drawn, setDrawn] = useState(DRAWN_STEP);
+
+  if (courses.length === 0) return <p className="meta">{emptyLabel}</p>;
+
   const visible = shown.slice(0, drawn);
   /** More to draw from what is already here, before asking the server. */
   const moreLocally = shown.length > drawn;
