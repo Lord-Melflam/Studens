@@ -62,7 +62,7 @@ export function About() {
       </section>
 
       <section className="band final">
-        <a className="ghost big" {...linkProps("/confidentialite")}>
+        <a className="ghost big" {...linkProps("/privacy")}>
           {t("about.privacy.cta")}
         </a>
       </section>

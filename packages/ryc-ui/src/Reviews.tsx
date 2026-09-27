@@ -49,7 +49,15 @@ function Summary({ a }: { a: Aggregate }) {
             (FR-C21), so inflating it would make the judgement wrong. */}
         {a.detached > 0 && <> {t("ryc.reviews.detached", { count: a.detached })}</>}
         {/* FR-D23: a band above a floor, never a percentage, never per review. */}
-        {a.passBand && <> {t("ryc.reviews.pass", { band: a.passBand })}</>}
+        {a.passBand && (
+          <>
+            {" "}
+            {/* The band arrives as a token and is named here, because the
+                module below this screen has no language and this screen has
+                three. */}
+            {t("ryc.reviews.pass", { band: t(`ryc.reviews.pass.${a.passBand}`) })}
+          </>
+        )}
       </p>
     </div>
   );

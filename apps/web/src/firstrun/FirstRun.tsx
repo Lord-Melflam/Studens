@@ -21,8 +21,8 @@
  * halfway. It mentions no module's domain either (FR-B16).
  */
 import { useCallback, useEffect, useState } from "react";
-import { LOCALES, LOCALE_NAMES, localePath, useLocale, useT, type Locale } from "@studens/i18n";
-import { currentRoute, navigate } from "../router.js";
+import { LOCALES, LOCALE_NAMES, useLocale, useT, type Locale } from "@studens/i18n";
+import { currentRoute, navigate, navigationTarget } from "../router.js";
 import { TEXT_LIMITS, countGraphemes, textProblem, type TextProblem } from "./text.js";
 import {
   PatchFailed,
@@ -35,15 +35,22 @@ import {
   type UsernameProblem,
 } from "./profile.js";
 
-/** The zone's own prefix, the way `/app` is the shell's. */
-export const FIRST_RUN = "/bienvenue";
+/**
+ * The zone's own prefix, the way `/app` is the shell's.
+ *
+ * Canonical, like every route inside this application. What a reader sees is
+ * `/fr/bienvenue/3`, `/nl/welkom/3` or `/en/welcome/3`, translated by
+ * `routes.ts` at the moment the URL is written (OPEN-49). The step survives
+ * the translation because only the first segment is a page name.
+ */
+export const FIRST_RUN = "/welcome";
 export const STEPS = 5;
 
 export function isFirstRunPath(route: string): boolean {
   return route === FIRST_RUN || route.startsWith(`${FIRST_RUN}/`);
 }
 
-/** The step in the path, clamped. `/bienvenue` alone means step one. */
+/** The step in the path, clamped. `/welcome` alone means step one. */
 export function stepFrom(route: string): number {
   const rest = route.slice(FIRST_RUN.length).replace(/^\//, "");
   const n = Number.parseInt(rest, 10);
@@ -175,7 +182,7 @@ export function FirstRun({
       setChosen(p.institutionCode ? [p.institutionCode] : []);
       setInstitutions(list);
 
-      // FR-F5: `/bienvenue` with no number means "wherever I was". The saved
+      // FR-F5: `/welcome` with no number means "wherever I was". The saved
       // step is the server's, so this resumes on a different device too, which
       // a URL alone cannot do.
       if (!hasExplicitStep(route) && p.onboardingStep > 1) {
@@ -424,7 +431,14 @@ export function FirstRun({
                   // so the change is visible immediately, and the profile
                   // remembers it for the next sign-in on another device.
                   void patchProfile({ locale: l });
-                  window.history.replaceState({}, "", localePath(currentRoute(), l as Locale));
+                  // Through the router, so the slug is translated with the language:
+                  // staying on `/nl/welkom/3` after choosing French would leave a
+                  // Dutch word in a French URL (OPEN-49).
+                  window.history.replaceState(
+                    {},
+                    "",
+                    navigationTarget(currentRoute(), l as Locale),
+                  );
                   window.dispatchEvent(new PopStateEvent("popstate"));
                 }}
               >

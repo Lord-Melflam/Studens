@@ -2280,6 +2280,71 @@ places is wrong as soon as somebody adds a third.**
 
 ---
 
+### Phase 54: the language was in the path and the next segment contradicted it
+
+A Dutch reader was sent to `/nl/confidentialite`. An English one to
+`/en/connexion`. The prefix said one language and the word after it said
+another, on the one part of a page somebody copies, pastes and reads aloud.
+
+**Nobody chose it.** The route map was written while the product was French
+only, the language prefix arrived afterwards, and no decision was ever taken to
+keep the slugs as they were. By the project's own rule that made it a guess
+rather than a decision, so it was recorded as OPEN-49 and answered rather than
+quietly changed.
+
+**Answered now because nothing is deployed.** No URL is in circulation, so this
+is the only moment when changing a slug costs nothing, and it gets dearer every
+week after a host exists. That timing was the whole argument; the rest is
+mechanics.
+
+**Canonical inside, localised where a URL is written.** Every route in the
+application stays `/privacy`, `/about`, `/welcome/3`, and one function
+translates out while another translates in. Carrying localised paths through
+the application instead would make every comparison depend on the current
+language.
+
+**The half that would have broken quietly is the language switcher**, and it is
+the reason the shape above was chosen rather than the shorter one. Leaving
+`/nl/privacy` and pressing FR has to produce `/fr/confidentialite`. A switcher
+that swaps only the prefix still changes the URL, still renders the right page,
+and leaves a Dutch word in a French address. Nothing fails and nobody reports
+it. With canonical routes inside, switching is the ordinary code path with a
+different argument, and the test walks every page through every pair of
+languages rather than checking the words.
+
+**A module translates its own slugs.** The shell may not hold a list of a
+module's screens (FR-B16), so RYC owns its words and converts at the two points
+where a path crosses the boundary. The shell translates at most two segments, a
+public page or its own reserved name under `/app`, and everything deeper
+belongs to somebody else. There is a test that `/app/ryc/privacy` is left
+alone, because `privacy` is one of the shell's own words and the shell must not
+reach into a module's path to claim it.
+
+**Rejected: translating at the call sites.** It would have meant threading the
+locale through about thirty of them, and the one that got missed would produce
+a link that works in French and falls through to the module's home screen in
+Dutch, which is the failure this whole design is trying not to have.
+
+**What is deliberately not translated**, each for a reason rather than by
+omission: `/app`, a mount point rather than a page name; module ids,
+institution codes and course codes, which are identifiers and not words; and
+query parameter names, because a link carrying `?f=q1` sent by a French reader
+to a Dutch one has to keep meaning the same thing. The last of those had been
+justified as "short French words, like the paths above them", and the paths
+moved, so the reason was rewritten rather than left pointing at something that
+is no longer true.
+
+**Old links still open their page.** Every language's slug resolves on the way
+in and the address is then corrected in place. That falls out of a table that
+already holds three languages, so it is not a redirect list anybody maintains,
+which was the cost that made this question look expensive in the first place.
+
+**Cost accepted.** Two slug tables to keep, one per side of the module
+boundary, and a fourth language whose word collided with an institution or
+course code would need noticing. The round trip test is what would notice.
+
+---
+
 ## Next
 
 0. ~~ULB~~ done, phases 35 to 39, and **loaded**. The full crawl ran on
@@ -2337,9 +2402,12 @@ places is wrong as soon as somebody adds a third.**
    the fallback.
 7. ~~The catalogue's own text is French~~ **done, phase 53, OPEN-47
    resolved.** Both editions are crawled and the choice is made per field, with
-   the language of each field reported and marked on screen. Loaded on
-   2026-09-27: UCLouvain 4,860 of 6,654 offerings carry English text, ULB 4,037
-   of 5,439. A reader can switch one record between FR and EN where both exist.
+   the language of each field reported and marked on screen. Most courses at
+   both universities carry English text and a real minority do not, which is why
+   the choice is per field and not per course. The crawl says how many on its
+   last line, in three numbers that sum to the offerings it parsed: with an
+   English edition, with an English page that had nothing, and unreachable.
+   A reader can switch one record between FR and EN where both exist.
    **What is still French** is a programme's title, its site and its field of
    study: they come from the programme listing rather than a course page, and
    there is no second edition of that listing to read them from. **Dutch has no

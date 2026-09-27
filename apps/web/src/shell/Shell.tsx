@@ -33,13 +33,16 @@ import {
 } from "../router.js";
 
 /**
- * The shell's own screen, reachable at /app/moi.
+ * The shell's own screen, reachable at `/app/settings`.
  *
  * A reserved segment: no module may claim it. There is one today and the
  * registry is where a collision would be caught, since a module declaring this
  * id would simply never mount.
+ *
+ * Canonical, like every route here. What a reader sees is `/fr/app/mon-compte`,
+ * `/nl/app/mijn-account` or `/en/app/my-account` (OPEN-49, `routes.ts`).
  */
-const SETTINGS = "moi";
+const SETTINGS = "settings";
 
 /**
  * The moderator's console. Reserved like the account panel: no module may claim
@@ -374,8 +377,8 @@ export function Shell() {
       <footer className="app-footer">
         <nav>
           <a {...linkProps("/")}>{t("nav.home")}</a>
-          <a {...linkProps("/confidentialite")}>{t("nav.privacy")}</a>
-          <a {...linkProps("/a-propos")}>{t("nav.about")}</a>
+          <a {...linkProps("/privacy")}>{t("nav.privacy")}</a>
+          <a {...linkProps("/about")}>{t("nav.about")}</a>
         </nav>
         <p className="disclaimer">{t("foot.tagline")}</p>
       </footer>

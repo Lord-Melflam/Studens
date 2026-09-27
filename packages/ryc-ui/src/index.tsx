@@ -188,6 +188,9 @@ export const rycModule: ModuleRegistration = {
 };
 
 export { Ryc, parseView, type RycView } from "./Ryc.js";
+// This module's own slug table (OPEN-49). The shell does not import it and
+// must not: it exists so the translation stays on this side of FR-B16.
+export { toSlugPath, fromSlugPath } from "./slugs.js";
 /**
  * The course page's folded sections, as they travel in the address. Pure, so
  * the round trip is checked directly in test/ui/url-state.test.ts.

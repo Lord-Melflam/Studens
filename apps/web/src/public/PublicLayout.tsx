@@ -19,8 +19,8 @@ import { LanguageSwitcher } from "../LanguageSwitcher.js";
 const NAV = [
   { to: "/", key: "nav.home" },
   { to: "/modules", key: "nav.modules" },
-  { to: "/confidentialite", key: "nav.privacy" },
-  { to: "/a-propos", key: "nav.about" },
+  { to: "/privacy", key: "nav.privacy" },
+  { to: "/about", key: "nav.about" },
 ];
 
 export function PublicLayout({ path, children }: { path: string; children: React.ReactNode }) {
@@ -70,7 +70,7 @@ export function PublicLayout({ path, children }: { path: string; children: React
               language and theme controls stay, because they are the page's
               own and the message should be readable in the reader's
               language. */}
-          {path !== "/suspendu" && <Account variant="public" here={path === "/connexion"} />}
+          {path !== "/suspended" && <Account variant="public" here={path === "/signin"} />}
         </div>
       </header>
 
