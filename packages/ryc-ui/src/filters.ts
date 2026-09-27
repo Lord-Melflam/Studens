@@ -19,7 +19,7 @@
  * screen. A count here is what you get if you click it.
  */
 import type { CourseSummary, ProgrammeSummary } from "./api.js";
-import { languageKey, quarterKey } from "./normalise.js";
+import { languageKey, quarterTerms } from "./normalise.js";
 import { courseKey } from "./Ryc.js";
 
 /** One option in a facet, with what choosing it would leave. */
@@ -98,11 +98,13 @@ function matchesCourse(
     if (!c.code.toLowerCase().includes(q) && !c.title.toLowerCase().includes(q)) return false;
   }
   if (ignore !== "quarters" && f.quarters.length > 0) {
-    // The CANONICAL term, the same one the facet is built from. Matching on
-    // the raw string here and faceting on the key there would give chips that
-    // select nothing.
-    const q = quarterKey(c.quarter);
-    if (!q || !f.quarters.includes(q)) return false;
+    // THE TERMS IT TOUCHES, not the string it is labelled with. A course
+    // marked `Q1+Q2` runs across both and a student asking for Q1 courses
+    // means to see it; matching the canonical string exactly returned only
+    // the ones marked plainly `Q1`, and a thousand courses were invisible to
+    // a filter that claimed to list them.
+    const terms = quarterTerms(c.quarter);
+    if (!terms.some((term) => f.quarters.includes(term))) return false;
   }
   if (ignore !== "languages" && f.languages.length > 0) {
     const l = languageKey(c.mainLanguage);
@@ -165,6 +167,31 @@ function campusFacets(
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
+/**
+ * The same, for a dimension where one course belongs to SEVERAL values.
+ *
+ * A course running across both terms counts toward Q1 and toward Q2, because
+ * a student can attend it in either. Counting it once against a combined
+ * `Q1+Q2` chip instead would give three chips nobody wants and a Q1 count
+ * that understates what Q1 actually offers.
+ */
+function facetsOfMany(
+  courses: CourseSummary[],
+  f: CourseFilter,
+  counts: Record<string, number>,
+  dimension: Dimension,
+  pick: (c: CourseSummary) => string[],
+): Array<Facet<string>> {
+  const tally = new Map<string, number>();
+  for (const c of courses) {
+    if (!matchesCourse(c, f, counts, dimension)) continue;
+    for (const v of pick(c)) tally.set(v, (tally.get(v) ?? 0) + 1);
+  }
+  return [...tally.entries()]
+    .map(([value, count]) => ({ value, label: String(value), count }))
+    .sort((a, b) => a.value.localeCompare(b.value));
+}
+
 function facetsOf<T extends string | number>(
   courses: CourseSummary[],
   f: CourseFilter,
@@ -205,7 +232,9 @@ export function courseFacets(
   counts: Record<string, number> = {},
 ): CourseFacets {
   return {
-    quarters: facetsOf(courses, f, counts, "quarters", (c) => quarterKey(c.quarter)),
+    // Faceted on the terms themselves, so the chips stay Q1, Q2, Q3 rather
+    // than growing one per combination the university happens to publish.
+    quarters: facetsOfMany(courses, f, counts, "quarters", (c) => quarterTerms(c.quarter)),
     languages: facetsOf(courses, f, counts, "languages", (c) => languageKey(c.mainLanguage)),
     ects: facetsOf(courses, f, counts, "ects", (c) => c.ects),
     entities: facetsOf(courses, f, counts, "entities", (c) => c.owningEntity),
@@ -607,7 +636,11 @@ export function pruneCourseFilter(f: CourseFilter, courses: CourseSummary[]): Co
   const has = <T,>(values: Set<T>, chosen: T[]): T[] => chosen.filter((v) => values.has(v));
   return {
     ...f,
-    quarters: has(new Set(courses.map((c) => c.quarter).filter((q): q is string => q !== null)), f.quarters),
+    // Against the TERMS, because that is what a selected quarter now is. The
+    // raw value here would drop a valid `Q1` selection whenever every course
+    // in view happened to be labelled `Q1+Q2`, and the reader would watch
+    // their filter disappear with nothing to unclick.
+    quarters: has(new Set(courses.flatMap((c) => quarterTerms(c.quarter))), f.quarters),
     languages: has(
       new Set(courses.map((c) => languageKey(c.mainLanguage)).filter((l): l is string => l !== null)),
       f.languages,

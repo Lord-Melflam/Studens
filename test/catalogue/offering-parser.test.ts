@@ -212,3 +212,39 @@ describe("failing loudly rather than storing nulls", () => {
     expect(() => parseOffering(html, "x", 2025, url)).toThrow(/the layout changed/);
   });
 });
+
+/**
+ * THE TERM, WHEN THE UNIVERSITY STATES TWO OF THEM.
+ *
+ * The parser matched `^Q[1-4]$`, so anything with two terms in the cell fell
+ * through and the course rendered as "term not stated" while its official
+ * page said otherwise. Reported from use by following the link and reading
+ * the page. Measured across 10,268 cached pages on 2026-09-27: 1,026 say
+ * `Q1 et Q2`, 351 `Q1 and Q2`, 143 `Q1 ou Q2`, 55 `Q1 or Q2`.
+ */
+describe("a header cell naming two terms", () => {
+  const withQuarter = (cell: string) =>
+    `<html><body><h1>Cours</h1>
+      <div class="row fa_row_1"><div class="fa_cell_0">5.00 crédits</div>
+      <div class="fa_cell_0">30.0 h</div><div class="fa_cell_0">${cell}</div></div>
+      <div class="fa_row"><div class="fa_cell_1">Langue</div>
+      <div class="fa_cell_2">Français</div></div></body></html>`;
+
+  for (const cell of ["Q1 et Q2", "Q1 ou Q2", "Q1 and Q2", "Q1 or Q2"]) {
+    it(`keeps "${cell}" instead of dropping it`, () => {
+      expect(parseOffering(withQuarter(cell), "x", 2026, "u").quarter).toBe(cell);
+    });
+  }
+
+  it("still reads a single term", () => {
+    expect(parseOffering(withQuarter("Q2"), "x", 2026, "u").quarter).toBe("Q2");
+  });
+
+  /**
+   * The cell next to it is the contact hours, and it must not be mistaken for
+   * a term now that the pattern is looser.
+   */
+  it("does not mistake another header cell for a term", () => {
+    expect(parseOffering(withQuarter("> Horaire"), "x", 2026, "u").quarter).toBeNull();
+  });
+});

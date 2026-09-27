@@ -7,7 +7,7 @@
  * than a cosmetic duplicate.
  */
 import { describe, expect, it } from "vitest";
-import { languageKey, quarterKey } from "@studens/ryc-ui";
+import { languageKey, quarterKey, quarterTerms } from "@studens/ryc-ui";
 
 describe("the term a course is taught in", () => {
   it("gives one key for both universities' words", () => {
@@ -61,5 +61,54 @@ describe("the language a course is taught in", () => {
     // merge things that are not the same.
     const keys = ["Français", "Anglais", "Neerlandais", "Allemand", "Espagnol"].map(languageKey);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+/**
+ * A COURSE CAN TOUCH TWO TERMS, AND THE CATALOGUE SAYS SO IN FOUR WAYS.
+ *
+ * Reported from use: a programme listed courses as "term not stated" while
+ * the official page plainly said `Q1 et Q2`. Measured across 10,268 cached
+ * pages on 2026-09-27: 1,026 say `Q1 et Q2`, 351 `Q1 and Q2`, 143 `Q1 ou Q2`
+ * and 55 `Q1 or Q2`. Fifteen hundred pages losing a field they published.
+ */
+describe("a term that spans or offers a choice", () => {
+  it("maps all four spellings onto two canonical values", () => {
+    expect(quarterKey("Q1 et Q2")).toBe("Q1+Q2");
+    expect(quarterKey("Q1 and Q2")).toBe("Q1+Q2");
+    expect(quarterKey("Q1 ou Q2")).toBe("Q1/Q2");
+    expect(quarterKey("Q1 or Q2")).toBe("Q1/Q2");
+  });
+
+  /**
+   * They are NOT the same fact. "Q1 et Q2" is one course running across the
+   * year; "Q1 ou Q2" is a course given twice, of which a student takes one.
+   * Collapsing them would throw away something the source publishes.
+   */
+  it("keeps spanning and choosing apart", () => {
+    expect(quarterKey("Q1 et Q2")).not.toBe(quarterKey("Q1 ou Q2"));
+  });
+
+  it("is unmoved by case and accents, like every other key here", () => {
+    expect(quarterKey("q1 ET q2")).toBe("Q1+Q2");
+  });
+
+  /**
+   * The set is what the filter matches on: a student asking for Q1 courses
+   * means every course they could attend in Q1.
+   */
+  it("reports the individual terms a course touches", () => {
+    expect(quarterTerms("Q1")).toEqual(["Q1"]);
+    expect(quarterTerms("Q1 et Q2")).toEqual(["Q1", "Q2"]);
+    expect(quarterTerms("Q1 ou Q2")).toEqual(["Q1", "Q2"]);
+    expect(quarterTerms(null)).toEqual([]);
+  });
+
+  it("expands a whole academic year to every term in it", () => {
+    expect(quarterTerms("annee academique")).toEqual(["Q1", "Q2", "Q3"]);
+  });
+
+  it("never repeats a term", () => {
+    expect(quarterTerms("Q2 et Q2")).toEqual(["Q2"]);
   });
 });
