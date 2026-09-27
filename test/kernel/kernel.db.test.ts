@@ -49,6 +49,15 @@ if (process.env["STUDENS_REQUIRE_DB"] === "1" && !reachable) {
 
 const dbit = reachable ? it : it.skip;
 
+/**
+ * THIS FILE'S OWN PROVIDER. Four files shared `"test"`, so none of them
+ * could delete its member without deleting the others' mid-run, and so
+ * none of them did: six rows with no username sat in the database
+ * permanently and surfaced in the administrator's member list as junk.
+ * A namespace has one owner (test-isolation.test.ts).
+ */
+const PROVIDER = "kern-test";
+
 const NOW = new Date("2026-09-10T12:00:00Z");
 let memberId = "";
 let courseId = "";
@@ -61,10 +70,10 @@ async function seed(): Promise<void> {
     create: { id: "00000000-0000-0000-0000-0000000000t1", name: "test" },
   });
   const m = await prisma.member.upsert({
-    where: { provider_providerSubject: { provider: "test", providerSubject: "kernel" } },
+    where: { provider_providerSubject: { provider: PROVIDER, providerSubject: "kernel" } },
     update: {},
     create: {
-      provider: "test",
+      provider: PROVIDER,
       providerSubject: "kernel",
       emailDomain: "example.invalid",
       tenantId: tenant.id,
@@ -90,6 +99,12 @@ await seed();
 beforeEach(reset);
 afterAll(async () => {
   await reset();
+  if (reachable) {
+    // The member goes too. Without this the row survives every run, and six
+    // of them turned up in the administrator's member list as accounts with
+    // no username that nobody could explain.
+    await prisma.member.deleteMany({ where: { provider: PROVIDER } });
+  }
   await prisma.$disconnect();
 });
 

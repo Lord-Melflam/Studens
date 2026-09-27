@@ -75,6 +75,68 @@ const FIXTURE_PREFIX = /['"`]?`(ztst[a-z0-9.-]*)\$\{/g;
  * with `z` followed by letters, in a file that seeds rows. The rule is that it
  * must be `ztst`.
  */
+/**
+ * A TEST THAT MAKES A MEMBER DELETES IT AGAIN.
+ *
+ * THE BUG THIS EXISTS FOR. Four files created a member with
+ * `provider: "test"` and not one of them removed it, for a reason that was
+ * itself the problem: they SHARED that provider, so none could delete by it
+ * without deleting the others' rows mid-run. Six accounts with no username sat
+ * in the database permanently and surfaced in the administrator's member list
+ * as junk nobody could explain.
+ *
+ * Worse, one of them held a `usernameKey` while showing no username, because
+ * its reset nulled the name and not the normalised key. The name stayed
+ * reserved by a row nobody could see holding it, and a later run failed with
+ * "taken" against a member that appeared to have none.
+ *
+ * So two things are checked, and the first is what makes the second possible:
+ * a file's provider is its own, and a file that creates a member deletes one.
+ */
+describe("a test that makes a member deletes it again", () => {
+  const files = testFiles(join(root, "test"));
+
+  /** Files that create or upsert a Member at all. */
+  const makers = files.filter((f) => /prisma\.member\.(create|upsert)/.test(readFileSync(f, "utf8")));
+
+  it("finds the files that make members", () => {
+    expect(makers.length).toBeGreaterThan(3);
+  });
+
+  it("gives each of them a provider nobody else uses", () => {
+    const owners = new Map<string, string[]>();
+    for (const file of makers) {
+      const code = readFileSync(file, "utf8");
+      for (const [, provider] of code.matchAll(/provider:\s*["'`]([a-z0-9._-]+)["'`]/gi)) {
+        owners.set(provider, [...(owners.get(provider) ?? []), file.slice(root.length)]);
+      }
+      for (const [, provider] of code.matchAll(/const PROVIDER = ["'`]([a-z0-9._-]+)["'`]/g)) {
+        owners.set(provider, [...(owners.get(provider) ?? []), file.slice(root.length)]);
+      }
+    }
+    const shared = [...owners]
+      .filter(([, where]) => new Set(where).size > 1)
+      .map(([p, where]) => `${p} used by ${[...new Set(where)].join(", ")}`);
+    expect(
+      shared,
+      "two files share a provider, so neither can clean up by it without " +
+        "deleting the other's rows while they run. Give each its own.",
+    ).toEqual([]);
+  });
+
+  it("deletes a member wherever it creates one", () => {
+    const leaky = makers
+      .filter((f) => !/prisma\.member\.delete(Many)?/.test(readFileSync(f, "utf8")))
+      .map((f) => f.slice(root.length));
+    expect(
+      leaky,
+      "these files create a member and never remove one, so the row survives " +
+        "every run and turns up in the administrator's member list. Delete by " +
+        "this file's own provider in afterAll.",
+    ).toEqual([]);
+  });
+});
+
 describe("every fixture lives under the one reserved prefix", () => {
   const files = testFiles(join(root, "test"));
 

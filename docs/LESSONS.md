@@ -356,6 +356,37 @@ that is not a course code at all.
 
 ---
 
+## 2b. A fixture that is never deleted becomes a user
+
+Six accounts with no username sat in the administrator's member list, and
+nobody could say what they were. They were fixtures: four test files created a
+member with `provider: "test"` and not one of them removed it.
+
+**The reason none of them cleaned up is the reason they could not.** All four
+shared that provider, so deleting by it would have deleted the other three
+files' rows while they were running. A shared namespace does not just risk a
+collision; it removes the only safe way to tidy up, so nobody tidies up.
+
+**And one of them was worse than untidy.** Its reset nulled `username` and left
+`usernameKey`, which is also unique. The name stayed reserved by a row that
+showed no name, so a later run failed with "taken" against a member that
+appeared to have none. The row was invisible as a name and present as a
+constraint.
+
+**What changed.** Each of the four has its own provider, each deletes by it in
+`afterAll`, and the reset clears the key with the name. Two checks were added:
+a file that makes a member must delete one, and no two files may share a
+provider. A full run now leaves nothing behind, verified twice.
+
+**The pattern worth carrying.** Test data is only invisible until somebody
+builds a screen that lists everything. The member directory was written on a
+Saturday and turned six years-old fixtures into a support question the same
+afternoon. Anything a test creates should be removable by the test that
+created it, and that is a property of the namespace before it is a property of
+the teardown.
+
+---
+
 ## 3. Applying a standard to others and not to ourselves
 
 The repository refuses to reuse `tdaron/epl-opinions` because it has no licence,
