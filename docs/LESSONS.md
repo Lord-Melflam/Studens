@@ -867,8 +867,33 @@ character and none of the three languages' function words, so the next value
 that tries to leave as prose fails at the boundary rather than on a reader's
 screen.
 
-**How to find the rest of them.** Search the tiers for string literals holding
-accented characters. Everything that came back in `ref` was a scraper label
-reading a French source page, which is correct and must stay; `platform` had
-none; the band was the only one of its kind. That sweep is worth repeating
-whenever a tier grows a new return value that a screen prints directly.
+**There is a second half, and the same day produced two more of it.** Prose
+made below the interface is one way a French word reaches a Dutch page. The
+other is a screen printing a CATALOGUE value straight into a translated
+sentence. The course list read "5 studiepunten · Q1 · Anglais" in Dutch and
+"5 ECTS · Q1 · Anglais" in English, and the term arrived as "Q1 et Q2" or
+"Q1 and Q2" for the same course depending on which edition was crawled.
+
+**The test for whether a catalogue value should be translated is whether it is
+a closed set.** A course title is prose, there is often no translation to be
+had, and OPEN-47 is the whole answer to it: the page marks which language each
+field came back in rather than pretending. A teaching language and a term are
+not prose. They are short, they come from a fixed list, they mean the same
+thing in every language, and the filter chips beside them were already showing
+them normalised while the row was not. A campus called "Autre site" is the
+other side of the line: it is a value UCLouvain publishes, not a label we
+failed to translate, and three comments in `ref` already say so.
+
+**Both halves were found the same way**, which is the part to keep: by opening
+the app in Dutch. Everything gets looked at in French first, so French is the
+one language in which all of these look correct, and a pass that only walks the
+French pages cannot see any of them.
+
+**How to find the rest of them.** Two sweeps, both cheap. Search the tiers for
+string literals holding accented characters: everything that came back in `ref`
+was a scraper label reading a French source page, which is correct and must
+stay, `platform` had none, and the band was the only one of its kind. Then
+search the screens for a server value rendered raw into a text run rather than
+through `t(...)`: what is left is codes, URLs, numbers and marked catalogue
+prose. Both are worth repeating whenever a tier grows a return value that a
+screen prints directly.
