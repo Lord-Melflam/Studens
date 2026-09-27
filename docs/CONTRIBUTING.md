@@ -110,15 +110,32 @@ to be checked by hand: `gh api repos/Lord-Melflam/Studens/branches/main/protecti
 Decided 2026-09-11, when the second developer joined. Until then the repository
 had one developer and no protection at all, which is why none of this existed.
 
-### The cycle, in five steps
+### The cycle, in six steps
 
 ```bash
-git switch main && git pull                 # 1. start from main, always
-git switch -c wil/moderation-queue          # 2. a branch per change
-                                            # 3. work, committing as you go
-npm run gates && npm run gates:db           # 4. both green before you ask anyone
-gh pr create --fill                         # 5. a pull request, never a push to main
+git fetch --prune && git switch main && git pull --ff-only   # 1. ASK THE REMOTE FIRST
+git switch -c wil/moderation-queue                           # 2. a branch per change
+                                                             # 3. work, committing as you go
+npm run gates && npm run gates:db                            # 4. both green before you ask anyone
+git fetch && git log --oneline origin/main -1                # 5. still the base you cut from?
+gh pr create --fill                                          # 6. a pull request, never a push
 ```
+
+**Step 1 is a fetch, not a pull, and the difference is the whole point.** A
+`main` you pulled twenty minutes ago is not `main`. Somebody merges while you
+are reading code, and every commit you then write sits on a base that no longer
+exists. The symptom arrives much later and does not look like the cause:
+
+- A push that prints `* [new branch]` for a branch you believed already
+  existed. It was deleted when its pull request merged, and you have just
+  recreated it holding commits that belong to no pull request at all.
+- A rejected push saying the remote has work you do not have, on a branch only
+  you have touched, because the merge button also merged `main` into it.
+- A pull request that conflicts in a file you never opened.
+
+Ask the remote before you cut a branch and again before you push. Two commands,
+and they cost nothing next to untangling a branch afterwards. This cost real
+time more than once, which is why it is written here rather than assumed.
 
 Branch names are `<who>/<what>`: `fm/oauth-microsoft`, `wil/moderation-queue`.
 Nothing enforces it; it just makes `git branch -a` readable for the other person.
