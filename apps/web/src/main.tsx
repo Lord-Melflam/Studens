@@ -15,11 +15,13 @@ import { bundle } from "./bundle.js";
 import { APP_PREFIX, currentRoute, isAppPath, navigate, usePath } from "./router.js";
 import { toSlugPath } from "./routes.js";
 import { SessionProvider, useSession } from "./session.js";
+import { Feedback } from "./Feedback.js";
 import { ErrorBoundary } from "./ErrorBoundary.js";
 import { FIRST_RUN, FirstRun, isFirstRunPath } from "./firstrun/FirstRun.js";
 import "./shell.css";
 import "./public/public.css";
 import "./firstrun/firstrun.css";
+import "./feedback.css";
 
 function Studens() {
   const path = usePath();
@@ -63,6 +65,15 @@ function Studens() {
     <I18nProvider locale={locale} bundle={bundle}>
       <SessionProvider>
         <Zone route={route} />
+        {/*
+          OUTSIDE THE ZONE, so it is on every page of all three: the public
+          site a stranger lands on from a social post, and the app once they
+          are in. The one place it is NOT drawn is the first run, and that is
+          deliberate: somebody halfway through choosing a username has not seen
+          the product yet, so asking them what they think of it is noise on top
+          of the one flow that must not be interrupted.
+        */}
+        {!isFirstRunPath(route) && <Feedback />}
       </SessionProvider>
     </I18nProvider>
   );

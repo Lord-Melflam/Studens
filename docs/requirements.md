@@ -1143,6 +1143,31 @@ Dutch it is not: this product asks students to trust it with something they are
 nervous about saying, and clumsy Dutch reads as "not for you". To be closed
 before any Flemish institution is launched into.
 
+### 3.9 Hearing from the people using it (FR-I)
+
+Everything else in this document is what Studens does to serve somebody. This
+is the one path in the other direction, and it exists because the product is
+about to meet people for the first time.
+
+**The sample is the whole point.** A form behind a sign-in is answered by
+people who already liked it enough to make an account. The person worth hearing
+from is the one who arrived from a link, could not work out what to do, and
+left. They will not register to tell us that, so the form does not ask them to.
+
+**It is not a contribution.** FR-C governs reviews, which are published, read
+by strangers, and on the anonymous path unlinkable to their author forever.
+Feedback is a message to the people running the thing, it is published nowhere,
+and answering the sender is the point of asking. That is why a nullable member
+column here is not the shape FR-C2 forbids, and why `Report` has had the same
+shape since FR-E8.
+
+| ID | Level | Requirement |
+|---|---|---|
+| FR-I1 | MUST | **Anybody can say what they think of Studens, signed in or not, from any page.** A fixed control in the corner of every screen in the public zone and the app zone, never a link in a footer: the reader who is about to give up is not scrolling to find a form. It is absent from the first run only, because somebody halfway through choosing a username has not seen the product yet. The message carries a kind (bug, idea, other), the text, an optional address to answer on, the page they were on and the interface language. Signed in, the row carries the member; signed out, it does not, and nothing on the screen asks. Alternatives rejected: an account requirement, which collects from the people who already liked it; and a mailto link, which loses everyone without a mail client configured and records nothing. Cost accepted: an open write endpoint, bounded by FR-I2. What would change the answer: abuse that the ceiling cannot absorb, which would mean a sign-in requirement and a worse sample. **[DERIVED]** 2026-09-28. |
+| FR-I2 | MUST | **The form records the message, the path, the language and nothing else about the sender.** No address, no user agent, no device, and not the query string of the page: knowing somebody was on the search screen is most of a bug report, and what they typed into the search box is theirs and finds no faults. The cut happens in the kernel, not at the caller, so it is a property of the column rather than a rule somebody remembers. The panel states the three things kept, at the moment somebody decides whether to type. **The ceiling on an open endpoint is held in memory and never written down**, because counting per address means holding addresses: it is a speed bump that stores nothing, it forgets on restart, and it must never be described as more than that (the same caution as OPEN-35). It charges only submissions that were stored, so a rejected form is not an abuse of the endpoint. Alternatives rejected: a per-address counter in a table, which would make this the one place in Studens holding a record of where somebody was when they acted; and no ceiling at all. Cost accepted: a determined person is not stopped. What would change the answer: sustained abuse, which would need something that survives a restart and therefore a decision about storing addresses, taken in the open. **[DERIVED]** 2026-09-28. |
+| FR-I3 | MUST | **An Administrator reads the feedback in the console, a screenful at a time.** The same shape as the member directory, for the same reason (NFR-O4): this is the list most likely to grow fast, because the whole point of a public link is that many people write at once. Page size is a setting. Filterable by kind, by state and by sender, where "not signed in" is a group rather than a person and the screen says so. Each row moves through open, read and done, because a console with no way to clear a queue becomes a list nobody opens twice. **[DERIVED]** 2026-09-28. |
+| FR-I4 | MUST | **Feedback can be exported as JSON, and the privacy-safe export is the default.** Two scopes. The anonymised one carries the text, the kind, the state, the timestamp, the path, the language and a stable pseudonymous sender key, and no address, username or member id. The full one carries the identifiers, requires the administrator to type a confirmation, and writes an audit row, exactly as revealing one address does (FR-E18). **The reason the default matters is what the file is for:** an export exists to be read somewhere else, and OPEN-23 already settled that contribution text never reaches a third-party inference service. Feedback is different data and is not covered by that, but a file that leaves this machine with names in it has the same shape, so the safe one is the one that takes no extra thought. Alternatives rejected: anonymised only, which makes it impossible to answer somebody who reported a real fault and asked to be told; and full by default. Cost accepted: two code paths and one more place personal data can leave. **[DERIVED]** 2026-09-28. |
+
 ## 4. Non-functional requirements
 
 ### 4.1 MEA (NFR-M)

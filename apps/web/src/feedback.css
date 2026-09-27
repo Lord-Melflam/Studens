@@ -1,0 +1,310 @@
+/*
+  The feedback panel (FR-I1).
+
+  ITS OWN STYLESHEET AND ITS OWN PREFIX. Four stylesheets already land in one
+  document and one cascade, and `css-collisions` exists because a name declared
+  in two of them is one of them silently editing the other. Every class here is
+  `fb-`, which belongs to nothing else, so this file can be read and changed
+  without knowing what the other three contain.
+
+  IT SITS IN BOTH ZONES, public and app, so it uses the design tokens rather
+  than either zone's own colours.
+*/
+
+.fb-launch {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  /* Lifted off the page, because it is the one control that is always on top
+     of whatever somebody is reading and has to look deliberate rather than
+     stuck there. */
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.12),
+    0 8px 24px rgb(0 0 0 / 0.18);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.fb-launch:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 4px rgb(0 0 0 / 0.14),
+    0 12px 28px rgb(0 0 0 / 0.22);
+}
+
+.fb-launch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* On a phone the label costs a third of the width and the bubble says it. */
+@media (max-width: 30rem) {
+  .fb-launch-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .fb-launch {
+    padding: 0.85rem;
+  }
+}
+
+.fb-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 0.45);
+}
+
+@media (min-width: 40rem) {
+  .fb-scrim {
+    align-items: center;
+  }
+}
+
+.fb-panel {
+  width: min(32rem, 100%);
+  max-height: min(90vh, 44rem);
+  overflow-y: auto;
+  padding: 1.25rem 1.25rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.35);
+  animation: fb-rise 160ms ease-out;
+}
+
+@keyframes fb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Motion is a thing people switch off because it makes them ill, not a taste
+   setting. The gate checks that every animated class is named in here. */
+@media (prefers-reduced-motion: reduce) {
+  .fb-panel {
+    animation: none;
+  }
+  .fb-launch {
+    transition: none;
+  }
+  .fb-launch:hover {
+    transform: none;
+  }
+}
+
+.fb-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.fb-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.fb-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.fb-close:hover {
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.fb-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.fb-intro {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.fb-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  border: 0;
+}
+
+.fb-kinds legend {
+  padding: 0;
+  margin-bottom: 0.45rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.fb-kind {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.fb-kind:hover {
+  border-color: var(--accent);
+}
+
+.fb-kind:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The chosen one wins on specificity, not on source order, because a rule of
+   equal weight later in the file has taken this away three times before. */
+.fb-kind.on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.fb-field {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.fb-text,
+.fb-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.fb-text {
+  min-height: 6rem;
+  margin-bottom: 1rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.fb-text:focus-visible,
+.fb-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.fb-help {
+  margin: 0.35rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.fb-problem {
+  margin: 0 0 0.85rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--warn-line, var(--line));
+  border-radius: 10px;
+  background: var(--warn-bg, transparent);
+  font-size: 0.9rem;
+}
+
+.fb-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.fb-send {
+  padding: 0.65rem 1.2rem;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fb-send:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.fb-send:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.fb-linkish {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.fb-linkish:hover {
+  color: var(--ink);
+}
+
+.fb-privacy {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}

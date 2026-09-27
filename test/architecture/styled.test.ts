@@ -33,6 +33,7 @@ const STYLESHEETS = [
   "apps/web/src/shell.css",
   "apps/web/src/public/public.css",
   "apps/web/src/firstrun/firstrun.css",
+  "apps/web/src/feedback.css",
 ];
 
 const COMPONENT_ROOTS = ["packages/ryc-ui/src", "apps/web/src"];
