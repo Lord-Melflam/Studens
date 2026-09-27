@@ -123,7 +123,19 @@ a.cta:hover { background: #16407c; }
 }
 .hero h1 {
   margin: 0 0 1.2rem;
-  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  /*
+    SIZED FOR THE COLUMN IT SITS IN, NOT THE WINDOW.
+
+    `6vw` measured the viewport while this heading occupies a grid column of
+    roughly half of it, so at 1100px the type reached 57.6px inside 463px of
+    space: four ragged lines with "part." alone on the last one. Reported as
+    the title going to the next line and looking ugly, which it was.
+
+    The ceiling is lower and the growth gentler, so the same sentence lands in
+    three fuller lines. Below 58rem the hero becomes one column and the
+    heading really does have the window, which is why the floor is unchanged.
+  */
+  font-size: clamp(2.05rem, 4.6vw, 3.05rem);
   line-height: 1.08;
   letter-spacing: -0.025em;
   font-weight: 700;
@@ -426,10 +438,49 @@ a.cta:hover { background: #16407c; }
   .hero-mock { max-height: 22rem; }
 }
 
+/*
+  THE HEADER ON A PHONE, IN THREE TIDY ROWS RATHER THAN WHATEVER FITS.
+
+  It used to wrap by accident: the brand, the language switcher, the theme
+  toggle and two buttons all competed for one 375px line, so the buttons
+  stacked one above the other and the navigation broke mid-label, giving
+  "Ce que ça / fait" and "Vie / privée". Reported from use, and the measurement
+  agreed: 229 pixels of header before any content, a quarter of the screen.
+
+  `display: contents` on the action group is what makes this possible without
+  touching the markup. Its children become direct flex items of the header, so
+  each can be ordered individually and the small controls can sit beside the
+  brand while the buttons take a row of their own.
+
+      row 1   brand ....................... language  theme
+      row 2   navigation
+      row 3   sign in / create an account
+
+  A NAVIGATION LABEL NEVER BREAKS MID-PHRASE. `white-space: nowrap` per link,
+  and the row wraps by whole items instead. A label split across two lines
+  reads as a layout failure, which is what it is.
+*/
 @media (max-width: 44rem) {
-  .site-header { flex-wrap: wrap; gap: 0.8rem 1.2rem; }
-  .site-nav { order: 3; width: 100%; gap: 1rem; }
-  .site-actions { margin-left: auto; }
+  .site-header {
+    flex-wrap: wrap;
+    gap: 0.7rem 1rem;
+    padding: 0.9rem 1.1rem;
+  }
+  .site-brand { order: 1; }
+  /* The group dissolves so its children can be placed individually. */
+  .site-actions { display: contents; }
+  .site-header .lang { order: 2; margin-left: auto; }
+  .site-header .theme-toggle { order: 3; }
+  .site-nav { order: 4; width: 100%; gap: 0.9rem; flex-wrap: wrap; }
+  .site-nav a { white-space: nowrap; }
+  /*
+    THE GROUP, NOT THE BUTTONS INSIDE IT. The session controls live in an
+    `.account` wrapper, so that wrapper is the flex item and the anchors are
+    not: ordering `a.cta` did nothing and the group kept its default 0, which
+    put it above the brand. Found by printing the computed order of every
+    header child rather than by reading the markup again.
+  */
+  .site-header .account { order: 5; flex-wrap: wrap; gap: 0.5rem; }
   .site-main > section { padding: 2.5rem 1.2rem; }
 }
 
@@ -579,4 +630,29 @@ a.cta:hover { background: #16407c; }
   .module-cards li:hover {
     transform: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   How a heading breaks, everywhere, rather than case by case.
+
+   `text-wrap: balance` asks the browser to even out the lines instead of
+   filling each one and leaving whatever is left on the last. It is what stops
+   a three line title ending in a single orphaned word, which is the specific
+   thing that reads as unfinished.
+
+   ON HEADINGS ONLY, deliberately. The algorithm is capped at a handful of
+   lines in every engine that implements it, and on a paragraph it either does
+   nothing or costs layout time for no visible gain. `pretty` is the right
+   answer for body text and is left for when it is supported more widely.
+
+   Unsupported browsers ignore the declaration and wrap as before, so this
+   improves what it can and breaks nothing.
+   --------------------------------------------------------------------------- */
+.hero h1,
+.band h2,
+.page-head h1,
+.mc-head h3,
+.hero .lede,
+.band-lede {
+  text-wrap: balance;
 }
