@@ -40,6 +40,15 @@ if (process.env["STUDENS_REQUIRE_DB"] === "1" && !reachable) {
 }
 const dbit = reachable ? it : it.skip;
 
+/**
+ * THIS FILE'S OWN PROVIDER. Four files shared `"test"`, so none of them
+ * could delete its member without deleting the others' mid-run, and so
+ * none of them did: six rows with no username sat in the database
+ * permanently and surfaced in the administrator's member list as junk.
+ * A namespace has one owner (test-isolation.test.ts).
+ */
+const PROVIDER = "sess-test";
+
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = new Date("2026-09-11T12:00:00Z");
 const later = (days: number, ms = 0): Date => new Date(NOW.getTime() + days * DAY + ms);
@@ -54,10 +63,10 @@ async function seed(): Promise<void> {
     create: { id: "00000000-0000-0000-0000-0000000000t2", name: "test" },
   });
   const m = await prisma.member.upsert({
-    where: { provider_providerSubject: { provider: "test", providerSubject: "session" } },
+    where: { provider_providerSubject: { provider: PROVIDER, providerSubject: "session" } },
     update: {},
     create: {
-      provider: "test",
+      provider: PROVIDER,
       providerSubject: "session",
       emailDomain: "student.example.invalid",
       tenantId: tenant.id,
@@ -73,7 +82,15 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  if (reachable) await prisma.session.deleteMany({ where: { memberId } });
+  if (reachable) {
+    await prisma.session.deleteMany({ where: { memberId } });
+  // THE MEMBER GOES TOO. These files upserted a member on a fixed key and
+  // never removed it, so six rows with no username sat in the database
+  // permanently and turned up in the administrator's member list as junk
+  // nobody could explain. A fixture is not finished until the row it made is
+  // gone (docs/CONTRIBUTING.md, and the gate in test-isolation.test.ts).
+    await prisma.member.deleteMany({ where: { provider: PROVIDER } });
+  }
   await prisma.$disconnect();
 });
 
@@ -233,10 +250,10 @@ describe("revoking every other session", () => {
   /** A second member, so the scoping can be checked against a real neighbour. */
   async function neighbour(): Promise<string> {
     const m = await prisma.member.upsert({
-      where: { provider_providerSubject: { provider: "test", providerSubject: "session-other" } },
+      where: { provider_providerSubject: { provider: PROVIDER, providerSubject: "session-other" } },
       update: {},
       create: {
-        provider: "test",
+        provider: PROVIDER,
         providerSubject: "session-other",
         emailDomain: "student.example.invalid",
         tenantId: "00000000-0000-0000-0000-0000000000t2",

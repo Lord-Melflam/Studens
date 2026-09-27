@@ -26,6 +26,15 @@ if (process.env["STUDENS_REQUIRE_DB"] === "1" && !reachable) {
 }
 const dbit = reachable ? it : it.skip;
 
+/**
+ * THIS FILE'S OWN PROVIDER. Four files shared `"test"`, so none of them
+ * could delete its member without deleting the others' mid-run, and so
+ * none of them did: six rows with no username sat in the database
+ * permanently and surfaced in the administrator's member list as junk.
+ * A namespace has one owner (test-isolation.test.ts).
+ */
+const PROVIDER = "fav-test";
+
 const TENANT = "00000000-0000-0000-0000-0000000000t7";
 const SUBJECT = "favourites";
 let memberId = "";
@@ -38,10 +47,10 @@ beforeAll(async () => {
     create: { id: TENANT, name: "test" },
   });
   const m = await prisma.member.upsert({
-    where: { provider_providerSubject: { provider: "test", providerSubject: SUBJECT } },
+    where: { provider_providerSubject: { provider: PROVIDER, providerSubject: SUBJECT } },
     update: {},
     create: {
-      provider: "test",
+      provider: PROVIDER,
       providerSubject: SUBJECT,
       emailDomain: "example.invalid",
       tenantId: TENANT,
@@ -52,7 +61,15 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  if (reachable) await prisma.memberInstitution.deleteMany({ where: { memberId } });
+  if (reachable) {
+    await prisma.memberInstitution.deleteMany({ where: { memberId } });
+  // THE MEMBER GOES TOO. These files upserted a member on a fixed key and
+  // never removed it, so six rows with no username sat in the database
+  // permanently and turned up in the administrator's member list as junk
+  // nobody could explain. A fixture is not finished until the row it made is
+  // gone (docs/CONTRIBUTING.md, and the gate in test-isolation.test.ts).
+    await prisma.member.deleteMany({ where: { provider: PROVIDER } });
+  }
   await prisma.$disconnect();
 });
 

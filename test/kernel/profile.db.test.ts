@@ -33,6 +33,15 @@ if (process.env["STUDENS_REQUIRE_DB"] === "1" && !reachable) {
 
 const dbit = reachable ? it : it.skip;
 
+/**
+ * THIS FILE'S OWN PROVIDER. Four files shared `"test"`, so none of them
+ * could delete its member without deleting the others' mid-run, and so
+ * none of them did: six rows with no username sat in the database
+ * permanently and surfaced in the administrator's member list as junk.
+ * A namespace has one owner (test-isolation.test.ts).
+ */
+const PROVIDER = "prof-test";
+
 let one = "";
 let two = "";
 
@@ -49,10 +58,10 @@ async function seed(): Promise<void> {
   });
   const mk = async (subject: string) => {
     const m = await prisma.member.upsert({
-      where: { provider_providerSubject: { provider: "test", providerSubject: subject } },
+      where: { provider_providerSubject: { provider: PROVIDER, providerSubject: subject } },
       update: {},
       create: {
-        provider: "test",
+        provider: PROVIDER,
         providerSubject: subject,
         emailDomain: "example.invalid",
         tenantId: tenant.id,
@@ -71,6 +80,13 @@ async function reset(): Promise<void> {
       where: { id },
       data: {
         username: null,
+        // AND THE KEY. Nulling the name alone leaves `usernameKey` holding the
+        // normalised form, which is also unique, so the name stays reserved by
+        // a row that shows no name. A later run then fails with "taken"
+        // against a member nobody can see holding it, and the administrator's
+        // member list shows an account with no username that cannot be
+        // explained.
+        usernameKey: null,
         locale: null,
         institutionCode: null,
         studies: null,
@@ -87,6 +103,12 @@ await seed();
 beforeEach(reset);
 afterAll(async () => {
   await reset();
+  if (reachable) {
+    // The member goes too. Without this the row survives every run, and six
+    // of them turned up in the administrator's member list as accounts with
+    // no username that nobody could explain.
+    await prisma.member.deleteMany({ where: { provider: PROVIDER } });
+  }
   await prisma.$disconnect();
 });
 
