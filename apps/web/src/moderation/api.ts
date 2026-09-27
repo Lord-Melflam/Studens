@@ -256,3 +256,78 @@ export async function eraseMember(id: string): Promise<{ ok: true } | { ok: fals
   const body = (await r.json().catch(() => ({}))) as { error?: string };
   return { ok: false, reason: body.error ?? "failed" };
 }
+
+/** FR-I3. One piece of feedback as the console sees it. */
+export interface FeedbackItem {
+  id: string;
+  memberId: string | null;
+  /** The sender's username, or null when nobody was signed in. */
+  username: string | null;
+  kind: string;
+  message: string;
+  /**
+   * WHETHER an address was left, never the address. Knowing an answer is
+   * possible is what a reader needs here; reading the address is a different
+   * act with a different cost, the same split as the member directory.
+   */
+  hasEmail: boolean;
+  route: string | null;
+  locale: string | null;
+  createdAt: string;
+  status: string;
+}
+
+export interface FeedbackPageData {
+  items: FeedbackItem[];
+  total: number;
+  counts: { open: number; read: number; done: number };
+  kinds: string[];
+  statuses: string[];
+  perPage: number;
+}
+
+const EMPTY_FEEDBACK: FeedbackPageData = {
+  items: [],
+  total: 0,
+  counts: { open: 0, read: 0, done: 0 },
+  kinds: [],
+  statuses: [],
+  perPage: 25,
+};
+
+export async function fetchFeedback(
+  q: string,
+  kind: string,
+  status: string,
+  author: string,
+  page: number,
+): Promise<FeedbackPageData> {
+  const params = new URLSearchParams();
+  if (q !== "") params.set("q", q);
+  if (kind !== "") params.set("kind", kind);
+  if (status !== "") params.set("status", status);
+  if (author !== "") params.set("author", author);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  const r = await fetch(`/api/moderation/feedback${query === "" ? "" : `?${query}`}`);
+  if (!r.ok) return EMPTY_FEEDBACK;
+  return (await r.json()) as FeedbackPageData;
+}
+
+export async function fetchFeedbackAuthors(): Promise<
+  Array<{ memberId: string | null; username: string | null; count: number }>
+> {
+  const r = await fetch("/api/moderation/feedback/authors");
+  if (!r.ok) return [];
+  return ((await r.json()) as { authors: Array<{ memberId: string | null; username: string | null; count: number }> })
+    .authors;
+}
+
+export async function setFeedbackState(id: string, status: string): Promise<boolean> {
+  const r = await fetch(`/api/moderation/feedback/${encodeURIComponent(id)}/status`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  return r.ok;
+}

@@ -28,6 +28,12 @@ import {
   appointmentHistory,
   canAppoint,
   canModerate,
+  FEEDBACK_KINDS,
+  FEEDBACK_STATUSES,
+  FEEDBACK_PER_PAGE,
+  feedbackAuthors,
+  listFeedback,
+  setFeedbackStatus,
   decide,
   listAppointments,
   listMembers,
@@ -344,6 +350,17 @@ export function moderationRoutes(prisma: PrismaClient): Router {
       },
     },
     {
+      key: "platform.feedbackPageSize",
+      min: 5,
+      max: 100,
+      fallback: 25,
+      help: {
+        fr: "Combien de retours s'affichent par page dans la liste des retours. Ce n'est pas un plafond : la liste indique le total et se parcourt page par page. C'est la liste qui grossit le plus vite, parce qu'un lien public veut dire que beaucoup de gens écrivent en même temps.",
+        nl: "Hoeveel reacties per pagina in de lijst verschijnen. Geen plafond: de lijst toont het totaal en wordt pagina per pagina doorlopen. Dit is de lijst die het snelst groeit, want een publieke link betekent dat veel mensen tegelijk schrijven.",
+        en: "How many pieces of feedback appear per page. Not a ceiling: the list states the total and is walked page by page. This is the fastest-growing list there is, because a public link means many people write at once.",
+      },
+    },
+    {
       key: "platform.quotaWindowDays",
       min: 1,
       max: 365,
@@ -546,6 +563,108 @@ export function moderationRoutes(prisma: PrismaClient): Router {
         // than hardcoding role names, the way the appointments screen does.
         roles: ROLES,
       });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
+   * FR-I3: the feedback queue.
+   *
+   * ADMINISTRATORS AND MODERATORS BOTH, which is not true of the member
+   * directory next door. A moderator already reads what people report about
+   * CONTENT; what people report about the product is the same job pointed at
+   * a different thing, and hiding it from them means the person most likely
+   * to notice a pattern cannot see one. They cannot export it (FR-I4), which
+   * is where the identifiers are.
+   */
+  router.get("/moderation/feedback", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canModerate(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const q = typeof req.query["q"] === "string" ? req.query["q"] : "";
+      const asked = Number.parseInt(String(req.query["page"] ?? "1"), 10);
+      // Unknown values are treated as no filter rather than as an error: they
+      // come from a URL, and a stale one should show everything rather than
+      // empty the screen with nothing to unclick.
+      const wantedKind = typeof req.query["kind"] === "string" ? req.query["kind"] : "";
+      const kind = (FEEDBACK_KINDS as readonly string[]).includes(wantedKind)
+        ? wantedKind
+        : undefined;
+      const wantedStatus = typeof req.query["status"] === "string" ? req.query["status"] : "";
+      const status = (FEEDBACK_STATUSES as readonly string[]).includes(wantedStatus)
+        ? wantedStatus
+        : undefined;
+      const author = typeof req.query["author"] === "string" ? req.query["author"] : undefined;
+
+      // NFR-O4, and this is the list most likely to grow fast: a public link
+      // means many people write at once. Bounded whatever is stored, because
+      // the kernel clamps to 100.
+      const perPage = await readNumberSetting(prisma, "platform.feedbackPageSize", {
+        fallback: FEEDBACK_PER_PAGE,
+        min: 5,
+        max: 100,
+      });
+      const out = await listFeedback({
+        client: prisma,
+        q,
+        ...(kind ? { kind } : {}),
+        ...(status ? { status } : {}),
+        ...(author ? { author } : {}),
+        page: Number.isFinite(asked) ? asked : 1,
+        perPage,
+      });
+      res.json({
+        ...out,
+        items: out.items.map((f) => ({
+          ...f,
+          createdAt: f.createdAt.toISOString(),
+          // THE ADDRESS NEVER REACHES THIS SCREEN. Whether one was left is
+          // what a reader needs in order to know an answer is possible; the
+          // address itself is personal data and the list is not where it is
+          // read, exactly as with the member directory (FR-E18).
+          contactEmail: undefined,
+          hasEmail: f.contactEmail !== null,
+        })),
+        kinds: FEEDBACK_KINDS,
+        statuses: FEEDBACK_STATUSES,
+        perPage,
+      });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /** Who has written in and how often, so the screen can group by sender. */
+  router.get("/moderation/feedback/authors", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canModerate(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      res.json({ authors: await feedbackAuthors({ client: prisma }) });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /** Move one row through open, read and done. */
+  router.post("/moderation/feedback/:id/status", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canModerate(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const status = (req.body ?? {})["status"];
+      if (typeof status !== "string") {
+        res.status(400).json({ error: "invalid" });
+        return;
+      }
+      try {
+        await setFeedbackStatus(String(req.params.id), status, { client: prisma });
+        res.json({ ok: true });
+      } catch {
+        res.status(400).json({ error: "invalid" });
+      }
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
 
