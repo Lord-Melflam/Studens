@@ -2402,9 +2402,12 @@ course code would need noticing. The round trip test is what would notice.
    the fallback.
 7. ~~The catalogue's own text is French~~ **done, phase 53, OPEN-47
    resolved.** Both editions are crawled and the choice is made per field, with
-   the language of each field reported and marked on screen. Loaded on
-   2026-09-27: UCLouvain 4,860 of 6,654 offerings carry English text, ULB 4,037
-   of 5,439. A reader can switch one record between FR and EN where both exist.
+   the language of each field reported and marked on screen. Most courses at
+   both universities carry English text and a real minority do not, which is why
+   the choice is per field and not per course. The crawl says how many on its
+   last line, in three numbers that sum to the offerings it parsed: with an
+   English edition, with an English page that had nothing, and unreachable.
+   A reader can switch one record between FR and EN where both exist.
    **What is still French** is a programme's title, its site and its field of
    study: they come from the programme listing rather than a course page, and
    there is no second edition of that listing to read them from. **Dutch has no

@@ -58,8 +58,22 @@ export interface Aggregate {
   recommendation: number | null;
   workloadVsEcts: number | null;
   difficulty: number | null;
-  /** FR-D23: a band, above a floor of five answers. Never a percentage. */
-  passBand: "la plupart ont réussi" | "résultats partagés" | "beaucoup ont échoué" | null;
+  /**
+   * FR-D23: a band, above a floor of five answers. Never a percentage.
+   *
+   * A TOKEN, NOT A PHRASE, and it used to be a phrase. The three values were
+   * French sentence fragments that the screen dropped into a translated
+   * sentence, so a Dutch reader was shown "Slaagkans: résultats partagés."
+   * and an English one "Passing: résultats partagés." The interface has three
+   * languages (FR-G) and this module has none: it is below the interface and
+   * cannot know which one is being read. Naming the band and letting the
+   * screen say it is the only version that works in all three.
+   *
+   * It is also a tier rule rather than a wording preference. Display prose
+   * produced in tier 3 is prose no translation gate can reach, because
+   * FR-G4 checks that keys resolve and this was never a key.
+   */
+  passBand: "most-passed" | "mixed" | "many-failed" | null;
   passAnswers: number;
 }
 
@@ -69,9 +83,9 @@ export const PASS_BAND_FLOOR = 5;
 function band(passed: number, answers: number): Aggregate["passBand"] {
   if (answers < PASS_BAND_FLOOR) return null;
   const ratio = passed / answers;
-  if (ratio >= 0.75) return "la plupart ont réussi";
-  if (ratio >= 0.4) return "résultats partagés";
-  return "beaucoup ont échoué";
+  if (ratio >= 0.75) return "most-passed";
+  if (ratio >= 0.4) return "mixed";
+  return "many-failed";
 }
 
 /**
