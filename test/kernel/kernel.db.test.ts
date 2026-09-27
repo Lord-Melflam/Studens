@@ -371,9 +371,16 @@ describe("reading obeys FR-D15, FR-C16 and FR-D23 on the server", () => {
     }
     const { aggregate } = await reviewsFor(prisma, courseId);
     expect(aggregate.passAnswers).toBe(PASS_BAND_FLOOR);
-    expect(aggregate.passBand).toBe("la plupart ont réussi");
+    expect(aggregate.passBand).toBe("most-passed");
     expect(typeof aggregate.passBand).toBe("string");
     expect(JSON.stringify(aggregate)).not.toMatch(/passRate|percent|%/);
+    // A TOKEN, NOT A SENTENCE. These three values used to be French phrases,
+    // and the screen dropped them into a translated sentence, so a Dutch
+    // reader was told "Slaagkans: résultats partagés." The module is below
+    // the interface and has no language of its own; the screen has three.
+    expect(JSON.stringify(aggregate), "the kernel must not emit display prose").not.toMatch(
+      /[éèêàçù]|\bont\b|\bles\b|\bde meesten\b/i,
+    );
   });
 
   dbit("the aggregate carries its own denominator (FR-D10)", async () => {
