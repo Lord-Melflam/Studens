@@ -39,6 +39,10 @@ export { looksLikeAFile, mountWebApp, webRoot } from "./web.js";
  * answered rather than left open, which is a thing only HTTP can show.
  */
 export { reviewRoutes } from "./routes/reviews.js";
+// Exported for the test that pins who may read the feedback queue: the
+// gate is a role check inside the route, so it can only be tested through one.
+export { moderationRoutes } from "./routes/moderation.js";
+export { feedbackRoutes } from "./routes/feedback.js";
 
 export interface AppSource {
   /** Set to read a snapshot file instead of the database. */

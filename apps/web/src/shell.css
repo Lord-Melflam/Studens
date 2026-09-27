@@ -1295,6 +1295,40 @@ a.ghost.here {
 .directory-name { font-weight: 600; overflow-wrap: anywhere; }
 .directory-meta { display: flex; align-items: baseline; gap: 0.6rem; flex: 0 1 auto; }
 .directory-meta .hint { margin: 0; font-size: 0.78rem; }
+
+/*
+  The feedback queue (FR-I3) reuses the directory's row, because it answers a
+  similar question and a console whose two lists behave differently is a
+  console you have to relearn. These three add what a message needs and a
+  member row does not: the text itself, a way to fold it, and somewhere to put
+  the controls that move it through the queue.
+*/
+.directory-who .feedback-text {
+  flex: 1 1 100%;
+  margin: 0.35rem 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+/* FOLDED, NOT TRUNCATED. A bug report cut off mid-sentence is a bug report
+   nobody acts on, so the whole text is always one press away rather than lost
+   behind an ellipsis. Four lines is about as much as can be skimmed without
+   the row stopping being a row. */
+.directory-who .feedback-text.clipped {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.directory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+}
 /* The domain is the signal the product already uses (FR-A10), so it is the
    thing given weight here rather than a grey afterthought. */
 .domain {

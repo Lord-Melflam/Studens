@@ -28,6 +28,10 @@ import {
   eraseMember,
   type DirectoryMember,
   fetchMembers,
+  fetchFeedback,
+  fetchFeedbackAuthors,
+  setFeedbackState,
+  type FeedbackPageData,
   fetchAddress,
   decide,
   fetchAppointments,
@@ -894,6 +898,238 @@ function Directory() {
   );
 }
 
+/**
+ * FR-I3: what people are saying about Studens itself.
+ *
+ * THE SAME SHAPE AS THE MEMBER DIRECTORY, deliberately. Somebody who has
+ * learned one of these screens has learned the other: a search, a row of
+ * filter chips built from the server's own lists, a screenful at a time with
+ * the total beside the heading, and a pager. The alternative is two screens
+ * that answer similar questions differently, which is how a console becomes a
+ * thing you have to relearn.
+ *
+ * IT SHOWS WHETHER AN ADDRESS WAS LEFT, NEVER THE ADDRESS. Reading one is a
+ * separate act with a separate cost, exactly as in the directory, and this
+ * screen is not where it happens.
+ *
+ * GROUPING BY SENDER IS A FILTER, not a different view. "Everything this
+ * person wrote" is the question, and the answer is the same list narrowed, so
+ * the state, the search and the pager all keep working. `anonymous` is a
+ * GROUP rather than a person, and the chip says so: it is every row nobody
+ * signed for, which on a public link is most of them.
+ */
+function FeedbackQueue() {
+  const t = useT();
+  const locale = useLocale();
+  const [typed, setTyped] = useState("");
+  const [q, setQ] = useState("");
+  const [kind, setKind] = useState("");
+  const [status, setStatus] = useState("");
+  const [author, setAuthor] = useState("");
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<FeedbackPageData | null>(null);
+  const [authors, setAuthors] = useState<
+    Array<{ memberId: string | null; username: string | null; count: number }>
+  >([]);
+  const [open, setOpen] = useState<string | null>(null);
+
+  // One request per pause in typing, not one per letter.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQ(typed.trim());
+      setPage(1);
+    }, 180);
+    return () => clearTimeout(timer);
+  }, [typed]);
+
+  const load = useCallback(() => {
+    void fetchFeedback(q, kind, status, author, page).then(setData);
+  }, [q, kind, status, author, page]);
+  useEffect(load, [load]);
+  useEffect(() => {
+    void fetchFeedbackAuthors().then(setAuthors);
+  }, []);
+
+  if (data === null) return <p className="hint">…</p>;
+
+  const pages = Math.max(1, Math.ceil(data.total / Math.max(1, data.perPage)));
+
+  const move = (id: string, to: string): void => {
+    void setFeedbackState(id, to).then((ok) => {
+      if (ok) load();
+    });
+  };
+
+  return (
+    <section className="panel">
+      <h3>
+        {t("mod.feedback")} <span className="count">{data.total}</span>
+      </h3>
+      <p className="hint">{t("mod.feedback.hint")}</p>
+
+      <div className="directory-controls">
+        <input
+          className="text-input"
+          type="search"
+          value={typed}
+          placeholder={t("mod.feedback.search")}
+          onChange={(e) => setTyped(e.target.value)}
+        />
+        {/* Three rows of chips, each built from the server's own list where
+            there is one, so a new kind or state needs no edit here. */}
+        <div className="filter-chips">
+          <button
+            type="button"
+            className={status === "" ? "filter-chip here" : "filter-chip"}
+            onClick={() => {
+              setStatus("");
+              setPage(1);
+            }}
+          >
+            {t("mod.feedback.all")}
+          </button>
+          {data.statuses.map((sName) => (
+            <button
+              key={sName}
+              type="button"
+              className={status === sName ? "filter-chip here" : "filter-chip"}
+              onClick={() => {
+                setStatus(sName);
+                setPage(1);
+              }}
+            >
+              {t(`mod.feedback.status.${sName}`)}{" "}
+              <span className="count">
+                {data.counts[sName as "open" | "read" | "done"] ?? 0}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="filter-chips">
+          <button
+            type="button"
+            className={kind === "" ? "filter-chip here" : "filter-chip"}
+            onClick={() => {
+              setKind("");
+              setPage(1);
+            }}
+          >
+            {t("mod.feedback.anykind")}
+          </button>
+          {data.kinds.map((k) => (
+            <button
+              key={k}
+              type="button"
+              className={kind === k ? "filter-chip here" : "filter-chip"}
+              onClick={() => {
+                setKind(k);
+                setPage(1);
+              }}
+            >
+              {t(`feedback.kind.${k}`)}
+            </button>
+          ))}
+        </div>
+        {authors.length > 0 && (
+          <div className="filter-chips">
+            <button
+              type="button"
+              className={author === "" ? "filter-chip here" : "filter-chip"}
+              onClick={() => {
+                setAuthor("");
+                setPage(1);
+              }}
+            >
+              {t("mod.feedback.anyone")}
+            </button>
+            {authors.map((a) => (
+              <button
+                key={a.memberId ?? "anonymous"}
+                type="button"
+                className={
+                  author === (a.memberId ?? "anonymous") ? "filter-chip here" : "filter-chip"
+                }
+                onClick={() => {
+                  setAuthor(a.memberId ?? "anonymous");
+                  setPage(1);
+                }}
+              >
+                {a.memberId === null
+                  ? t("mod.feedback.nobody")
+                  : (a.username ?? t("mod.directory.unnamed"))}{" "}
+                <span className="count">{a.count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {data.items.length === 0 ? (
+        <p className="hint">{t("mod.feedback.none")}</p>
+      ) : (
+        <ul className="directory">
+          {data.items.map((f) => (
+            <li key={f.id} className="directory-row">
+              <div className="directory-who">
+                <span className="directory-name">
+                  {f.username ?? t("mod.feedback.nobody")}
+                </span>
+                <span className="directory-meta">
+                  {t(`feedback.kind.${f.kind}`)} · {ago(f.createdAt, locale)}
+                  {f.locale ? ` · ${f.locale.toUpperCase()}` : ""}
+                  {f.route ? ` · ${f.route}` : ""}
+                  {f.hasEmail ? ` · ${t("mod.feedback.replyable")}` : ""}
+                </span>
+                {/* Folded at four lines rather than truncated with an ellipsis:
+                    a bug report cut off mid-sentence is a bug report nobody
+                    acts on, and the whole text is two presses away. */}
+                <p className={open === f.id ? "feedback-text" : "feedback-text clipped"}>
+                  {f.message}
+                </p>
+                {f.message.length > 160 && (
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => setOpen(open === f.id ? null : f.id)}
+                  >
+                    {open === f.id ? t("mod.feedback.less") : t("mod.feedback.more")}
+                  </button>
+                )}
+              </div>
+              <div className="directory-actions">
+                {data.statuses
+                  .filter((sName) => sName !== f.status)
+                  .map((sName) => (
+                    <button
+                      key={sName}
+                      type="button"
+                      className="ghost"
+                      onClick={() => move(f.id, sName)}
+                    >
+                      {t(`mod.feedback.move.${sName}`)}
+                    </button>
+                  ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {pages > 1 && (
+        <nav className="pager" aria-label={t("mod.feedback")}>
+          <button type="button" onClick={() => setPage(page - 1)} disabled={page <= 1}>
+            {t("mod.page.prev")}
+          </button>
+          <span className="pager-where">{t("mod.page.where", { page, pages })}</span>
+          <button type="button" onClick={() => setPage(page + 1)} disabled={page >= pages}>
+            {t("mod.page.next")}
+          </button>
+        </nav>
+      )}
+    </section>
+  );
+}
+
 function Appointments() {
   const t = useT();
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -1071,7 +1307,23 @@ function Appointments() {
  * A MODERATOR WITHOUT THE ADMINISTRATOR'S POWERS SEES NO BAR AT ALL. They have
  * one section, and a row of one tab is a control that can never do anything.
  */
-export const SECTIONS = ["signalements", "comptes", "membres", "roles", "reglages"] as const;
+/**
+ * FRENCH, LIKE THE FOUR BESIDE IT, and that is a decision rather than an
+ * oversight now that OPEN-49 exists. That question settled PATH slugs and
+ * deliberately left query parameters alone: a path names a page, a parameter
+ * names a setting inside one, and a console address sent by one administrator
+ * to another has to open the same screen for both of them. Renaming these five
+ * would also break every console link anybody has already saved, for a part of
+ * the product only three people will ever see.
+ */
+export const SECTIONS = [
+  "signalements",
+  "retours",
+  "comptes",
+  "membres",
+  "roles",
+  "reglages",
+] as const;
 export type Section = (typeof SECTIONS)[number];
 
 /**
@@ -1083,10 +1335,21 @@ export type Section = (typeof SECTIONS)[number];
  * by an administrator is opened by a moderator who holds less. Showing them
  * the screen they can use beats telling them they cannot use this one.
  */
+/**
+ * Which sections a moderator may open, as opposed to an administrator.
+ *
+ * FEEDBACK IS THEIRS TOO (FR-I3). A moderator already reads what people report
+ * about CONTENT; what people report about the PRODUCT is the same job pointed
+ * at a different thing, and keeping it from them means the person most likely
+ * to spot a pattern across twenty messages is the one who cannot see them.
+ * They cannot export it, which is where the identifiers are (FR-I4).
+ */
+const MODERATOR_SECTIONS: readonly Section[] = ["signalements", "retours"];
+
 export function sectionFrom(search: string, canAppoint: boolean): Section {
   const asked = new URLSearchParams(search).get("section");
   if (!SECTIONS.includes(asked as Section)) return "signalements";
-  if (asked !== "signalements" && !canAppoint) return "signalements";
+  if (!canAppoint && !MODERATOR_SECTIONS.includes(asked as Section)) return "signalements";
   return asked as Section;
 }
 
@@ -1104,6 +1367,7 @@ export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; h
   useEffect(load, [load]);
 
   const section = sectionFrom(search, canAppoint);
+  const visible: readonly Section[] = canAppoint ? SECTIONS : MODERATOR_SECTIONS;
 
   const go = (to: Section): void =>
     navigate(to === "signalements" ? here : `${here}?section=${to}`, { replace: true });
@@ -1112,9 +1376,13 @@ export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; h
     <div className="panel-stack">
       <h2 className="panel-title">{t("mod.title")}</h2>
 
-      {canAppoint && (
+      {/* THE TABS APPEAR FOR A MODERATOR TOO, now that they have more than one
+          screen. Before this, the nav was drawn only for an administrator,
+          which was right when a moderator had exactly one place to be and
+          would have left them looking at a row with one item in it. */}
+      {visible.length > 1 && (
         <nav className="console-tabs" aria-label={t("mod.title")}>
-          {SECTIONS.map((id) => (
+          {visible.map((id) => (
             <button
               key={id}
               type="button"
@@ -1158,6 +1426,8 @@ export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; h
           <Register reload={changed} />
         </>
       )}
+
+      {section === "retours" && <FeedbackQueue />}
 
       {canAppoint && section === "membres" && <Directory />}
       {canAppoint && section === "roles" && <Appointments />}
