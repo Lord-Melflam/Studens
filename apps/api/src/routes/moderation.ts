@@ -530,7 +530,13 @@ export function moderationRoutes(prisma: PrismaClient): Router {
   router.get("/moderation/members", (req, res) => {
     void (async () => {
       const who = await identifyIfAny(prisma, req);
-      if (!who || !canAppoint(who.role)) {
+      // READABLE BY A MODERATOR, and this is the line worth stating. The LIST
+      // carries a username, a role, an email DOMAIN and whether an address
+      // exists; it answers "who is this person I am about to act on", which is
+      // the question a moderator has while reading a report. The two things
+      // that lead somewhere are the address itself and the erasure, and both
+      // stay administrators' below (FR-E18, FR-E19).
+      if (!who || !canModerate(who.role)) {
         res.status(404).json({ error: "not found" });
         return;
       }
@@ -795,7 +801,11 @@ export function moderationRoutes(prisma: PrismaClient): Router {
   router.get("/moderation/suspensions", (req, res) => {
     void (async () => {
       const who = await identifyIfAny(prisma, req);
-      if (!who || !canAppoint(who.role)) {
+      // Readable by a moderator: they are the people most likely to open a
+      // report about an account somebody has already dealt with, and without
+      // this they cannot tell. Taking a suspension is still an
+      // administrator's (`/moderation/suspend` below).
+      if (!who || !canModerate(who.role)) {
         res.status(404).json({ error: "not found" });
         return;
       }

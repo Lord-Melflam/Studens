@@ -279,9 +279,21 @@ describe("which section the address asks for", () => {
    * gets the screen they can use, not an error. The API answers 404 to every
    * request behind those sections anyway, so this is about not showing
    * somebody an empty panel, never about keeping them out.
+   *
+   * WHICH SECTIONS THOSE ARE MOVED, and the line is no longer "everything but
+   * the queue". A moderator reads the feedback, the member list and the
+   * register of who is suspended, because all three answer questions they
+   * have while working a report. What stays above them is appointing roles
+   * and changing settings: the two screens that change what everybody else
+   * can do.
    */
-  it("sends a moderator back to the queue, whatever the link said", () => {
-    expect(sectionFrom("?section=comptes", false)).toBe("signalements");
+  it("opens the four a moderator may use", () => {
+    for (const id of ["signalements", "retours", "membres", "comptes"]) {
+      expect(sectionFrom(`?section=${id}`, false)).toBe(id);
+    }
+  });
+
+  it("sends a moderator back to the queue from the two that are not theirs", () => {
     expect(sectionFrom("?section=roles", false)).toBe("signalements");
     expect(sectionFrom("?section=reglages", false)).toBe("signalements");
   });

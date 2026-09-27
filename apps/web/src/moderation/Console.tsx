@@ -688,7 +688,18 @@ const VISIBLE_HOLDERS = 8;
  * the catalogue search settled on, so typing costs one request per pause and
  * not one per letter.
  */
-function Directory() {
+/**
+ * FR-E18, and who may do what on it.
+ *
+ * A MODERATOR READS THIS AND CANNOT ACT ON IT. The list answers "who is this
+ * person I am about to act on", which is the question they have while reading
+ * a report, and it carries a username, a role, an email DOMAIN and whether an
+ * address exists. The two controls that lead somewhere else are the address
+ * reveal, which is a separate audited act, and the erasure, which has no undo.
+ * Both stay an administrator's, and the server refuses them independently of
+ * anything decided here.
+ */
+function Directory({ canAct }: { canAct: boolean }) {
   const t = useT();
   const locale = useLocale();
   const [q, setQ] = useState("");
@@ -818,10 +829,17 @@ function Directory() {
                       <span className="hint"> {t("mod.directory.unconfirmed")}</span>
                     )}
                   </span>
-                ) : m.hasAddress ? (
+                ) : m.hasAddress && canAct ? (
                   <button type="button" className="ghost" onClick={() => reveal(m.id)}>
                     {t("mod.directory.reveal")}
                   </button>
+                ) : m.hasAddress ? (
+                  /* A MODERATOR IS TOLD THAT ONE EXISTS AND NOT WHAT IT IS.
+                     That is the whole difference between this screen for them
+                     and for an administrator: knowing somebody can be answered
+                     is useful while reading a report, and reading the address
+                     is the separate audited act that stays above them. */
+                  <span className="hint">{t("mod.directory.hasaddress")}</span>
                 ) : (
                   <span className="hint">{t("mod.directory.noaddress")}</span>
                 )}
@@ -830,17 +848,19 @@ function Directory() {
                     from suspension. It is not the moderation answer to a
                     person being a problem: that is suspension, which tells
                     them why and can be undone. */}
-                <button
-                  type="button"
-                  className="ghost danger"
-                  onClick={() => {
-                    setAsked(asked === m.id ? null : m.id);
-                    setTyped2("");
-                    setProblem(null);
-                  }}
-                >
-                  {t("mod.directory.erase")}
-                </button>
+                {canAct && (
+                  <button
+                    type="button"
+                    className="ghost danger"
+                    onClick={() => {
+                      setAsked(asked === m.id ? null : m.id);
+                      setTyped2("");
+                      setProblem(null);
+                    }}
+                  >
+                    {t("mod.directory.erase")}
+                  </button>
+                )}
               </div>
 
               {asked === m.id && (
@@ -1420,7 +1440,12 @@ export type Section = (typeof SECTIONS)[number];
  * to spot a pattern across twenty messages is the one who cannot see them.
  * They cannot export it, which is where the identifiers are (FR-I4).
  */
-const MODERATOR_SECTIONS: readonly Section[] = ["signalements", "retours"];
+const MODERATOR_SECTIONS: readonly Section[] = [
+  "signalements",
+  "retours",
+  "membres",
+  "comptes",
+];
 
 export function sectionFrom(search: string, canAppoint: boolean): Section {
   const asked = new URLSearchParams(search).get("section");
@@ -1497,16 +1522,20 @@ export function ModerationConsole({ canAppoint, here }: { canAppoint: boolean; h
 
       {/* The form and the register together, because they are one question
           asked in two directions: who should be stopped, and who is. */}
-      {canAppoint && section === "comptes" && (
+      {section === "comptes" && (
         <>
-          <Suspensions onChanged={() => setChanged(changed + 1)} />
+          {/* TAKING a suspension is an administrator's; SEEING who is
+              suspended is not. A moderator reading a report about an account
+              somebody already dealt with has no way to tell without the
+              register, and re-actioning it is the mistake that follows. */}
+          {canAppoint && <Suspensions onChanged={() => setChanged(changed + 1)} />}
           <Register reload={changed} />
         </>
       )}
 
       {section === "retours" && <FeedbackQueue canExport={canAppoint} me={mine?.username ?? null} />}
 
-      {canAppoint && section === "membres" && <Directory />}
+      {section === "membres" && <Directory canAct={canAppoint} />}
       {canAppoint && section === "roles" && <Appointments />}
       {canAppoint && section === "reglages" && <Settings />}
     </div>

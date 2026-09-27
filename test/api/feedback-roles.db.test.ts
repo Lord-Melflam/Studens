@@ -120,12 +120,61 @@ describe("the feedback queue is a moderator's as well as an administrator's", ()
   });
 });
 
-describe("the member directory stays an administrator's", () => {
-  dbit("is open to an administrator and shut to a moderator", async () => {
+describe("a moderator reads the directory and cannot act on it", () => {
+  /**
+   * WHERE THE LINE IS, and it is not the screen. A moderator reading a report
+   * needs to know who they are about to act on, which is what the LIST says:
+   * a username, a role, an email domain, whether an address exists. The two
+   * things that lead somewhere else are reading the address, which is a
+   * separate audited act, and erasing the account, which has no undo.
+   *
+   * Tested on the server rather than on the screen, because hiding a button
+   * is a courtesy and refusing the request is the control.
+   */
+  dbit("lets both read the list", async () => {
     expect((await get("/api/moderation/members", "admin")).status).toBe(200);
-    // The line between the two screens is where the addresses are: this one
-    // leads to them and the feedback queue does not.
-    expect((await get("/api/moderation/members", "moderator")).status).toBe(404);
+    expect((await get("/api/moderation/members", "moderator")).status).toBe(200);
+  });
+
+  dbit("lets only an administrator read one address", async () => {
+    const tenantId = (await prisma.tenant.findFirst({ select: { id: true } }))!.id;
+    const target = await prisma.member.create({
+      data: {
+        provider: PROVIDER,
+        providerSubject: "target",
+        emailDomain: "example.invalid",
+        username: "ztst.fbroles.target",
+        providerEmail: "target@example.invalid",
+        tenantId,
+      },
+    });
+    expect((await get(`/api/moderation/members/${target.id}/address`, "admin")).status).toBe(200);
+    expect((await get(`/api/moderation/members/${target.id}/address`, "moderator")).status).toBe(
+      404,
+    );
+  });
+
+  dbit("lets both read the register of who is suspended", async () => {
+    // Seeing who is already suspended stops a moderator re-reporting an
+    // account somebody has dealt with. TAKING a suspension is not theirs.
+    expect((await get("/api/moderation/suspensions", "admin")).status).toBe(200);
+    expect((await get("/api/moderation/suspensions", "moderator")).status).toBe(200);
+  });
+
+  dbit("keeps the settings an administrator's", async () => {
+    expect((await get("/api/moderation/settings", "admin")).status).toBe(200);
+    expect((await get("/api/moderation/settings", "moderator")).status).toBe(404);
+  });
+
+  dbit("keeps a plain member and a stranger out of all of it", async () => {
+    for (const path of [
+      "/api/moderation/members",
+      "/api/moderation/suspensions",
+      "/api/moderation/settings",
+    ]) {
+      expect((await get(path, "member")).status, path).toBe(404);
+      expect((await get(path)).status, path).toBe(404);
+    }
   });
 });
 
