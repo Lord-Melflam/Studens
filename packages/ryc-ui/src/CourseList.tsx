@@ -1,7 +1,8 @@
 /** A list of courses, used by both search results and programme browsing. */
-import { useT } from "@studens/i18n";
+import { useLocale, useT } from "@studens/i18n";
 import type { CourseSummary } from "./api.js";
 import { courseKey } from "./Ryc.js";
+import { languageName, quarterKey } from "./normalise.js";
 
 export function CourseList({
   courses,
@@ -14,6 +15,7 @@ export function CourseList({
   reviewCounts?: Record<string, number>;
 }) {
   const t = useT();
+  const locale = useLocale();
   return (
     <ul className="results">
       {courses.map((c) => {
@@ -25,8 +27,13 @@ export function CourseList({
               <span className="title">{c.title}</span>
               <span className="facts">
                 {c.ects === null ? t("ryc.course.ects.unstated") : t("ryc.course.ects", { n: c.ects })}
-                {c.quarter ? ` · ${c.quarter}` : ""}
-                {c.mainLanguage ? ` · ${c.mainLanguage}` : ""}
+                {/* Both normalised rather than shown as published. The term
+                    arrives as "Q1 et Q2" or "Q1 and Q2" depending on which
+                    edition was crawled, and the language as "Anglais". A row
+                    is chrome, not catalogue prose, so it reads in the
+                    reader's language and matches the filter chips beside it. */}
+                {c.quarter ? ` · ${quarterKey(c.quarter)}` : ""}
+                {c.mainLanguage ? ` · ${languageName(c.mainLanguage, locale)}` : ""}
                 {c.external ? ` · ${t("ryc.course.external")}` : ""}
                 {c.offeredThisYear ? "" : ` · ${t("ryc.course.notOffered.flag")}`}
               </span>

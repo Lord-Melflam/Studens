@@ -295,7 +295,7 @@ export { REPORT_CATEGORIES, REPORT_DETAIL_MIN, type ReportCategory } from "./api
 /** The filter bar over a list of courses. Exported so it can be rendered in a test. */
 export { CourseFilters } from "./CourseFilters.js";
 /** One key for two universities' words. Pure, so it is checked directly. */
-export { languageKey, quarterKey, quarterTerms } from "./normalise.js";
+export { languageKey, languageName, quarterKey, quarterTerms } from "./normalise.js";
 /** The review list and its pager, exported so the pager is checked directly. */
 export { Reviews } from "./Reviews.js";
 /**
