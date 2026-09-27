@@ -22,6 +22,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useT, useLocale } from "@studens/i18n";
 import { useSession } from "../session.js";
+import { Info } from "../Info.js";
 import { navigate, useSearch } from "../router.js";
 import {
   decide,
@@ -324,6 +325,7 @@ function Holder({
  */
 function Settings() {
   const t = useT();
+  const locale = useLocale();
   const [rows, setRows] = useState<SettingRow[] | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [problem, setProblem] = useState<string | null>(null);
@@ -354,36 +356,74 @@ function Settings() {
     <section className="panel">
       <h3>{t("mod.settings")}</h3>
       <p className="hint">{t("mod.settings.hint")}</p>
-      {rows.map((row) => (
-        <div key={row.key} className="field-row narrow">
-          {/* THE KEY IS THE LABEL. Translating it would mean the shell
-              holding a phrase like "reviews per page", which is the module's
-              vocabulary and exactly what FR-B16 keeps out of here; the gate
-              caught the first attempt. A key is also what an administrator
-              reading the audit log will see, and a new setting needs no change
-              to this screen at all. */}
-          <label htmlFor={row.key}>
-            <code>{row.key}</code>
-          </label>
-          <input
-            id={row.key}
-            className="text-input"
-            type="number"
-            min={row.min}
-            max={row.max}
-            value={draft[row.key] ?? ""}
-            onChange={(e) => setDraft({ ...draft, [row.key]: e.target.value })}
-          />
-          <span className="hint">
-            {t("mod.settings.range", { min: row.min, max: row.max, fallback: row.fallback })}
-          </span>
-          <div className="panel-actions">
-            <button type="button" className="go" onClick={() => save(row)}>
-              {t("mod.settings.save")}
-            </button>
-          </div>
-        </div>
-      ))}
+      {/*
+        ONE ROW PER SETTING, name on the left, control on the right.
+
+        It was a stack of full width blocks, each with its own large primary
+        button, so three settings produced three identical loud buttons down a
+        narrow column with half the panel's width unused. A settings list is a
+        list: the thing being set and the thing that sets it belong on one
+        line, and the rule between rows is what says where one ends.
+
+        The button is quiet until the value actually differs from what is
+        stored. Three primary buttons on a screen where nothing has changed
+        invite a press that writes the same number back and puts a line in the
+        audit log saying somebody changed something.
+      */}
+      <ul className="settings-list">
+        {rows.map((row) => {
+          const stored = row.value === null ? String(row.fallback) : String(row.value);
+          const dirty = (draft[row.key] ?? "") !== stored;
+          return (
+            <li key={row.key} className="setting">
+              <div className="setting-name">
+                {/* THE KEY IS THE LABEL. Translating it would mean the shell
+                    holding a phrase like "reviews per page", which is the
+                    module's vocabulary and exactly what FR-B16 keeps out of
+                    here; the gate caught the first attempt. A key is also what
+                    an administrator reading the audit log will see, and a new
+                    setting needs no change to this screen at all. */}
+                <span className="setting-label">
+                  <label htmlFor={row.key}>
+                    <code>{row.key}</code>
+                  </label>
+                  {/* The sentence comes from the API, because it describes a
+                      module's domain and the shell may not hold those words
+                      (FR-B16). The shell decides where it goes, not what it
+                      says. */}
+                  {row.help && <Info label={row.key}>{row.help[locale] ?? row.help.en}</Info>}
+                </span>
+                <span className="hint">
+                  {t("mod.settings.range", {
+                    min: row.min,
+                    max: row.max,
+                    fallback: row.fallback,
+                  })}
+                </span>
+              </div>
+              <div className="setting-control">
+                <input
+                  id={row.key}
+                  className="text-input setting-input"
+                  type="number"
+                  min={row.min}
+                  max={row.max}
+                  value={draft[row.key] ?? ""}
+                  onChange={(e) => setDraft({ ...draft, [row.key]: e.target.value })}
+                />
+                <button
+                  type="button"
+                  className={dirty ? "go" : "ghost"}
+                  disabled={!dirty}
+                  onClick={() => save(row)}
+                >
+                  {t("mod.settings.save")}
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
       {saved && <p className="hint">{t("mod.settings.saved")}</p>}
       {problem && <p className="bad">{t("mod.settings.refused")}</p>}
     </section>

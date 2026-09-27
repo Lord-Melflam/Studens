@@ -7,7 +7,14 @@
  */
 import { Router, json } from "express";
 import { PrismaClient } from "@prisma/client";
-import { QuotaExceeded, quotaRemaining, readNumberSetting, usernamesFor } from "@studens/platform";
+import {
+  QUOTA_PER_WINDOW,
+  WINDOW_DAYS,
+  QuotaExceeded,
+  quotaRemaining,
+  readNumberSetting,
+  usernamesFor,
+} from "@studens/platform";
 import {
   REVIEWS_PER_PAGE,
   ReviewInvalid,
@@ -157,7 +164,11 @@ export function reviewRoutes(prisma: PrismaClient): Router {
       // cross-site top-level GET, so a GET that changes state is reachable from
       // another site. See docs/design/authentication.md 0.3.
       const who = await identifyIfAny(prisma, req);
-      const remaining = who ? await quotaRemaining(who.memberId, { client: prisma }) : null;
+      // The same number the submission will enforce, so the screen cannot
+      // promise a contribution the kernel then refuses.
+      const remaining = who
+        ? await quotaRemaining(who.memberId, { client: prisma, ...(await quotaSettings()) })
+        : null;
       res.json({ course: course.code, named, anonymous, quotaRemaining: remaining });
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
@@ -338,6 +349,29 @@ export function reviewRoutes(prisma: PrismaClient): Router {
     });
   });
 
+  /**
+   * Contributions per window, as an administrator set it (OPEN-26).
+   *
+   * Read at the composition layer, not in the module: settings are the
+   * platform's and `@studens/ryc` may not reach them (FR-B11). The bounds are
+   * repeated from the settings declaration on purpose, because a row can be
+   * edited by somebody who never saw the form, and a stored 0 or 10000 must
+   * not be a way to stop the product taking contributions or to remove the
+   * limit entirely.
+   */
+  const quotaSettings = async () => ({
+    limit: await readNumberSetting(prisma, "platform.quotaPerWindow", {
+      fallback: QUOTA_PER_WINDOW,
+      min: 1,
+      max: 1000,
+    }),
+    windowDays: await readNumberSetting(prisma, "platform.quotaWindowDays", {
+      fallback: WINDOW_DAYS,
+      min: 1,
+      max: 365,
+    }),
+  });
+
   router.post("/courses/:institution/:code/reviews", (req, res) => {
     void (async () => {
       const who = await identify(prisma, req, res);
@@ -365,11 +399,12 @@ export function reviewRoutes(prisma: PrismaClient): Router {
         completed: body.completed === true,
       };
 
+      const { limit, windowDays } = await quotaSettings();
       // The two paths are called separately and share no branch beyond this
       // point. FR-C6 in code: not one function with a flag.
       const created = anonymous
-        ? await submitAnonymous(who.memberId, input, { client: prisma })
-        : await submitAttributed(who.memberId, input, { client: prisma });
+        ? await submitAnonymous(who.memberId, input, { client: prisma, limit, windowDays })
+        : await submitAttributed(who.memberId, input, { client: prisma, limit, windowDays });
 
       // The response carries the id ONLY for the attributed path. Returning it
       // for an anonymous submission would hand the client a handle to a row

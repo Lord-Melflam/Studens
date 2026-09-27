@@ -288,6 +288,58 @@ export async function listSessions(
 }
 
 /**
+ * Delete sessions that can never authenticate anybody again.
+ *
+ * NFR-O4. THE TABLE ONLY GREW. `verifySession` refuses an expired row and
+ * leaves it where it is, and `revokeSession` writes a timestamp rather than
+ * deleting, so every session anybody has ever held is still a row. Nothing
+ * anywhere removed one. That was noted as a gap on 2026-09-21 and built on
+ * 2026-09-27; the table was small enough that nobody would have noticed for
+ * another year, which is exactly when a growth problem is cheap to fix.
+ *
+ * WHAT IS DELETED. Three kinds, and all three are already dead by the rules in
+ * `verifySession`, so this removes no capability:
+ *
+ *   - idle past IDLE_DAYS
+ *   - issued past ABSOLUTE_DAYS, however active
+ *   - revoked, and revoked long enough ago to be past both windows
+ *
+ * WHY REVOKED ROWS WAIT rather than going at once. Somebody signing out of a
+ * stolen session should be able to see, in "my account", that the session they
+ * killed is gone; a row that vanishes the same second leaves nothing to have
+ * been reassured by. After the windows have passed it could not have worked
+ * anyway.
+ *
+ * NO GRACE PERIOD BEYOND THAT, and nothing is archived. A session row is a
+ * hashed token, two timestamps and a member id: there is nothing in it worth
+ * keeping and it is a per-member record of when somebody was using the
+ * product, which is the kind of thing FR-B12's instinct says not to hold
+ * longer than it does work.
+ */
+export async function pruneSessions(
+  opts: SessionOptions = {},
+): Promise<{ deleted: number }> {
+  const prisma = opts.client ?? new PrismaClient();
+  const now = opts.now ?? new Date();
+  const idleBefore = new Date(now.getTime() - IDLE_DAYS * DAY_MS);
+  const issuedBefore = new Date(now.getTime() - ABSOLUTE_DAYS * DAY_MS);
+  try {
+    const { count } = await prisma.session.deleteMany({
+      where: {
+        OR: [
+          { lastSeenAt: { lt: idleBefore } },
+          { issuedAt: { lt: issuedBefore } },
+          { AND: [{ revokedAt: { not: null } }, { revokedAt: { lt: idleBefore } }] },
+        ],
+      },
+    });
+    return { deleted: count };
+  } finally {
+    if (!opts.client) await prisma.$disconnect();
+  }
+}
+
+/**
  * Constant-time comparison, for anywhere a caller compares a secret itself
  * rather than looking one up by hash.
  */

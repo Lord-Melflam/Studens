@@ -54,6 +54,7 @@ should be called.
 | `npm run dev:api:anon` | The API with **no** development identity: what a signed-out visitor sees |
 | `npm run dev:web` | Vite, port 5173. Proxies `/api` to 3001 |
 | `npm run mail` | Drain the mail outbox. Prints each message when no relay is configured. `-- --watch` loops every 30 seconds |
+| `npm run prune` | Delete sessions that can never authenticate anybody again: idle past 14 days, issued past 90, or revoked long enough ago to be past both. `-- --watch` loops every 6 hours. Nothing else removes a session row, so without this the table only grows |
 | **Before you push** | |
 | `npm run gates` | The whole no-database gate. What CI's `gates` job runs |
 | `npm run gates:db` | The database half. What CI's `database` job runs |

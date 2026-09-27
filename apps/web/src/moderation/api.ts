@@ -113,6 +113,15 @@ export interface SettingRow {
   fallback: number;
   /** Null when nobody has set it, so the screen can show the default as one. */
   value: string | null;
+  /**
+   * What the setting does, in each language, served by the API.
+   *
+   * Not translated in the shell: these sentences describe a module's domain
+   * and the shell may not carry those words (FR-B16). Optional because a
+   * setting added without one should still render, showing its key and its
+   * range as before rather than crashing the panel.
+   */
+  help?: Record<string, string>;
 }
 
 export async function fetchSettings(): Promise<SettingRow[]> {

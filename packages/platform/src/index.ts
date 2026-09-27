@@ -27,6 +27,7 @@ export {
   revokeSession,
   revokeOtherSessions,
   listSessions,
+  pruneSessions,
   hashToken,
   newToken,
   secretEquals,

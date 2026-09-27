@@ -252,12 +252,89 @@ export function moderationRoutes(prisma: PrismaClient): Router {
    * so that a typo cannot write a row nothing will ever read, and so the
    * screen can list what exists without guessing.
    */
+  /**
+   * WHAT EACH KEY ACTUALLY DOES, IN WORDS, AND WHY THE WORDS ARE HERE.
+   *
+   * The console showed three keys, three number fields and a range. A key is
+   * the right LABEL, because it is what an administrator sees in the audit log
+   * and because translating it would put a module's vocabulary in the shell,
+   * which FR-B16 forbids and a gate catches. But a key is not an explanation,
+   * and the three differ enormously in consequence: one changes how long a
+   * page is, another changes how much anybody may publish in a week. Setting
+   * the wrong one is a mistake the screen invited.
+   *
+   * So the text is served, not translated in the shell. This file is the
+   * composition layer, the one place allowed to know both the platform and the
+   * modules, so it is where a sentence about reviews may legally be written.
+   * The console renders a string it was given and still contains none of the
+   * vocabulary itself.
+   *
+   * All three languages are sent rather than the member's own. The payload is
+   * a few hundred bytes, the shell already knows which language it is drawing,
+   * and negotiating a locale on this one endpoint would be a second mechanism
+   * for something the client already does.
+   */
   const SETTINGS = [
-    { key: "ryc.reviewsPerPage", min: 3, max: 50, fallback: 10 },
-    // How many search results come back at once. It is a page size, not a
-    // ceiling: the list says how many matched and lengthens on request, so
-    // this decides how much arrives per step rather than what can be found.
-    { key: "ryc.searchResults", min: 5, max: 100, fallback: 25 },
+    {
+      key: "ryc.reviewsPerPage",
+      min: 3,
+      max: 50,
+      fallback: 10,
+      help: {
+        fr: "Combien d'avis s'affichent d'un coup sur la fiche d'un cours, avant de devoir passer à la page suivante. N'affecte pas ce qui peut être publié.",
+        nl: "Hoeveel beoordelingen tegelijk op een cursusfiche verschijnen, voor je naar de volgende pagina moet. Heeft geen invloed op wat gepubliceerd mag worden.",
+        en: "How many reviews appear at once on a course page before the next page is needed. Does not affect what may be published.",
+      },
+    },
+    {
+      key: "ryc.searchResults",
+      min: 5,
+      max: 100,
+      fallback: 25,
+      help: {
+        fr: "Combien de résultats de recherche arrivent par étape. Ce n'est pas un plafond : la liste indique combien de cours correspondent et s'allonge à la demande, donc aucun cours ne devient introuvable.",
+        nl: "Hoeveel zoekresultaten per stap binnenkomen. Geen plafond: de lijst zegt hoeveel cursussen overeenkomen en wordt op verzoek langer, dus geen enkele cursus wordt onvindbaar.",
+        en: "How many search results arrive per step. Not a ceiling: the list says how many courses matched and lengthens on request, so no course becomes unfindable.",
+      },
+    },
+    // THE CEILING IS ANTI-TYPO, NOT POLICY. A five year degree is fifty to
+    // sixty courses, and the alumnus reviewing all of them in one sitting is
+    // the contributor this product most wants, so a ceiling near that number
+    // is aimed at exactly the wrong person. A thousand is far past anything a
+    // human writes in a week and still stops a slipped keystroke turning the
+    // limit off by accident.
+    //
+    // The floor is 1 rather than 0. Zero would be a way to stop the product
+    // accepting contributions at all from a settings form, which is a
+    // different decision from rate limiting and should not wear its clothes.
+    {
+      key: "platform.quotaPerWindow",
+      min: 1,
+      max: 1000,
+      fallback: 5,
+      help: {
+        fr: "Combien de publications un même compte peut faire par période (FR-C4). Monter ce nombre au lancement est normal : un ancien étudiant qui veut donner son avis sur les soixante cours de son cursus le fait en une fois, et c'est exactement le contributeur recherché. Le baisser restreint tout le monde, y compris de bonne foi. Ce nombre borne des COMPTES, pas des personnes : c'est un ralentisseur, jamais une garantie.",
+        nl: "Hoeveel publicaties één account per periode mag doen (FR-C4). Dit bij de lancering verhogen is normaal: een oud-student die zestig cursussen wil beoordelen doet dat in één keer, en dat is precies de gewenste bijdrager. Verlagen beperkt iedereen, ook te goeder trouw. Dit getal begrenst ACCOUNTS, geen personen: een drempel, nooit een garantie.",
+        en: "How many contributions one account may publish per period (FR-C4). Raising it at launch is reasonable: an alumnus reviewing the sixty courses of their degree does it in one sitting, and that is exactly the contributor this wants. Lowering it restricts everybody, including in good faith. It bounds ACCOUNTS, not people: a speed bump, never a guarantee.",
+      },
+    },
+    // The window length. Changing it makes every stored counter belong to a
+    // window that no longer exists, so every member gets one fresh allowance
+    // at that moment. That is a real consequence and it is stated on screen
+    // rather than being a reason to forbid the control: it can only loosen, it
+    // happens once, and it is recorded in the audit log like every other
+    // change here.
+    {
+      key: "platform.quotaWindowDays",
+      min: 1,
+      max: 365,
+      fallback: 7,
+      help: {
+        fr: "Sur combien de jours le compteur ci-dessus est calculé. Attention : changer cette valeur remet tous les compteurs à zéro une fois, donc chacun repart avec son quota entier à cet instant. Cela ne peut qu'assouplir, jamais restreindre d'un coup, et le changement est inscrit au journal.",
+        nl: "Over hoeveel dagen de teller hierboven wordt berekend. Let op: deze waarde wijzigen zet alle tellers één keer op nul, dus iedereen begint op dat moment met een volledig quotum. Dat kan alleen versoepelen, nooit plots beperken, en de wijziging komt in het logboek.",
+        en: "Over how many days the count above is measured. Note: changing this resets every counter once, so everybody starts again with a full allowance at that moment. It can only loosen, never suddenly restrict, and the change is recorded in the log.",
+      },
+    },
   ] as const;
 
   router.get("/moderation/settings", (req, res) => {
@@ -274,6 +351,7 @@ export function moderationRoutes(prisma: PrismaClient): Router {
           min: s.min,
           max: s.max,
           fallback: s.fallback,
+          help: s.help,
           value: stored.get(s.key) ?? null,
         })),
       });

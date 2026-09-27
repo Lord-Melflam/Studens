@@ -17,10 +17,62 @@
  * and nothing else. See docs/design/anonymous-rate-limiting.md.
  */
 
-/** Days per window. Provisional: the real number is OPEN-26. */
+/**
+ * Days per window, by default. **Changeable**, through
+ * `platform.quotaWindowDays`.
+ *
+ * OPEN-26, resolved 2026-09-27 and revised the same day.
+ *
+ * THE FIRST VERSION OF THIS COMMENT ARGUED THE OPPOSITE, and it was wrong in
+ * a way worth keeping written down. The argument was that changing the length
+ * makes every stored counter belong to a window that no longer exists, so
+ * every quota resets at once, and that this was "a way to empty the only rate
+ * limit the product has, from a form". The mechanism is real. The conclusion
+ * was not: a reset can only ever LOOSEN, it happens once, it is recorded in
+ * the audit log, and it is done by somebody already trusted to set the limit
+ * itself. Refusing the control bought nothing and cost the ability to respond
+ * to how people actually use the product.
+ *
+ * So the reset is a documented consequence rather than a reason to forbid the
+ * change, and the settings screen says so in as many words before anybody
+ * presses anything.
+ *
+ * Windows stay aligned to the epoch whatever the length, so every member's
+ * window still starts on the same day and a boundary still reveals nothing
+ * about when anybody joined.
+ */
 export const WINDOW_DAYS = 7;
 
-/** Contributions permitted per window. Provisional: OPEN-26. */
+/**
+ * Contributions permitted per window, by default.
+ *
+ * OPEN-26, resolved 2026-09-27: **five per seven days to begin with**, and
+ * both numbers are an administrator's to change.
+ *
+ * REQUIREMENT: FR-C4 wants a per-person limit, and the design note requires it
+ * be a counter on the member and nothing on the contribution, so the number is
+ * the whole of the mechanism.
+ *
+ * WHY FIVE IS ONLY A STARTING POINT, and why the ceiling on the setting is
+ * high rather than tidy. The contributor this product most wants is the
+ * alumnus reviewing the courses of a whole degree, which is fifty to sixty of
+ * them, in one sitting, once. A limit that stops that is a limit aimed at
+ * exactly the wrong person. The first cohort also arrives at an almost empty
+ * catalogue (OPEN-42), so early on the risk is not too much writing, it is
+ * none.
+ *
+ * ALTERNATIVES REJECTED. One per day, because a student reviewing a semester
+ * does it at the end of it and a daily drip means abandoning most of it. A
+ * fixed constant with no setting, because five is a guess and nobody has
+ * measured anything yet.
+ *
+ * COST ACCEPTED. It bounds ACCOUNTS, not people (OPEN-35), so it is a speed
+ * bump and must never be described as more. Raising it raises how fast one
+ * account can flood one course.
+ *
+ * WHAT WOULD CHANGE THE ANSWER: the first weeks of real use, which is the
+ * whole reason both numbers are settings and not constants.
+ */
 export const QUOTA_PER_WINDOW = 5;
 
 const MS_PER_DAY = 86_400_000;

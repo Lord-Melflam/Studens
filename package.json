@@ -39,7 +39,8 @@
     "test:db": "STUDENS_REQUIRE_DB=1 vitest run",
     "mail": "npm run --silent build:worker && node apps/worker/dist/send-mail.js",
     "admin": "npm run --silent build:worker && node apps/worker/dist/grant-admin.js",
-    "docs:links": "node scripts/check-links.mjs"
+    "docs:links": "node scripts/check-links.mjs",
+    "prune": "npm run --silent build:worker && node apps/worker/dist/prune-sessions.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
