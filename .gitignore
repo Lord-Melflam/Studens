@@ -8,6 +8,16 @@
 CLAUDE.md
 CLAUDE.local.md
 
+# The private half of the handover: a copy of CLAUDE.md, the notes a previous
+# assistant accumulated, and a note naming every credential and where to
+# re-issue it. Kept in the repository so it travels with a clone made BY THE
+# OWNER, and ignored so it never travels with a clone made by anybody else.
+#
+# The public half is docs/HANDOFF.md, which is tracked and names no value and
+# no person. If something in here would be safe to publish, it belongs there
+# instead; this directory is for what would not be.
+handover-private/
+
 # Study notes and syntheses of course material. Untracked on purpose: they summarise
 # UCL course slides and a commercial textbook, so they stay out of a public repository.
 # Extracted source text also lands here and must never be committed.

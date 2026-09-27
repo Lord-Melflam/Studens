@@ -111,6 +111,17 @@ rather than to a person.
 
 Also untracked, for the same reason. What survived the sanitising is section 5.
 
+### Where they are, if you are the owner
+
+Both of the above, plus a note naming every credential and where to re-issue
+it, are kept in an ignored directory beside this one, named in `.gitignore`
+with a comment saying what it is for. It travels with a clone made by somebody
+who already has the working copy, and with nobody else's.
+
+**If you are reading this from a fresh clone and that directory is not there,
+you have the public half only.** That is the expected state for a contributor
+and the wrong one for whoever is taking the project over: ask them for it.
+
 ---
 
 ## 4. The shape of the code
