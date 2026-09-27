@@ -515,7 +515,7 @@ Small, and each cost real time.
 | Duplicate `@prisma/client` | `^7.10.0` was installed nested in three packages while the CLI and the generated client were 5.22. Types checked, gates passed, and it would have failed at runtime | Pin the client to the exact version of the generator, in every package that declares it, then `rm -rf node_modules package-lock.json && npm install`. A nested duplicate is invisible to `tsc` |
 | `sudo npm` in this project | `sudo` resets `PATH` to `secure_path`, so it ran `/usr/bin/node` v12 instead of the nvm v22, and TypeScript died on its own `??` with `SyntaxError: Unexpected token '?'`. It would then have failed again on the database, because peer authentication makes the socket user `root` | Nothing here needs root: port 3001 is above 1024 and the grants are on your own user. `sudo` is for `service postgresql start` and nothing else. The error names a file nobody wrote, which is why it reads as a broken dependency rather than a wrong shell |
 | A comment is not a violation | The frontend boundary test failed on a CSS comment that *explained* the rule it was checking | Strip comments before scanning source for forbidden words |
-| Two dev servers, and stale CSS | An edit to `ryc.css` did not reach the browser. The page still had rules deleted a PR earlier, so the screenshot showed unstyled buttons and the change looked broken. Two `vite` processes were running at once, started hours apart | If a change seems not to apply, check the number of dev servers before re-reading the code. `node_modules/.vite` cleared and one server started fixed it. Half an hour went into reasoning about CSS that the browser never saw |
+| Two dev servers, and stale CSS | An edit to `ryc.css` did not reach the browser. The page still had rules deleted a PR earlier, so the screenshot showed unstyled buttons and the change looked broken. Two `vite` processes were running at once, started hours apart | If a change seems not to apply, check the number of dev servers before re-reading the code. `node_modules/.vite` cleared and one server started fixed it. Half an hour went into reasoning about CSS that the browser never saw. **One server is enough to do this**, and the second time it looked far worse: a single `vite` ran for nearly four hours while branches were checked out and rebased under it, and it went on serving a cached transform of a workspace package from before a merged feature existed. A control that had shipped was simply absent from the page, so the first reading was that the work had been lost. **Compare what the server sends with the file on disk**, which settles it in one command and does not depend on remembering anything: `grep -c thing packages/x/src/Y.tsx` against `curl -s http://localhost:5173/@fs/$PWD/packages/x/src/Y.tsx | grep -c thing`. Four on disk, zero over the wire |
 | A screenshot is not a measurement | `--window-size=420` is clamped to the host's minimum window width, so the page lays out wider than the image and every element looks cut off at the right edge. I recorded a phone-overflow defect in `TIMELINE.md` from those images. The app zone had no overflow at all; the public zone had a real one, 910px inside 375px, in a different element entirely. Two rounds of fixes went to the wrong place | Measure the DOM, not the picture: a throwaway page under `apps/web/` with an iframe at the target width, reading `documentElement.scrollWidth` and `getBoundingClientRect().right` per element. It found it in one run, named the element, and gave a pass/fail over 72 page-width combinations |
 | A Windows browser cannot be driven from WSL | Headless Edge screenshots work from WSL, but its devtools port binds on the Windows side and the firewall blocks it, so no cookie can be set and no signed-in page can be captured. `pkill` also cannot see Windows processes; `taskkill.exe /F /IM` can | Screenshot what a signed-out visitor sees, and cover the signed-in screens with render tests instead. Do not spend an hour on the transport |
 
@@ -826,3 +826,49 @@ seven permanent warnings is how a lint gate gets ignored.
 mistake into a build failure earns its place even in a project that refuses
 dependencies by default. The test is whether the mistake is *mechanical*: this
 one is, which is why a linter can see it and a reviewer reliably cannot.
+
+---
+
+## Prose made below the interface is prose no translation gate can reach
+
+The Dutch course page read "Slaagkans: résultats partagés." The English one
+read "Passing: résultats partagés." The sentence around the value was
+translated; the value was not.
+
+`passBand` was typed as one of three French phrases and the RYC module returned
+the phrase itself, which the screen then interpolated into a translated
+sentence. In French the result is correct, and French is the language
+everything gets looked at in first, so it survived from the day the band was
+written.
+
+**FR-G4 could not see it.** That gate checks that every key resolves in all
+three languages, that no string is empty, and that the same page rendered in
+the three differs. Every one of those passed: the key `ryc.reviews.pass`
+existed everywhere and the pages did differ, because the rest of the sentence
+was translated properly. The French was not a missing translation. It was a
+value, and a value is not a key, so a whole visible sentence sat outside the
+only check written to catch exactly this.
+
+**The module cannot fix it by translating.** RYC sits below the interface: it
+is handed a course id and gives back an aggregate, and the interface exists in
+three languages that the module deliberately knows nothing about. Translating
+inside the module means passing a locale down into the kernel, which points a
+dependency the wrong way and gives tier 3 a reason to care about something that
+is not its business.
+
+**The rule.** A tier below the interface returns *tokens*, never text a person
+reads. `most-passed` is a fact about the data; "la plupart ont réussi" is a
+sentence in one language, and deciding which language is the screen's job.
+
+**What changed.** The three phrases became `most-passed`, `mixed` and
+`many-failed`, with three keys per language beside the sentence they go into.
+The kernel test now asserts that a serialised aggregate carries no accented
+character and none of the three languages' function words, so the next value
+that tries to leave as prose fails at the boundary rather than on a reader's
+screen.
+
+**How to find the rest of them.** Search the tiers for string literals holding
+accented characters. Everything that came back in `ref` was a scraper label
+reading a French source page, which is correct and must stay; `platform` had
+none; the band was the only one of its kind. That sweep is worth repeating
+whenever a tier grows a new return value that a screen prints directly.
