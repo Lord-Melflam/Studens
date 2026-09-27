@@ -257,10 +257,13 @@ Stated plainly, because a handover that lists only what works is a brochure.
   occupied (FR-E9). Marked `[OPEN]`: it is a non-lawyer's reading of DSA
   Article 17 and needs confirming by somebody qualified.
 - **Microsoft sign-in has never been exercised against the live provider.** Two
-  of its values were written from documentation and never observed. This
-  matters more than it sounds: one of the two target universities runs on
-  Microsoft 365, so it decides whether that population can use a university
-  account at all.
+  of its values were written from documentation and never observed, so treat
+  them as unverified rather than as working. This matters more than it sounds:
+  one of the two target universities runs on Microsoft 365, so it decides
+  whether that population can use a university account at all. **Parked
+  deliberately on 2026-09-27**, not forgotten: it needs a directory to register
+  an application in, which a personal Microsoft account does not have. It is
+  the highest-value thing on this list and nothing technical blocks it.
 - **No student has used any of this.** Every review in the database was written
   during testing.
 
