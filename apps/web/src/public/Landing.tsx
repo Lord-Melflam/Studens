@@ -36,7 +36,7 @@ export function Landing() {
           </h1>
           <p className="lede">{t("hero.lede")}</p>
           <div className="hero-actions">
-            <a className="cta big" {...linkProps("/connexion")}>
+            <a className="cta big" {...linkProps("/signin")}>
               {t("nav.register")}
             </a>
             <a className="ghost big" {...linkProps("/modules")}>
@@ -144,7 +144,7 @@ export function Landing() {
           </li>
         </ul>
         <p className="band-action">
-          <a className="ghost" {...linkProps("/confidentialite")}>
+          <a className="ghost" {...linkProps("/privacy")}>
             {t("promises.limits")}
           </a>
         </p>
@@ -175,7 +175,7 @@ export function Landing() {
         {/* The page's one call to action in the body, and the only filled
             one left below the hero. */}
         <p className="band-action">
-          <a className="cta big" {...linkProps("/connexion")}>
+          <a className="cta big" {...linkProps("/signin")}>
             {t("nav.register")}
           </a>
         </p>

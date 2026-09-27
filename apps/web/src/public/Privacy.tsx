@@ -87,7 +87,7 @@ export function Privacy() {
           {t("privacy.spec.cta")}
         </a>
         <p className="band-fine">
-          <a {...linkProps("/a-propos")}>{t("privacy.about")}</a>
+          <a {...linkProps("/about")}>{t("privacy.about")}</a>
         </p>
       </section>
     </>

@@ -23,13 +23,13 @@ describe("a module owns the path below its own segment", () => {
   it("the shell resolves the module and leaves the rest alone", () => {
     // The shell must not parse "/c/lepl1503": that is RYC's business (FR-B16).
     expect(activeModuleFor("/fr/app/ryc/c/lepl1503")?.id).toBe("ryc");
-    expect(activeModuleFor("/fr/app/ryc/c/lepl1503/avis")?.id).toBe("ryc");
+    expect(activeModuleFor("/fr/app/ryc/c/lepl1503/review")?.id).toBe("ryc");
   });
 
   it("every RYC screen has an address", () => {
     expect(parseView("/")).toEqual({ kind: "browse" });
     expect(parseView("")).toEqual({ kind: "browse" });
-    expect(parseView("/recherche")).toEqual({ kind: "search" });
+    expect(parseView("/search")).toEqual({ kind: "search" });
     // A programme is an address now. It was component state, so it could not be
     // linked to, a refresh lost it, and Back left the app instead of stepping
     // out of the programme.
@@ -46,7 +46,7 @@ describe("a module owns the path below its own segment", () => {
       code: "lepl1503",
       writing: false,
     });
-    expect(parseView("/c/uclouvain/lepl1503/avis")).toEqual({
+    expect(parseView("/c/uclouvain/lepl1503/review")).toEqual({
       kind: "course",
       institution: "uclouvain",
       code: "lepl1503",
@@ -63,7 +63,7 @@ describe("a module owns the path below its own segment", () => {
       code: "lepl1503",
       writing: false,
     });
-    expect(parseView("/c/lepl1503/avis")).toEqual({
+    expect(parseView("/c/lepl1503/review")).toEqual({
       kind: "legacyCourse",
       code: "lepl1503",
       writing: true,
@@ -105,7 +105,7 @@ describe("a module owns the path below its own segment", () => {
    * review survives a refresh of the page it sits on.
    */
   it("writing a review is a place, not a flag", () => {
-    const at = parseView("/c/uclouvain/lepl1503/avis");
+    const at = parseView("/c/uclouvain/lepl1503/review");
     expect(at.kind === "course" && at.writing).toBe(true);
     // And the course underneath it is the same course, so Back has somewhere
     // to land that is not the module root.

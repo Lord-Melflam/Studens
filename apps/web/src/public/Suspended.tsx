@@ -59,7 +59,7 @@ export function Suspended() {
         <h1>{t("suspended.none.title")}</h1>
         <p className="lede">{t("suspended.none.body")}</p>
         <p>
-          <a className="cta" {...linkProps("/connexion")}>
+          <a className="cta" {...linkProps("/signin")}>
             {t("suspended.none.signin")}
           </a>
         </p>

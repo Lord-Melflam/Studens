@@ -160,7 +160,7 @@ grants your own user everything it needs.
 | `http://localhost:5173/` | redirects to your browser's language |
 | `http://localhost:5173/fr` `‧/nl` `‧/en` | the public site |
 | `http://localhost:5173/fr/modules` | what each module does |
-| `http://localhost:5173/fr/connexion` | sign in |
+| `http://localhost:5173/fr/connexion` | sign in. The slug is translated, so it is `/nl/aanmelden` and `/en/sign-in` (OPEN-49) |
 | `http://localhost:5173/fr/app` | the app, behind a session |
 | `http://localhost:3001/api/health` | the API, on its own |
 
@@ -562,7 +562,7 @@ exists. The worker **prints each one in full**, which is how the confirmation
 link for an address change is clicked with no mail server at all:
 
 ```bash
-# change the address in /app/moi, then
+# change the address in the account screen, /fr/app/mon-compte, then
 npm run mail               # the link is in the printed message; open it
 ```
 
@@ -784,7 +784,7 @@ bash scripts/fetch-logos.sh
 | `SET ROLE` permission denied | Your user is not a member of the module roles | `npm run db:grant-local` |
 | The review form says a session is required | The API is running without the development identity | Use `npm run dev:api`, not `dev:api:anon` |
 | `sign-in providers: none configured` | `.env` missing a name, or only half a pair | Check both `_CLIENT_ID` and `_CLIENT_SECRET` |
-| A refresh on `/fr/a-propos` 404s in production | The server does not fall back to `index.html` | Only affects a real deployment; the dev server handles it |
+| A refresh on `/fr/a-propos` 404s in production (and on `/nl/over-ons`, `/en/about`) | The server does not fall back to `index.html` | Only affects a real deployment; the dev server handles it |
 | Your terminal died running `pkill` | The pattern matched the shell running it | Kill by port instead |
 | `SyntaxError: Unexpected token '?'` from inside `node_modules/typescript` | You ran it with `sudo`, which used `/usr/bin/node` v12 instead of your nvm v22 | Drop the `sudo`. Only `service postgresql start` needs it |
 | `EACCES ... '/root/.npm/_logs'` | Same cause: npm running as root | Drop the `sudo` |

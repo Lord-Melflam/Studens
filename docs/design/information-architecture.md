@@ -46,26 +46,39 @@ than discovering later.
 
 ## 2. The route map
 
+**The slugs below are the canonical names, not what a reader sees.** They are
+translated per language (OPEN-49, resolved 2026-09-27): `/privacy` is
+`/fr/confidentialite`, `/nl/privacy` and `/en/privacy`, and `/welcome/3` is
+`/fr/bienvenue/3`, `/nl/welkom/3` and `/en/welcome/3`. The map is written in
+canonical form because that is what the code uses; `apps/web/src/routes.ts`
+holds the words and says why the translation happens at the URL and nowhere
+else.
+
+`/app` and everything under it is NOT translated: it is a mount point for
+identifiers, not a page name. A module's own slugs are translated by the
+module, in `packages/ryc-ui/src/slugs.ts`, because the shell may not hold a
+list of a module's screens (FR-B16).
+
 ```
 PUBLIC
   /                     what Studens is, the problem from 1.1, how it works
   /modules              RYC today, what is coming, and what is deliberately absent
-  /a-propos             an independent project, affiliated with nobody
-  /confidentialite      FR-C12 in plain French: what anonymity does NOT protect
+  /about                an independent project, affiliated with nobody
+  /privacy              FR-C12 in plain words: what anonymity does NOT protect
   header, right         Se connecter  ·  Créer un compte
 
 AUTH
-  /connexion            Microsoft, Google. Both buttons do the same thing:
+  /signin               Microsoft, Google. Both buttons do the same thing:
                         FR-A6 means there is no separate "register" flow, an
                         unknown subject simply becomes a Member
   /api/auth/...         the OIDC endpoints, built
 
 ONBOARDING              first sign-in only, resumable, one step per screen
-  /bienvenue/1          welcome, and what we will and will not ask
-  /bienvenue/2          username
-  /bienvenue/3          language and theme
-  /bienvenue/4          your studies          (optional, see 4)
-  /bienvenue/5          your universities, and the choice is NOT exclusive:
+  /welcome/1            welcome, and what we will and will not ask
+  /welcome/2            username
+  /welcome/3            language and theme
+  /welcome/4            your studies          (optional, see 4)
+  /welcome/5            your universities, and the choice is NOT exclusive:
                         a student registered at one and taking a minor at
                         another is two of the three institutions this launches
                         with, twenty kilometres apart
@@ -74,7 +87,8 @@ ONBOARDING              first sign-in only, resumable, one step per screen
 APP
   /app                  module home
   /app/ryc/...          the module owns everything below its own segment
-  /app/moi              profile, preferences, sessions (FR-A5), my reviews (FR-D12)
+  /app/settings         profile, preferences, sessions (FR-A5), my reviews (FR-D12)
+  /app/moderation       the console, for a Moderator or an Administrator
 
 QUERY                   what is on screen, per FR-B21. Owned by the module,
                         handed over by the shell without being read
@@ -89,10 +103,15 @@ QUERY                   what is on screen, per FR-B21. Owned by the module,
                         methodes, biblio, themes
 ```
 
-**The keys are short French words**, like the paths above them, because a URL
-is read by people. They are also part of every link anybody has ever shared,
-so one may be added and none may be renamed: a renamed key does not fail, it
-silently comes back as the default, which is the worst way for a link to rot.
+**The keys are short French words**, and unlike the paths above them they are
+NOT translated (OPEN-49), because they are a different kind of thing: a path
+names a page and a key names a setting inside one. A link carrying `?f=q1`
+sent by a French reader to a Dutch one has to keep meaning the same thing, and
+a translated key would not.
+
+They are also part of every link anybody has ever shared, so one may be added
+and none may be renamed: a renamed key does not fail, it silently comes back as
+the default, which is the worst way for a link to rot.
 
 **What never appears here is anything unpublished**, and the text of a review
 being written above all. Browser history, bookmark sync and whoever is looking

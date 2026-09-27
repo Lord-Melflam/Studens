@@ -20,6 +20,7 @@
  */
 import { useEffect, useState } from "react";
 import { DEFAULT_LOCALE, localePath, splitLocale, type Locale } from "@studens/i18n";
+import { fromSlugPath, toSlugPath } from "./routes.js";
 
 /** Everything below this prefix needs a session. Everything else is public. */
 export const APP_PREFIX = "/app";
@@ -95,7 +96,11 @@ export function moduleRoute(prefix: string, inner: string): string {
  * prefix exists. Adding a fourth language changes no route.
  */
 export function currentRoute(path: string = currentPath()): string {
-  return splitLocale(path).rest;
+  // CANONICAL, not what the address bar shows. The slugs are translated
+  // (OPEN-49, `routes.ts`), so `/nl/privacy` and `/fr/confidentialite` are the
+  // same route and every comparison downstream is written once rather than
+  // once per language.
+  return fromSlugPath(splitLocale(path).rest);
 }
 
 export function currentLocale(path: string = currentPath()): Locale {
@@ -138,7 +143,7 @@ export function moduleIdFrom(path: string = currentPath()): string | null {
  */
 export function navigationTarget(route: string, locale: Locale): string {
   const { path, search } = splitQuery(route);
-  return localePath(path, locale) + search;
+  return localePath(toSlugPath(path, locale), locale) + search;
 }
 
 /**
@@ -205,7 +210,8 @@ export function linkProps(
   onClick: (e: React.MouseEvent) => void;
 } {
   const { path, search } = splitQuery(to);
-  const target = localePath(path, locale ?? currentLocale()) + search;
+  const chosen = locale ?? currentLocale();
+  const target = localePath(toSlugPath(path, chosen), chosen) + search;
   return {
     href: target,
     onClick: (e: React.MouseEvent) => {

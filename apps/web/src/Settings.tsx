@@ -1,5 +1,5 @@
 /**
- * The account panel, at /app/moi.
+ * The account panel, at `/app/settings` (shown translated, OPEN-49).
  *
  * Platform level, not a module: it is about the member, not about anything a
  * module owns, so it lives in the shell's zone and mentions no module's domain
@@ -255,7 +255,7 @@ export function Settings() {
     return (
       <section className="panel">
         <p className="lede">{t("settings.signedout")}</p>
-        <a className="cta" {...linkProps("/connexion")}>
+        <a className="cta" {...linkProps("/signin")}>
           {t("nav.signin")}
         </a>
       </section>
