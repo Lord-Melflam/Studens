@@ -21,7 +21,12 @@ import {
   searchUrl,
 } from "./urls.js";
 import { extractLinks } from "./parse/links.js";
-import { parseEnglish, parseOffering, type ParsedOffering } from "./parse/offering.js";
+import {
+  hasEnglishProse,
+  parseEnglish,
+  parseOffering,
+  type ParsedOffering,
+} from "./parse/offering.js";
 import { parseSearchRows } from "./parse/search.js";
 import { BudgetExceeded, TooManyUnavailable } from "./errors.js";
 import { programmeShape } from "./parse/programme.js";
@@ -303,7 +308,11 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
       try {
         const alt = await fetcher.get(courseUrlEn(year, code));
         parsed.english = parseEnglish(alt.html, code, year, alt.finalUrl);
-        if (parsed.english) englishFound++;
+        // Prose, not the object. Every UCLouvain course has an English title
+        // whether or not anybody wrote the English sheet, so a title-only
+        // record is a page that had nothing, which is what the reader is told
+        // below and what the loader will decide too.
+        if (hasEnglishProse(parsed.english)) englishFound++;
       } catch (err) {
         if (err instanceof BudgetExceeded) throw err;
         englishMissing++;
@@ -319,7 +328,18 @@ export async function crawl(opts: CrawlOptions = {}): Promise<Snapshot> {
   }
   say(`${offerings.length} offerings parsed`);
   if (wantEnglish) {
-    say(`${englishFound} with an English edition, ${englishMissing} without`);
+    // Three outcomes, not two. A page that answered and carried nothing is
+    // the ordinary case here, and counting only the unreachable ones made the
+    // difference between the two numbers look like courses that vanished.
+    // `silent` is a subtraction, so it is only right while `englishFound`
+    // means what the loader means by it: prose, not a title. UCLouvain hands
+    // out an English title for every course, so counting records instead of
+    // prose put all 6,654 in the first bucket and reported zero silent ones.
+    const silent = offerings.length - englishFound - englishMissing;
+    say(
+      `${englishFound} with an English edition, ${silent} whose English page had ` +
+        `nothing, ${englishMissing} unreachable`,
+    );
   }
 
   // A handful of broken pages is the catalogue; a wave of them is us. Being

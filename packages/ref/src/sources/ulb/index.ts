@@ -22,7 +22,10 @@
  */
 import { PoliteFetcher } from "../../ingestion/http.js";
 import type { Snapshot, SnapshotProgramme } from "../../ingestion/snapshot.js";
-import type { ParsedOffering } from "../../ingestion/parse/offering.js";
+import {
+  hasEnglishProse,
+  type ParsedOffering,
+} from "../../ingestion/parse/offering.js";
 import type { CatalogueSource, SourceCrawlOptions } from "../index.js";
 import { parseFaculties, type UlbFaculty } from "./faculties.js";
 import { parseProgramme, programmeCodeFrom } from "./programme.js";
@@ -321,7 +324,11 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
         try {
           const alt = (await fetcher.get(courseUrlEn(o.year, o.code))).html;
           const en = parseCourseProse(alt);
-          const blocks = {
+          // `title` stays null on purpose: ULB's English page repeats the
+          // French programme title, and storing that would put a French
+          // string in a column whose name promises an English one.
+          const record = {
+            title: null,
             assessment: en.assessment,
             themes: null,
             content: en.content,
@@ -330,8 +337,8 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
             teachingMethods: en.teachingMethods,
             bibliography: en.bibliography,
           };
-          if (Object.values(blocks).some((v) => v !== null)) {
-            o.english = { title: null, ...blocks };
+          if (hasEnglishProse(record)) {
+            o.english = record;
             englishFound += 1;
           }
         } catch {
@@ -345,7 +352,18 @@ async function crawlUlb(opts: SourceCrawlOptions = {}): Promise<Snapshot> {
         `${failed} pages unreachable`,
     );
     if (wantEnglish) {
-      say(`ulb: ${englishFound} with an English edition, ${englishMissing} without`);
+      /*
+        THREE OUTCOMES, NOT TWO. It said "4037 with an English edition, 4
+        without" on a run of 5,439 courses, which reads as though the other
+        1,398 did not exist. They did: their English page answered and carried
+        no prose worth storing, which is the ordinary case and not a failure.
+        Only the 4 were actually unreachable.
+      */
+      const silent = offerings.length - englishFound - englishMissing;
+      say(
+        `ulb: ${englishFound} with an English edition, ${silent} whose English page ` +
+          `had nothing, ${englishMissing} unreachable`,
+      );
     }
   }
 
