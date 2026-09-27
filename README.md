@@ -4,8 +4,11 @@ A modular web platform for students in higher education. People log in securely,
 **modules**: self-contained tools covering the things that make student life better.
 
 **Status: working software, one module, nothing deployed.** The specification came first
-and still leads: 156 requirements, each with the reasoning that produced it, and 8
-questions still open rather than guessed.
+and still leads: every requirement carries the reasoning that produced it, and the
+questions that are still open are written down as open rather than guessed at. `npm run
+state` prints how many of each, from the repository, because a count typed into a sentence
+is wrong the merge after it is typed. This one said 156 requirements for long enough that
+the real figure passed it.
 
 ## What runs today
 

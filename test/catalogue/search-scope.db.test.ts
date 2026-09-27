@@ -43,9 +43,10 @@ const dbit = reachable ? it : it.skip;
 
 /**
  * A word nothing real matches, so the rows counted here are only this file's.
- * `zsco` keeps it inside the ztst-style namespace the other suites use.
+ * `ztst.sco` keeps it inside the one reserved namespace, which is what lets
+ * `npm run state` exclude every row a test made.
  */
-const WORD = "zscopeword";
+const WORD = "ztst.scopeword";
 const YEAR = 2026;
 /** Comfortably more than the default window of 25, which is the point. */
 const PER_INSTITUTION = 30;
@@ -71,7 +72,7 @@ async function seed(code: string, institution: string) {
 async function clean() {
   if (!reachable) return;
   const mine = await prisma.course.findMany({
-    where: { OR: [{ code: { startsWith: "zscoa" } }, { code: { startsWith: "zscob" } }] },
+    where: { OR: [{ code: { startsWith: "ztst.sco.a" } }, { code: { startsWith: "ztst.sco.b" } }] },
     select: { id: true },
   });
   const ids = mine.map((c) => c.id);
@@ -84,8 +85,8 @@ beforeAll(async () => {
   if (!reachable) return;
   await clean();
   // Two catalogues, each with more matches than one page of results holds.
-  await seed("zscoa", "uclouvain");
-  await seed("zscob", "ulb");
+  await seed("ztst.sco.a", "uclouvain");
+  await seed("ztst.sco.b", "ulb");
 });
 
 afterAll(async () => {
@@ -145,10 +146,10 @@ describe("a scoped search answers from that catalogue only", () => {
 
   dbit("still finds a course by its code inside the scope", async () => {
     const catalogue = new DatabaseCatalogue(prisma, YEAR);
-    const hit = await catalogue.search("zscoa000", { institutions: ["uclouvain"] });
-    expect(hit.map((r) => r.code)).toContain("zscoa000");
+    const hit = await catalogue.search("ztst.sco.a000", { institutions: ["uclouvain"] });
+    expect(hit.map((r) => r.code)).toContain("ztst.sco.a000");
 
     // And not from outside it: the same code prefix scoped elsewhere is absent.
-    expect(await catalogue.search("zscoa000", { institutions: ["ulb"] })).toEqual([]);
+    expect(await catalogue.search("ztst.sco.a000", { institutions: ["ulb"] })).toEqual([]);
   });
 });
