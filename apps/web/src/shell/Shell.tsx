@@ -199,7 +199,21 @@ function Store() {
   return (
     <>
       <header className="page-intro">
+        {/* The same back control the app's other inner screen uses, chevron
+            and all. Without the mark it drew as a bare bordered word at the
+            top corner, which reads as a stray tag rather than as the way
+            out. */}
         <button type="button" className="crumb-up" onClick={() => navigate(APP_PREFIX)}>
+          <svg className="crumb-chevron" viewBox="0 0 20 20" aria-hidden="true">
+            <path
+              d="M12 5 7 10l5 5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
           {t("app.back")}
         </button>
         <h2>{t("store.title")}</h2>
@@ -227,7 +241,7 @@ function Store() {
         ))}
 
         {planned.map((m) => (
-          <li key={m.id} className="store-item">
+          <li key={m.id} className="store-item upcoming">
             <div className="store-who">
               <span className="name">{m.name}</span>
               <span className="summary">{m.summary}</span>

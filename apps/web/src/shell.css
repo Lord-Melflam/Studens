@@ -30,6 +30,26 @@
   /* Text on a filled --accent. Also a literal #fff until now, and it stops
      being white the moment --accent becomes light enough to need dark text. */
   --on-accent: #ffffff;
+
+  /* DEPTH IS A TOKEN, because a fixed black shadow is invisible on a dark
+     page. `rgb(0 0 0 / 0.06)` over #fbfbfc reads as an object sitting on
+     paper; the same value over #13161a is nothing at all, so a card that
+     looked raised in the light scheme looked flat in the dark one and the two
+     schemes disagreed about whether it could be pressed.
+
+     TWO LAYERS, and they do different jobs: a tight contact shadow puts the
+     edge on the surface, a wider ambient one gives it height. One soft shadow
+     alone reads as a blur rather than as an object. */
+  --lift-1:
+    0 1px 2px rgb(16 22 32 / 0.06),
+    0 4px 10px rgb(16 22 32 / 0.05);
+  --lift-2:
+    0 2px 4px rgb(16 22 32 / 0.08),
+    0 14px 28px rgb(16 22 32 / 0.12);
+  /* A card has to separate from the page by FILL as well as by shadow, or the
+     shadow is doing all the work and there is nothing to press. In the light
+     scheme the page is slightly grey and the card is white. */
+  --card: #ffffff;
 }
 
 /* --- GROUP 2: meaning. A theme MUST NOT override any of these. ----------
@@ -99,6 +119,19 @@
     --warn: #e3b64a;
     --warn-soft: #362b12;
     --danger: #f2796c;
+
+    /* Darker and larger, because a shadow on a dark page has less contrast to
+       work with, and a card that is lighter than its page needs the edge
+       under it to be read as an edge. */
+    --lift-1:
+      0 1px 2px rgb(0 0 0 / 0.5),
+      0 4px 10px rgb(0 0 0 / 0.35);
+    --lift-2:
+      0 2px 6px rgb(0 0 0 / 0.55),
+      0 16px 34px rgb(0 0 0 / 0.45);
+    /* Lighter than --surface, which is the inversion of the light scheme: a
+       raised thing comes towards the light. */
+    --card: #222730;
   }
 }
 
@@ -120,6 +153,13 @@
   --named-soft: #10362c;
   --anon: #cdb0f5;
   --anon-soft: #2c2140;
+  --lift-1:
+    0 1px 2px rgb(0 0 0 / 0.5),
+    0 4px 10px rgb(0 0 0 / 0.35);
+  --lift-2:
+    0 2px 6px rgb(0 0 0 / 0.55),
+    0 16px 34px rgb(0 0 0 / 0.45);
+  --card: #222730;
   --warn: #e3b64a;
   --warn-soft: #362b12;
   --danger: #f2796c;
@@ -214,37 +254,105 @@ header { margin-bottom: 1.75rem; }
   the top and wondered why almost none of it applied: there were already two
   further down, and the last one wins. One document, one cascade (LESSONS 12).
 */
-/* The catalogue itself: a list, because it is read rather than entered. */
-.store-list { list-style: none; margin: 1.25rem 0 0; padding: 0; }
-.store-item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 0;
-  border-top: 1px solid var(--line);
+/*
+  The catalogue (FR-F16).
+
+  CARDS, NOT A LIST OF ROWS. The first version was rows separated by hairlines
+  with the controls pushed to the right edge, which is the shape of a settings
+  table: it read as administration rather than as a place to look at what
+  Studens can do, and at a glance it was three horizontal lines and some grey
+  text. It also disagreed with the home screen, which shows the same modules as
+  cards, so the two pages described the same things in two visual languages.
+
+  The grid matches the home's on purpose, so moving between them is the same
+  furniture rearranged rather than a different room.
+*/
+.store-list {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 22rem));
+  gap: 0.9rem;
 }
-.store-who { flex: 1 1 18rem; min-width: 0; }
-.store-who .name { display: block; font-weight: 600; }
-.store-who .summary { display: block; margin-top: 0.2rem; font-size: 0.9rem; color: var(--muted); }
-.store-note {
-  margin: 0.6rem 0 0;
-  font-size: 0.9rem;
+
+.store-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.3rem 1.25rem 1.1rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--lift-1);
+  overflow: hidden;
+}
+
+/* The same accent bar the home's cards carry, so a module looks like a module
+   on both screens. Muted on one that is not here yet: the bar is the cue that
+   it is part of the product, and something announced is not. */
+.store-item::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--accent);
+}
+.store-item.upcoming::before { background: var(--line); }
+.store-item.upcoming { box-shadow: none; background: none; }
+
+.store-who { min-width: 0; }
+.store-who .name { display: block; font-size: 1.05rem; font-weight: 600; }
+.store-who .summary {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.92rem;
   line-height: 1.5;
   color: var(--muted);
 }
-.store-state { display: flex; align-items: center; gap: 0.75rem; margin-left: auto; }
+.store-note {
+  margin: 0.7rem 0 0;
+  padding: 0.6rem 0.7rem;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* Pushed to the bottom of the card, so two cards of different heights still
+   line their controls up. */
+.store-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 0.9rem;
+}
+
 .store-tag {
-  padding: 0.25rem 0.6rem;
+  padding: 0.25rem 0.65rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--muted);
   white-space: nowrap;
 }
 /* Two classes, so a later rule of equal weight cannot take it back. */
-.store-tag.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-.store-foot { margin-top: 1.5rem; }
+.store-tag.on {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.store-foot {
+  margin-top: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  max-width: 48rem;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .modules button,
@@ -985,36 +1093,58 @@ a.ghost.here {
   margin-top: 1.5rem;
 }
 .modules li + li { margin-top: 0; }
+/*
+  A CARD HAS TO LOOK PRESSABLE BEFORE IT IS POINTED AT, which is what this
+  rewrite is about. The accent edge on the left was the only weight the card
+  carried: everything else was a one pixel grey line on a background almost the
+  same colour as the page, so the card read as a region of the page rather than
+  as a thing sitting on it, and the only clue it could be pressed was a word in
+  the corner.
+
+  THREE THINGS TOGETHER, and no one of them is enough alone. A FILL that
+  differs from the page, so the shape exists without the shadow. A SHADOW on
+  both schemes, through the tokens above, so it exists in dark mode too. And an
+  ACCENT BAR across the top rather than down one side, which reads as a header
+  on a card instead of a marker beside a row.
+*/
 .modules button {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 1.1rem 1.15rem 1rem;
-  /* The accent edge is the module's own colour cue, and the only decoration
-     here: a card that needs an illustration to look finished is a card with
-     nothing to say. */
-  border-left: 3px solid var(--accent);
-  /* SITTING ON THE PAGE RATHER THAN DRAWN ON IT. Two layers rather than one:
-     a single soft shadow reads as a blur, while a tight contact shadow under
-     a wider ambient one reads as an object with a surface beneath it. The
-     card had no shadow at rest and gained one on hover, so it only looked
-     like an object once you were already pointing at it. */
-  box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.05),
-    0 5px 14px rgb(0 0 0 / 0.06);
-  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+  gap: 0.4rem;
+  padding: 1.3rem 1.25rem 1.1rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--lift-1);
+  overflow: hidden;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease,
+    transform 0.14s ease;
 }
+
+/* The module's colour cue, across the top. A pseudo-element rather than a
+   border so it cannot fight the card's own border for the corner radius. */
+.modules button::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--accent);
+}
+
 .modules button:hover {
   border-color: var(--accent);
-  box-shadow:
-    0 2px 4px rgb(0 0 0 / 0.07),
-    0 14px 30px rgb(0 0 0 / 0.11);
-  transform: translateY(-2px);
+  box-shadow: var(--lift-2);
+  transform: translateY(-3px);
 }
 .modules button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* The tile, after the cards so it wins, and losing the accent edge with it. */
+/* The tile, after the cards so it wins: no fill, no shadow, no accent bar.
+   It is a gap in the surface rather than a thing on it, and the contrast with
+   the cards beside it is what says so. */
 .modules .module-add {
   border: 1px dashed var(--line);
   background: none;
@@ -1022,12 +1152,13 @@ a.ghost.here {
   color: var(--muted);
   justify-content: flex-start;
 }
+.modules .module-add::before { display: none; }
 .modules .module-add:hover {
   border-color: var(--accent);
   color: var(--ink);
-  background: none;
+  background: var(--accent-soft);
   box-shadow: none;
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 .module-plus {
   display: inline-flex;
@@ -1041,12 +1172,22 @@ a.ghost.here {
 }
 .modules .name { font-size: 1.05rem; }
 .modules .summary { margin-top: 0; line-height: 1.5; }
+/* The call to action reads as one: a pill the card fills on hover, rather
+   than a coloured word that could be a label. */
 .modules .go {
+  align-self: flex-start;
   margin-top: auto;
-  padding-top: 0.6rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--accent);
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.modules button:hover .go {
+  background: var(--accent);
+  color: var(--on-accent);
 }
 .modules .go::after { content: " \2192"; }
 
@@ -1199,7 +1340,24 @@ a.ghost.here {
 
    Wide screens keep the quiet version, because there a crumb sits beside a
    brand and a row of actions and does not need to shout. */
-.crumb-up { display: inline-flex; align-items: center; gap: 0.2rem; }
+.crumb-up {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  /* Stated here rather than inherited, because this is used inside
+     `.page-intro` as well as in the header, and there a bare `button` picks up
+     a border and a background from further down the cascade: the control drew
+     as a small bordered word in the top corner, which reads as a stray tag
+     rather than as the way out. */
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+.crumb-up:hover { color: var(--ink); }
+.crumb-up:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 .crumb-chevron { width: 0.95rem; height: 0.95rem; flex: none; }
 
 @media (max-width: 700px) {
