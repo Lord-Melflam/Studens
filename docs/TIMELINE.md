@@ -14,8 +14,8 @@ gone wrong and what each failure changed.
 
 | | |
 |---|---|
-| Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted, read and paged on both paths, moderation end to end, and an administrator who can change settings, suspend an account, and see who is suspended and why. A suspended person is told, which they were not until phase 46. The web process serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
-| Data | **Two catalogues in PostgreSQL**, UCLouvain and ULB, with eleven institutions known and two open for choosing. **No figure is written into the interface**: `/api/catalogue` reports them and the pages read it |
+| Stage | **Working software, two catalogues, nowhere to visit.** Catalogue end to end for UCLouvain and ULB, sign-in with Google, a first run, an account somebody can leave, reviews submitted, read and paged on both paths, moderation end to end, and an administrator who can change settings, suspend an account, see who is suspended and why, list the members, reveal one address at a time with each reveal recorded, and erase an account behind a confirmation. A suspended person is told, which they were not until phase 46. The web process serves the built application as well as the API, so there is one artefact to deploy. Nothing is deployed |
+| Data | **Two catalogues in PostgreSQL**, UCLouvain and ULB, with eleven institutions known and two open for choosing. Since phase 53 a course is stored in **both editions the universities publish**, and the language is chosen per field rather than per course, so a field that exists only in French is still shown and marked. **No figure is written into the interface**: `/api/catalogue` reports them and the pages read it |
 | Reviews | **All written by us while testing**, seeded onto two courses so that paging and the aggregate can be shown. No student has used this yet, and the product does not pretend otherwise |
 | Mail | **It really leaves the machine**, since 2026-09-19. Plain SMTP over a socket, STARTTLS on 587, no library and no vendor; the relay is whatever mailbox the installation was given. The queue is drained by `npm run mail`, or continuously by `npm run mail -- --watch` every thirty seconds. Nothing is sent inside a request: the outbox row is the unit of retry and it survives a restart. A row that fails five times is left for a person, and nothing alerts anybody to that |
 | Counted | `npm run state` prints the commits, the requirements, the open questions, the tests, the lines and the catalogue and review figures, from the repository and the database. **Deliberately not written here**, see phase 47: six of this table's cells used to be numbers that move on nearly every merge, and they were wrong again two merges after being corrected by hand |
@@ -2068,6 +2068,218 @@ an intruder signed in.
 
 ---
 
+### Phase 49: an administrator who could act on members but not see them
+
+The console could appoint a role, suspend an account and say why, and keep a
+register of who is suspended. What it could not do was show who is in the
+database at all. The roles screen lists only people holding a power, on the
+reasoning that a page about accountability should not become a directory, and
+that reasoning is right about that page; it is not an argument against a
+directory existing somewhere else. An operator who cannot see who registered
+cannot answer a support question, tell a real sign-up from a leftover test
+account, or notice a hundred registrations in an hour.
+
+**The directory then showed what it was built to show, and the first thing it
+showed was rubbish.** Accounts left behind by testing, with no username, drawn
+as "sans pseudonyme" because that is what they are. Seeing them is what made
+the next half necessary: a list that surfaces rows nobody can act on is only
+half a tool.
+
+**FR-E18, the directory.** Search on the username, the domain or the address,
+filter by role, one screenful at a time with the count beside it. Searching
+MATCHES an address without returning one, so "who is this address" can be
+answered on a screen that never prints a list of addresses. It is the same shape as the
+course search on purpose: a reader who has learned one has learned the other,
+and the bound is NFR-O4 rather than a preference, because a member list only
+grows.
+
+**The page size is a setting, not a constant.** `platform.directoryPageSize`,
+between 5 and 100, changed from the console like the two that were already
+there. A number that decides how much of a screen is usable belongs to whoever
+is looking at the screen.
+
+**The list carries the domain and never the address.** Printing every address
+on a page load turns opening a list into a bulk disclosure of personal data,
+and it would be the operator doing it to their own members. So the row shows
+the email domain, which is the part that answers whether somebody is a student,
+and the address itself is one deliberate press that writes `member:address-read`
+to the audit log in the same transaction as the read. If the audit fails the
+read fails. The privacy statement was extended to match, because it had told
+members their address was used to contact them and nothing else, and browsing
+is something else.
+
+**FR-E19, erasure by an administrator.** Suspension was the nearest thing that
+existed and it is not equivalent: a suspended account is still a member, still
+holds a reserved pseudonym, and still appears wherever members appear. Deleting
+a test row is not a sanction, it is housekeeping, and dressing it as a sanction
+leaves a register of suspensions full of rows that were never people.
+
+Two refusals, and they are refusals rather than warnings: an administrator
+cannot erase themselves, which the account screen already does properly and
+which here would end the session doing it, and cannot erase the last
+administrator, which would leave a platform nobody can administer.
+
+**The confirmation is the member's username, typed.** Not a fixed word and not
+a second button: a fixed confirmation becomes muscle memory within a week, and
+a name can only be typed for the person actually in front of you. It reuses the
+member's own deletion rather than being a second path, so contributions detach
+and the text survives without the name (FR-A15), and anonymous contributions
+are untouched because nothing can reach them.
+
+**The audit entry is written before the row goes.** `member:erased:<username>`
+is recorded first, so what survives is the fact that somebody erased that
+member, at that moment. An audit written afterwards can reference nothing, and
+one written inside the same transaction as the delete is the only version where
+the record cannot outlive its own subject by accident.
+
+**The quota bounds were a guess and are now a choice.** `platform.quotaPerWindow`
+was capped at 50 and the window fixed at seven days, neither justified
+anywhere. Both are adjustable now, 1 to 1000 and 1 to 365, on the owner's call:
+a launch is likely to bring a burst, alumni most of all, and throttling people
+who arrived to say something, using a ceiling nobody chose deliberately, is a
+cost with nothing on the other side of it. The quota still bounds accounts and
+not people (OPEN-35), which no number changes.
+
+**Test rows came back after being deleted, and the cause was shared
+namespaces.** Four database test files all created members with
+`provider: "test"`, so no file could clean up after itself without deleting
+rows belonging to another file running at the same time, and in practice none
+of them cleaned up at all. Separately, the reset helper set `username` to null
+and left `usernameKey` set, so an invisible row went on reserving a name that
+nothing could be seen to hold. Both are the same failure as the fixture
+namespace rule already in `LESSONS.md`: a test owns its rows or it owns
+nobody's.
+
+---
+
+### Phase 50: hooks declared after a branch, and the crash that only some data causes
+
+Opening a programme from the search screen failed with "Rendered more hooks
+than during the previous render." Nothing about the page had changed that day.
+
+`CourseFilters` returned early when the course list was empty, and called
+`useState` below that return. A programme with no courses rendered the short
+path, a later render of the same component took the long path, and React
+counted a hook that had not been there before. The component had been written
+that way for some time: it needed a programme with an empty list to show it,
+and the fixtures did not have one.
+
+**The fix is one line moved.** The interesting part is that nothing in the
+toolchain objected. `eslint-plugin-react-hooks` is now installed with
+`rules-of-hooks` as an error, which rejects exactly this shape at lint time.
+
+**`exhaustive-deps` is deliberately off.** It is a different rule wearing the
+same badge: it reports dependency arrays that are working as intended, its
+autofix changes behaviour, and turning it on would mean editing code that has
+no defect to satisfy a linter. `rules-of-hooks` catches a crash; the other
+catches a difference of opinion.
+
+---
+
+### Phase 51: the term the university states twice
+
+A course page said the term was not stated. The official page said "Q1 et Q2".
+
+The parser looked for a header cell matching `^Q[1-4]$`, so any course
+published as two terms matched nothing and the field was stored as null. It
+had been that way since the first crawl, and it was invisible because a missing
+term looks exactly like a course whose term the university really does not
+publish. 1,575 cached pages carried a value of that shape.
+
+**The filter was a second, independent bug, and it was worse.** It compared the
+stored string against the chip a reader pressed, so once the parser was fixed,
+filtering on Q1 would have hidden every Q1 et Q2 course: the string "Q1+Q2" is
+not the string "Q1". A filter that silently drops matching results is more
+damaging than a field that is visibly empty. A value is now read as the set of
+terms it names, and a chip matches any value whose set contains it.
+
+**Repaired without asking uclouvain.be for anything.** `PoliteFetcher` serves a
+cached page before the delay and without spending a request, so the whole
+catalogue re-parses at disk speed. 1,084 courses got their term back in a run
+that made zero requests. This is written up in `COMMANDS.md` because it changes
+what a parsing mistake costs: minutes, not another crawl.
+
+---
+
+### Phase 52: a landing page that arrives, and headings that break evenly
+
+Two reports, one answer, and the answer had to be general rather than aimed at
+the two screens where the fault was noticed.
+
+**The French home title wrapped to four ragged lines**, because the size was
+fixed and French is longer than English. Set with `clamp()` and given
+`text-wrap: balance`, it is three even lines at a smaller size, and the rule
+applies to headings rather than to that one heading: the next language, or the
+next title, does not need the fix to be discovered again.
+
+**The phone header stacked into a column.** The actions were a flex container
+that could not fit, so it wrapped one item per line and the header took 229px
+of a 667px screen. `display: contents` on that container lets its children join
+the header's own grid, and an explicit order puts the account control on the
+third row. 157px, and the rows are deliberate rather than whatever wrapping
+produced.
+
+**Animation on the home page, with the opt-out written at the same time.** The
+hero arrives in a short stagger. `prefers-reduced-motion: reduce` is not a
+taste setting: people set it because motion makes them ill, so a decorative
+animation that ignores it is the precise thing they asked the system to stop.
+A gate now checks that every stylesheet declaring an animation also names the
+animated class inside a reduced-motion block, because the animation and its
+opt-out are written together and then live far apart in the file, and omitting
+the second has no symptom for whoever wrote the first.
+
+---
+
+### Phase 53: both editions, and a reader who can choose between them
+
+OPEN-47 resolved. The catalogue's own text was French whatever language the
+interface was in, and the page said so rather than pretending.
+
+**The obvious fix destroys data.** Crawling English instead of French loses
+every field that exists only in French: measured at 16% of 168 UCLouvain field
+pairs and 30% of 108 ULB ones. So both editions are crawled and the choice is
+made per field, with the record reporting which language each field ended up
+in, and the screen marking the ones that are not the reader's.
+
+**A field that only defers is refused at ingestion.** UCLouvain's English page
+may carry the literal sentence "See French document" where the French page has
+1,855 characters. Storing it would replace real text with an instruction to go
+and find what was just discarded.
+
+**ULB has an English edition, and this file previously said it did not.** The
+claim was made here from a measurement about Dutch at UCLouvain, extended to a
+different university without checking it. `ulb.be/en/programme/<code>` answers
+and carries real prose for 4,037 of 5,439 courses. `titleEn` is deliberately
+not stored for ULB: its English page repeats the French programme title, and
+putting a French string in a column named for English is worse than an empty
+column.
+
+**A Dutch reader is offered English before French.** There is no Dutch source:
+`nl-cours-...` is 404 and no amount of work changes that. But falling back to
+French was the wrong second choice, since a Dutch speaker in Belgium is more
+likely to read English than French. The preference is per interface language
+and it is data, not a branch.
+
+**The fallback is selectable, which is the part that is not obvious.** A note
+saying which language a record was published in is a statement; beside it now
+is an FR|EN switch. It changes that record only, it does not touch the
+interface language, and the per-field tags follow the edition being read rather
+than the language the reader chose for the menus. It appears only when more
+than one edition exists, so it is never a control with one option.
+
+**Then the crawl's own report turned out to be wrong**, which is phase 53's
+real lesson. It said "6,654 with an English edition, 0 whose English page had
+nothing" while the database held 4,860. `parseEnglish` returns a record when
+any field survived and `title` is a field, and UCLouvain publishes an English
+title for every course whether or not the English sheet was ever written; the
+loader builds its column from the seven prose fields and leaves the title out.
+Two definitions of one sentence, disagreeing by 1,794 courses, each correct
+about the question it was actually answering. There is one predicate now, used
+by both crawlers and by the loader. **A number that is right in one of two
+places is wrong as soon as somebody adds a third.**
+
+---
+
 ## Next
 
 0. ~~ULB~~ done, phases 35 to 39, and **loaded**. The full crawl ran on
@@ -2123,13 +2335,16 @@ an intruder signed in.
    application and PostgreSQL together, with three accepted risks in
    requirements 5.2; Hetzner at about 4 EUR a month removes all three and is
    the fallback.
-7. **The catalogue's own text is French**, in every language of the interface:
-   a programme's title, its site, its field of study and the three long course
-   fields are all stored as crawled. Since phase 31 the screen says so rather
-   than leaving it to be read as a half-finished translation. Fixing it is
-   OPEN-47 and is measured in `design/catalogue-ingestion.md` 12.15: a second
-   crawl of the English edition, a language per field, a per-field fallback,
-   and no Dutch source at all.
+7. ~~The catalogue's own text is French~~ **done, phase 53, OPEN-47
+   resolved.** Both editions are crawled and the choice is made per field, with
+   the language of each field reported and marked on screen. Loaded on
+   2026-09-27: UCLouvain 4,860 of 6,654 offerings carry English text, ULB 4,037
+   of 5,439. A reader can switch one record between FR and EN where both exist.
+   **What is still French** is a programme's title, its site and its field of
+   study: they come from the programme listing rather than a course page, and
+   there is no second edition of that listing to read them from. **Dutch has no
+   source and never will**, `nl-cours-...` is 404, so a Dutch reader is served
+   English first and French only where no English exists.
 7b. ~~The full catalogue~~ done, phase 30 for UCLouvain and phase 35 for ULB.
    Both are loaded: 32 faculties, 1,055 programmes and 12,154 courses across
    11 institutions, of which 2 are open for choosing, counted in the database

@@ -1142,7 +1142,8 @@ So the shape of the work is not "crawl English instead". It is:
    disagree about which fields exist,
 3. fall back to French per field, and say on screen which language each field
    ended up in,
-4. accept that Dutch has no source and will fall back to French always.
+4. accept that Dutch has no source. **Superseded later in this same 12.15:**
+   it does not follow that Dutch falls back to French, and it no longer does.
 
 **Deferred on 2026-09-17, then built on 2026-09-27**, on the owner's call to fix
 it properly rather than hand it over measured.
