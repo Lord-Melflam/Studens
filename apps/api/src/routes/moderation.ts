@@ -34,6 +34,7 @@ import {
   feedbackAuthors,
   listFeedback,
   setFeedbackStatus,
+  exportFeedback,
   decide,
   listAppointments,
   listMembers,
@@ -643,6 +644,70 @@ export function moderationRoutes(prisma: PrismaClient): Router {
         return;
       }
       res.json({ authors: await feedbackAuthors({ client: prisma }) });
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  /**
+   * FR-I4: the whole queue as a JSON file.
+   *
+   * ADMINISTRATORS ONLY, unlike reading the queue. A moderator reads what
+   * people wrote; an export is a copy that leaves this machine, and the full
+   * scope carries addresses and usernames. That is the same line the member
+   * directory draws.
+   *
+   * THE ANONYMISED SCOPE IS A GET, because it is a download and a link is how
+   * downloads work. THE FULL SCOPE IS A POST carrying a typed confirmation,
+   * because it is not the kind of thing that should happen from a link
+   * somebody clicks, and because an audit row with no deliberate act behind it
+   * records an accident.
+   *
+   * THE TYPED WORD IS THE ADMINISTRATOR'S OWN USERNAME, not a fixed word like
+   * EXPORT. FR-E19 chose a typed name over a fixed word for the same reason:
+   * a fixed word becomes muscle memory within a week. There is no target
+   * member here to name, so the name is theirs, which also makes the audit row
+   * and the act agree about who did it.
+   */
+  router.get("/moderation/feedback/export", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canAppoint(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const file = await exportFeedback({
+        client: prisma,
+        scope: "anonymised",
+        secret: process.env["STUDENS_SESSION_SECRET"] ?? "",
+      });
+      res.setHeader("content-disposition", 'attachment; filename="studens-feedback.json"');
+      res.json(file);
+    })().catch(() => res.status(500).json({ error: "unavailable" }));
+  });
+
+  router.post("/moderation/feedback/export", (req, res) => {
+    void (async () => {
+      const who = await identifyIfAny(prisma, req);
+      if (!who || !canAppoint(who.role)) {
+        res.status(404).json({ error: "not found" });
+        return;
+      }
+      const confirm = (req.body ?? {})["confirm"];
+      const me = await prisma.member.findUnique({
+        where: { id: who.memberId },
+        select: { username: true },
+      });
+      if (typeof confirm !== "string" || me?.username == null || confirm.trim() !== me.username) {
+        res.status(400).json({ error: "confirm" });
+        return;
+      }
+      const file = await exportFeedback({
+        client: prisma,
+        scope: "full",
+        secret: process.env["STUDENS_SESSION_SECRET"] ?? "",
+        actorMemberId: who.memberId,
+      });
+      res.setHeader("content-disposition", 'attachment; filename="studens-feedback-full.json"');
+      res.json(file);
     })().catch(() => res.status(500).json({ error: "unavailable" }));
   });
 

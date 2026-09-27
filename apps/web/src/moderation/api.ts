@@ -331,3 +331,23 @@ export async function setFeedbackState(id: string, status: string): Promise<bool
   });
   return r.ok;
 }
+
+/**
+ * FR-I4: the full export, which is a POST because it is audited and needs a
+ * typed confirmation. The anonymised one is an ordinary download link and
+ * needs no function here.
+ *
+ * Returns the parsed file so the caller can turn it into a download; a failure
+ * returns null and the screen says which kind it was.
+ */
+export async function exportFeedbackFull(
+  confirm: string,
+): Promise<{ ok: true; file: unknown } | { ok: false; reason: "confirm" | "failed" }> {
+  const r = await fetch("/api/moderation/feedback/export", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ confirm }),
+  });
+  if (r.ok) return { ok: true, file: await r.json() };
+  return { ok: false, reason: r.status === 400 ? "confirm" : "failed" };
+}

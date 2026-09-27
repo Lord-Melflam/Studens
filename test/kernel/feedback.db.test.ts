@@ -21,6 +21,7 @@ import {
   FEEDBACK_KINDS,
   FeedbackInvalid,
   MESSAGE_MAX,
+  exportFeedback,
   feedbackAuthors,
   listFeedback,
   setFeedbackStatus,
@@ -231,5 +232,91 @@ describe("deleting an account does not delete what that person reported", () => 
     expect(after, "a bug report is not the member's to take back by leaving").not.toBeNull();
     expect(after?.memberId).toBeNull();
     expect(after?.message).toContain("something is wrong");
+  });
+});
+
+describe("the export, and why the safe scope is the default", () => {
+  dbit("carries no address, no username and no member id when anonymised", async () => {
+    await submitFeedback(said({ contactEmail: "findme@example.invalid" }), {
+      client: prisma,
+      memberId,
+    });
+    const file = await exportFeedback({ client: prisma, secret: "ztst.secret" });
+    expect(file.scope).toBe("anonymised");
+    const text = JSON.stringify(file);
+    // The three things a file that leaves this machine must not carry.
+    expect(text).not.toContain("findme@example.invalid");
+    expect(text).not.toContain("ztst.fb.sender");
+    expect(text).not.toContain(memberId);
+  });
+
+  dbit("groups a sender without naming them, which is what makes it useful", async () => {
+    const a = await submitFeedback(said(), { client: prisma, memberId });
+    const b = await submitFeedback(said(), { client: prisma, memberId });
+    const c = await submitFeedback(said(), { client: prisma });
+    const file = await exportFeedback({ client: prisma, secret: "ztst.secret" });
+
+    // SCOPED TO THE ROWS THIS TEST MADE, and it has to be. An export reads the
+    // WHOLE table by design, so it is the one thing in the suite that cannot
+    // be namespaced: vitest runs files in parallel, and asserting over every
+    // item counted another file's rows as a second sender. The first version
+    // of this test did exactly that and failed for a reason that had nothing
+    // to do with what it checks.
+    const byId = new Map(file.items.map((i) => [i["id"], i]));
+    expect(new Set([byId.get(a.id)?.["sender"], byId.get(b.id)?.["sender"]]).size).toBe(1);
+    expect(byId.get(a.id)?.["sender"]).toBeTruthy();
+    // Somebody who was not signed in gets NO key. There is nothing to group
+    // them by, and inventing one would be a lie about what is known.
+    expect(byId.get(c.id)?.["sender"]).toBeNull();
+  });
+
+  dbit("gives the same sender the same key next time, and a different key under a different secret", async () => {
+    const row = await submitFeedback(said(), { client: prisma, memberId });
+    const a = await exportFeedback({ client: prisma, secret: "ztst.secret" });
+    const b = await exportFeedback({ client: prisma, secret: "ztst.secret" });
+    const c = await exportFeedback({ client: prisma, secret: "ztst.other" });
+    // By id, for the same reason as above: the export is table-wide.
+    const key = (f: typeof a): unknown => f.items.find((i) => i["id"] === row.id)?.["sender"];
+    expect(key(b), "stable, or grouping across two exports is meaningless").toBe(key(a));
+    // Keyed rather than a plain hash: an administrator holds every member id,
+    // so an unkeyed hash of one would be reversible by the people it is
+    // meant to protect the senders from.
+    expect(key(c)).not.toBe(key(a));
+  });
+
+  dbit("carries the identities when full, and says who asked in the log", async () => {
+    await submitFeedback(said({ contactEmail: "findme@example.invalid" }), {
+      client: prisma,
+      memberId,
+    });
+    const file = await exportFeedback({
+      client: prisma,
+      scope: "full",
+      secret: "ztst.secret",
+      actorMemberId: memberId,
+    });
+    expect(file.scope).toBe("full");
+    expect(JSON.stringify(file)).toContain("findme@example.invalid");
+    const logged = await prisma.auditLog.findFirst({
+      where: { actorMemberId: memberId, action: { startsWith: "feedback:exported:full" } },
+      orderBy: { at: "desc" },
+    });
+    // The count is in the action, so the record says how much left rather
+    // than only that something did.
+    expect(logged?.action).toMatch(/^feedback:exported:full:\d+$/);
+  });
+
+  dbit("refuses a full export that cannot say who asked", async () => {
+    await expect(
+      exportFeedback({ client: prisma, scope: "full", secret: "ztst.secret" }),
+    ).rejects.toBeInstanceOf(FeedbackInvalid);
+  });
+
+  dbit("explains its own fields, so a reader needs nothing else", async () => {
+    await submitFeedback(said(), { client: prisma });
+    const file = await exportFeedback({ client: prisma, secret: "ztst.secret" });
+    for (const key of Object.keys(file.items[0] ?? {})) {
+      expect(file.fields[key], `${key} is in the file and not in its legend`).toBeTruthy();
+    }
   });
 });

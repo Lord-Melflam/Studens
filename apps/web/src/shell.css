@@ -1322,6 +1322,35 @@ a.ghost.here {
   overflow: hidden;
 }
 
+/*
+  The two export controls (FR-I4), and the difference between them is drawn as
+  well as written. The anonymised one is an ordinary control; the full one is a
+  quieter link that opens a question, because it should take a decision rather
+  than a click.
+*/
+.export-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.export-confirm {
+  margin: 0 0 1.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--raised, transparent);
+}
+
+.export-confirm .plain {
+  margin: 0 0 0.75rem;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 .directory-actions {
   display: flex;
   flex-wrap: wrap;
