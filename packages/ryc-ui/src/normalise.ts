@@ -39,7 +39,62 @@ const QUARTER: Record<string, string> = {
   "troisieme quadrimestre": "Q3",
   "1e et 2e quadrimestre": "Q1+Q2",
   "annee academique": "Q1-Q3",
+  /*
+    A COURSE CAN TOUCH TWO TERMS, AND UCLouvain SAYS SO IN FOUR WAYS.
+    Measured across 10,268 cached pages on 2026-09-27:
+
+        Q1 et Q2   1026      Q1 and Q2   351
+        Q1 ou Q2    143      Q1 or Q2     55
+
+    Fifteen hundred pages, and every one of them parsed to null and displayed
+    as "term not stated", because the parser matched `^Q[1-4]$` and these are
+    not that. Reported from use: the official page states the term and ours
+    did not.
+
+    `et` and `ou` are NOT the same fact and are kept apart. "Q1 et Q2" is one
+    course running across the year; "Q1 ou Q2" is a course given twice, of
+    which a student takes one. Both mean it is available in either term, which
+    is what the filter cares about, and only the second means you may choose,
+    which is what the reader cares about.
+
+    English maps onto the French keys rather than getting its own, the same
+    rule the rest of the catalogue follows: one set of keys, not two
+    vocabularies for one fact.
+  */
+  "q1 et q2": "Q1+Q2",
+  "q1 and q2": "Q1+Q2",
+  "q1 ou q2": "Q1/Q2",
+  "q1 or q2": "Q1/Q2",
+  "q2 et q3": "Q2+Q3",
+  "q2 and q3": "Q2+Q3",
+  "q2 ou q3": "Q2/Q3",
+  "q2 or q3": "Q2/Q3",
 };
+
+/**
+ * The individual terms a course actually touches.
+ *
+ * THE FILTER NEEDS A SET, THE CARD NEEDS THE STRING. A student asking for Q1
+ * courses means every course they could attend in Q1, which includes the ones
+ * running across both terms and the ones offered in either. Matching the
+ * canonical string exactly gave them only the courses marked plainly `Q1`, so
+ * a thousand were invisible to a filter that claimed to list them.
+ *
+ * Faceting on terms also keeps the chips to the three that exist rather than
+ * growing one per combination.
+ */
+export function quarterTerms(raw: string | null): string[] {
+  const key = quarterKey(raw);
+  if (!key) return [];
+  // `Q1-Q3` is a year, so it touches everything between its ends.
+  const span = /^Q(\d)-Q(\d)$/.exec(key);
+  if (span) {
+    const [from, to] = [Number(span[1]), Number(span[2])];
+    return Array.from({ length: to - from + 1 }, (_, i) => `Q${from + i}`);
+  }
+  const found = key.match(/Q\d/g);
+  return found ? [...new Set(found)] : [];
+}
 
 /**
  * ISO 639-1, because a code is the one spelling that is nobody's language.

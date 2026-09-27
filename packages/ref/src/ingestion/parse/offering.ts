@@ -334,8 +334,28 @@ export function parseOffering(
     ects: parseEcts(headerCells, url),
     // "30.0 h + 30.0 h". Present in both eras, but only as the second header cell.
     contactHours: headerCells.find((c) => /\bh\b/.test(c) && !/cr/i.test(c)) ?? null,
-    // The archive era has no quarter at all. Absent by era, not an error.
-    quarter: headerCells.find((c) => /^Q[1-4]$/i.test(c)) ?? null,
+    /*
+      THE WHOLE CELL, not just a bare `Q1`.
+
+      This matched `^Q[1-4]$`, so anything the university wrote with two terms
+      in it fell through and the course displayed as "term not stated" while
+      its official page said otherwise. Measured across 10,268 cached pages on
+      2026-09-27:
+
+          Q1 et Q2   1026      Q1 and Q2   351
+          Q1 ou Q2    143      Q1 or Q2     55
+
+      Fifteen hundred pages, losing a field they published plainly. Reported
+      from use, by following the official link and finding the term there.
+
+      The value is kept as written and mapped to one canonical vocabulary by
+      the reader (`normalise.ts`), which is where French and English already
+      meet. Parsing is not the place to decide that `et` and `and` are the same
+      word.
+
+      The archive era has no quarter at all. Absent by era, not an error.
+    */
+    quarter: headerCells.find((c) => /^Q[1-4](\s+\S+\s+Q[1-4])?$/i.test(c)) ?? null,
     language: field(fields, ["langue d'enseignement", "langue", "language"], url, "language"),
     teachers: teachersRaw
       ? teachersRaw

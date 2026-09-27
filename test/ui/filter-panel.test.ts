@@ -15,7 +15,16 @@ import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { I18nProvider } from "@studens/i18n";
-import { FilterGroup, Reviews, ScopePicker, rycStrings } from "@studens/ryc-ui";
+import {
+  FilterGroup,
+  Reviews,
+  ScopePicker,
+  rycStrings,
+  NO_COURSE_FILTER,
+  applyCourseFilter,
+  courseFacets,
+  type CourseSummary,
+} from "@studens/ryc-ui";
 import type { ReactNode } from "react";
 
 function draw(children: ReactNode): string {
@@ -206,5 +215,70 @@ describe("the review pager", () => {
     // nothing on it either.
     expect(show({ page: 1, pages: 5, reviews: [], sessionRequired: true }))
       .not.toContain('class="pager"');
+  });
+});
+
+/**
+ * A FILTER THAT CLAIMS TO LIST Q1 COURSES MUST LIST THEM ALL.
+ *
+ * Reported from use. The match was on the canonical string, so selecting Q1
+ * returned only courses labelled plainly `Q1`: a thousand running across both
+ * terms were invisible to a filter that said it was showing them. The chips
+ * grew one per combination, too, which is three ways of saying the same
+ * thing.
+ */
+describe("a course that touches two terms", () => {
+  const course = (code: string, quarter: string | null): CourseSummary =>
+    ({
+      institution: "uclouvain",
+      code,
+      title: code,
+      year: 2026,
+      offeredThisYear: true,
+      ects: 5,
+      quarter,
+      teachers: [],
+      external: false,
+      mainLanguage: "fr",
+      owningEntity: null,
+      campuses: [],
+    }) as CourseSummary;
+
+  const courses = [
+    course("spans", "Q1 et Q2"),
+    course("either", "Q1 ou Q2"),
+    course("first", "Q1"),
+    course("second", "Q2"),
+    course("none", null),
+  ];
+
+  it("appears when the term it spans is selected", () => {
+    const picked = applyCourseFilter(courses, { ...NO_COURSE_FILTER, quarters: ["Q1"] }, {});
+    expect(picked.map((c) => c.code).sort()).toEqual(["either", "first", "spans"]);
+  });
+
+  it("appears under the other term too, because it really is offered then", () => {
+    const picked = applyCourseFilter(courses, { ...NO_COURSE_FILTER, quarters: ["Q2"] }, {});
+    expect(picked.map((c) => c.code).sort()).toEqual(["either", "second", "spans"]);
+  });
+
+  it("offers a chip per term, not per combination", () => {
+    const facets = courseFacets(courses, NO_COURSE_FILTER, {});
+    expect(facets.quarters.map((f) => f.value)).toEqual(["Q1", "Q2"]);
+  });
+
+  /**
+   * The count has to include them or it understates what the term offers,
+   * which is the number a student uses to decide whether to click.
+   */
+  it("counts a spanning course toward both terms", () => {
+    const facets = courseFacets(courses, NO_COURSE_FILTER, {});
+    expect(facets.quarters.find((f) => f.value === "Q1")?.count).toBe(3);
+    expect(facets.quarters.find((f) => f.value === "Q2")?.count).toBe(3);
+  });
+
+  it("still excludes a course whose term nobody stated", () => {
+    const picked = applyCourseFilter(courses, { ...NO_COURSE_FILTER, quarters: ["Q1", "Q2"] }, {});
+    expect(picked.map((c) => c.code)).not.toContain("none");
   });
 });

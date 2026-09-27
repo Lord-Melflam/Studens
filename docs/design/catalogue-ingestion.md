@@ -1185,6 +1185,47 @@ matches on title and a string inside a JSON blob is not matchable by that query;
 answers 404. Dutch readers get French, and the screen says which fields are
 French rather than pretending otherwise.
 
+### 12.16 A term is not always one term
+
+The parser matched the quadrimester cell with `^Q[1-4]$`, so it read `Q1` and
+`Q2` and dropped everything else. UCLouvain states two terms on a great many
+courses, and every one of those rendered as "term not stated" while its
+official page said otherwise. Reported from use on 2026-09-27, by following the
+link and reading the page.
+
+Measured across the 10,268 course pages then in the cache:
+
+| cell | pages |
+|---|---|
+| `Q2` | 4,400 |
+| `Q1` | 3,977 |
+| **`Q1 et Q2`** | **1,026** |
+| **`Q1 and Q2`** | **351** |
+| nothing stated | 164 |
+| `Q3` | 152 |
+| **`Q1 ou Q2`** | **143** |
+| **`Q1 or Q2`** | **55** |
+
+Roughly fifteen hundred pages losing a field the source publishes plainly.
+
+**`et` and `ou` are different facts and stay apart.** `Q1 et Q2` is one course
+running across the year; `Q1 ou Q2` is a course given twice, of which a student
+takes one. They map to `Q1+Q2` and `Q1/Q2`, and the English spellings map onto
+the same two keys rather than getting their own, which is the rule the rest of
+this document already follows.
+
+**The filter matches the terms, not the label.** A student asking for Q1
+courses means every course they could attend in Q1, so a course is compared by
+the set of terms it touches. Matching the canonical string exactly returned
+only the ones marked plainly `Q1`. The facet is built from terms too, so the
+chips stay Q1, Q2, Q3 rather than growing one per combination.
+
+**No re-crawl was needed to repair the data.** Every page was already in
+`data/page-cache`, and `PoliteFetcher.get` serves a cached page before the
+politeness delay and without counting a request, so re-running the ingestion
+re-parses from disk in minutes rather than hours. That is the general remedy
+for a parsing mistake here: the crawl is expensive and the parse is not.
+
 ## 13. A second institution: ULB
 
 Decided 2026-09-18: ULB is crawled as well. These are the two universities to
