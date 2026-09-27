@@ -1,0 +1,277 @@
+% The handover document, typeset.
+%
+% Same content as docs/HANDOFF.md, which is the version that stays current
+% because it lives beside the code and is diffed with it. This one exists to be
+% read away from a terminal, or handed to somebody who has not cloned anything
+% yet. If the two ever disagree, the markdown is right.
+%
+% Build:  xelatex handoff.tex   (twice, for the contents)
+
+\documentclass[11pt,a4paper]{article}
+\input{studens-preamble}
+\docfooter{Studens handover}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+{\sffamily\Huge\bfseries\color{studens} Studens}\\[0.6em]
+{\sffamily\LARGE Picking this project up}\\[2em]
+{\sffamily\large\color{muted} For whoever arrives next: a person, or a model\\
+working on their behalf}\\[3em]
+{\sffamily\normalsize\color{muted} 2026-09-27}\\[0.4em]
+{\sffamily\footnotesize\color{muted} AGPL-3.0-or-later\ \ \textbf{·}\ \
+github.com/Lord-Melflam/Studens}
+\vfill
+{\sffamily\footnotesize\color{muted}
+Everything here was checked against the code rather than recalled. Where a
+number would go stale, this document names the command that computes it
+instead. The living version is \texttt{docs/HANDOFF.md}; if the two disagree,
+that one is right.}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ===========================================================================
+\section{What this is, in one minute}
+
+Students choose elective courses blind. Syllabus descriptions diverge from the
+real workload and difficulty, peer advice lives in Discord and is buried within
+weeks, so every cohort re-asks the same questions. \textbf{Studens} hosts small
+modules for students; the first, \textbf{RYC}, lets them read and write course
+reviews.
+
+\begin{why}
+\textbf{v1 passes when a student can search a course code and see rated, dated,
+workload-annotated feedback in one place before their PAE deadline.} That
+sentence is the acceptance test. Nothing else is.
+\end{why}
+
+The hard part is not the reviews. A contribution is published \textbf{either
+anonymously or under the author's name, chosen per contribution}, and the
+anonymous half must stay unlinkable to its author permanently, including from
+whoever runs the service. Most of the unusual decisions in this codebase exist
+because of that one property.
+
+% ===========================================================================
+\section{From zero to running}
+
+PostgreSQL 14+ and Node 22+. Nothing else.
+
+\begin{cmd}
+git clone <this repository> && cd studens
+npm ci
+
+createdb studens              # or whatever DATABASE_URL points at
+cp .env.example .env          # then fill it in, see the next section
+npm run db:migrate            # schemas, tables, and the role grants
+npm run db:grant-local        # lets your own user read all three schemas
+
+npm run gates                 # typecheck, lint, the suite, schema, links
+npm run gates:db              # the above plus the role isolation proof
+\end{cmd}
+
+The catalogue is scraped, not shipped. Without it the product runs and has no
+courses:
+
+\begin{cmd}
+npm run ingest                # ~75 min per university, politely rate limited
+npm run db:load               # the snapshot into PostgreSQL, one transaction
+npm run catalogue:report      # compares both directions, exits 1 on a gap
+\end{cmd}
+
+Then, in three terminals:
+
+\begin{cmd}
+npm run dev:api               # 3001, with the development identity
+npm run dev:web               # 5173
+npm run mail -- --watch       # drains the outbox every 30 seconds
+\end{cmd}
+
+\begin{careful}
+\texttt{dev:api} signs in one fixed member so submission works without provider
+credentials. Use \texttt{dev:api:anon} for anything reachable from outside the
+machine, or one press of the sign-in button hands a stranger an administrator
+session.
+\end{careful}
+
+% ===========================================================================
+\newpage
+\section{What is NOT in this repository}
+
+\textbf{The section that matters most, and the reason this document exists.}
+Three things the project depends on are deliberately untracked, so a clone
+gives you none of them.
+
+\subsection{Configuration and secrets}
+
+\texttt{.env.example} documents every variable with what it is for. Names only:
+
+\begin{center}
+\sffamily\scriptsize
+\begin{tabular}{@{}>{\ttfamily}p{4.6cm} p{9.6cm}@{}}
+\toprule
+\textrm{\textbf{Variable}} & \textrm{\textbf{What it is, and where a new one comes from}} \\
+\midrule
+DATABASE\_URL & Your PostgreSQL connection. Local development uses peer authentication over the unix socket, so it carries no password. \\
+STUDENS\_SESSION\_SECRET & Any long random string you generate. Changing it signs everybody out and does nothing else. \\
+STUDENS\_GOOGLE\_CLIENT\_* & Google Cloud console, an OAuth 2.0 Web application client. The redirect URI must match your origin exactly. \\
+STUDENS\_MS\_CLIENT\_* & Microsoft Entra, app registration. Never exercised against the live provider. \\
+STUDENS\_PUBLIC\_ORIGIN, \newline STUDENS\_APP\_ORIGIN & Where the app is reachable. Both must be the public address, or the provider sends visitors back to their own localhost. \\
+STUDENS\_SECURE\_COOKIES & \texttt{1} whenever the origin is HTTPS. \\
+STUDENS\_SMTP\_*, \newline STUDENS\_MAIL\_FROM & Any SMTP relay. Port 587 with STARTTLS; 465 hangs, because the sender always issues STARTTLS on a plain socket. \\
+STUDENS\_CONTACT\_EMAIL & Printed on the suspension screen and in the suspension message. Unset means both state the reason and offer nowhere to write, which beats an address that bounces. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{careful}
+No value is written down anywhere in this repository, and none should be.
+Re-issue them rather than hunting for the old ones.
+\end{careful}
+
+\subsection{The working instructions for a model, and a previous assistant's notes}
+
+Both untracked, because they hold personal and machine-specific context. What
+belongs to the project rather than to a person is in the two sections below.
+
+% ===========================================================================
+\section{The shape of the code}
+
+A \textbf{modular monolith plus one worker}. One database, a schema per module,
+a PostgreSQL role per schema.
+
+\begin{center}
+\begin{tikzpicture}
+  \node[wbox={5.4cm}{0.85cm}] (ryc) at (0,2.1) {\textbf{tier 3} \ \texttt{packages/ryc}\\the review module};
+  \node[wbox={5.4cm}{0.85cm}] (ref) at (0,0.7) {\textbf{tier 2} \ \texttt{packages/ref}\\the catalogue and its crawler};
+  \node[wbox={5.4cm}{0.85cm}] (plat) at (0,-0.7) {\textbf{tier 1} \ \texttt{packages/platform}\\members, sessions, quota, the kernel};
+  \draw[flow] (ryc) -- (ref);
+  \draw[flow] (ryc.west) to[out=180,in=180] (plat.west);
+  \node[right=8mm of ref, text width=7.4cm, font=\sffamily\scriptsize\color{muted}]
+    {Tier 1 imports nothing. Tier 2 imports nothing. Tier 3 may import both.
+     Nothing ever points upward or sideways.\\[0.5em]
+     Enforced twice, and the second is the one that matters: a linter rule with
+     a test that proves it bites, and \textbf{the database}.
+     \texttt{studens\_ryc} holds SELECT and nothing else on the anonymous
+     review table, so the module that owns the feature physically cannot write
+     one, whatever its code says.};
+\end{tikzpicture}
+\end{center}
+
+Six runtime dependencies in total: \texttt{@prisma/client},
+\texttt{express}, \texttt{react}, \texttt{react-dom}, \texttt{cheerio} and
+\texttt{jose}. No router
+library, no state library, no CSS framework, no auth library, no mail library,
+each for a reason recorded in \texttt{stack-overview.tex}, which is the
+document to read after this one.
+
+% ===========================================================================
+\newpage
+\section{How this project is worked on}
+
+Not style preferences. Each was earned by something going wrong, and each is
+the short form of a longer entry in \texttt{docs/LESSONS.md}.
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Verify by using it, in the state the user is in.} Green
+        endpoints and passing component tests can both be true while the screen
+        a person opens is blank. Two changes were reported as working and were
+        broken on the signed-in path, because everything behind sign-in was, in
+        test terms, never drawn. Say which parts you checked and which you did
+        not, and never claim a fix you have not reproduced.
+  \item \textbf{Measure the document, look at the render.} Screenshots lie
+        about width: a headless window has a minimum size, so the page lays out
+        wider than the picture. Probe the DOM for layout questions; take a
+        screenshot for "which rule applied" questions.
+  \item \textbf{Anything that can grow gets a bound in the change that adds
+        it}, not when it hurts. The failure is legibility long before speed:
+        976 programmes as a 143,000 pixel page, "25 of 25" where 25 was the
+        window and 456 matched.
+  \item \textbf{Every choice names four things}, or it is a guess and is marked
+        \texttt{[OPEN]}: the requirement, the alternatives rejected, the cost
+        accepted, and what would change the answer.
+  \item \textbf{Challenge, then follow the call.} Name the cost nobody has
+        mentioned: money, permanence, or a weakened guarantee. Then do what was
+        decided. Several entries in the specification record the owner
+        overruling a recommendation, and say so.
+  \item \textbf{Branch from \texttt{main}, always.} Merges are squash merges,
+        so a branch stacked on an unmerged branch conflicts every time.
+  \item \textbf{A database test owns its namespace.} Files run in parallel
+        against one database and \texttt{username} is globally unique. Every
+        fixture lives under \texttt{ztst}, and \texttt{npm run state} excludes
+        that namespace so the project never counts its own test rows as data.
+        It did once, and the wrong figure reached a published document.
+  \item \textbf{Visual staleness is a defect.} Small-capital micro-labels are
+        the strongest dated signal; sentence case at a readable size, with
+        weight doing the separating, reads as maintained. Chevrons are SVG
+        paths with round caps, never two rotated CSS borders.
+  \item \textbf{Plain words.} Short sentences, no em dashes in prose, and none
+        of the vocabulary that signals a machine wrote it.
+\end{itemize}
+
+% ===========================================================================
+\section{The gates, and the failure each one is made of}
+
+About a third of the suite tests the \emph{project} rather than the product.
+None was written speculatively.
+
+\begin{center}
+\sffamily\scriptsize
+\begin{tabular}{@{}>{\ttfamily}p{3.5cm} p{10.7cm}@{}}
+\toprule
+boundaries & A tier boundary is only real if crossing it fails a build. \\
+anonymity-schema & Asserts the anonymous table has no member column. \\
+verify-isolation.sql & Its first version was a false green: every SET ROLE was itself denied, so all nine "must fail" queries ran as the owner and passed. \\
+here-wins & A "you are here" mark lost to a later rule of equal specificity three times, then a fourth where \texttt{.panel button} squeezed a button's content box to a negative width and an icon rendered as nothing. \\
+styled & A whole screen shipped with six class names and no CSS rule for any of them. \\
+signed-out & A route caught the not-signed-in error and returned without answering, so the request hung forever. \\
+no-egress & Review text must never reach a third party, so the module holding it opens no socket at all. \\
+no-stale-counts & The public page said 546 courses while the database held 12,154. \\
+docs:links & Nothing tracked may reference an untracked file. The repository is public. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{careful}
+Never bypass a gate because you wrote the change yourself. Review is the
+security boundary here, not a quality practice: every anonymity guarantee rests
+on all database-touching code having been read.
+\end{careful}
+
+% ===========================================================================
+\section{What is not built}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Nothing is deployed.} One deployable artefact exists and has
+        never run anywhere but a laptop. A host, a domain and TLS are missing.
+  \item \textbf{Automatic screening} before publication.
+  \item \textbf{Removal publishing a statement of reasons} in the place the
+        contribution occupied. Marked open: a non-lawyer's reading of DSA
+        Article 17 that needs confirming.
+  \item \textbf{Microsoft sign-in has never been exercised against the live
+        provider.} Two of its values were written from documentation and never
+        observed. One of the two target universities runs on Microsoft 365, so
+        this decides whether that population can use a university account.
+  \item \textbf{No student has used any of this.} Every review in the database
+        was written during testing.
+\end{itemize}
+
+% ===========================================================================
+\section{A suggested first hour}
+
+\begin{enumerate}[leftmargin=*]
+  \item \texttt{npm run gates}. If it is green, the repository is sound.
+  \item Read \texttt{docs/TIMELINE.md} down to the end of the state section.
+  \item Read \texttt{packages/platform/src/kernel.ts} in full. It is the
+        smallest piece of code the whole privacy design depends on, and it is
+        deliberately short enough to read in one sitting.
+  \item Run the app, sign in, write one review on each path, and look at what
+        the course page shows and withholds.
+  \item Read section 3.3 of the specification, the complement problem.
+        Everything odd in the schema follows from it.
+\end{enumerate}
+
+\end{document}

@@ -357,6 +357,7 @@ could tell from the folder what was in it.
 ```
 docs/
   README.md        the index: what each document is, and where to start
+  HANDOFF.md       for somebody arriving with nothing but the repository
   requirements.md  the specification. Requirement IDs are permanent
   TIMELINE.md      state, and the log of how each decision was reached
   LESSONS.md       what has gone wrong, and what each failure changed
