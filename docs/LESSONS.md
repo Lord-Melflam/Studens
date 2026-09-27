@@ -792,3 +792,37 @@ rule and one was a rule that did not exist, and on screen they are
 indistinguishable. Nothing about "the style is missing" narrows down which of
 the two it is, so the answer both times is to make the absence fail a build
 rather than to be more careful.
+
+---
+
+## A hook below an early return, and nothing in the toolchain saw it
+
+Every programme page crashed. Opening one and clicking through replaced the
+page with the error boundary and "Rendered more hooks than during the previous
+render", which names no component and no hook.
+
+`CourseFilters` declared `const [drawn, setDrawn] = useState(...)` **below** an
+early return for the empty case. A programme page renders twice: once with no
+courses while the fetch is in flight, calling four hooks, and once with them,
+calling five. React refuses the second and unmounts the tree.
+
+**It was introduced by a correct change.** The `useState` is the NFR-O4
+windowing that stopped a 349-course programme rendering every row. The feature
+was right; it was declared eleven lines too low.
+
+**Nothing caught it.** TypeScript is happy, because it is valid TypeScript.
+The tests are happy, because none renders that component through both states,
+and the bug only exists in the transition. Lint was happy, because the plugin
+that checks the rules of hooks was not installed: the project keeps its
+dependency list short on purpose, and this was one of the gaps that left.
+
+**What changed.** `eslint-plugin-react-hooks`, with `rules-of-hooks` as an
+error. It reports the original bug precisely, naming the file, the line and the
+hook. Its companion rule `exhaustive-deps` is off, with the reasoning written
+in the config: it reports seven things here, none of them a known defect, and
+seven permanent warnings is how a lint gate gets ignored.
+
+**The general shape.** A dependency that turns a class of fatal, mechanical
+mistake into a build failure earns its place even in a project that refuses
+dependencies by default. The test is whether the mistake is *mechanical*: this
+one is, which is why a linter can see it and a reviewer reliably cannot.
